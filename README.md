@@ -20,6 +20,7 @@ Rhasspy provides offline, private solutions to problems 1-4 using off-the-shelf 
 2. [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) (wait for silence)
 3. [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx) (speech to text)
 4. [RasaNLU](https://rasa.com/) (intent recognition)
+  * A simple [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) based recognizer is available for testing and low-resource systems 
 
 For problem 5 (fulfilling the speaker's intent), Rhasspy works with Home Assistant's built-in [automation capability](https://www.home-assistant.io/docs/automation/). For each intent you define, Rhasspy sends an event to Home Assistant that can be used to do anything Home Assistant can do (toggle switches, call REST services, etc.). This means that Rhasspy will do very little out of the box compared to other voice assistants, but there will also be no limits to what can be done.
  
@@ -41,12 +42,12 @@ Rhasspy allows you to customize every stage of intent recognition, including:
 
 1. Defining custom wake words
 2. Providing example sentences that you want to be recognized, annotated with intent information
-3. Specifying how you pronounce specific words, including words that Rhasspy doesn't know
+3. Specifying how you pronounce specific words, including words that Rhasspy doesn't know yet
 
 Profiles
 ----------
 
-All of the files Rhasspy needs for wake word detection, speech transcription, and intent recognition are contained in a *profile* directory. Out of the box, Rhasspy contains profiles for English (en), Spanish (es), French (fr), German (de), Italian (it), and Dutch (nl).
+All of the files Rhasspy needs for wake word detection, speech transcription, and intent recognition are contained in a *profile* directory. Out of the box, Rhasspy contains profiles for English (en), Spanish (es), French (fr), German (de), Italian (it), Dutch (nl), and Russion (ru).
 
 The important files in a profile are:
 
@@ -99,6 +100,7 @@ The following tools/libraries help to support Rhasspy:
 * [Flask](http://flask.pocoo.org) (web server)
 * [Opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary) (language modeling)
 * [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) (word pronunciations)
+* [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy) (fuzzy string matching)
 * [Python 3](https://www.python.org)
 * [Sox](http://sox.sourceforge.net) (WAV conversion)
 * [Vue.js](https://vuejs.org/) (web UI)

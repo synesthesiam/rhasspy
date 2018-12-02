@@ -274,9 +274,21 @@ def send_intent(hass_config, intent):
     for entity in intent['entities']:
         slots[entity['entity']] = entity['value']
 
-    response = requests.post(post_url, headers=headers, json=slots)
-    logging.debug('POSTed intent to %s with headers=%s' % (post_url, headers))
-    response.raise_for_status()
+    # Add a copy of the event to the intent
+    intent['hass_event'] = {
+        'event_type': event_type,
+        'event_data': slots
+    }
+
+    try:
+        # Send to Home Assistant
+        response = requests.post(post_url, headers=headers, json=slots)
+        logging.debug('POSTed intent to %s with headers=%s' % (post_url, headers))
+
+        response.raise_for_status()
+    except Exception as e:
+        logging.exception('send_intent')
+        intent['error'] = str(e)
 
 # -----------------------------------------------------------------------------
 
