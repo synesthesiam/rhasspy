@@ -1,0 +1,64 @@
+{
+    "rhasspy": {
+        "preload_profile": true,
+        "listen_on_start": false
+    },
+
+    "home_assistant": {
+        "url": "http://hassio/homeassistant/",
+        "api_password": "",
+        "event_type_format": "rhasspy_{0}"
+    },
+
+    "speech_to_text": {
+        "system": "pocketsphinx",
+        "pocketsphinx": {
+            "acoustic_model": "acoustic_model",
+            "base_dictionary": "base_dictionary.txt",
+            "dictionary": "dictionary.txt",
+            "language_model": "language_model.txt",
+            "custom_words": "custom_words.txt",
+            "unknown_words": "unknown_words.txt"
+        },
+
+        "sentences_ini": "sentences.ini",
+        "sentences_text": "sentences.txt",
+        "grammars_dir": "grammars",
+        "g2p_model": "g2p.fst"
+    },
+
+    "text_to_speech": {
+        "system": "espeak",
+        "espeak": {
+            "phoneme_map": "espeak_phonemes.txt"
+        },
+
+        "phoneme_examples": "phoneme_examples.txt"
+    },
+
+    "intent": {
+        "system": "fuzzywuzzy",
+
+        "fuzzywuzzy": {
+            "examples_json": "intent_examples.json"
+        },
+
+        "rasa": {
+            "project_dir": "rasa_projects",
+            "project_name": "default",
+            "config": "rasa_config.yml",
+            "examples_markdown": "intent_examples.md"
+        }
+    },
+
+    "training": {
+        "balance_sentences": true,
+        "tokenizer": "regex",
+        "regex": {
+            "replace": [{
+                "-": " "
+            }],
+            "split": "\\s+"
+        }
+    }
+}

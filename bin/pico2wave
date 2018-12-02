@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+import os
+import sys
+import argparse
+import subprocess
+
+# Pretend to be pico2wave, but use eSpeak instead
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('message', type=str)
+    parser.add_argument('-w', '--wave', type=str, required=True)
+    parser.add_argument('-l', '--lang', type=str, default='en-US')
+    args = parser.parse_args()
+
+    cmd = ['espeak',
+           '-v', args.lang,
+           '-w', args.wave,
+           args.message]
+
+    subprocess.check_call(cmd)
+
+if __name__ == '__main__':
+    main()

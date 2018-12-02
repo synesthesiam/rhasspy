@@ -1,0 +1,26 @@
+body {
+    padding-top: 4rem;
+}
+
+.main-container {
+    padding: 1rem;
+}
+
+.response {
+    text-align: center;
+}
+
+.tab-pane {
+    padding-top: 2rem;
+    padding-left: 0.5rem;
+}
+
+.spinner {
+    -webkit-animation:spin 4s linear infinite;
+    -moz-animation:spin 4s linear infinite;
+    animation:spin 4s linear infinite;
+}
+
+@-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
+@-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
+@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform: rotate(360deg); } }

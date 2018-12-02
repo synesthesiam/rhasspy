@@ -1,0 +1,14 @@
+__pycache__/
+.venv/
+node_modules/
+sentences.cnts
+sentences.far
+sentences.syms
+sentences.mod
+sentences.arpa
+grammars/
+etc/homeassistant/config/.storage/
+etc/homeassistant/config/deps/
+etc/homeassistant/config/tts/
+etc/homeassistant/config/*.log
+etc/homeassistant/config/.HA_VERSION

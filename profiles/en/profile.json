@@ -1,0 +1,28 @@
+{
+    "language": "en",
+
+    "wake": {
+        "system": "pocketsphinx",
+        "pocketsphinx": {
+            "keyphrase": "okay rhasspy",
+            "threshold": 1e-40
+        },
+
+        "snowboy": {
+            "model": "snowboy.umdl",
+            "sensitivity": 0.5,
+            "audio_gain": 1.0
+        }
+    },
+
+
+    "training": {
+        "sentence_casing": "lower",
+        "regex": {
+            "replace": [
+                { "'s": "s" },
+                { "[^\\w ]+": " " }
+            ]
+        }
+    }
+}

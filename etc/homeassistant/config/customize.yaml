@@ -1,0 +1,20 @@
+switch.living_room_lamp:
+  friendly_name: "Living Room Lamp"
+  icon: mdi:lamp
+
+light.bedroom_light:
+  friendly_name: "Bedroom Light"
+  icon: mdi:lightbulb
+
+switch.garage_light:
+  friendly_name: "Garage Light"
+  icon: mdi:lightbulb
+
+binary_sensor.garage_door:
+  friendly_name: "Garage Door"
+  device_class: garage_door
+  icon: mdi:garage
+
+sensor.temperature:
+  friendly_name: "Temperature"
+  icon: mdi:thermometer
