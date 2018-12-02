@@ -22,7 +22,7 @@ Available profile sections and settings are:
   * `api_password` - Password, if you have that enabled (Hass.io token is used automatically)
   * `event_type_format` - Python format string used to create event type from intent type (`{0}`)
 * `speech_to_text` - transcribing speech to text commands
-  * `system` - name of speech to text system (currently only `pocketsphinx`)
+  * `system` - name of speech to text system (`pocketsphinx` or `remote`)
   * `pocketsphinx` - configuration for Pocketsphinx
     * `acoustic_model` - directory with CMU 16Khz acoustic model
     * `base_dictionary` - large text file with word pronunciations (read only)
@@ -30,9 +30,10 @@ Available profile sections and settings are:
     * `dictionary` - text file with all words/pronunciations needed for example sentences
     * `unknown_words` - small text file with guessed word pronunciations (from phonetisaurus)
     * `language_model` - text file with trigram ARPA language model built from example sentences
-  * `sentences_yaml` - YAML file with example sentences/templates grouped by intent
+  * `remote` - configuration for remote Rhasspy server
+    * `url` - URL to POST WAV data for transcription (e.g., `http://your-rhasspy-server:12101/api/speech-to-text`)
+  * `sentences_ini` - Ini file with example sentences/JSGF templates grouped by intent
   * `sentences_text` - text file with all example sentences expanded and repeated
-  * `classes_yaml` - YAML file with expansions for all sentence templates
   * `g2p_model` - finite-state transducer for phonetisaurus to guess word pronunciations
 * `intent` - transforming text commands to intents
   * `system` - intent recognition system (currently `fuzzywuzzy` or `rasa`)
@@ -55,8 +56,7 @@ Available profile sections and settings are:
     * `replace` - list of dictionaries with patterns/replacements used on each example sentence
     * `split` - pattern used to break sentences into words
 * `wake` - waking Rhasspy up for speech input
-  * `system` - wake word recognition system (only `snowboy` for now)
-    * `snowboy` - configuration for Snowboy wake word recognizer
-      * `model` - path to Snowboy model file (`.umdl` or `.pmdl`)
-      * `sensitivity` - sensitivity of detection (range 0-1, defaults to 0.5)
-      * `audio_gain` - amount of gain when recording (defaults to 1.0)
+  * `system` - wake word recognition system (only `pocketsphinx` for now)
+    * `pocketsphinx` - configuration for Pocketsphinx wake word recognizer
+      * `keyphrase` - phrase to wake up on (3-4 syllables recommended)
+      * `threshold` - sensitivity of detection (recommended range 1e-50 to 1e-5)

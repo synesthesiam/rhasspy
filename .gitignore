@@ -12,3 +12,4 @@ etc/homeassistant/config/deps/
 etc/homeassistant/config/tts/
 etc/homeassistant/config/*.log
 etc/homeassistant/config/.HA_VERSION
+rhasspy-hassio-addon*.tar.gz

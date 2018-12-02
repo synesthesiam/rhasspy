@@ -158,6 +158,7 @@
                  })
                  .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => {
+                     this.recording = false
                      this.interpreting = false
                      this.$parent.endAsync()
                  })
