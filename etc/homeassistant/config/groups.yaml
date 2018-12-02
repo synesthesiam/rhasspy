@@ -1,0 +1,23 @@
+default_view:
+  view: yes
+  entities:
+    - group.inside
+    - group.garage
+    - group.outside
+
+garage:
+  name: Garage
+  entities:
+    - switch.garage_light
+    - binary_sensor.garage_door
+
+inside:
+  name: Inside
+  entities:
+    - switch.living_room_lamp
+    - light.bedroom_light
+
+outside:
+  name: Outside
+  entities:
+    - sensor.temperature

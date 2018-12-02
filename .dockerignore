@@ -1,0 +1,4 @@
+.git/
+.venv/
+node_modules/
+etc/homeassistant/config/.storage

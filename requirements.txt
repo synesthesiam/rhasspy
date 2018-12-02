@@ -1,0 +1,8 @@
+Flask
+flask-swagger-ui
+requests
+PyAudio
+flask_cors
+pyyaml
+fuzzywuzzy[speedup]
+webrtcvad
