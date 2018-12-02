@@ -127,7 +127,12 @@
              this.$parent.beginAsync()
              TranscribeService.getIntent(this.profile, this.sentence, this.sendHass)
                  .then(request => {
-                     this.$parent.alert('Got intent: ' + request.data.intent.name, 'success')
+                     if (request.data.error) {
+                         this.$parent.alert(request.data.error, 'danger')
+                     } else {
+                         this.$parent.alert('Got intent: ' + request.data.intent.name + ' in ' + request.data.time_sec.toFixed(2) + ' second(s)', 'success')
+                     }
+
                      this.jsonSource = request.data
                  })
                  .catch(err => this.$parent.alert(err.response.data, 'danger'))

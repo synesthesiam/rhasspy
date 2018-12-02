@@ -3,7 +3,7 @@ import os
 import threading
 import logging
 
-def pocketsphinx_wake(profile, wake_decoders, wake_word_detected):
+def pocketsphinx_wake(profile, wake_decoders, wake_word_detected, device_index=None):
     import pocketsphinx
     import pyaudio
 
@@ -55,7 +55,8 @@ def pocketsphinx_wake(profile, wake_decoders, wake_word_detected):
             audio = pyaudio.PyAudio()
             data_format = pyaudio.get_format_from_width(2)
             mic = audio.open(format=data_format, channels=1, rate=16000,
-                            input=True, stream_callback=stream_callback)
+                            input=True, input_device_index=device_index,
+                             stream_callback=stream_callback)
 
             # Block until wake word is detected
             mic.start_stream()

@@ -79,11 +79,15 @@ def api_listen_for_wake():
 def listen_for_wake(profile, no_hass=False):
     global listen_for_wake_func
     system = profile.wake.get('system', None)
+    device_index = int(request.args.get('device', -1))
+    if device_index < 0:
+        device_index = None  # default device
 
     if system == 'pocketsphinx':
         global decoders
         listen_for_wake_func = wake.pocketsphinx_wake(
-            profile, wake_decoders, functools.partial(wake_word_detected, profile, no_hass))
+            profile, wake_decoders, functools.partial(wake_word_detected, profile, no_hass),
+            device_index=device_index)
 
         # Start listening
         listen_for_wake_func()
@@ -259,15 +263,16 @@ def api_phonemes():
 def api_sentences():
     profile = request_to_profile(request, profiles_dirs)
     stt_config = profile.speech_to_text
-    sentences_path = profile.write_path(stt_config['sentences_ini'])
 
     if request.method == 'POST':
         # Update sentences
+        sentences_path = profile.write_path(stt_config['sentences_ini'])
         with open(sentences_path, 'wb') as sentences_file:
             sentences_file.write(request.data)
             return 'Wrote %s byte(s) to %s' % (len(request.data), sentences_path)
 
     # Return sentences
+    sentences_path = profile.read_path(stt_config['sentences_ini'])
     if not os.path.exists(sentences_path):
         return ''  # no sentences yet
 
