@@ -17,6 +17,7 @@ from collections import defaultdict
 from flask import Flask, request, Response, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import pyaudio
+import requests
 
 import utils
 import wake
@@ -394,6 +395,19 @@ def get_intent(profile, text):
             intent_projects[profile.name] = project
 
         return project.parse(text)
+    elif system == 'remote':
+        remote_url = profile.intent[system]['url']
+        headers = { 'Content-Type': 'text/plain' }
+
+        # Pass profile name through
+        params = { 'profile': profile.name, 'nohass': True }
+        response = requests.post(remote_url, headers=headers,
+                                 data=text, params=params)
+
+        response.raise_for_status()
+
+        # Return intent directly
+        return response.json()
     else:
         fuzzy_config = profile.intent[system]
 

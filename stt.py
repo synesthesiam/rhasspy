@@ -19,7 +19,11 @@ def transcribe_wav(profile, wav_data, decoder=None):
         remote_url = profile.speech_to_text[system]['url']
         headers = { 'Content-Type': 'audio/wav' }
         logging.debug('POSTing %d byte(s) of WAV data to %s' % (len(wav_data), remote_url))
-        response = requests.post(remote_url, headers=headers, data=wav_data)
+        # Pass profile name through
+        params = { 'profile': profile.name }
+        response = requests.post(remote_url, headers=headers,
+                                 data=wav_data, params=params)
+
         response.raise_for_status()
 
         # Return fake decoder with remote transcription
