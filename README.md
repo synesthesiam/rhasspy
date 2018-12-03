@@ -20,7 +20,6 @@ Rhasspy provides offline, private solutions to problems 1-4 using off-the-shelf 
 2. [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) (wait for silence)
 3. [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx) (speech to text)
 4. [RasaNLU](https://rasa.com/) (intent recognition)
-  * A simple [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) based recognizer is available for testing and low-resource systems 
 
 For problem 5 (fulfilling the speaker's intent), Rhasspy works with Home Assistant's built-in [automation capability](https://www.home-assistant.io/docs/automation/). For each intent you define, Rhasspy sends an event to Home Assistant that can be used to do anything Home Assistant can do (toggle switches, call REST services, etc.). This means that Rhasspy will do very little out of the box compared to other voice assistants, but there will also be no limits to what can be done.
  
@@ -70,12 +69,10 @@ The important files in a profile are:
 * `profile.json`
   * Overrides profile settings from `defaults.json`
   * See [profile documentation](doc/profiles.md) for details
+* `sentences.ini`
+  * Intents and sentences used to generate language model and train intent recognizer
 * `rasa_config.yml`
   * YAML configuration for RasaNLU
-* `classes.yml`
-  * Class expansions for user-defined word classes
-* `sentences.yml`
-  * Intents and sentences used to generate language model and train intent recognizer
   
 Running
 ---------
@@ -104,3 +101,4 @@ The following tools/libraries help to support Rhasspy:
 * [Python 3](https://www.python.org)
 * [Sox](http://sox.sourceforge.net) (WAV conversion)
 * [Vue.js](https://vuejs.org/) (web UI)
+* [webrtcvad](https://github.com/wiseman/py-webrtcvad) (voice activity detection)

@@ -39,6 +39,8 @@ Available profile sections and settings are:
   * `system` - intent recognition system (currently `fuzzywuzzy` or `rasa`)
   * `fuzzywuzzy` - configuration for simplistic [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) based intent recognizer
     * `examples_json` - JSON file with intents/example sentences
+  * `remote` - configuration for remote Rhasspy server
+    * `url` - URL to POST text to for intent recognition (e.g., `http://your-rhasspy-server:12101/api/text-to-intent`)
   * `rasa` - configuration for rasaNLU based intent recognizer
     * `examples_markdown` - Markdown file with intents/example sentences
     * `project_dir` - directory to store project files

@@ -154,6 +154,46 @@ paths:
             text/plain:
               schema:
                 type: string
+  /api/custom_words:
+    get:
+      summary: 'Get custom words for profile'
+      produces: 
+        - text/plain
+      parameters:
+      - in: query
+        name: profile
+        description: 'Profile name or default profile if not specified'
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+    post:
+      summary: 'Overwrite custom workds for profile'
+      requestBody:
+        description: 'Custom words as a CMU dictionary'
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      parameters:
+      - in: query
+        name: profile
+        description: 'Profile name or default profile if not specified'
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
   /api/unknown_words:
     get:
       summary: 'Get unknown words for profile'
