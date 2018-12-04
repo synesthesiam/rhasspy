@@ -14,6 +14,8 @@ RELEASE_FILES := Dockerfile \
                  profiles/en/*.ini \
                  profiles/en/g2p.fst
 
+LANGUAGES := de en es fr it nl ru
+
 docker:
 	docker build . \
     --build-arg BUILD_FROM=homeassistant/${BUILD_ARCH}-base:latest \

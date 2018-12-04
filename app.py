@@ -142,6 +142,13 @@ def api_profiles():
 
 # -----------------------------------------------------------------------------
 
+@app.route('/api/profile')
+def api_profile():
+    profile = request_to_profile(request, profiles_dirs)
+    return jsonify(profile.json)
+
+# -----------------------------------------------------------------------------
+
 @app.route('/api/lookup', methods=['POST'])
 def api_lookup():
     n = int(request.args.get('n', 5))
