@@ -29,10 +29,9 @@ Available profile sections and settings are:
     * `custom_words` - small text file with words/pronunciations added by user
     * `dictionary` - text file with all words/pronunciations needed for example sentences
     * `unknown_words` - small text file with guessed word pronunciations (from phonetisaurus)
-    * `language_model` - text file with trigram ARPA language model built from example sentences
-  * `remote` - configuration for remote Rhasspy server
+    * `language_model` - text file with trigram [ARPA language model](https://cmusphinx.github.io/wiki/arpaformat/) built from example sentences * `remote` - configuration for remote Rhasspy server
     * `url` - URL to POST WAV data for transcription (e.g., `http://your-rhasspy-server:12101/api/speech-to-text`)
-  * `sentences_ini` - Ini file with example sentences/JSGF templates grouped by intent
+  * `sentences_ini` - Ini file with example [sentences/JSGF templates](sentences.md) grouped by intent
   * `sentences_text` - text file with all example sentences expanded and repeated
   * `g2p_model` - finite-state transducer for phonetisaurus to guess word pronunciations
 * `intent` - transforming text commands to intents
