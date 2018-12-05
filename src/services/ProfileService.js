@@ -5,7 +5,16 @@ export default {
         return Api().get('/api/profiles')
     },
 
-    getProfileSettings(profile) {
-        return Api().get('/api/profile', { params: { 'profile': profile } })
+    getProfileSettings(profile, layers) {
+        return Api().get('/api/profile', {
+            params: { 'profile': profile, 'layers': layers }
+        })
+    },
+
+    updateProfileSettings(profile, settings) {
+        return Api().post('/api/profile', settings, {
+            params: { 'profile': profile },
+            headers: { 'Content-Type': 'application/json' }
+        })
     }
 }

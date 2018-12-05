@@ -34,6 +34,9 @@
                 <li class="nav-item">
                     <a class="nav-link" id="pronounce-tab" data-toggle="tab" href="#pronounce" role="tab" aria-controls="pronounce" aria-selected="true">Words</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="settings-tab" data-toggle="tab" href="#settings" role="tab" aria-controls="settings" aria-selected="true">Settings</a>
+                </li>
             </ul>
             <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade show active" id="speech" role="tabpanel" aria-labelledby="speech-tab">
@@ -44,6 +47,9 @@
                 </div>
                 <div class="tab-pane fade" id="pronounce" role="tabpanel" aria-labelledby="pronounce-tab">
                     <LookupPronounce :profile="profile" :unknownWords="unknownWords" />
+                </div>
+                <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
+                    <ProfileSettings :profile="profile" />
                 </div>
             </div>
 

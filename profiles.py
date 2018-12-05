@@ -4,26 +4,30 @@ import collections
 import logging
 
 class Profile:
-    def __init__(self, name, profiles_dirs):
+    def __init__(self, name, profiles_dirs, layers='all'):
         self.name = name
         self.profiles_dirs = profiles_dirs
+        self.layers = layers
         self.load_profile()
 
     def load_profile(self):
         # Load defaults first
         self.json = {}  # no defaults
-        for profiles_dir in self.profiles_dirs:
-            defaults_path = os.path.join(profiles_dir, 'defaults.json')
-            if os.path.exists(defaults_path):
-                with open(defaults_path, 'r') as defaults_file:
-                    self.json = json.load(defaults_file)
-                    break
+
+        if self.layers in ['all', 'defaults']:
+            for profiles_dir in self.profiles_dirs:
+                defaults_path = os.path.join(profiles_dir, 'defaults.json')
+                if os.path.exists(defaults_path):
+                    with open(defaults_path, 'r') as defaults_file:
+                        self.json = json.load(defaults_file)
+                        break
 
         # Overlay with profile
-        self.json_path = self.read_path('profile.json')
-        if os.path.exists(self.json_path):
-            with open(self.json_path, 'r') as profile_file:
-                recursive_update(self.json, json.load(profile_file))
+        if self.layers in ['all', 'profile']:
+            self.json_path = self.read_path('profile.json')
+            if os.path.exists(self.json_path):
+                with open(self.json_path, 'r') as profile_file:
+                    recursive_update(self.json, json.load(profile_file))
 
         # Extract default sub-sections
         self.rhasspy = self.json.get('rhasspy', {})
@@ -83,11 +87,11 @@ class Profile:
 
 # -----------------------------------------------------------------------------
 
-def request_to_profile(request, profiles_dirs):
+def request_to_profile(request, profiles_dirs, layers='all'):
     profile_name = request.args.get(
         'profile', os.environ.get('RHASSPY_PROFILE', 'en'))
 
-    return Profile(profile_name, profiles_dirs)
+    return Profile(profile_name, profiles_dirs, layers=layers)
 
 def recursive_update(base_dict, new_dict):
     for k, v in new_dict.items():
