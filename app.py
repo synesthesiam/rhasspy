@@ -142,9 +142,19 @@ def api_profiles():
 
 # -----------------------------------------------------------------------------
 
-@app.route('/api/profile')
+@app.route('/api/profile', methods=['GET', 'POST'])
 def api_profile():
-    profile = request_to_profile(request, profiles_dirs)
+    if request.method == 'POST':
+        profile = request_to_profile(request, profiles_dirs)
+        profile_path = profile.write_path('profile.json')
+        with open(profile_path, 'wb') as profile_file:
+            profile_file.write(request.data)
+
+        return 'Wrote %d byte(s) to %s' % (len(request.data), profile_path)
+
+    layers = request.args.get('layers', 'all')
+    profile = request_to_profile(request, profiles_dirs, layers)
+
     return jsonify(profile.json)
 
 # -----------------------------------------------------------------------------
