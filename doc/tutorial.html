@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<title>tutorial.html</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+
+</head>
+
+<body>
+
+<h1>Tutorial</h1>
+
+<ol>
+<li>Download the latest release of the <a href="https://github.com/synesthesiam/rhasspy-hassio-addon/releases">Rhasspy Hass.io add-on</a></li>
+<li>Extract/copy the files into a <code>rhasspy</code> directory in your Hass.io <code>/addons</code> directory (see <a href="https://developers.home-assistant.io/docs/en/hassio_addon_tutorial.html">this tutorial</a> for details on installing local add-ons)</li>
+<li>Refresh your add-ons in the <code>Add-On Store</code> tab and click on  "Rhasspy Assistant" under "Local add-ons"</li>
+<li>Click <code>INSTALL</code> and watch the system log (under the Hass.io <code>System</code> tab) to see when it's finished (it may take 10 minutes or more on a Raspberry Pi)</li>
+<li>Click <code>Start</code> and wait until</li>
+<li>Click <code>Open Web UI</code> to open the web interface. If you get a connection error, Rhasspy may still be starting up. Wait a minute and refresh.</li>
+</ol>
+
+<h2>Rhasspy Web Interface</h2>
+
+<p>Rhasspy's web-based user interface lets you manage custom words and commands as
+well as test Rhasspy using your microphone or by uploading a WAV file.</p>
+
+<h3>Speech</h3>
+
+<p>The default tab in Rhasspy is <code>Speech</code>, which lets you tests various aspects of
+Rhasspy's speech/intent recognition:</p>
+
+<p><img src="img/web-speech.png"></p>
+
+<p>The image above shows important parts of the web interface:</p>
+
+<ol>
+<li>The currently selected <em>profile</em>
+<ul>
+<li><code>Re-Train</code> - trains the speech/intent recognizer with your custom sentences/words</li>
+<li><code>Reload</code> - clears cached speech/intent objects from memory</li>
+</ul></li>
+<li>The microphone that will be used to record
+<ul>
+<li><code>Hold to Record</code> - start recording from microphone when pressed, stop recording when released</li>
+</ul></li>
+<li>Upload a pre-recorded WAV for to run through the speech recognizer
+<ul>
+<li>Preferred format is 16-bit 16Khz mono</li>
+</ul></li>
+<li>Type a sentence to test intent recognizer
+<ul>
+<li>Holds transcription from speech recognizer when record/upload functionality is used</li>
+</ul></li>
+<li>Send any recognized intents directly to Home Assistant (<code>homeassistant.url</code> in your profile)</li>
+</ol>
+
+<h3>Sentences</h3>
+
+<p>This tab contains the custom commands for Rhasspy to recognize. These are categoried by <em>intent</em>, and use a simplified <a href="https://www.w3.org/TR/jsgf/">JSGF grammar</a>. Sentences are listed under the <code>[IntentName]</code>, and may contain <code>[optional words]</code> or <code>(one |or |more | alternative | items)</code>. Rules are defined like <code>rule_name = ...</code> and referenced in sentences as <code>&lt;rule_name&gt;</code>. Adding a <code>{tag}</code> to a word, rule, etc. will set a slot with the tag name in the event Rhasspy sends to Home Assistant (<code>(value) {name}</code> will be <code>name: value</code>).</p>
+
+<p><img src="img/web-sentences.png"></p>
+
+<h3>Words</h3>
+
+<p>You can define <a href="https://cmusphinx.github.io/wiki/tutorialdict/">custom words</a> here by looking up pronunciations of other words or by having Rhasspy guess pronunciations using <a href="https://github.com/AdolfVonKleist/Phonetisaurus">phonetisaurus</a>.</p>
+
+<p><img src="img/web-words.png"></p>
+
+<h3>Settings</h3>
+
+<p>Rhasspy gets settings for your current profile by overlaying the JSON define in <code>profile.json</code> with the <code>defaults.json</code> file in your profiles directory. See the <a href="profiles.md">profiles docmentation</a> for more details.</p>
+
+<p><img src="img/web-settings.png"></p>
+
+</body>
+</html>
