@@ -36,7 +36,7 @@ The image above shows important parts of the web interface:
 
 ### Sentences
 
-This tab contains the custom commands for Rhasspy to recognize. These are categorized by *intent*, and use a simplified [JSGF grammar](https://www.w3.org/TR/jsgf/). Sentences are listed under the `[IntentName]`, and may contain `[optional words]` or `(one |or |more | alternative | items)`. Rules are defined like `rule_name = ...` and referenced in sentences as `<rule_name>`. Adding a `{tag}` to a word, rule, etc. will set a slot with the tag name in the event Rhasspy sends to Home Assistant (`(value) {name}` will be `name: value`).
+This tab contains the custom commands for Rhasspy to recognize. These are categorized by *intent*, and use a [simplified JSGF grammar](sentences.md). Sentences are listed under the `[IntentName]`, and may contain `[optional words]` or `(one |or |more | alternative | items)`. Rules are defined like `rule_name = ...` and referenced in sentences as `<rule_name>`. Adding a `{tag}` to a word, rule, etc. will set a slot with the tag name in the event Rhasspy sends to Home Assistant (`(value) {name}` will be `name: value`).
 
 <img src="img/web-sentences.png">
 

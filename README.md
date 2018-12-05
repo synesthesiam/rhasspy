@@ -26,7 +26,7 @@ For problem 5 (fulfilling the speaker's intent), Rhasspy works with Home Assista
 How it Works
 ---------------
 
-Rhasspy transforms speech commands [Home Assistant events](https://www.home-assistant.io/docs/configuration/events/) that can be be used to [trigger automations](https://www.home-assistant.io/docs/automation/trigger/#event-trigger). You define these commands in a *profile* using a specialized template syntax that lets you control how Rhasspy creates the events it sends to Home Assistant.
+Rhasspy transforms speech commands into [Home Assistant events](https://www.home-assistant.io/docs/configuration/events/) that [trigger automations](https://www.home-assistant.io/docs/automation/trigger/#event-trigger). You define these commands in a Rhasspy [profile](doc/profiles.md) using a specialized template syntax that lets you control how Rhasspy creates the events it sends to Home Assistant.
 
 Let's say you have an RGB of some kind in your bedroom that's hooked up already to Home Assistant. You'd like to be able to say things like "*set the bedroom light to red*" to change its color. To start, you could write a [Home Assistant automation](https://www.home-assistant.io/docs/automation/action/) to help you out:
 
@@ -46,7 +46,7 @@ Now you just need the trigger! Rhasspy will send events that can be caught with 
     colors = (red | green | blue) {color}
     set [the] (bedroom){name} [to] <colors>
     
-This is a simplified [JSGF grammar](https://www.w3.org/TR/jsgf/) that will generate the following sentences:
+This is a [simplified JSGF grammar](doc/sentences/md) that will generate the following sentences:
 
 * set the bedroom to red
 * set the bedroom to green
@@ -161,6 +161,7 @@ Supporting Tools
 The following tools/libraries help to support Rhasspy:
 
 * [Flask](http://flask.pocoo.org) (web server)
+* [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx) (speech to text)
 * [Opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary) (language modeling)
 * [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) (word pronunciations)
 * [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy) (fuzzy string matching)
