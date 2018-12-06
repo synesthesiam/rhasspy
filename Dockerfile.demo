@@ -14,7 +14,7 @@ RUN apt-get update && \
         build-essential portaudio19-dev swig \
         sox espeak alsa-utils \
         openjdk-8-jre \
-        vlc
+        vlc jq
 
 # Install Python dependencies
 COPY requirements.txt /requirements.txt
@@ -49,8 +49,8 @@ COPY dist/ /usr/share/rhasspy/dist/
 COPY bin/pico2wave /usr/bin/
 
 # Use home assistant URL inside container
-RUN sed -i -e 's|http://hassio/homeassistant/|http://localhost:8123/|' /usr/share/rhasspy/profiles/defaults.json
-RUN sed -i -e 's|"api_password": ""|"api_password": "secret"|' /usr/share/rhasspy/profiles/defaults.json
+RUN cat /usr/share/rhasspy/profiles/defaults.json | jq '.home_assistant.url="http://localhost:8123/"' | jq '.home_assistant.api_password="secret"' > /tmp/defaults.json && \
+    mv /tmp/defaults.json /usr/share/rhasspy/profiles/defaults.json
 
 # Demo config
 COPY etc/homeassistant/config /config

@@ -13,7 +13,8 @@ RUN apt-get update && \
         build-essential portaudio19-dev swig \
         libatlas-base-dev \
         sox espeak alsa-utils \
-        openjdk-8-jre
+        openjdk-8-jre-headless \
+        jq wget
 
 # Install Python dependencies
 COPY requirements.txt /requirements.txt
