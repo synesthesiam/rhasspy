@@ -239,7 +239,7 @@
 
          addToCustomWords: function() {
              if (this.dictWord.length > 0) {
-                 this.customWords += this.dictWord + ' ' + this.phonemes
+                 this.customWords += '\n' + this.dictWord + ' ' + this.phonemes
                  this.customWordsDirty = true
              }
          }
