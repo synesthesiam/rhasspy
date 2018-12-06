@@ -56,9 +56,15 @@ RUN cd / && wget -qO - https://github.com/synesthesiam/docker-opengrm/releases/d
     dpkg -i /opengrm.deb && \
     rm /opengrm.deb
 
+RUN ldconfig
+
 # Copy my code
 COPY *.py /usr/share/rhasspy/
 COPY dist/ /usr/share/rhasspy/dist/
+COPY profiles/defaults.json /usr/share/rhasspy/profiles/
+
+RUN cat /usr/share/rhasspy/profiles/defaults.json | jq '.speech_to_text.system = "rasa"' > /tmp/defaults.json && \
+    mv /tmp/defaults/json /usr/share/rhasspy/profiles/defaults.json
 
 # Copy script to run
 COPY docker/run.sh /run.sh
