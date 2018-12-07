@@ -14,25 +14,28 @@ RUN apt-get update && \
         libatlas-base-dev \
         sox espeak alsa-utils \
         openjdk-8-jre-headless \
-        jq wget
+        jq
 
 # Install Python dependencies
 COPY requirements.txt /requirements.txt
 RUN python3 -m pip install --no-cache-dir wheel
 RUN python3 -m pip install --no-cache-dir -r /requirements.txt
-RUN python3 -m pip install --no-cache-dir sklearn-crfsuite \
-    scikit-learn \
-    scipy \
-    rasa_nlu[spacy]
+RUN python3 -m pip install --no-cache-dir msgpack==0.5.6 \
+    rasa_nlu[spacy]==0.12.3 \
+    spacy==2.0.11 \
+    sklearn-crfsuite==0.3.6 \
+    scikit-learn==0.19.1 \
+    scipy==1.1.0
 
 # Install spaCy models
 COPY bin/install-models.sh /
 RUN bash /install-models.sh $LANGUAGES
 
 # Install Rhasspy profiles
+RUN apt-get install -y wget
 COPY bin/install-profiles.sh /
 RUN mkdir -p /usr/share/rhasspy/profiles && \
-    cd /usr/share/rhasspyprofiles && \
+    cd /usr/share/rhasspy/profiles && \
     bash /install-profiles.sh $LANGUAGES
 
 # Install Pocketsphinx Python module with no sound
@@ -61,13 +64,11 @@ RUN ldconfig
 # Copy my code
 COPY *.py /usr/share/rhasspy/
 COPY dist/ /usr/share/rhasspy/dist/
-COPY profiles/defaults.json /usr/share/rhasspy/profiles/
-
-RUN cat /usr/share/rhasspy/profiles/defaults.json | jq '.speech_to_text.system = "rasa"' > /tmp/defaults.json && \
-    mv /tmp/defaults/json /usr/share/rhasspy/profiles/defaults.json
 
 # Copy script to run
 COPY docker/run.sh /run.sh
 RUN chmod a+x /run.sh
+
+COPY profiles/defaults.json /usr/share/rhasspy/profiles/
 
 CMD ["/run.sh"]

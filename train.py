@@ -151,7 +151,7 @@ def train(profile):
         project_name = rasa_config['project_name']
         rasa_config_path = profile.read_path(rasa_config['config'])
 
-        train_intent_recognizer(examples_path, rasa_config_path,
+        train_intent_recognizer(examples_md_path, rasa_config_path,
                                 project_dir, project_name)
     else:
         fuzzy_config = profile.intent[intent_system]
