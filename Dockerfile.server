@@ -14,7 +14,7 @@ RUN apt-get update && \
         libatlas-base-dev \
         sox espeak alsa-utils \
         openjdk-8-jre-headless \
-        jq
+        jq wget
 
 # Install Python dependencies
 COPY requirements.txt /requirements.txt
@@ -32,7 +32,6 @@ COPY bin/install-models.sh /
 RUN bash /install-models.sh $LANGUAGES
 
 # Install Rhasspy profiles
-RUN apt-get install -y wget
 COPY bin/install-profiles.sh /
 RUN mkdir -p /usr/share/rhasspy/profiles && \
     cd /usr/share/rhasspy/profiles && \
@@ -64,11 +63,10 @@ RUN ldconfig
 # Copy my code
 COPY *.py /usr/share/rhasspy/
 COPY dist/ /usr/share/rhasspy/dist/
+COPY profiles/defaults.json /usr/share/rhasspy/profiles/
 
 # Copy script to run
 COPY docker/run.sh /run.sh
 RUN chmod a+x /run.sh
-
-COPY profiles/defaults.json /usr/share/rhasspy/profiles/
 
 CMD ["/run.sh"]
