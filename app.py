@@ -35,8 +35,9 @@ app.secret_key = str(uuid.uuid4())
 CORS(app)
 
 # Like PATH, searched in reverse order
-profiles_dirs = os.environ.get('RHASSPY_PROFILES', 'profiles')\
-    .split(':')
+profiles_dirs = [path for path in
+                 os.environ.get('RHASSPY_PROFILES', 'profiles')\
+                 .split(':') if len(path.strip()) > 0]
 
 profiles_dirs.reverse()
 logging.debug('Profiles dirs: %s' % profiles_dirs)

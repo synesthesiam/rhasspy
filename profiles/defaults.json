@@ -37,7 +37,7 @@
     },
 
     "intent": {
-        "system": "rasa",
+        "system": "fuzzywuzzy",
 
         "fuzzywuzzy": {
             "examples_json": "intent_examples.json"
