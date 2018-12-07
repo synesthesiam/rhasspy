@@ -26,7 +26,14 @@ demo:
 	docker build . \
     -f Dockerfile.demo \
     --build-arg BUILD_ARCH=${BUILD_ARCH} \
-    -t synesthesiam/rhasspy-demo:${BUILD_ARCH} --no-cache
+    -t synesthesiam/rhasspy-demo:${BUILD_ARCH}
+
+server:
+	docker build . \
+    -f Dockerfile.server \
+    --build-arg BUILD_ARCH=${BUILD_ARCH} \
+    --build-arg LANGUAGES=en \
+    -t synesthesiam/rhasspy-server:${BUILD_ARCH}-en
 
 web-dist:
 	yarn build
