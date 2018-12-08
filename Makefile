@@ -12,7 +12,8 @@ RELEASE_FILES := Dockerfile \
                  docker/run.sh \
                  profiles/defaults.json
 
-LANGUAGES := de en es fr it nl
+LANGUAGES := de en es fr it nl ru
+RASA_LANGUAGES := de en es fr it nl
 
 docker:
 	docker build . \
@@ -26,11 +27,18 @@ demo:
     --build-arg BUILD_ARCH=${BUILD_ARCH} \
     -t synesthesiam/rhasspy-demo:${BUILD_ARCH}
 
+client:
+	docker build . \
+    -f Dockerfile.client \
+    --build-arg BUILD_ARCH=${BUILD_ARCH} \
+    --build-arg LANGUAGES="${LANGUAGES}" \
+    -t synesthesiam/rhasspy-client:${BUILD_ARCH}
+
 server:
 	docker build . \
     -f Dockerfile.server \
     --build-arg BUILD_ARCH=${BUILD_ARCH} \
-    --build-arg LANGUAGES="${LANGUAGES}" \
+    --build-arg LANGUAGES="${RASA_LANGUAGES}" \
     -t synesthesiam/rhasspy-server:${BUILD_ARCH}
 
 web-dist:

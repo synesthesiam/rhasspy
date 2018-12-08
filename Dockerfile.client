@@ -11,7 +11,6 @@ WORKDIR /
 RUN apt-get update && \
     apt-get install -y python3 python3-pip python3-dev \
         build-essential portaudio19-dev swig \
-        libatlas-base-dev \
         sox espeak alsa-utils \
         openjdk-8-jre-headless \
         jq wget
@@ -20,16 +19,6 @@ RUN apt-get update && \
 COPY requirements.txt /requirements.txt
 RUN python3 -m pip install --no-cache-dir wheel
 RUN python3 -m pip install --no-cache-dir -r /requirements.txt
-RUN python3 -m pip install --no-cache-dir msgpack==0.5.6 \
-    rasa_nlu[spacy]==0.12.3 \
-    spacy==2.0.11 \
-    sklearn-crfsuite==0.3.6 \
-    scikit-learn==0.19.1 \
-    scipy==1.1.0
-
-# Install spaCy models
-COPY bin/install-models.sh /
-RUN bash /install-models.sh $LANGUAGES
 
 # Install Rhasspy profiles
 COPY bin/install-profiles.sh /
@@ -63,7 +52,7 @@ RUN ldconfig
 # Copy my code
 COPY *.py /usr/share/rhasspy/
 COPY dist/ /usr/share/rhasspy/dist/
-COPY profiles/server-defaults.json /usr/share/rhasspy/profiles/defaults.json
+COPY profiles/defaults.json /usr/share/rhasspy/profiles/defaults.json
 
 # Copy script to run
 COPY docker/run.sh /run.sh
