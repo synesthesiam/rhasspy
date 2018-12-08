@@ -2,6 +2,7 @@ ARG BUILD_FROM
 FROM $BUILD_FROM
 
 ARG BUILD_ARCH
+ARG LANGUAGES=en
 LABEL maintainer="Michael Hansen <hansen.mike@gmail.com>"
 
 ENV LANG C.UTF-8
@@ -31,6 +32,12 @@ RUN cd / && wget -qO - https://github.com/synesthesiam/phonetisaurus-2013/releas
 
 # Install opengrm
 RUN cd / && wget -qO - https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-$BUILD_ARCH-alpine/opengrm-1.3.4_$BUILD_ARCH-alpine.tar.gz | tar xzf -
+
+# Install Rhasspy profiles
+COPY bin/install-profiles.sh /
+RUN mkdir -p /usr/share/rhasspy/profiles && \
+    cd /usr/share/rhasspy/profiles && \
+    bash /install-profiles.sh $LANGUAGES
 
 # Copy my code
 COPY *.py /usr/share/rhasspy/
