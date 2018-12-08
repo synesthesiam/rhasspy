@@ -3,6 +3,11 @@ Rhasspy Voice Assistant
 
 Rhasspy is an offline, multilingual voice assistant toolkit inspired by [Jasper](https://jasperproject.github.io/) that works with [Home Assistant](https://www.home-assistant.io/) and [Hass.io](https://www.home-assistant.io/hassio/).
 
+* [Video Introduction](https://www.youtube.com/watch?v=ijKTR_GqWwA)
+* [Hass.IO Add-On Repository](https://github.com/synesthesiam/hassio-addons)
+* [Docker Installation](doc/docker.md)
+* [Discussion](https://community.home-assistant.io/t/rhasspy-offline-voice-assistant-toolkit/60862)
+
 Purpose
 ---------
 
