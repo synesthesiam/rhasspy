@@ -12,7 +12,7 @@ RELEASE_FILES := Dockerfile \
                  docker/run.sh \
                  profiles/defaults.json
 
-LANGUAGES := de en es fr it nl ru
+LANGUAGES := de en es fr it nl
 
 docker:
 	docker build . \
@@ -31,7 +31,7 @@ server:
     -f Dockerfile.server \
     --build-arg BUILD_ARCH=${BUILD_ARCH} \
     --build-arg LANGUAGES="${LANGUAGES}" \
-    -t synesthesiam/rhasspy-server:${BUILD_ARCH}-en
+    -t synesthesiam/rhasspy-server:${BUILD_ARCH}
 
 web-dist:
 	yarn build

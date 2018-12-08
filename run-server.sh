@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-LANGUAGE=en
 
 # Usually x86_64 or armhf
 CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
@@ -14,4 +13,4 @@ docker run --rm -it --name rhasspy-server \
        -p 12101:12101 \
        --device /dev/snd:/dev/snd \
        --privileged \
-       synesthesiam/rhasspy-server:${CPU_ARCH}-$LANGUAGE
+       synesthesiam/rhasspy-server:${CPU_ARCH}
