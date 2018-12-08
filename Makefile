@@ -3,16 +3,14 @@ SHELL := bash
 BUILD_ARCH ?= amd64
 RELEASE_FILES := Dockerfile \
                  *.py \
+                 build.json \
                  config.json \
                  requirements.txt \
+                 README.md \
+                 bin/install-profiles.sh \
                  dist/ \
                  docker/run.sh \
-                 profiles/defaults.json \
-                 profiles/en/acoustic_model/ \
-                 profiles/en/*.json \
-                 profiles/en/*.txt \
-                 profiles/en/*.ini \
-                 profiles/en/g2p.fst
+                 profiles/defaults.json
 
 LANGUAGES := de en es fr it nl ru
 
@@ -32,7 +30,7 @@ server:
 	docker build . \
     -f Dockerfile.server \
     --build-arg BUILD_ARCH=${BUILD_ARCH} \
-    --build-arg LANGUAGES=en \
+    --build-arg LANGUAGES="${LANGUAGES}" \
     -t synesthesiam/rhasspy-server:${BUILD_ARCH}-en
 
 web-dist:
