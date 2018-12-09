@@ -1,7 +1,8 @@
 {
     "rhasspy": {
         "preload_profile": true,
-        "listen_on_start": false
+        "listen_on_start": false,
+        "default_profile": "nl"
     },
 
     "home_assistant": {
