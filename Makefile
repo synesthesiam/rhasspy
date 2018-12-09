@@ -1,4 +1,4 @@
-.PHONY: web-dist docker demo release
+.PHONY: web-dist docker demo release client server alpine
 SHELL := bash
 BUILD_ARCH ?= amd64
 RELEASE_FILES := Dockerfile \
@@ -40,6 +40,14 @@ server:
     --build-arg BUILD_ARCH=${BUILD_ARCH} \
     --build-arg LANGUAGES="${RASA_LANGUAGES}" \
     -t synesthesiam/rhasspy-server:${BUILD_ARCH}
+
+alpine:
+	docker build . \
+    -f Dockerfile.alpine \
+    --build-arg BUILD_FROM=homeassistant/${BUILD_ARCH}-base:latest \
+    --build-arg BUILD_ARCH=${BUILD_ARCH} \
+    --build-arg LANGUAGES="${LANGUAGES}" \
+    -t synesthesiam/rhasspy-alpine:${BUILD_ARCH}
 
 web-dist:
 	yarn build
