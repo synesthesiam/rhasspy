@@ -2,7 +2,7 @@ ARG BUILD_FROM
 FROM $BUILD_FROM
 
 ARG BUILD_ARCH
-ARG LANGUAGES=en
+ARG LANGUAGES="de en es fr it nl ru"
 LABEL maintainer="Michael Hansen <hansen.mike@gmail.com>"
 
 ENV LANG C.UTF-8
