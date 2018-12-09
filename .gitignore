@@ -13,3 +13,4 @@ etc/homeassistant/config/tts/
 etc/homeassistant/config/*.log
 etc/homeassistant/config/.HA_VERSION
 rhasspy-hassio-addon*.tar.gz
+etc/qemu-arm-static
