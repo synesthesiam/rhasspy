@@ -12,7 +12,7 @@ export default {
     },
 
     updateProfileSettings(profile, settings) {
-        return Api().post('/api/profile', settings, {
+        return Api().post('/api/profile', JSON.stringify(settings, null, 4), {
             params: { 'profile': profile },
             headers: { 'Content-Type': 'application/json' }
         })

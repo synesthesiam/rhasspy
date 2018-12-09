@@ -3,30 +3,119 @@
         <form class="form" v-on:submit.prevent="saveSettings">
             <h2>{{ this.profile }}</h2>
 
-            <div class="form-group">
-                <div class="form-row">
-                    <button type="submit" class="btn btn-primary"
-                            v-bind:class="{ 'btn-danger': profileSettingsDirty }">Save Profile</button>
+            <button class="btn btn-primary">Save Settings</button>
+
+            <div class="card mt-3">
+                <div class="card-header">Home Assistant</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="hass-url" class="col-form-label">Hass URL</label>
+                            <div class="col">
+                                <input id="hass-url" type="text" class="form-control" v-model="hassURL">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="hass-password" class="col-form-label">API Password</label>
+                            <div class="col">
+                                <input id="hass-password" type="text" class="form-control" v-model="hassPassword">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="form-group">
-                <div class="form-row">
-                    <textarea id="profile-settings" class="form-control" style="border-width: 3px" type="text" rows="15" v-model="profileSettings" v-bind:class="{ 'border-danger': profileSettingsDirty }" @input="profileSettingsDirty=true"></textarea>
+            <div class="card mt-3">
+                <div class="card-header">Speech Recognition</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="localSTT" id="local-stt" value="local" v-model="rhasspySTT">
+                                <label class="form-check-label" for="local-stt">
+                                    Do speech recognition on this device
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="remoteSTT" id="remote-stt" value="remote" v-model="rhasspySTT">
+                                <label class="form-check-label" for="remote-stt">
+                                    Use remote Rhasspy server for speech recognition
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="stt-url" class="col-form-label">Rhasspy Speech-to-Text URL</label>
+                            <div class="col">
+                                <input id="stt-url" type="text" class="form-control" v-model="sttURL" :disabled="rhasspySTT == 'local'">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="form-group">
-                <div class="form-row">
-                    <button type="submit" class="btn btn-primary"
-                            v-bind:class="{ 'btn-danger': profileSettingsDirty }">Save Profile</button>
+            <div class="card mt-3">
+                <div class="card-header">Intent Recognition</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="localIntent" id="local-intent" value="local" v-model="rhasspyIntent">
+                                <label class="form-check-label" for="local-intent">
+                                    Do intent recognition on this device
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="remoteIntent" id="remote-intent" value="remote" v-model="rhasspyIntent">
+                                <label class="form-check-label" for="remote-intent">
+                                    Use remote Rhasspy server for intent recognition
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="intent-url" class="col-form-label">Rhasspy Text-to-Intent URL</label>
+                            <div class="col">
+                                <input id="intent-url" type="text" class="form-control" v-model="intentURL" :disabled="rhasspyIntent == 'local'">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <hr />
+            <button class="btn btn-primary mt-3">Save Settings</button>
 
-            <h2>Defaults</h2>
-            <textarea id="default-settings" class="form-control" type="text" rows="15" v-model="defaultSettings" readonly></textarea>
+            <h2 class="mt-5">Current</h2>
+            <div class="card">
+                <div class="card-header">
+                    Current settings for {{ this.profile }}
+                </div>
+                <div class="card-body">
+                    <tree-view :data="profileSettings"
+                               :options='{ rootObjectKey: "current" }'
+                               :hidden="!profileSettings"></tree-view>
+                </div>
+            </div>
+
+            <h2 class="mt-5">Defaults</h2>
+            <div class="card">
+                <div class="card-header">
+                    Default settings for all profiles
+                </div>
+                <div class="card-body">
+                    <tree-view :data="defaultSettings"
+                               :options='{ rootObjectKey: "defaults" }'
+                               :hidden="!defaultSettings"></tree-view>
+                </div>
+            </div>
         </form>
     </div> <!-- container -->
 </template>
@@ -41,10 +130,17 @@
      },
      data: function () {
          return {
-             profileSettings: '',
-             profileSettingsDirty: false,
+             profileSettings: {},
+             defaultSettings: {},
 
-             defaultSettings: ''
+             hassURL: '',
+             hassPassword: '',
+
+             rhasspySTT: 'local',
+             sttURL: '',
+
+             rhasspyIntent: 'local',
+             intentURL: ''
          }
      },
 
@@ -52,7 +148,34 @@
          refreshSettings: function() {
              ProfileService.getProfileSettings(this.profile, 'profile')
                            .then(request => {
-                               this.profileSettings = JSON.stringify(request.data, null, 4)
+                               this.profileSettings = request.data
+                               this.hassURL = this._.get(this.profileSettings,
+                                                         'home_assistant.url',
+                                                         this.defaultSettings.home_assistant.url)
+                               this.hassPassword = this._.get(this.profileSettings,
+                                                              'home_assistant.api_password',
+                                                              this.defaultSettings.home_assistant.api_password)
+
+                               // Speech
+                               var sttSystem = this._.get(this.profileSettings,
+                                                          'speech_to_text.system',
+                                                          this.defaultSettings.speech_to_text.system)
+
+                               this.sttRemote = (sttSystem == 'remote') ? 'remote' : 'local'
+
+                               this.sttURL = this._.get(this.profileSettings,
+                                                        'speech_to_text.remote.url',
+                                                        this.defaultSettings.speech_to_text.remote.url)
+
+                               // Intent
+                               var intentSystem = this._.get(this.profileSettings,
+                                                          'intent.system',
+                                                          this.defaultSettings.intent.system)
+
+                               this.intentRemote = (intentSystem == 'remote') ? 'remote' : 'local'
+                               this.intentURL = this._.get(this.profileSettings,
+                                                        'intent.remote.url',
+                                                        this.defaultSettings.intent.remote.url)
                            })
                            .catch(err => this.$parent.alert(err.response.data, 'danger'))
          },
@@ -60,32 +183,77 @@
          refreshDefaults: function() {
              ProfileService.getProfileSettings(this.profile, 'defaults')
                            .then(request => {
-                               this.defaultSettings = JSON.stringify(request.data, null, 4)
+                               this.defaultSettings = request.data
                            })
                            .catch(err => this.$parent.alert(err.response.data, 'danger'))
          },
 
          saveSettings: function() {
+             // Update settings
+             this._.set(this.profileSettings,
+                        'home_assistant.url',
+                        this.hassURL)
+
+             this._.set(this.profileSettings,
+                        'home_assistant.api_password',
+                        this.hassPassword)
+
+             if (this.rhasspySTT == 'remote') {
+                 // Remote speech to text
+                 this._.set(this.profileSettings,
+                            'speech_to_text.system',
+                            'remote')
+
+                 this._.set(this.profileSettings,
+                            'speech_to_text.remote.url',
+                            this.sttURL)
+             } else {
+                 // Local speech to text
+                 this._.set(this.profileSettings,
+                            'speech_to_text.system',
+                            this._.get(this.defaultSettings,
+                                       'speech_to_text.system',
+                                       'pocketsphinx'))
+             }
+
+             if (this.rhasspyIntent == 'remote') {
+                 // Remote intent recognition
+                 this._.set(this.profileSettings,
+                            'intent.system',
+                            'remote')
+
+                 this._.set(this.profileSettings,
+                            'intent.remote.url',
+                            this.intentURL)
+             } else {
+                 // Local intent recognition
+                 this._.set(this.profileSettings,
+                            'intent.system',
+                            this._.get(this.defaultSettings,
+                                       'intent.system',
+                                       'fuzzywuzzy'))
+             }
+
+             // POST to server
              this.$parent.beginAsync()
              ProfileService.updateProfileSettings(this.profile, this.profileSettings)
                  .then(request => this.$parent.alert(request.data, 'success'))
                  .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => {
                      this.$parent.endAsync()
-                     this.profileSettingsDirty = false
                  })
          }
      },
 
      mounted: function() {
-         this.refreshSettings()
          this.refreshDefaults()
+         this.refreshSettings()
      },
 
      watch: {
          profile() {
-             this.refreshSettings()
              this.refreshDefaults()
+             this.refreshSettings()
          }
      }
  }

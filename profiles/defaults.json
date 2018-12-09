@@ -21,6 +21,10 @@
             "unknown_words": "unknown_words.txt"
         },
 
+        "remote": {
+            "url": "http://my-server:12101/api/speech-to-text"
+        },
+
         "sentences_ini": "sentences.ini",
         "sentences_text": "sentences.txt",
         "grammars_dir": "grammars",
@@ -48,6 +52,10 @@
             "project_name": "default",
             "config": "rasa_config.yml",
             "examples_markdown": "intent_examples.md"
+        },
+
+        "remote": {
+            "url": "http://my-server:12101/api/text-to-intent"
         }
     },
 
