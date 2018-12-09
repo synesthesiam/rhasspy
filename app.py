@@ -52,15 +52,29 @@ decoders = {}
 wake_decoders = {}
 
 # Load default profile
-default_profile_name = os.environ.get('RHASSPY_PROFILE', 'en')
+default_profile_name = os.environ.get('RHASSPY_PROFILE', None)
+
+if default_profile_name is None:
+    try:
+        for profiles_dir in profiles_dirs:
+            defaults_path = os.path.join(profiles_dir, 'defaults.json')
+            if os.path.exists(defaults_path):
+                with open(defaults_path, 'r') as defaults_file:
+                    defaults_json = json.load(defaults_file)
+                    default_profile_name = defaults_json['rhasspy']['default_profile']
+    except:
+        default_profile_name = 'en'
 
 def load_default_profile():
     global decoders
     default_profile = Profile(default_profile_name, profiles_dirs)
     if default_profile.rhasspy.get('preload_profile', False):
-        # Load speech to text decoder
-        decoder = maybe_load_decoder(default_profile)
-        decoders[default_profile.name] = decoder
+        try:
+            # Load speech to text decoder
+            decoder = maybe_load_decoder(default_profile)
+            decoders[default_profile.name] = decoder
+        except Exception as e:
+            logging.error('Failed to pre-load profile')
 
     if default_profile.rhasspy.get('listen_on_start', False):
         # Start listening for wake word
@@ -139,7 +153,10 @@ def api_profiles():
             if os.path.isdir(os.path.join(profiles_dir, path)):
                 profile_names.add(path)
 
-    return jsonify(sorted(profile_names))
+    return jsonify({
+        'default_profile': default_profile_name,
+        'profiles': sorted(profile_names)
+    })
 
 # -----------------------------------------------------------------------------
 

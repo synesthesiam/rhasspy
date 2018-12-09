@@ -5,6 +5,23 @@
 
             <button class="btn btn-primary">Save Settings</button>
 
+            <!-- <div class="card mt-3">
+                 <div class="card-header">Rhasspy</div>
+                 <div class="card-body">
+                 <div class="form-group">
+                 <div class="form-row">
+                 <label for="default-profile" class="col-form-label">Default Profile</label>
+                 <div class="col">
+                 <select id="rhasspy-profiles" v-model="defaultProfile">
+                 <option disabled value="">Select Profile</option>
+                 <option v-for="profile in profiles" v-bind:key="defaultProfile">{{ profile }}</option>
+                 </select>
+                 </div>
+                 </div>
+                 </div>
+                 </div>
+                 </div>
+            -->
             <div class="card mt-3">
                 <div class="card-header">Home Assistant</div>
                 <div class="card-body">
@@ -126,12 +143,15 @@
  export default {
      name: 'ProfileSettings',
      props: {
-         profile : String
+         profile : String,
+         profiles: Array
      },
      data: function () {
          return {
              profileSettings: {},
              defaultSettings: {},
+
+             defaultProfile: '',
 
              hassURL: '',
              hassPassword: '',
@@ -149,6 +169,10 @@
              ProfileService.getProfileSettings(this.profile, 'profile')
                            .then(request => {
                                this.profileSettings = request.data
+                               this.defaultProfile = this._.get(this.profileSettings,
+                                                                'rhasspy.default_profile',
+                                                                this.defaultSettings.rhasspy.default_profile)
+
                                this.hassURL = this._.get(this.profileSettings,
                                                          'home_assistant.url',
                                                          this.defaultSettings.home_assistant.url)

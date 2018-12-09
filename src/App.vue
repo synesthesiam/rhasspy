@@ -49,7 +49,7 @@
                     <LookupPronounce :profile="profile" :unknownWords="unknownWords" />
                 </div>
                 <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
-                    <ProfileSettings :profile="profile" />
+                    <ProfileSettings :profile="profile" :profiles="profiles" />
                 </div>
             </div>
 
@@ -126,7 +126,8 @@
          getProfiles: function() {
              ProfileService.getProfiles()
                            .then(request => {
-                               this.profiles = request.data
+                               this.profile = request.data.default_profile
+                               this.profiles = request.data.profiles
                            })
                            .catch(err => this.alert(err.response.data, 'danger'))
          },
