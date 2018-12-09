@@ -61,6 +61,33 @@ def train(profile):
         _, wake_tokens = sanitize_sentence(wake_keyphrase, profile.training)
         words_needed.update(wake_tokens)
 
+    # Check for unknown words
+    unknown_words = words_needed - word_dict.keys()
+    unknown_path = profile.read_path(ps_config['unknown_words'])
+
+    if len(unknown_words) > 0:
+        with open(unknown_path, 'w') as unknown_file:
+            for word in unknown_words:
+                result = utils.lookup_word(word, word_dict, profile, n=1)
+
+                pronounces = result['pronunciations']
+                phonemes = ' '.join(pronounces)
+
+                # Dictionary uses upper-case letters
+                if stt_config.get('dictionary_upper', False):
+                    word = word.upper()
+                else:
+                    word = word.lower()
+
+                print(word.lower(), phonemes, file=unknown_file)
+
+        raise RuntimeError('Training failed due to %s unknown word(s)' % len(unknown_words))
+
+    elif os.path.exists(unknown_path):
+        # Remove unknown dictionary
+        os.unlink(unknown_path)
+
+
     # Write out dictionary with only the necessary words (speeds up loading)
     dictionary_path = profile.write_path(ps_config['dictionary'])
     with open(dictionary_path, 'w') as dictionary_file:
@@ -94,32 +121,6 @@ def train(profile):
                     num_sentences = num_sentences + 1
 
     logging.debug('Wrote %s sentence(s) to %s' % (num_sentences, sentences_text_path))
-
-    # Check for unknown words
-    unknown_words = words_needed - word_dict.keys()
-    unknown_path = profile.read_path(ps_config['unknown_words'])
-
-    if len(unknown_words) > 0:
-        with open(unknown_path, 'w') as unknown_file:
-            for word in unknown_words:
-                result = utils.lookup_word(word, word_dict, profile, n=1)
-
-                pronounces = result['pronunciations']
-                phonemes = ' '.join(pronounces)
-
-                # Dictionary uses upper-case letters
-                if stt_config.get('dictionary_upper', False):
-                    word = word.upper()
-                else:
-                    word = word.lower()
-
-                print(word.lower(), phonemes, file=unknown_file)
-
-        raise RuntimeError('Training failed due to %s unknown word(s)' % len(unknown_words))
-
-    elif os.path.exists(unknown_path):
-        # Remove unknown dictionary
-        os.unlink(unknown_path)
 
     # Generate ARPA language model
     lm = train_speech_recognizer(profile)
