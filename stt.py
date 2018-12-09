@@ -57,7 +57,7 @@ def transcribe_wav(profile, wav_data, decoder=None):
     return decoder
 
 def maybe_load_decoder(profile, decoder=None):
-    if decoder is None:
+    if (decoder is None) or isinstance(decoder, RemoteDecoder):
         ps_config = profile.speech_to_text['pocketsphinx']
 
         # Load decoder settings
