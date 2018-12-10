@@ -162,15 +162,23 @@ def api_profiles():
 
 @app.route('/api/profile', methods=['GET', 'POST'])
 def api_profile():
+    layers = request.args.get('layers', 'all')
+
     if request.method == 'POST':
-        profile = request_to_profile(request, profiles_dirs)
-        profile_path = profile.write_path('profile.json')
-        with open(profile_path, 'wb') as profile_file:
-            profile_file.write(request.data)
+        if layers == 'default':
+            for profiles_dir in profiles_dirs:
+                profile_path = os.path.join(profiles_dir, 'defaults.json')
+                if os.path.exists(profile_path):
+                    with open(profile_path, 'wb') as profile_file:
+                        profile_file.write(request.data)
+        else:
+            profile = request_to_profile(request, profiles_dirs)
+            profile_path = profile.write_path('profile.json')
+            with open(profile_path, 'wb') as profile_file:
+                profile_file.write(request.data)
 
         return 'Wrote %d byte(s) to %s' % (len(request.data), profile_path)
 
-    layers = request.args.get('layers', 'all')
     profile = request_to_profile(request, profiles_dirs, layers)
 
     return jsonify(profile.json)

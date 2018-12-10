@@ -6,7 +6,6 @@ RELEASE_FILES := Dockerfile \
                  build.json \
                  config.json \
                  requirements.txt \
-                 README.md \
                  bin/install-profiles.sh \
                  dist/ \
                  docker/run.sh \

@@ -1,27 +1,27 @@
 <template>
     <div class="container">
         <form class="form" v-on:submit.prevent="saveSettings">
-            <h2>{{ this.profile }}</h2>
-
             <button class="btn btn-primary">Save Settings</button>
 
-            <!-- <div class="card mt-3">
-                 <div class="card-header">Rhasspy</div>
-                 <div class="card-body">
-                 <div class="form-group">
-                 <div class="form-row">
-                 <label for="default-profile" class="col-form-label">Default Profile</label>
-                 <div class="col">
-                 <select id="rhasspy-profiles" v-model="defaultProfile">
-                 <option disabled value="">Select Profile</option>
-                 <option v-for="profile in profiles" v-bind:key="defaultProfile">{{ profile }}</option>
-                 </select>
-                 </div>
-                 </div>
-                 </div>
-                 </div>
-                 </div>
-            -->
+            <div class="card mt-3">
+                <div class="card-header">Rhasspy</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="default-profile" class="col-form-label">Default Profile</label>
+                            <div class="col">
+                                <select id="rhasspy-profiles" v-model="defaultProfile">
+                                    <option disabled value="">Select Profile</option>
+                                    <option v-for="profile in profiles" v-bind:key="profile">{{ profile }}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 class="mt-3">{{ this.profile }}</h2>
+
             <div class="card mt-3">
                 <div class="card-header">Home Assistant</div>
                 <div class="card-body">
@@ -214,6 +214,10 @@
 
          saveSettings: function() {
              // Update settings
+             this._.set(this.defaultSettings,
+                        'rhasspy.default_profile',
+                        this.defaultProfile)
+
              this._.set(this.profileSettings,
                         'home_assistant.url',
                         this.hassURL)
@@ -260,11 +264,15 @@
 
              // POST to server
              this.$parent.beginAsync()
-             ProfileService.updateProfileSettings(this.profile, this.profileSettings)
-                 .then(request => this.$parent.alert(request.data, 'success'))
+             ProfileService.updateDefaultSettings(this.defaultSettings)
                  .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => {
-                     this.$parent.endAsync()
+                     ProfileService.updateProfileSettings(this.profile, this.profileSettings)
+                                   .then(request => this.$parent.alert(request.data, 'success'))
+                                   .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                                   .then(() => {
+                                       this.$parent.endAsync()
+                                   })
                  })
          }
      },

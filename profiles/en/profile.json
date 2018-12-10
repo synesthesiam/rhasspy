@@ -1,4 +1,8 @@
 {
+    "home_assistant": {
+        "api_password": "",
+        "url": "http://hassio/homeassistant/"
+    },
     "language": "en",
     "training": {
         "regex": {
@@ -19,9 +23,5 @@
             "threshold": 1e-40
         },
         "system": "pocketsphinx"
-    },
-    "home_assistant": {
-        "url": "http://hassio/homeassistant/",
-        "api_password": ""
     }
 }
