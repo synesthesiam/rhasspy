@@ -11,6 +11,13 @@ export default {
         })
     },
 
+    updateDefaultSettings(settings) {
+        return Api().post('/api/profile', JSON.stringify(settings, null, 4), {
+            params: { 'layers': 'default' },
+            headers: { 'Content-Type': 'application/json' }
+        })
+    },
+
     updateProfileSettings(profile, settings) {
         return Api().post('/api/profile', JSON.stringify(settings, null, 4), {
             params: { 'profile': profile },

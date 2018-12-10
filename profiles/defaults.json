@@ -1,73 +1,64 @@
 {
-    "rhasspy": {
-        "preload_profile": true,
-        "listen_on_start": false,
-        "default_profile": "nl"
-    },
-
     "home_assistant": {
-        "url": "http://hassio/homeassistant/",
         "api_password": "",
-        "event_type_format": "rhasspy_{0}"
+        "event_type_format": "rhasspy_{0}",
+        "url": "http://hassio/homeassistant/"
     },
-
-    "speech_to_text": {
-        "system": "pocketsphinx",
-        "pocketsphinx": {
-            "acoustic_model": "acoustic_model",
-            "base_dictionary": "base_dictionary.txt",
-            "dictionary": "dictionary.txt",
-            "language_model": "language_model.txt",
-            "custom_words": "custom_words.txt",
-            "unknown_words": "unknown_words.txt"
-        },
-
-        "remote": {
-            "url": "http://my-server:12101/api/speech-to-text"
-        },
-
-        "sentences_ini": "sentences.ini",
-        "sentences_text": "sentences.txt",
-        "grammars_dir": "grammars",
-        "g2p_model": "g2p.fst"
-    },
-
-    "text_to_speech": {
-        "system": "espeak",
-        "espeak": {
-            "phoneme_map": "espeak_phonemes.txt"
-        },
-
-        "phoneme_examples": "phoneme_examples.txt"
-    },
-
     "intent": {
-        "system": "fuzzywuzzy",
-
         "fuzzywuzzy": {
             "examples_json": "intent_examples.json"
         },
-
         "rasa": {
-            "project_dir": "rasa_projects",
-            "project_name": "default",
             "config": "rasa_config.yml",
-            "examples_markdown": "intent_examples.md"
+            "examples_markdown": "intent_examples.md",
+            "project_dir": "rasa_projects",
+            "project_name": "default"
         },
-
         "remote": {
             "url": "http://my-server:12101/api/text-to-intent"
-        }
+        },
+        "system": "fuzzywuzzy"
     },
-
+    "rhasspy": {
+        "default_profile": "en",
+        "listen_on_start": false,
+        "preload_profile": true
+    },
+    "speech_to_text": {
+        "g2p_model": "g2p.fst",
+        "grammars_dir": "grammars",
+        "pocketsphinx": {
+            "acoustic_model": "acoustic_model",
+            "base_dictionary": "base_dictionary.txt",
+            "custom_words": "custom_words.txt",
+            "dictionary": "dictionary.txt",
+            "language_model": "language_model.txt",
+            "unknown_words": "unknown_words.txt"
+        },
+        "remote": {
+            "url": "http://my-server:12101/api/speech-to-text"
+        },
+        "sentences_ini": "sentences.ini",
+        "sentences_text": "sentences.txt",
+        "system": "pocketsphinx"
+    },
+    "text_to_speech": {
+        "espeak": {
+            "phoneme_map": "espeak_phonemes.txt"
+        },
+        "phoneme_examples": "phoneme_examples.txt",
+        "system": "espeak"
+    },
     "training": {
         "balance_sentences": true,
-        "tokenizer": "regex",
         "regex": {
-            "replace": [{
-                "-": " "
-            }],
+            "replace": [
+                {
+                    "-": " "
+                }
+            ],
             "split": "\\s+"
-        }
+        },
+        "tokenizer": "regex"
     }
 }
