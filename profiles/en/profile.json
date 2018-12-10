@@ -23,17 +23,5 @@
     "home_assistant": {
         "url": "http://hassio/homeassistant/",
         "api_password": ""
-    },
-    "speech_to_text": {
-        "system": "pocketsphinx",
-        "remote": {
-            "url": "http://pumpkin.lan:12101/api/speech-to-text"
-        }
-    },
-    "intent": {
-        "system": "fuzzywuzzy",
-        "remote": {
-            "url": "http://pumpkin.lan:12101/api/text-to-intent"
-        }
     }
 }
