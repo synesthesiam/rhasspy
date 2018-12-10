@@ -48,13 +48,13 @@ if [[ -z "$(which docker)" ]] || [[ ! -z "$RHASSPY_NODOCKER" ]]; then
 
     trap cleanup EXIT
 
-    wget -qO "$PKG_DIR/jsgf-gen.deb" https://github.com/synesthesiam/jsgf-gen/releases/download/v1.0/jsgf-gen-1.0_all.deb
+    wget -O "$PKG_DIR/jsgf-gen.deb" https://github.com/synesthesiam/jsgf-gen/releases/download/v1.0/jsgf-gen-1.0_all.deb
 
-    wget -qO "$PKG_DIR/openfst.deb" https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${CPU_ARCH}/openfst_1.6.9-1_${CPU_ARCH}.deb
+    wget -O "$PKG_DIR/openfst.deb" https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${CPU_ARCH}/openfst_1.6.9-1_${CPU_ARCH}.deb
 
-    wget -qO "$PKG_DIR/opengrm.deb" https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${CPU_ARCH}/opengrm_1.3.4-1_${CPU_ARCH}.deb
+    wget -O "$PKG_DIR/opengrm.deb" https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${CPU_ARCH}/opengrm_1.3.4-1_${CPU_ARCH}.deb
 
-    wget -qO "$PKG_DIR/phonetisaurus.deb" https://github.com/synesthesiam/phonetisaurus-2013/releases/download/v1.0-${CPU_ARCH}/phonetisaurus_2013-1_${CPU_ARCH}.deb
+    wget -O "$PKG_DIR/phonetisaurus.deb" https://github.com/synesthesiam/phonetisaurus-2013/releases/download/v1.0-${CPU_ARCH}/phonetisaurus_2013-1_${CPU_ARCH}.deb
 
     sudo dpkg -i ${PKG_DIR}/*.deb
 fi
