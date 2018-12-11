@@ -10,7 +10,7 @@ case $CPU_ARCH in
 esac
 
 docker run -d -p 12101:12101 \
-       -v $(pwd):/rhasspy \
+       -v "$(pwd):/rhasspy" \
        -v /dev/snd:/dev/snd \
        --privileged \
        synesthesiam/rhasspy-hassio-addon:${CPU_ARCH}

@@ -11,6 +11,7 @@ sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
 
 if [[ -z "$(which java)" ]]; then
     echo "Installing Java"
+    sudo apt-get install -y ca-certificates-java
     sudo apt-get install -y openjdk-8-jre-headless
 fi
 
