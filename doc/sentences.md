@@ -98,3 +98,31 @@ When the `SetLightColor` intent is recognized now, the `rhasspy_SetLightColor` e
     
     
 Your [automation](https://www.home-assistant.io/docs/automation) can use the slot values to take an appropriate action, such as (setting an RGB light's color)(https://www.home-assistant.io/docs/automation/action/) to `[255,0,0]`. 
+
+### Tag Synonyms
+
+There are times where you want to match a particular part of your sentence with a tag, but want the actual *value* of the tag to be something different than the matched text. This is needed if you, for example, want to talk about entities in Home Assistant with phrases like "the living room lamp", but want to pass the appropriate entity id (say `lamp_1`) to Home Assistant instead.
+
+Normally, you would tag part of a sentence like this:
+
+    [ChangeLightState]
+    turn on the (living room lamp){name}
+    
+When this intent is activated, Rhasspy will send an event named `rhasspy_ChangeLightState` to Home Assistant with
+
+    {
+      "name": "living room lamp"
+    }
+    
+You can catch this event in a Home Assistant automation, match the `name` "living room name", and do something with the `lamp_1` entity. That's fine for one instance, but would require a separate rule for every `name`! Instead, let's add a tag **synonym**:
+
+    [ChangeLightState]
+    turn on the (living room lamp){name:lamp_1}
+    
+The tag label and synonym are separated by a ":". When this sentence is spoken and the intent is activated, the same `rhasspy_ChangeLightState` event will be sent to Home Assistant, but with the following data:
+
+    {
+      "name": "lamp_1"
+    }
+    
+Now in your Home Assistant automation, you could use [templating](https://www.home-assistant.io/docs/automation/templating/) to plug the `name` directly into the `entity_id` field of an action. One rule to rule them all.
