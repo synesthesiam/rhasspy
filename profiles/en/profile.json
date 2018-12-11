@@ -3,19 +3,7 @@
         "api_password": "",
         "url": "http://hassio/homeassistant/"
     },
-    "intent": {
-        "remote": {
-            "url": "http://pumpkin.lan:12101/api/text-to-intent"
-        },
-        "system": "fuzzywuzzy"
-    },
     "language": "en",
-    "speech_to_text": {
-        "remote": {
-            "url": "http://pumpkin.lan:12101/api/speech-to-text"
-        },
-        "system": "pocketsphinx"
-    },
     "training": {
         "regex": {
             "replace": [
