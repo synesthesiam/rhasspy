@@ -148,17 +148,63 @@ The important files in a profile are:
 Running
 ---------
 
-Rhasspy is intended to run in three possible ways:
+Rhasspy is designed to run on Raspberry Pi's (`armhf`) and desktops/laptops (`amd64`), as a [Hass.IO add-on](https://www.home-assistant.io/addons/), within [Docker](https://www.docker.com/) and inside a [Python virtual environment](https://docs.python-guide.org/dev/virtualenvs/).
 
-1. In a Python virtual environment
-  * Use the `create-venv.sh` and `run-venv.sh` scripts (expects a Debian distribution)
-  * Local `profiles` directory is used
-2. In a standalone Docker container
-  * Use `make docker` target and `run-docker.sh` script
-  * Local `profiles` directory is used
-3. As a Hass.io add-on
-  * Clone the repository into your `/addons` directory and install/build
-  * See the add-on's `/data` directory for `profiles`
+### Raspberry Pi (Docker)
+
+Make sure you have Docker installed:
+
+    curl -sSL https://get.docker.com | sh
+    
+and that your user is part of the `docker` group:
+
+    sudo usermod -a -G docker $USER
+    
+Be sure to reboot after adding yourself to the `docker` group!
+
+Next, start the Rhasspy Docker image in the background:
+
+    docker run -d -p 12101:12101 \
+          --restart unless-stopped \
+          -e RHASSPY_PROFILES=/profiles \
+          -v "$HOME/.rhasspy:/profiles" \
+          -v /dev/snd:/dev/snd \
+          --privileged \
+          synesthesiam/rhasspy-hassio-addon:armhf
+          
+The web interface should now be accessible at http://localhost:12101
+
+### Desktop/Laptop (Docker)
+
+Make sure you have Docker installed:
+
+    curl -sSL https://get.docker.com | sh
+    
+and that your user is part of the `docker` group:
+
+    sudo usermod -a -G docker $USER
+    
+Be sure to reboot after adding yourself to the `docker` group!
+
+Next, start the Rhasspy Docker image in the background:
+
+    docker run -d -p 12101:12101 \
+          --restart unless-stopped \
+          -e RHASSPY_PROFILES=/profiles \
+          -v "$HOME/.rhasspy:/profiles" \
+          -v /dev/snd:/dev/snd \
+          --privileged \
+          synesthesiam/rhasspy-hassio-addon:amd64
+          
+The web interface should now be accessible at http://localhost:12101
+
+### Hass.IO
+
+Add my [Hass.IO Add-On Repository](https://github.com/synesthesiam/hassio-addons) in the Add-On Store, refresh, then install the "Rhasspy Assistant" under “Synesthesiam Hass.IO Add-Ons” (all the way at the bottom of the Add-On Store screen).
+
+**NOTE:** Beware that on a Raspberry Pi 3, the add-on can take 10-15 minutes to build and around 1-2 minutes to start.
+
+Watch the system log for a message like “Build 8e35c251/armhf-addon-rhasspy:1.1 done”. If the “Open Web UI” link on the add-on page doesn’t work, please check the log for errors, wait a minute, and try again.
 
 Supporting Tools
 --------------------
