@@ -168,11 +168,24 @@ Next, start the Rhasspy Docker image in the background:
           --restart unless-stopped \
           -e RHASSPY_PROFILES=/profiles \
           -v "$HOME/.rhasspy:/profiles" \
-          -v /dev/snd:/dev/snd \
-          --privileged \
+          --device /dev/snd:/dev/snd \
           synesthesiam/rhasspy-hassio-addon:armhf
           
 The web interface should now be accessible at http://localhost:12101
+
+If you're using [docker compose](https://docs.docker.com/compose/), try this:
+
+    rhasspy:
+        image: "synesthesiam/rhasspy-hassio-addon:armhf"
+        restart: unless-stopped
+        environment:
+            RHASSPY_PROFILES: "/profiles"
+        volumes:
+            - "./rhasspy_config:/profiles"
+        ports:
+            - "12101:12101"
+        devices:
+            - "/dev/snd:/dev/snd"
 
 ### Desktop/Laptop (Docker)
 
@@ -192,11 +205,24 @@ Next, start the Rhasspy Docker image in the background:
           --restart unless-stopped \
           -e RHASSPY_PROFILES=/profiles \
           -v "$HOME/.rhasspy:/profiles" \
-          -v /dev/snd:/dev/snd \
-          --privileged \
+          --device /dev/snd:/dev/snd \
           synesthesiam/rhasspy-hassio-addon:amd64
           
 The web interface should now be accessible at http://localhost:12101
+
+If you're using [docker compose](https://docs.docker.com/compose/), try this:
+
+    rhasspy:
+        image: "synesthesiam/rhasspy-hassio-addon:amd64"
+        restart: unless-stopped
+        environment:
+            RHASSPY_PROFILES: "/profiles"
+        volumes:
+            - "./rhasspy_config:/profiles"
+        ports:
+            - "12101:12101"
+        devices:
+            - "/dev/snd:/dev/snd"
 
 ### Hass.IO
 
