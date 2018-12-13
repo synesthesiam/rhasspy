@@ -5,8 +5,19 @@ Rhasspy is an offline, multilingual voice assistant toolkit inspired by [Jasper]
 
 * [Video Introduction](https://www.youtube.com/watch?v=ijKTR_GqWwA)
 * [Hass.IO Add-On Repository](https://github.com/synesthesiam/hassio-addons)
-* [Docker Installation](doc/docker.md)
+* [Running Rhasspy](#running)
 * [Discussion](https://community.home-assistant.io/t/rhasspy-offline-voice-assistant-toolkit/60862)
+
+To run Rhasspy using Docker:
+
+    docker run -d -p 12101:12101 \
+          --restart unless-stopped \
+          -e RHASSPY_PROFILES=/profiles \
+          -v "$HOME/.rhasspy:/profiles" \
+          --device /dev/snd:/dev/snd \
+          synesthesiam/rhasspy-hassio-addon:latest
+          
+Then visit the web interface at http://localhost:12101
 
 Purpose
 ---------
@@ -150,7 +161,7 @@ Running
 
 Rhasspy is designed to run on Raspberry Pi's (`armhf`) and desktops/laptops (`amd64`), as a [Hass.IO add-on](https://www.home-assistant.io/addons/), within [Docker](https://www.docker.com/) and inside a [Python virtual environment](https://docs.python-guide.org/dev/virtualenvs/).
 
-### Raspberry Pi (Docker)
+### Docker
 
 Make sure you have Docker installed:
 
@@ -169,51 +180,14 @@ Next, start the Rhasspy Docker image in the background:
           -e RHASSPY_PROFILES=/profiles \
           -v "$HOME/.rhasspy:/profiles" \
           --device /dev/snd:/dev/snd \
-          synesthesiam/rhasspy-hassio-addon:armhf
+          synesthesiam/rhasspy-hassio-addon:latest
           
 The web interface should now be accessible at http://localhost:12101
 
 If you're using [docker compose](https://docs.docker.com/compose/), try this:
 
     rhasspy:
-        image: "synesthesiam/rhasspy-hassio-addon:armhf"
-        restart: unless-stopped
-        environment:
-            RHASSPY_PROFILES: "/profiles"
-        volumes:
-            - "./rhasspy_config:/profiles"
-        ports:
-            - "12101:12101"
-        devices:
-            - "/dev/snd:/dev/snd"
-
-### Desktop/Laptop (Docker)
-
-Make sure you have Docker installed:
-
-    curl -sSL https://get.docker.com | sh
-    
-and that your user is part of the `docker` group:
-
-    sudo usermod -a -G docker $USER
-    
-Be sure to reboot after adding yourself to the `docker` group!
-
-Next, start the Rhasspy Docker image in the background:
-
-    docker run -d -p 12101:12101 \
-          --restart unless-stopped \
-          -e RHASSPY_PROFILES=/profiles \
-          -v "$HOME/.rhasspy:/profiles" \
-          --device /dev/snd:/dev/snd \
-          synesthesiam/rhasspy-hassio-addon:amd64
-          
-The web interface should now be accessible at http://localhost:12101
-
-If you're using [docker compose](https://docs.docker.com/compose/), try this:
-
-    rhasspy:
-        image: "synesthesiam/rhasspy-hassio-addon:amd64"
+        image: "synesthesiam/rhasspy-hassio-addon:latest"
         restart: unless-stopped
         environment:
             RHASSPY_PROFILES: "/profiles"
