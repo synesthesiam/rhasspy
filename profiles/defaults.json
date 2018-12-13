@@ -1,5 +1,6 @@
 {
     "home_assistant": {
+        "access_token": "",
         "api_password": "",
         "event_type_format": "rhasspy_{0}",
         "url": "http://hassio/homeassistant/"

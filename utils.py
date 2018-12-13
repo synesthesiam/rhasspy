@@ -262,13 +262,17 @@ def send_intent(hass_config, intent):
     post_url = urljoin(hass_config['url'], 'api/events/' + event_type)
     headers = {}
 
-    if ('api_password' in hass_config) and \
-       len(hass_config['api_password']) > 0:
-        # Use API pasword
-        headers['X-HA-Access'] = hass_config['api_password']
+    if ('access_token' in hass_config) and \
+         len(hass_config['access_token']) > 0:
+        # Use token from config
+        headers['Authorization'] = 'Bearer %s' % hass_config['access_token']
     elif 'HASSIO_TOKEN' in os.environ:
         # Use token from hass.io
         headers['Authorization'] = 'Bearer %s' % os.environ['HASSIO_TOKEN']
+    elif ('api_password' in hass_config) and \
+       len(hass_config['api_password']) > 0:
+        # Use API pasword
+        headers['X-HA-Access'] = hass_config['api_password']
 
     slots = {}
     for entity in intent['entities']:
