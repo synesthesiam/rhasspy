@@ -3,8 +3,6 @@ SHELL := bash
 BUILD_ARCH ?= amd64
 RELEASE_FILES := Dockerfile \
                  *.py \
-                 build.json \
-                 config.json \
                  requirements.txt \
                  bin/install-profiles.sh \
                  dist/ \
