@@ -35,6 +35,14 @@
                     </div>
                     <div class="form-group">
                         <div class="form-row">
+                            <label for="hass-token" class="col-form-label">Access Token</label>
+                            <div class="col">
+                                <input id="hass-token" type="text" class="form-control" v-model="hassToken">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
                             <label for="hass-password" class="col-form-label">API Password</label>
                             <div class="col">
                                 <input id="hass-password" type="text" class="form-control" v-model="hassPassword">
@@ -154,6 +162,7 @@
              defaultProfile: '',
 
              hassURL: '',
+             hassToken: '',
              hassPassword: '',
 
              rhasspySTT: 'local',
@@ -179,6 +188,10 @@
                                this.hassPassword = this._.get(this.profileSettings,
                                                               'home_assistant.api_password',
                                                               this.defaultSettings.home_assistant.api_password)
+
+                               this.hassToken = this._.get(this.profileSettings,
+                                                           'home_assistant.access_token',
+                                                           this.defaultSettings.home_assistant.access_token)
 
                                // Speech
                                var sttSystem = this._.get(this.profileSettings,
@@ -225,6 +238,10 @@
              this._.set(this.profileSettings,
                         'home_assistant.api_password',
                         this.hassPassword)
+
+             this._.set(this.profileSettings,
+                        'home_assistant.access_token',
+                        this.hassToken)
 
              if (this.rhasspySTT == 'remote') {
                  // Remote speech to text
