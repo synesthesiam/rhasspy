@@ -61,3 +61,19 @@ Available profile sections and settings are:
     * `pocketsphinx` - configuration for Pocketsphinx wake word recognizer
       * `keyphrase` - phrase to wake up on (3-4 syllables recommended)
       * `threshold` - sensitivity of detection (recommended range 1e-50 to 1e-5)
+
+The RHASSPY_PROFILES Variable
+-----------------------------
+
+Rhasspy uses an environment variable named `RHASSPY_PROFILES` to decide where to read/write profile files. By default, this is set to a directory named `profiles` wherever Rhasspy is running.
+
+Similar to the Unix `PATH` environment variable, you can add more directories to `RHASSPY_PROFILES` (separated by ":"). Rhasspy will go through the list of directories from **right to left** (like `PATH`) when reading or writing a profile file (like `profile.json`). When *reading* a profile file, Rhasspy tries each of the directories until the file is found. When *writing* a profile file, Rhasspy will try to write to each directory, stopping when it succeeds.
+
+### Example
+
+Assume you have `RHASSPY_PROFILES="/usr/share/rhasspy/profiles:/profiles"` and you add some new sentences to the `en` (English) profile in the web interface. When saving, Rhasspy will search for a writable directory in the following order:
+
+1. `/profiles/en/`
+2. `/usr/share/rhasspy/profiles/en/`
+
+If `/profiles/en` is writable, then `/profiles/en/sentences.ini` will be written with all of your sentences. When Rhasspy attempts to locate the profile file `sentences.ini` in the future, `/profiles/en/sentences.ini` will be found **first** and loaded *instead of* `/usr/share/rhasspy/profiles/en/sentences.ini`.
