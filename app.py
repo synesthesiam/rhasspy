@@ -16,7 +16,6 @@ from collections import defaultdict
 
 from flask import Flask, request, Response, jsonify, send_file, send_from_directory
 from flask_cors import CORS
-import pyaudio
 import requests
 
 import utils
@@ -25,6 +24,7 @@ from profiles import request_to_profile, Profile
 from stt import transcribe_wav, maybe_load_decoder
 from intent import best_intent
 from train import train
+from audio_recorder import PyAudioRecorder, ARecordAudioRecorder
 
 # -----------------------------------------------------------------------------
 
@@ -547,52 +547,30 @@ def speech_to_intent(profile, wav_data, no_hass=False):
 
 # -----------------------------------------------------------------------------
 
-record_audio = None
-record_mic = None
-record_buffer = None
+recorder = None
 
-# Use arecord to start recording a WAV file to a temporary file
+# Start recording a WAV file to a temporary buffer
 @app.route('/api/start-recording', methods=['POST'])
 def api_start_recording():
-    global record_audio, record_mic, record_buffer
+    global recorder
     device_index = int(request.args.get('device', -1))
     if device_index < 0:
         device_index = None  # default device
 
-    def stream_callback(data, frame_count, time_info, status):
-        global record_buffer
-        if record_buffer is None:
-            record_buffer = data
-        else:
-            record_buffer += data
-
-        return (data, pyaudio.paContinue)
-
-    record_audio = pyaudio.PyAudio()
-    data_format = record_audio.get_format_from_width(2)  # 16-bit
-    record_mic = record_audio.open(format=data_format,
-                                   channels=1,
-                                   rate=16000,
-                                   input_device_index=device_index,
-                                   input=True,
-                                   stream_callback=stream_callback)
-
-    record_mic.start_stream()
+    profile = request_to_profile(request, profiles_dirs)
+    recorder = get_audio_recorder(profile)
+    recorder.start_recording(device_index)
 
     return 'OK'
 
 # Stop recording WAV file, transcribe, and get intent
 @app.route('/api/stop-recording', methods=['POST'])
 def api_stop_recording():
-    global decoders, record_audio, record_mic, record_buffer
+    global decoders, recorder
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
 
-    if (record_audio is not None) and (record_mic is not None) and (record_buffer is not None):
-        record_mic.stop_stream()
-        record_audio.terminate()
-
-        record_audio = None
-        record_mic = None
+    if recorder is not None:
+        record_buffer = recorder.stop_recording()
         logging.debug('Stopped recording (got %s byte(s))' % len(record_buffer))
 
         profile = request_to_profile(request, profiles_dirs)
@@ -632,15 +610,16 @@ def api_stop_recording():
 
 @app.route('/api/microphones', methods=['GET'])
 def api_microphones():
-    mics = {}
-    audio = pyaudio.PyAudio()
-    for i in range(audio.get_device_count()):
-        info = audio.get_device_info_by_index(i)
-        mics[i] = info['name']
-
-    audio.terminate()
-
+    profile = request_to_profile(request, profiles_dirs)
+    mics = get_audio_recorder(profile).get_microphones()
     return jsonify(mics)
+
+def get_audio_recorder(profile):
+    system = profile.microphone.get('system', 'pyaudio')
+    if system == 'arecord':
+        return ARecordAudioRecorder()
+
+    return PyAudioRecorder()
 
 # -----------------------------------------------------------------------------
 
