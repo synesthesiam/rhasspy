@@ -61,5 +61,8 @@
             "split": "\\s+"
         },
         "tokenizer": "regex"
+    },
+    "microphone": {
+        "system": "pyaudio"
     }
 }
