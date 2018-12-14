@@ -12,7 +12,6 @@ sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
 if [[ -z "$(which java)" ]]; then
     echo "Installing Java"
     sudo apt-get install -y ca-certificates-java
-    sudo apt-get install -y openjdk-8-jre-headless
 fi
 
 VENV_PATH=$DIR/.venv
@@ -29,7 +28,7 @@ python3 -m pip install wheel
 python3 -m pip install -r requirements.txt
 python3 -m pip install https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz
 
-if [[ -z "$(which docker)" ]] || [[ ! -z "$RHASSPY_NODOCKER" ]]; then
+if [[ -z "$RHASSPY_DOCKER" ]]; then
     echo "Installing pre-compiled binaries"
 
     # Usually x86_64 or armhf
@@ -37,8 +36,13 @@ if [[ -z "$(which docker)" ]] || [[ ! -z "$RHASSPY_NODOCKER" ]]; then
 
     # Use amd64 instead of x86_64 for consistency with home assistant's BUILD_ARCH
     case $CPU_ARCH in
-        x86_64)
-            CPU_ARCH=amd64
+	    x86_64)
+		    CPU_ARCH=amd64
+		    ;;
+
+	    armv7l)
+		    CPU_ARCH=armhf
+		    ;;
     esac
 
     PKG_DIR=$(mktemp -d)
@@ -59,5 +63,8 @@ if [[ -z "$(which docker)" ]] || [[ ! -z "$RHASSPY_NODOCKER" ]]; then
 
     sudo dpkg -i ${PKG_DIR}/*.deb
 fi
+
+# Add /usr/local/lib to LD_LIBRARY_PATH
+sudo ldconfig
 
 echo "Done"

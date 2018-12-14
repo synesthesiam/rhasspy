@@ -6,7 +6,7 @@ export LANG=C.UTF-8
 # Directory of *this* script
 DIR="$( cd "$( dirname "$0" )" && pwd )"
 
-if [[ -z "$(which docker)" ]] || [[ ! -z "$RHASSPY_NODOCKER" ]]; then
+if [[ -z "$RHASSPY_DOCKER" ]]; then
     echo "Using pre-compiled binaries."
 else
     echo "Using Docker scripts."
