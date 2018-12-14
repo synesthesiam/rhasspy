@@ -1,4 +1,4 @@
-.PHONY: web-dist docker release update-addon
+.PHONY: web-dist docker release update-addon manifest
 SHELL := bash
 BUILD_ARCH ?= amd64
 RELEASE_FILES := Dockerfile \
@@ -30,3 +30,9 @@ update-addon:
 	cp -R dist/ ${ADDON_DIR}/
 	cp docker/run.sh ${ADDON_DIR}/docker/
 	cp profiles/defaults.json ${ADDON_DIR}/profiles/
+
+manifest:
+	docker manifest push --purge synesthesiam/rhasspy-server:latest
+	docker manifest create --amend synesthesiam/rhasspy-server:latest synesthesiam/rhasspy-server:amd64 synesthesiam/rhasspy-server:armhf
+	docker manifest annotate synesthesiam/rhasspy-server:latest synesthesiam/rhasspy-server:armhf --os linux --arch arm
+	docker manifest push synesthesiam/rhasspy-server:latest
