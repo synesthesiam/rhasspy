@@ -20,6 +20,9 @@
         },
         "system": "fuzzywuzzy"
     },
+    "microphone": {
+        "system": "pyaudio"
+    },
     "rhasspy": {
         "default_profile": "en",
         "listen_on_start": false,
@@ -61,8 +64,5 @@
             "split": "\\s+"
         },
         "tokenizer": "regex"
-    },
-    "microphone": {
-        "system": "pyaudio"
     }
 }

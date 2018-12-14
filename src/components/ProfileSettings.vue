@@ -116,6 +116,29 @@
                 </div>
             </div>
 
+            <div class="card mt-3">
+                <div class="card-header">Audio Recording</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="audioPyAudio" id="audio-pyaudio" value="pyaudio" v-model="audioSystem">
+                                <label class="form-check-label" for="audio-pyaudio">
+                                    Use PyAudio
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="audioARecord" id="audio-arecord" value="arecord" v-model="audioSystem">
+                                <label class="form-check-label" for="audio-arecord">
+                                    Use arecord
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <button class="btn btn-primary mt-3">Save Settings</button>
 
             <h2 class="mt-5">Current</h2>
@@ -169,7 +192,9 @@
              sttURL: '',
 
              rhasspyIntent: 'local',
-             intentURL: ''
+             intentURL: '',
+
+             audioSystem: 'pyaudio'
          }
      },
 
@@ -213,6 +238,11 @@
                                this.intentURL = this._.get(this.profileSettings,
                                                         'intent.remote.url',
                                                         this.defaultSettings.intent.remote.url)
+
+                               // Microphone
+                               this.audioSystem = this._.get(this.profileSettings,
+                                                             'microphone.system',
+                                                             this.defaultSettings.microphone.system)
                            })
                            .catch(err => this.$parent.alert(err.response.data, 'danger'))
          },
@@ -278,6 +308,11 @@
                                        'intent.system',
                                        'fuzzywuzzy'))
              }
+
+             // Microphone
+             this._.set(this.profileSettings,
+                        'microphone.system',
+                        this.audioSystem)
 
              // POST to server
              this.$parent.beginAsync()
