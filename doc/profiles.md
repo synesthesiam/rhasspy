@@ -61,6 +61,8 @@ Available profile sections and settings are:
     * `pocketsphinx` - configuration for Pocketsphinx wake word recognizer
       * `keyphrase` - phrase to wake up on (3-4 syllables recommended)
       * `threshold` - sensitivity of detection (recommended range 1e-50 to 1e-5)
+* `microphone` - configuration for audio recording
+  * `system` - audio recording system (`pyaudio` or `arecord`)
 
 The RHASSPY_PROFILES Variable
 -----------------------------
