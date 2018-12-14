@@ -206,6 +206,23 @@ Add my [Hass.IO Add-On Repository](https://github.com/synesthesiam/hassio-addons
 
 Watch the system log for a message like “Build 8e35c251/armhf-addon-rhasspy:1.1 done”. If the “Open Web UI” link on the add-on page doesn’t work, please check the log for errors, wait a minute, and try again.
 
+### Virtual Environment
+
+This repository is designed to host a Python Virtual environment for running Rhasspy outside of Docker. This may be desirable if you have trouble getting Rhasspy to access your microphone from within a Docker container. To start, clone the repo somewhere:
+
+    git clone https://github.com/synesthesiam/rhasspy-hassio-addon.git
+    
+Then run the `create-venv.sh` script (assumes a Debian distribution):
+
+    cd rhasspy-hassio-addon/
+    ./create-venv.sh
+    
+Once the installation finishes (5-10 minutes on a Raspberry Pi 3), you can use the `run-venv.sh` script to start Rhasspy:
+
+    ./run-venv.sh
+    
+If all is well, the web interface will be available at http://localhost:12101
+
 Supporting Tools
 --------------------
 

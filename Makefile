@@ -1,4 +1,4 @@
-.PHONY: web-dist docker release
+.PHONY: web-dist docker release update-addon
 SHELL := bash
 BUILD_ARCH ?= amd64
 RELEASE_FILES := Dockerfile \
@@ -8,6 +8,8 @@ RELEASE_FILES := Dockerfile \
                  dist/ \
                  docker/run.sh \
                  profiles/defaults.json
+
+ADDON_DIR := ../hassio-addons/rhasspy
 
 docker:
 	docker build . \
@@ -20,3 +22,11 @@ web-dist:
 
 release:
 	tar -czf rhasspy-hassio-addon.tar.gz ${RELEASE_FILES}
+
+update-addon:
+	rm -rf ${ADDON_DIR}/dist
+	cp Dockerfile *.py requirements.txt ${ADDON_DIR}/
+	cp bin/install-profiles.sh ${ADDON_DIR}/bin/
+	cp -R dist/ ${ADDON_DIR}/
+	cp docker/run.sh ${ADDON_DIR}/docker/
+	cp profiles/defaults.json ${ADDON_DIR}/profiles/
