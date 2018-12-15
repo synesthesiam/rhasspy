@@ -12,14 +12,22 @@ export default {
     },
 
     updateDefaultSettings(settings) {
-        return Api().post('/api/profile', JSON.stringify(settings, null, 4), {
+        if (typeof(settings) == 'object') {
+            settings = JSON.stringify(settings, null, 4)
+        }
+
+        return Api().post('/api/profile', settings, {
             params: { 'layers': 'default' },
             headers: { 'Content-Type': 'application/json' }
         })
     },
 
     updateProfileSettings(profile, settings) {
-        return Api().post('/api/profile', JSON.stringify(settings, null, 4), {
+        if (typeof(settings) == 'object') {
+            settings = JSON.stringify(settings, null, 4)
+        }
+
+        return Api().post('/api/profile', settings, {
             params: { 'profile': profile },
             headers: { 'Content-Type': 'application/json' }
         })
