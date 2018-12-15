@@ -17,6 +17,12 @@
                             </div>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <input type="checkbox" id="wake-on-start" v-model="wakeOnStart">
+                            <label for="wake-on-start" class="col-form-label">Listen for wake word on start-up (default profile)</label>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -46,6 +52,20 @@
                             <label for="hass-password" class="col-form-label">API Password</label>
                             <div class="col">
                                 <input id="hass-password" type="text" class="form-control" v-model="hassPassword">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">Wake Word</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="wake-keyphrase" class="col-form-label">Wake Keyphrase</label>
+                            <div class="col-sm-auto">
+                                <input id="wake-keyphrase" type="text" class="form-control" v-model="wakeKeyphrase">
                             </div>
                         </div>
                     </div>
@@ -194,7 +214,10 @@
              rhasspyIntent: 'local',
              intentURL: '',
 
-             audioSystem: 'pyaudio'
+             audioSystem: 'pyaudio',
+
+             wakeOnStart: false,
+             wakeKeyphrase: ''
          }
      },
 
@@ -217,6 +240,15 @@
                                this.hassToken = this._.get(this.profileSettings,
                                                            'home_assistant.access_token',
                                                            this.defaultSettings.home_assistant.access_token)
+
+                               // Wake
+                               this.wakeOnStart = this._.get(this.defaultSettings,
+                                                             'rhasspy.listen_on_start',
+                                                             false)
+
+                               this.wakeKeyphrase = this._.get(this.profileSettings,
+                                                               'wake.pocketsphinx.keyphrase',
+                                                               this.defaultSettings.wake.pocketsphinx.keyphrase)
 
                                // Speech
                                var sttSystem = this._.get(this.profileSettings,
@@ -308,6 +340,15 @@
                                        'intent.system',
                                        'fuzzywuzzy'))
              }
+
+             // Wake
+             this._.set(this.defaultSettings,
+                        'rhasspy.listen_on_start',
+                        this.wakeOnStart)
+
+             this._.set(this.profileSettings,
+                        'wake.pocketsphinx.keyphrase',
+                        this.wakeKeyphrase)
 
              // Microphone
              this._.set(this.profileSettings,

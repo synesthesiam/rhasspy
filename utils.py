@@ -325,3 +325,9 @@ def extract_entities(phrase):
     phrase = re.sub(r'\[([^]]+)\]\(([^)]+)\)', match, phrase)
 
     return phrase, entities
+
+# -----------------------------------------------------------------------------
+
+def play_wav(path):
+    if os.path.exists(path):
+        subprocess.run(['aplay', path])

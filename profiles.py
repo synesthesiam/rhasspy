@@ -38,6 +38,7 @@ class Profile:
         self.wake = self.json.get('wake', {})
         self.training = self.json.get('training', {})
         self.microphone = self.json.get('microphone', {})
+        self.sounds = self.json.get('sounds', {})
 
     def read_path(self, *path_parts):
         for profiles_dir in self.profiles_dirs:
