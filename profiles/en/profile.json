@@ -1,7 +1,8 @@
 {
     "home_assistant": {
         "api_password": "",
-        "url": "http://hassio/homeassistant/"
+        "url": "http://hassio/homeassistant/",
+        "access_token": ""
     },
     "language": "en",
     "training": {
@@ -17,11 +18,18 @@
         },
         "sentence_casing": "lower"
     },
+    "speech_to_text": {
+        "system": "pocketsphinx"
+    },
+    "intent": {
+        "system": "fuzzywuzzy"
+    },
     "wake": {
         "pocketsphinx": {
-            "keyphrase": "okay rhasspy",
-            "threshold": 1e-40
-        },
-        "system": "pocketsphinx"
+            "keyphrase": "okay rhasspy"
+        }
+    },
+    "microphone": {
+        "system": "pyaudio"
     }
 }

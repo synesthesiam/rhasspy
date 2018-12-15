@@ -80,8 +80,6 @@ def load_default_profile():
         # Start listening for wake word
         listen_for_wake(default_profile)
 
-load_default_profile()
-
 # -----------------------------------------------------------------------------
 
 listen_for_wake_func = None
@@ -90,14 +88,15 @@ listen_for_wake_func = None
 def api_listen_for_wake():
     profile = request_to_profile(request, profiles_dirs)
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
-    return jsonify(listen_for_wake(profile, no_hass))
-
-def listen_for_wake(profile, no_hass=False):
-    global listen_for_wake_func
-    system = profile.wake.get('system', None)
     device_index = int(request.args.get('device', -1))
     if device_index < 0:
         device_index = None  # default device
+
+    return jsonify(listen_for_wake(profile, no_hass, device_index))
+
+def listen_for_wake(profile, no_hass=False, device_index=None):
+    global listen_for_wake_func
+    system = profile.wake.get('system', None)
 
     if system == 'pocketsphinx':
         global decoders
@@ -116,10 +115,14 @@ def wake_word_detected(profile, no_hass):
     global listen_for_wake_func
 
     try:
+        utils.play_wav(profile.sounds.get('wake', ''))
+
         # Listen until silence
         from command_listener import CommandListener
         listener = CommandListener()
         recorded_data = listener.listen()
+
+        utils.play_wav(profile.sounds.get('recorded', ''))
 
         # Convert to WAV
         with io.BytesIO() as wav_data:
@@ -138,6 +141,11 @@ def wake_word_detected(profile, no_hass):
 
     # Start listening again
     listen_for_wake_func()
+
+# -----------------------------------------------------------------------------
+
+# Load default profile and (optionally) start listening for wake word
+load_default_profile()
 
 # -----------------------------------------------------------------------------
 
