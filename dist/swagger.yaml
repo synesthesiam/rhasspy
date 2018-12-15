@@ -27,6 +27,40 @@ paths:
         description: 'Profile name or default profile if not specified'
         schema:
           type: string
+      - in: query
+        name: layers
+        description: ''
+        enum: [all, default, profile]
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+    post:
+      summary: 'Overwrite profile settings'
+      produces: 
+        - application/json
+      requestBody:
+        description: 'JSON to write to profile'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      parameters:
+      - in: query
+        name: profile
+        description: 'Profile name or default profile if not specified'
+        schema:
+          type: string
+      - in: query
+        name: layers
+        description: ''
+        enum: [default, profile]
+        schema:
+          type: string
       responses:
         '200':
           description: OK

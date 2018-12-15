@@ -37,6 +37,9 @@
                 <li class="nav-item">
                     <a class="nav-link" id="settings-tab" data-toggle="tab" href="#settings" role="tab" aria-controls="settings" aria-selected="true">Settings</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="advanced-tab" data-toggle="tab" href="#advanced" role="tab" aria-controls="advanced" aria-selected="true">Advanced</a>
+                </li>
             </ul>
             <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade show active" id="speech" role="tabpanel" aria-labelledby="speech-tab">
@@ -50,6 +53,9 @@
                 </div>
                 <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
                     <ProfileSettings :profile="profile" :profiles="profiles" />
+                </div>
+                <div class="tab-pane fade" id="advanced" role="tabpanel" aria-labelledby="advanced-tab">
+                    <AdvancedSettings :profile="profile" :profiles="profiles" />
                 </div>
             </div>
 
@@ -66,6 +72,7 @@
  import TrainLanguageModel from './components/TrainLanguageModel.vue'
  import TranscribeSpeech from './components/TranscribeSpeech.vue'
  import ProfileSettings from './components/ProfileSettings.vue'
+ import AdvancedSettings from './components/AdvancedSettings.vue'
 
  export default {
      name: 'app',
@@ -73,7 +80,8 @@
          LookupPronounce,
          TrainLanguageModel,
          TranscribeSpeech,
-         ProfileSettings
+         ProfileSettings,
+         AdvancedSettings
      },
 
      data: function() {

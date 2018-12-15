@@ -165,6 +165,9 @@ def api_profile():
     layers = request.args.get('layers', 'all')
 
     if request.method == 'POST':
+        # Ensure that JSON is valid
+        json.loads(request.data)
+
         if layers == 'default':
             for profiles_dir in profiles_dirs:
                 profile_path = os.path.join(profiles_dir, 'defaults.json')
