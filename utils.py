@@ -329,5 +329,8 @@ def extract_entities(phrase):
 # -----------------------------------------------------------------------------
 
 def play_wav(path):
-    if os.path.exists(path):
-        subprocess.run(['aplay', path])
+    try:
+        if os.path.exists(path):
+            subprocess.run(['aplay', path])
+    except Exception as ex:
+        logging.exception('play_wav')

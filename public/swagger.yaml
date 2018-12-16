@@ -66,7 +66,7 @@ paths:
           description: OK
           schema:
             type: object
-  /api/listen_for_wake:
+  /api/listen-for-wake:
     post:
       summary: 'Make Rhasspy listen for the wake word'
       produces: 
@@ -77,6 +77,28 @@ paths:
         description: 'Profile name or default profile if not specified'
         schema:
           type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+  /api/listen-for-command:
+    post:
+      summary: 'Make Rhasspy listen for a command'
+      produces: 
+        - application/json
+      parameters:
+      - in: query
+        name: profile
+        description: 'Profile name or default profile if not specified'
+        schema:
+          type: string
+      - in: query
+        name: nohass
+        description: 'True if intent should NOT be sent to Home Assistant'
+        schema:
+          type: boolean
+          default: false
       responses:
         '200':
           description: OK
@@ -204,7 +226,7 @@ paths:
             text/plain:
               schema:
                 type: string
-  /api/custom_words:
+  /api/custom-words:
     get:
       summary: 'Get custom words for profile'
       produces: 
@@ -244,7 +266,7 @@ paths:
             text/plain:
               schema:
                 type: string
-  /api/unknown_words:
+  /api/unknown-words:
     get:
       summary: 'Get unknown words for profile'
       produces: 
