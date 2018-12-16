@@ -114,9 +114,28 @@ def listen_for_wake(profile, no_hass=False, device_index=None):
 def wake_word_detected(profile, no_hass):
     global listen_for_wake_func
 
-    try:
-        utils.play_wav(profile.sounds.get('wake', ''))
+    # Listen until silence
+    listen_for_command(profile, no_hass)
 
+    # Start listening again
+    listen_for_wake_func()
+
+# -----------------------------------------------------------------------------
+
+@app.route('/api/listen-for-command', methods=['POST'])
+def api_listen_for_command():
+    profile = request_to_profile(request, profiles_dirs)
+    no_hass = request.args.get('nohass', 'false').lower() == 'true'
+
+    # Listen until silence
+    intent = listen_for_command(profile, no_hass)
+
+    return jsonify(intent)
+
+def listen_for_command(profile, no_hass):
+    utils.play_wav(profile.sounds.get('wake', ''))
+
+    try:
         # Listen until silence
         from command_listener import CommandListener
         listener = CommandListener()
@@ -136,11 +155,16 @@ def wake_word_detected(profile, no_hass):
 
             # Get intent/send to Home Assistant
             intent = speech_to_intent(profile, wav_data.read(), no_hass)
+
+            if not no_hass:
+                # Send intent to Home Assistant
+                utils.send_intent(profile.home_assistant, intent)
+
+            return intent
     except:
         logging.exception('Error processing command')
 
-    # Start listening again
-    listen_for_wake_func()
+    return {}
 
 # -----------------------------------------------------------------------------
 
