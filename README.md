@@ -44,7 +44,7 @@ How it Works
 
 Rhasspy transforms speech commands into [Home Assistant events](https://www.home-assistant.io/docs/configuration/events/) that [trigger automations](https://www.home-assistant.io/docs/automation/trigger/#event-trigger). You define these commands in a Rhasspy [profile](doc/profiles.md) using a specialized template syntax that lets you control how Rhasspy creates the events it sends to Home Assistant.
 
-Let's say you have an RGB of some kind in your bedroom that's hooked up already to Home Assistant. You'd like to be able to say things like "*set the bedroom light to red*" to change its color. To start, you could write a [Home Assistant automation](https://www.home-assistant.io/docs/automation/action/) to help you out:
+Let's say you have an RGB light of some kind in your bedroom that's hooked up already to Home Assistant. You'd like to be able to say things like "*set the bedroom light to red*" to change its color. To start, you could write a [Home Assistant automation](https://www.home-assistant.io/docs/automation/action/) to help you out:
 
     automation:
       # Change the light in the bedroom to red.
@@ -56,7 +56,7 @@ Let's say you have an RGB of some kind in your bedroom that's hooked up already 
           rgb_color: [255, 0, 0]
           entity_id: light.bedroom
           
-Now you just need the trigger! Rhasspy will send events that can be caught with the [event trigger platform](https://www.home-assistant.io/docs/automation/trigger/#event-trigger). A different event will be sent for each *intent* that you define. On the Rhasspy side, define an intent called `ChangeLightColor` that can be said a number of ways:
+Now you just need the trigger! Rhasspy will send events that can be caught with the [event trigger platform](https://www.home-assistant.io/docs/automation/trigger/#event-trigger). A different event will be sent for each *intent* that you define, with slot values corresponding to important parts of the command (like light name and color). Let's start by defining an intent in Rhasspy called `ChangeLightColor` that can be said a few different ways:
 
     [ChangeLightColor]
     colors = (red | green | blue) {color}
@@ -77,7 +77,7 @@ This is a [simplified JSGF grammar](doc/sentences/md) that will generate the fol
 * set bedroom green
 * set bedroom blue
 
-Rhasspy uses these sentences generate an [ARPA language model](https://cmusphinx.github.io/wiki/arpaformat/) for speech recognition, and train an intent recognizer. The `{color}` tag in the `colors` rule will have Rhasspy put a `color` property in each event with the name of the recognized color. Likewise, the `{name}` tag on `bedroom` will add a `name` property.
+Rhasspy uses these sentences to create an [ARPA language model](https://cmusphinx.github.io/wiki/arpaformat/) for speech recognition, and also train an intent recognizer that can extract relevant parts of the command. The `{color}` tag in the `colors` rule will make Rhasspy put a `color` property in each event with the name of the recognized color (red, green, or blue). Likewise, the `{name}` tag on `bedroom` will add a `name` property to the event.
 
 If trained on these sentences, Rhasspy will now recognize commands like "*set the bedroom light to red*" and send a `rhasspy_ChangeLightState` to Home Assistant with the following data:
 
