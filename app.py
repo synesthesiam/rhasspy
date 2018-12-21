@@ -12,14 +12,18 @@ import wave
 import tempfile
 import threading
 import functools
+import signal
+import atexit
 from collections import defaultdict
 
 from flask import Flask, request, Response, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import requests
+from thespian import ActorSystem
 
 import utils
 import wake
+from rhasspy import Rhasspy
 from profiles import request_to_profile, Profile
 from stt import transcribe_wav, maybe_load_decoder
 from intent import best_intent
@@ -34,51 +38,19 @@ app = Flask('rhasspy')
 app.secret_key = str(uuid.uuid4())
 CORS(app)
 
-# Like PATH, searched in reverse order
-profiles_dirs = [path for path in
-                 os.environ.get('RHASSPY_PROFILES', 'profiles')\
-                 .split(':') if len(path.strip()) > 0]
-
-profiles_dirs.reverse()
-logging.debug('Profiles dirs: %s' % profiles_dirs)
-
-web_dir = os.environ.get('RHASSPY_WEB', 'dist')
-
 # -----------------------------------------------------------------------------
 
-# Cached pocketsphinx decoders
-# profile -> decoder
-decoders = {}
-wake_decoders = {}
+system = ActorSystem('multiprocTCPBase')
 
-# Load default profile
-default_profile_name = os.environ.get('RHASSPY_PROFILE', None)
+# We really, *really* want shutdown to be called
+@atexit.register
+def shutdown(*args, **kwargs):
+    system.shutdown()
 
-if default_profile_name is None:
-    try:
-        for profiles_dir in profiles_dirs:
-            defaults_path = os.path.join(profiles_dir, 'defaults.json')
-            if os.path.exists(defaults_path):
-                with open(defaults_path, 'r') as defaults_file:
-                    defaults_json = json.load(defaults_file)
-                    default_profile_name = defaults_json['rhasspy']['default_profile']
-    except:
-        default_profile_name = 'en'
+signal.signal(signal.SIGINT, shutdown)
+signal.signal(signal.SIGTERM, shutdown)
 
-def load_default_profile():
-    global decoders
-    default_profile = Profile(default_profile_name, profiles_dirs)
-    if default_profile.rhasspy.get('preload_profile', False):
-        try:
-            # Load speech to text decoder
-            decoder = maybe_load_decoder(default_profile)
-            decoders[default_profile.name] = decoder
-        except Exception as e:
-            logging.error('Failed to pre-load profile')
-
-    if default_profile.rhasspy.get('listen_on_start', False):
-        # Start listening for wake word
-        listen_for_wake(default_profile)
+core = system.createActor(Rhasspy)
 
 # -----------------------------------------------------------------------------
 
@@ -94,32 +66,6 @@ def api_listen_for_wake():
 
     return jsonify(listen_for_wake(profile, no_hass, device_index))
 
-def listen_for_wake(profile, no_hass=False, device_index=None):
-    global listen_for_wake_func
-    system = profile.wake.get('system', None)
-
-    if system == 'pocketsphinx':
-        global decoders
-        listen_for_wake_func = wake.pocketsphinx_wake(
-            profile, wake_decoders, functools.partial(wake_word_detected, profile, no_hass),
-            device_index=device_index)
-
-        # Start listening
-        listen_for_wake_func()
-
-        return profile.wake
-    else:
-        assert False, 'Unknown wake word system: %s' % system
-
-def wake_word_detected(profile, no_hass):
-    global listen_for_wake_func
-
-    # Listen until silence
-    listen_for_command(profile, no_hass)
-
-    # Start listening again
-    listen_for_wake_func()
-
 # -----------------------------------------------------------------------------
 
 @app.route('/api/listen-for-command', methods=['POST'])
@@ -131,40 +77,6 @@ def api_listen_for_command():
     intent = listen_for_command(profile, no_hass)
 
     return jsonify(intent)
-
-def listen_for_command(profile, no_hass):
-    utils.play_wav(profile.sounds.get('wake', ''))
-
-    try:
-        # Listen until silence
-        from command_listener import CommandListener
-        listener = CommandListener()
-        recorded_data = listener.listen()
-
-        utils.play_wav(profile.sounds.get('recorded', ''))
-
-        # Convert to WAV
-        with io.BytesIO() as wav_data:
-            with wave.open(wav_data, mode='wb') as wav_file:
-                wav_file.setframerate(listener.sample_rate)
-                wav_file.setsampwidth(listener.sample_width)
-                wav_file.setnchannels(listener.channels)
-                wav_file.writeframesraw(recorded_data)
-
-            wav_data.seek(0)
-
-            # Get intent/send to Home Assistant
-            intent = speech_to_intent(profile, wav_data.read(), no_hass)
-
-            if not no_hass:
-                # Send intent to Home Assistant
-                utils.send_intent(profile.home_assistant, intent)
-
-            return intent
-    except:
-        logging.exception('Error processing command')
-
-    return {}
 
 # -----------------------------------------------------------------------------
 
@@ -443,75 +355,6 @@ def api_speech_to_text():
 
 # -----------------------------------------------------------------------------
 
-# Cached rasaNLU projects
-# profile -> project
-intent_projects = {}
-
-# Cached fuzzywuzzy examples
-# profile -> examples
-intent_examples = {}
-
-def get_intent(profile, text):
-    system = profile.intent.get('system', 'fuzzywuzzy')
-
-    if system == 'rasa':
-        rasa_config = profile.intent[system]
-
-        # Use rasaNLU
-        global intent_projects
-
-        project = intent_projects.get(profile.name, None)
-        if project is None:
-            import rasa_nlu
-            from rasa_nlu.project import Project
-            project_dir = profile.read_path(rasa_config['project_dir'])
-            project_name = rasa_config['project_name']
-
-            project = Project(project=project_name,
-                              project_dir=project_dir)
-
-            intent_projects[profile.name] = project
-
-        return project.parse(text)
-    elif system == 'remote':
-        remote_url = profile.intent[system]['url']
-        headers = { 'Content-Type': 'text/plain' }
-
-        # Pass profile name through
-        params = { 'profile': profile.name, 'nohass': True }
-        response = requests.post(remote_url, headers=headers,
-                                 data=text, params=params)
-
-        response.raise_for_status()
-
-        # Return intent directly
-        return response.json()
-    else:
-        fuzzy_config = profile.intent[system]
-
-        # Use fuzzywuzzy
-        global intent_examples
-
-        if not profile.name in intent_examples:
-            examples_path = profile.read_path(fuzzy_config['examples_json'])
-            with open(examples_path, 'r') as examples_file:
-                intent_examples[profile.name] = json.load(examples_file)
-
-        text, intent_name, slots = best_intent(intent_examples[profile.name], text)
-
-        # Try to match RasaNLU format for future compatibility
-        intent = {
-            'text': text,
-            'intent': {
-                'name': intent_name,
-            },
-            'entities': [
-                { 'entity': name, 'value': values[0] } for name, values in slots.items()
-            ]
-        }
-
-        return intent
-
 # -----------------------------------------------------------------------------
 
 # Get intent from text
@@ -558,27 +401,6 @@ def api_speech_to_intent():
         'entities': [],
         'time_sec': intent_sec
     })
-
-def speech_to_intent(profile, wav_data, no_hass=False):
-    global decoders
-
-    # speech to text
-    decoder = transcribe_wav(profile, wav_data, decoders.get(profile.name))
-    decoders[profile.name] = decoder
-
-    # text to intent
-    if decoder.hyp() is not None:
-        text = decoder.hyp().hypstr
-        intent = get_intent(profile, text)
-        logging.debug(intent)
-
-        if not no_hass:
-            # Send intent to Home Assistant
-            utils.send_intent(profile.home_assistant, intent)
-
-        return intent
-
-    return None
 
 # -----------------------------------------------------------------------------
 
