@@ -10,6 +10,18 @@ class Profile:
         self.layers = layers
         self.load_profile()
 
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def load_defaults(profiles_dirs):
+        for profiles_dir in profiles_dirs:
+            defaults_path = os.path.join(profiles_dir, 'defaults.json')
+            if os.path.exists(defaults_path):
+                with open(defaults_path, 'r') as defaults_file:
+                    return json.load(defaults_file)
+
+    # -------------------------------------------------------------------------
+
     def load_profile(self):
         # Load defaults first
         self.json = {}  # no defaults

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import re
 import json
 from collections import defaultdict
 
@@ -41,5 +42,38 @@ def best_intent(examples, sentence):
 
     # (text, intent, slots)
     return choices.get(best_text)
+
+# -----------------------------------------------------------------------------
+
+def make_adapt_parser(profile):
+    from adapt.entity_tagger import EntityTagger
+    from adapt.tools.text.tokenizer import EnglishTokenizer
+    from adapt.tools.text.trie import Trie
+    from adapt.intent import IntentBuilder
+    from adapt.parser import Parser
+    from adapt.engine import IntentDeterminationEngine
+
+    stop_words = set()
+    stop_words_path = profile.read_path(profile.intent.get('stop_words'))
+    if os.path.exists(stop_words_path, 'r') as stop_words_file:
+        stop_words = set([line.strip() for line in stop_words_file.readlines()])
+
+    tokenizer = EnglishTokenizer()
+    trie = Trie()
+    tagger = EntityTagger(trie, tokenizer)
+    parser = Parser(tokenizer, tagger)
+
+    engine = IntentDeterminationEngine()
+
+    for intent_name, examples in examples.items():
+        # for word in re.split(r'\s+', )
+        for mk in music_keywords:
+            engine.register_entity(mk, "MusicKeyword")
+
+        # intent = IntentBuilder(intent_name)
+        #     .require("MusicVerb")\
+        #     .optionally("MusicKeyword")\
+        #     .optionally("Artist")\
+        #     .build()
 
 # -----------------------------------------------------------------------------

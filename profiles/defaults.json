@@ -18,6 +18,9 @@
         "remote": {
             "url": "http://my-server:12101/api/text-to-intent"
         },
+        "adapt": {
+            "stop_words": "stop_words.txt"
+        },
         "system": "fuzzywuzzy"
     },
     "microphone": {
