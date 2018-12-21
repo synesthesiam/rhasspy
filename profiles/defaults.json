@@ -10,10 +10,9 @@
             "examples_json": "intent_examples.json"
         },
         "rasa": {
-            "config": "rasa_config.yml",
+            "url": "http://localhost:5000/",
             "examples_markdown": "intent_examples.md",
-            "project_dir": "rasa_projects",
-            "project_name": "default"
+            "project_name": "rhasspy"
         },
         "remote": {
             "url": "http://my-server:12101/api/text-to-intent"

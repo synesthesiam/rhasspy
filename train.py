@@ -38,7 +38,7 @@ def train(profile):
 
                 # Split sentence into words (tokens)
                 sentence, tokens = sanitize_sentence(sentence, profile.training)
-                sentences_by_intent[intent_name].append((sentence, entities))
+                sentences_by_intent[intent_name].append((sentence, entities, tokens))
 
                 # Collect all used words
                 words_needed.update(tokens)
@@ -115,7 +115,7 @@ def train(profile):
         num_sentences = 0
         for intent_name, intent_sents in sentences_by_intent.items():
             num_repeats = max(1, lcm_sentences // len(intent_sents))
-            for sentence, slots in intent_sents:
+            for sentence, slots, tokens in intent_sents:
                 for i in range(num_repeats):
                     print(sentence, file=sentences_text_file)
                     num_sentences = num_sentences + 1
@@ -142,8 +142,8 @@ def train(profile):
             for intent_name, intent_sents in tagged_sentences.items():
                 # Rasa Markdown training format
                 print('## intent:%s' % intent_name, file=examples_md_file)
-                for intent_sent in intent_sents:
-                    print('-', intent_sent, file=examples_md_file)
+                for sentence, slots, tokens in intent_sents:
+                    print('-', sentence, file=examples_md_file)
 
                 print('', file=examples_md_file)
 

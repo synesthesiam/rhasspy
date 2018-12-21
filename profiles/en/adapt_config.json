@@ -1,0 +1,46 @@
+{
+    "intents": {
+        "GetTime": {
+            "name": "GetTime",
+            "require": [
+                "GetTimeRequiredKeyword"
+            ],
+            "optionally": [
+                "GetTimeOptionalKeyword"
+            ]
+        },
+        "ChangeLightColor": {
+            "name": "ChangeLightColor",
+            "require": [
+                "ChangeLightColor.name",
+                "ChangeLightColor.color"
+            ],
+            "optionally": [
+                "ChangeLightColorOptionalKeyword"
+            ]
+        }
+    },
+    "entities": {
+        "GetTimeRequiredKeyword": [
+            "time"
+        ],
+        "GetTimeOptionalKeyword": [
+            "what",
+            "tell"
+        ],
+        "ChangeLightColor.name": [
+            "bedroom light",
+            "kitchen light"
+        ],
+        "ChangeLightColor.color": [
+            "green",
+            "red",
+            "blue"
+        ],
+        "ChangeLightColorOptionalKeyword": [
+            "turn",
+            "set",
+            "make"
+        ]
+    }
+}
