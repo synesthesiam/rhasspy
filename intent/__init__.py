@@ -6,9 +6,9 @@ sys.path.insert(0, os.path.abspath('..'))
 from thespian.actors import ActorSystem
 
 from profile import Profile
-from fuzzy import FuzzyWuzzyIntentActor
-from adapt import AdaptIntentActor
-from rasa import RasaIntentActor
+from .fuzzy import FuzzyWuzzyIntentActor
+from .adapt import AdaptIntentActor
+from .rasa import RasaIntentActor
 
 # -----------------------------------------------------------------------------
 # Events
