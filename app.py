@@ -31,6 +31,8 @@ from train import train
 from audio_recorder import PyAudioRecorder, ARecordAudioRecorder
 
 # -----------------------------------------------------------------------------
+# Flask Web App Setup
+# -----------------------------------------------------------------------------
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -38,6 +40,8 @@ app = Flask('rhasspy')
 app.secret_key = str(uuid.uuid4())
 CORS(app)
 
+# -----------------------------------------------------------------------------
+# Actor System Setup
 # -----------------------------------------------------------------------------
 
 system = ActorSystem('multiprocTCPBase')
@@ -53,8 +57,8 @@ signal.signal(signal.SIGTERM, shutdown)
 core = system.createActor(Rhasspy)
 
 # -----------------------------------------------------------------------------
-
-listen_for_wake_func = None
+# HTTP API
+# -----------------------------------------------------------------------------
 
 @app.route('/api/listen-for-wake', methods=['POST'])
 def api_listen_for_wake():

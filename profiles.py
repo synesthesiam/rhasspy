@@ -2,9 +2,14 @@ import os
 import json
 import collections
 import logging
+from typing import List, Dict
 
 class Profile:
-    def __init__(self, name, profiles_dirs, layers='all'):
+    def __init__(self,
+                 name: str,
+                 profiles_dirs: List[str],
+                 layers: str ='all'):
+
         self.name = name
         self.profiles_dirs = profiles_dirs
         self.layers = layers
@@ -13,7 +18,7 @@ class Profile:
     # -------------------------------------------------------------------------
 
     @staticmethod
-    def load_defaults(profiles_dirs):
+    def load_defaults(profiles_dirs: List[str]):
         for profiles_dir in profiles_dirs:
             defaults_path = os.path.join(profiles_dir, 'defaults.json')
             if os.path.exists(defaults_path):
@@ -101,13 +106,13 @@ class Profile:
 
 # -----------------------------------------------------------------------------
 
-def request_to_profile(request, profiles_dirs, layers='all'):
+def request_to_profile(request, profiles_dirs: List[str], layers='all'):
     profile_name = request.args.get(
         'profile', os.environ.get('RHASSPY_PROFILE', 'en'))
 
     return Profile(profile_name, profiles_dirs, layers=layers)
 
-def recursive_update(base_dict, new_dict):
+def recursive_update(base_dict: Dict, new_dict: Dict):
     for k, v in new_dict.items():
         if isinstance(v, collections.Mapping) and (k in base_dict):
             recursive_update(base_dict[k], v)

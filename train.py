@@ -245,18 +245,3 @@ def sanitize_sentence(sentence, training_config):
         assert False, 'Unknown tokenizer: %s' % tokenizer
 
     return sentence, tokens
-
-# -----------------------------------------------------------------------------
-
-def train_intent_recognizer(examples_file, rasa_config,
-                            project_dir, project_name,
-                            num_threads=4):
-    import rasa_nlu
-    from rasa_nlu.train import do_train
-
-    # Run the actual training
-    do_train(cfg=rasa_nlu.config.load(rasa_config),
-             data=examples_file,
-             path=project_dir,
-             project=project_name,
-             num_threads=num_threads)
