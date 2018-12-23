@@ -8,13 +8,13 @@ from profile import Profile
 # -----------------------------------------------------------------------------
 
 class ProfileEvent:
-    def __init__(self, name, event):
+    def __init__(self, name: str, event):
         self.name = name
         self.event = event
 
 # -----------------------------------------------------------------------------
 
-class Rhasspy(Actor):
+class RhasspyActor(Actor):
 
     def __init__(self):
         self.profiles = {}

@@ -22,13 +22,13 @@ import requests
 from thespian import ActorSystem
 
 import utils
-import wake
-from rhasspy import Rhasspy
-from profiles import request_to_profile, Profile
-from stt import transcribe_wav, maybe_load_decoder
-from intent import best_intent
-from train import train
-from audio_recorder import PyAudioRecorder, ARecordAudioRecorder
+# import wake
+from rhasspy import RhasspyActor
+# from profiles import request_to_profile, Profile
+# from stt import transcribe_wav, maybe_load_decoder
+# from intent import best_intent
+# from train import train
+# from audio_recorder import PyAudioRecorder, ARecordAudioRecorder
 
 # -----------------------------------------------------------------------------
 # Flask Web App Setup
@@ -54,7 +54,7 @@ def shutdown(*args, **kwargs):
 signal.signal(signal.SIGINT, shutdown)
 signal.signal(signal.SIGTERM, shutdown)
 
-core = system.createActor(Rhasspy)
+core = system.createActor(RhasspyActor)
 
 # -----------------------------------------------------------------------------
 # HTTP API
@@ -93,7 +93,7 @@ load_default_profile()
 def api_profiles():
     # ['en', 'fr', ...]
     profile_names = set()
-    for profiles_dir in profiles_dirs:
+    for profiles_dir in core.profiles_dirs:
         if not os.path.exists(profiles_dir):
             continue
 
@@ -102,7 +102,7 @@ def api_profiles():
                 profile_names.add(path)
 
     return jsonify({
-        'default_profile': default_profile_name,
+        'default_profile': core.default_profile_name,
         'profiles': sorted(profile_names)
     })
 
@@ -117,12 +117,14 @@ def api_profile():
         json.loads(request.data)
 
         if layers == 'default':
+            # Write default settings
             for profiles_dir in profiles_dirs:
                 profile_path = os.path.join(profiles_dir, 'defaults.json')
                 if os.path.exists(profile_path):
                     with open(profile_path, 'wb') as profile_file:
                         profile_file.write(request.data)
         else:
+            # Write profile settings
             profile = request_to_profile(request, profiles_dirs)
             profile_path = profile.write_path('profile.json')
             with open(profile_path, 'wb') as profile_file:

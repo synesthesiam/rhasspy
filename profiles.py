@@ -2,7 +2,7 @@ import os
 import json
 import collections
 import logging
-from typing import List, Dict
+from typing import List, Dict, Mapping, Any
 
 class Profile:
     def __init__(self,
@@ -112,7 +112,7 @@ def request_to_profile(request, profiles_dirs: List[str], layers='all'):
 
     return Profile(profile_name, profiles_dirs, layers=layers)
 
-def recursive_update(base_dict: Dict, new_dict: Dict):
+def recursive_update(base_dict: Mapping[Any, Any], new_dict: Mapping[Any, Any]):
     for k, v in new_dict.items():
         if isinstance(v, collections.Mapping) and (k in base_dict):
             recursive_update(base_dict[k], v)
