@@ -10,24 +10,11 @@ import itertools
 import collections
 from collections import defaultdict
 from urllib.parse import urljoin
+from typing import Mapping, List, Iterable
 
 import requests
 
 # -----------------------------------------------------------------------------
-
-def load_phoneme_map(path):
-    # Load phoneme map from Sphinx to eSpeak (dictionary)
-    phonemes = {}
-    with open(path, 'r') as phoneme_file:
-        for line in phoneme_file:
-            line = line.strip()
-            if (len(line) == 0) or line.startswith('#'):
-                continue  # skip blanks and comments
-
-            parts = re.split('\s+', line, maxsplit=1)
-            phonemes[parts[0]] = parts[1]
-
-    return phonemes
 
 def load_phoneme_examples(path):
     examples = {}
@@ -47,7 +34,7 @@ def load_phoneme_examples(path):
 
 # -----------------------------------------------------------------------------
 
-def read_dict(dict_file, word_dict):
+def read_dict(dict_file: Iterable[str], word_dict: Mapping[str, List[str]]):
     """
     Loads a CMU word dictionary into an existing Python dictionary.
     """
@@ -66,64 +53,6 @@ def read_dict(dict_file, word_dict):
             word_dict[word].append(pronounce)
         else:
             word_dict[word] = [pronounce]
-
-# -----------------------------------------------------------------------------
-
-def lookup_word(word, word_dict, profile, n=5):
-    assert len(word) > 0, 'No word'
-
-    # Dictionary uses upper-case letters
-    stt_config = profile.speech_to_text
-    if stt_config.get('dictionary_upper', False):
-        word = word.upper()
-    else:
-        word = word.lower()
-
-    pronounces = list(word_dict.get(word, []))
-    in_dictionary = (len(pronounces) > 0)
-    if not in_dictionary:
-        # Guess pronunciation
-        # Path to phonetisaurus FST
-        g2p_path = profile.read_path(stt_config['g2p_model'])
-
-        # FST was trained with upper-case letters
-        if stt_config.get('g2p_upper', False):
-            word = word.upper()
-        else:
-            word = word.lower()
-
-        with tempfile.NamedTemporaryFile(mode='w+', suffix='.txt', delete=False) as pronounce_file:
-            # Use phonetisaurus to guess pronunciations
-            g2p_command = ['phonetisaurus-g2p',
-                            '--model=' + g2p_path,
-                            '--input=' + word,  # case sensitive
-                            '--nbest=' + str(n),
-                            '--words']
-
-            logging.debug(g2p_command)
-            subprocess.check_call(g2p_command, stdout=pronounce_file)
-
-            pronounce_file.seek(0)
-
-            # Read results
-            ws_pattern = re.compile(r'\s+')
-
-            for line in pronounce_file:
-                parts = ws_pattern.split(line)
-                phonemes = ' '.join(parts[2:]).strip()
-                pronounces.append(phonemes)
-
-            # Needed on Windows
-            try:
-                pronounce_file.close()
-                os.unlink(pronounce_file.name)
-            except:
-                pass
-
-    return {
-        'in_dictionary': in_dictionary,
-        'pronunciations': pronounces
-    }
 
 # -----------------------------------------------------------------------------
 

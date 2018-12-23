@@ -7,10 +7,10 @@ import time
 import wave
 import io
 
-logging.basicConfig(level=logging.DEBUG)
-
 from thespian.actors import Actor, ActorSystem
 
+# -----------------------------------------------------------------------------
+# Events
 # -----------------------------------------------------------------------------
 
 class RecordingSettings:
@@ -48,6 +48,8 @@ class AudioData:
             return wav_buffer.getvalue()
 
 # -----------------------------------------------------------------------------
+# arecord Based Actor
+# -----------------------------------------------------------------------------
 
 class ARecordActor(Actor):
     FORMATS = { 8: 'S8', 16: 'S16_LE', 24: 'S24_LE', 32: 'S32_LE' }
@@ -62,25 +64,28 @@ class ARecordActor(Actor):
         self.record_buffer = None
 
     def receiveMessage(self, message, sender):
-        if isinstance(message, RecordingSettings):
-            self.settings = message
-        elif isinstance(message, StartStreaming):
-            # Start streaming audio data to an actor
-            self.subscribers.append(sender)
-            self.maybe_start_proc()
-        elif isinstance(message, StopStreaming):
-            # Stop streaming
-            self.subscribers.remove(sender)
-            self.maybe_stop_proc()
-        elif isinstance(message, StartRecording):
-            # Start recording audio data to a buffer
-            self.record_buffer = bytes()
-            self.maybe_start_proc()
-        elif isinstance(message, StopRecording):
-            # Stop recording (return data)
-            self.send(sender, AudioData(self.record_buffer, self.settings))
-            self.record_buffer = None
-            self.maybe_stop_proc()
+        try:
+            if isinstance(message, RecordingSettings):
+                self.settings = message
+            elif isinstance(message, StartStreaming):
+                # Start streaming audio data to an actor
+                self.subscribers.append(sender)
+                self.maybe_start_proc()
+            elif isinstance(message, StopStreaming):
+                # Stop streaming
+                self.subscribers.remove(sender)
+                self.maybe_stop_proc()
+            elif isinstance(message, StartRecording):
+                # Start recording audio data to a buffer
+                self.record_buffer = bytes()
+                self.maybe_start_proc()
+            elif isinstance(message, StopRecording):
+                # Stop recording (return data)
+                self.send(sender, AudioData(self.record_buffer, self.settings))
+                self.record_buffer = None
+                self.maybe_stop_proc()
+        except Exception as e:
+            logging.exception('receiveMessage')
 
     # -------------------------------------------------------------------------
 
@@ -133,6 +138,8 @@ class ARecordActor(Actor):
                 finally:
                     self.proc = None
 
+# -----------------------------------------------------------------------------
+# Tests
 # -----------------------------------------------------------------------------
 
 if __name__ == '__main__':
