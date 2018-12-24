@@ -15,10 +15,12 @@ Settings
 Available profile sections and settings are:
 
 * `rhasspy` - configuration for Rhasspy assistant
-  * `preload_profile` - true if speech/intent recognizers for default profile
+  * `default_profile` - name of default profile (e.g., "en")
+  * `preload_profile` - true if speech/intent recognizers should be automatically loaded for default profile
   * `listen_on_start` - true if Rhasspy should listen for wake word at startup
 * `home_assistant` - how to communicate with Home Assistant/Hass.io
   * `url` - Base URL of Home Assistant server (no `/api`)
+  * `access_token` - Home Assistant long-lived access token
   * `api_password` - Password, if you have that enabled (Hass.io token is used automatically)
   * `event_type_format` - Python format string used to create event type from intent type (`{0}`)
 * `speech_to_text` - transcribing speech to text commands
@@ -58,9 +60,9 @@ Available profile sections and settings are:
     * `split` - pattern used to break sentences into words
 * `wake` - waking Rhasspy up for speech input
   * `system` - wake word recognition system (only `pocketsphinx` for now)
-    * `pocketsphinx` - configuration for Pocketsphinx wake word recognizer
-      * `keyphrase` - phrase to wake up on (3-4 syllables recommended)
-      * `threshold` - sensitivity of detection (recommended range 1e-50 to 1e-5)
+  * `pocketsphinx` - configuration for Pocketsphinx wake word recognizer
+    * `keyphrase` - phrase to wake up on (3-4 syllables recommended)
+    * `threshold` - sensitivity of detection (recommended range 1e-50 to 1e-5)
 * `microphone` - configuration for audio recording
   * `system` - audio recording system (`pyaudio` or `arecord`)
 
