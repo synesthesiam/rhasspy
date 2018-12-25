@@ -4,6 +4,13 @@ import collections
 import logging
 from typing import List, Dict, Mapping, Any
 
+import pydash
+from thespian.actors import Actor
+
+from audio_player import PlayWavFile
+
+# -----------------------------------------------------------------------------
+
 class Profile:
     def __init__(self,
                  name: str,
@@ -17,13 +24,18 @@ class Profile:
 
     # -------------------------------------------------------------------------
 
-    @staticmethod
-    def load_defaults(profiles_dirs: List[str]):
+    @classmethod
+    def load_defaults(cls, profiles_dirs: List[str]):
         for profiles_dir in profiles_dirs:
             defaults_path = os.path.join(profiles_dir, 'defaults.json')
             if os.path.exists(defaults_path):
                 with open(defaults_path, 'r') as defaults_file:
                     return json.load(defaults_file)
+
+    # -------------------------------------------------------------------------
+
+    def get(self, path: str, default=None):
+        return pydash.get(self.json, path, default)
 
     # -------------------------------------------------------------------------
 
@@ -45,17 +57,6 @@ class Profile:
             if os.path.exists(self.json_path):
                 with open(self.json_path, 'r') as profile_file:
                     recursive_update(self.json, json.load(profile_file))
-
-        # Extract default sub-sections
-        self.rhasspy = self.json.get('rhasspy', {})
-        self.home_assistant = self.json.get('home_assistant', {})
-        self.speech_to_text = self.json.get('speech_to_text', {})
-        self.text_to_speech = self.json.get('text_to_speech', {})
-        self.intent = self.json.get('intent', {})
-        self.wake = self.json.get('wake', {})
-        self.training = self.json.get('training', {})
-        self.microphone = self.json.get('microphone', {})
-        self.sounds = self.json.get('sounds', {})
 
     def read_path(self, *path_parts):
         for profiles_dir in self.profiles_dirs:
@@ -103,6 +104,37 @@ class Profile:
         os.makedirs(dir_path, exist_ok=True)
 
         return dir_path
+
+# -----------------------------------------------------------------------------
+
+class ProfileActor(Actor):
+    def __init__(self):
+        self.parent = None
+        self.profile = None
+        self.audio_player_actor = None
+
+    def receiveMessage(self, message, sender):
+        try:
+            if isinstance(message, Profile):
+                self.parent = sender
+                self.profile = profile
+            elif isinstance(message, PlayWavFile):
+                self.maybe_load_audio_player()
+                self.send(self.audio_player_actor, message)
+
+        except Exception as ex:
+            logging.exception('receiveMessage')
+
+    # -------------------------------------------------------------------------
+
+    def maybe_load_audio_player(self):
+        if self.audio_player_actor is None:
+            system = self.profile.get('sounds.system', 'aplay')
+            assert system in ['aplay'], 'Unknown audio player system'
+            if system == 'aplay':
+                from audio_player import APlayActor
+                self.audio_player_actor = self.createActor(APlayActor)
+                self.send(self.audio_player_actor, self.profile)
 
 # -----------------------------------------------------------------------------
 
