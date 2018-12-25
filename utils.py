@@ -10,7 +10,7 @@ import itertools
 import collections
 from collections import defaultdict
 from urllib.parse import urljoin
-from typing import Mapping, List, Iterable
+from typing import Mapping, List, Iterable, Optional
 
 import requests
 
@@ -34,10 +34,14 @@ def load_phoneme_examples(path):
 
 # -----------------------------------------------------------------------------
 
-def read_dict(dict_file: Iterable[str], word_dict: Mapping[str, List[str]]):
+def read_dict(dict_file: Iterable[str],
+              word_dict: Optional[Mapping[str, List[str]]] = None):
     """
-    Loads a CMU word dictionary into an existing Python dictionary.
+    Loads a CMU word dictionary, optionally into an existing Python dictionary.
     """
+    if word_dict is None:
+        word_dict = {}
+
     for line in dict_file:
         line = line.strip()
         if len(line) == 0:
@@ -53,6 +57,8 @@ def read_dict(dict_file: Iterable[str], word_dict: Mapping[str, List[str]]):
             word_dict[word].append(pronounce)
         else:
             word_dict[word] = [pronounce]
+
+    return word_dict
 
 # -----------------------------------------------------------------------------
 

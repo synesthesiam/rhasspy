@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import subprocess
 import uuid
 import logging
@@ -19,11 +20,11 @@ from collections import defaultdict
 from flask import Flask, request, Response, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import requests
-from thespian import ActorSystem
+from thespian.actors import ActorSystem
 
 import utils
 # import wake
-from rhasspy import RhasspyActor
+from rhasspy import Rhasspy
 # from profiles import request_to_profile, Profile
 # from stt import transcribe_wav, maybe_load_decoder
 # from intent import best_intent
@@ -44,20 +45,62 @@ CORS(app)
 # Actor System Setup
 # -----------------------------------------------------------------------------
 
-system = ActorSystem('multiprocTCPBase')
+system = ActorSystem('multiprocQueueBase')
+# system = ActorSystem('multiprocTCPBase')
 
 # We really, *really* want shutdown to be called
 @atexit.register
 def shutdown(*args, **kwargs):
-    system.shutdown()
+    global system
+    if system is not None:
+        try:
+            system.shutdown()
+            system = None
+        except:
+            pass
+
+    sys.exit(0)
 
 signal.signal(signal.SIGINT, shutdown)
 signal.signal(signal.SIGTERM, shutdown)
 
-core = system.createActor(RhasspyActor)
+# Like PATH, searched in reverse order
+profiles_dirs = [path for path in
+                 os.environ.get('RHASSPY_PROFILES', 'profiles')\
+                 .split(':') if len(path.strip()) > 0]
+
+profiles_dirs.reverse()
+
+# Check for default profile
+default_profile_name = os.environ.get('RHASSPY_PROFILE', None)
+
+# Create top-level actor
+core = Rhasspy(profiles_dirs, default_profile_name)
+# core_actor = system.createActor(RhasspyActor)
+# system.tell(core_actor, StartRhasspy(profiles_dirs, default_profile_name))
+
+def request_to_profile(request):
+    profile_name = request.args.get('profile', core.default_profile_name)
+    return core.profiles[profile_name]
 
 # -----------------------------------------------------------------------------
 # HTTP API
+# -----------------------------------------------------------------------------
+
+@app.route('/api/profiles')
+def api_profiles():
+    return jsonify({
+        'default_profile': core.default_profile_name,
+        'profiles': sorted(core.profiles.keys())
+    })
+
+# -----------------------------------------------------------------------------
+
+@app.route('/api/microphones', methods=['GET'])
+def api_microphones():
+    mics = core.get_audio_recorder().get_microphones()
+    return jsonify(mics)
+
 # -----------------------------------------------------------------------------
 
 @app.route('/api/listen-for-wake', methods=['POST'])
@@ -84,30 +127,6 @@ def api_listen_for_command():
 
 # -----------------------------------------------------------------------------
 
-# Load default profile and (optionally) start listening for wake word
-load_default_profile()
-
-# -----------------------------------------------------------------------------
-
-@app.route('/api/profiles')
-def api_profiles():
-    # ['en', 'fr', ...]
-    profile_names = set()
-    for profiles_dir in core.profiles_dirs:
-        if not os.path.exists(profiles_dir):
-            continue
-
-        for path in os.listdir(profiles_dir):
-            if os.path.isdir(os.path.join(profiles_dir, path)):
-                profile_names.add(path)
-
-    return jsonify({
-        'default_profile': core.default_profile_name,
-        'profiles': sorted(profile_names)
-    })
-
-# -----------------------------------------------------------------------------
-
 @app.route('/api/profile', methods=['GET', 'POST'])
 def api_profile():
     layers = request.args.get('layers', 'all')
@@ -124,17 +143,26 @@ def api_profile():
                     with open(profile_path, 'wb') as profile_file:
                         profile_file.write(request.data)
         else:
-            # Write profile settings
-            profile = request_to_profile(request, profiles_dirs)
+            # Write local profile settings
+            profile = request_to_profile(request)
             profile_path = profile.write_path('profile.json')
             with open(profile_path, 'wb') as profile_file:
                 profile_file.write(request.data)
 
         return 'Wrote %d byte(s) to %s' % (len(request.data), profile_path)
 
-    profile = request_to_profile(request, profiles_dirs, layers)
-
-    return jsonify(profile.json)
+    if layers == 'default':
+        # Read default settings
+        return jsonify(core.defaults_json)
+    elif layers == 'profile':
+        # Local settings only
+        profile = request_to_profile(request)
+        profile_path = profile.read_path('profile.json')
+        return send_file(open(profile_path, 'rb'),
+                         mimetype='application/json')
+    else:
+        profile = request_to_profile(request)
+        return jsonify(profile.json)
 
 # -----------------------------------------------------------------------------
 
@@ -244,9 +272,9 @@ def api_pronounce():
 
 @app.route('/api/phonemes')
 def api_phonemes():
-    profile = request_to_profile(request, profiles_dirs)
-    tts_config = profile.text_to_speech
-    examples_path = profile.read_path(tts_config['phoneme_examples'])
+    profile = request_to_profile(request)
+    examples_path = profile.read_path(
+        profile.get('text_to_speech.phoneme_examples'))
 
     # phoneme -> { word, phonemes }
     logging.debug('Loading phoneme examples from %s' % examples_path)
@@ -258,18 +286,21 @@ def api_phonemes():
 
 @app.route('/api/sentences', methods=['GET', 'POST'])
 def api_sentences():
-    profile = request_to_profile(request, profiles_dirs)
-    stt_config = profile.speech_to_text
+    profile = request_to_profile(request)
 
     if request.method == 'POST':
         # Update sentences
-        sentences_path = profile.write_path(stt_config['sentences_ini'])
+        sentences_path = profile.write_path(
+            profile.get('speech_to_text.sentences_ini'))
+
         with open(sentences_path, 'wb') as sentences_file:
             sentences_file.write(request.data)
             return 'Wrote %s byte(s) to %s' % (len(request.data), sentences_path)
 
     # Return sentences
-    sentences_path = profile.read_path(stt_config['sentences_ini'])
+    sentences_path = profile.read_path(
+        profile.get('speech_to_text.sentences_ini'))
+
     if not os.path.exists(sentences_path):
         return ''  # no sentences yet
 
@@ -281,10 +312,9 @@ def api_sentences():
 
 @app.route('/api/custom-words', methods=['GET', 'POST'])
 def api_custom_words():
-    profile = request_to_profile(request, profiles_dirs)
-    stt_config = profile.speech_to_text
-    ps_config = stt_config['pocketsphinx']
-    custom_words_path = profile.write_path(ps_config['custom_words'])
+    profile = request_to_profile(request)
+    custom_words_path = profile.write_path(
+        profile.get('speech_to_text.pocketsphinx.custom_words'))
 
     if request.method == 'POST':
         # Update custom words
@@ -471,28 +501,23 @@ def api_stop_recording():
         'entities': []
     })
 
-@app.route('/api/microphones', methods=['GET'])
-def api_microphones():
-    profile = request_to_profile(request, profiles_dirs)
-    mics = get_audio_recorder(profile).get_microphones()
-    return jsonify(mics)
+# def get_audio_recorder(profile):
+#     system = profile.microphone.get('system', 'pyaudio')
+#     if system == 'arecord':
+#         return ARecordAudioRecorder()
 
-def get_audio_recorder(profile):
-    system = profile.microphone.get('system', 'pyaudio')
-    if system == 'arecord':
-        return ARecordAudioRecorder()
-
-    return PyAudioRecorder()
+#     return PyAudioRecorder()
 
 # -----------------------------------------------------------------------------
 
 @app.route('/api/unknown_words', methods=['GET'])
 def api_unknown_words():
-    profile = request_to_profile(request, profiles_dirs)
-    ps_config = profile.speech_to_text['pocketsphinx']
+    profile = request_to_profile(request)
 
     unknown_words = {}
-    unknown_path = profile.read_path(ps_config['unknown_words'])
+    unknown_path = profile.read_path(
+        profile.get('speech_to_text.pocketsphinx.unknown_words'))
+
     if os.path.exists(unknown_path):
         for line in open(unknown_path, 'r'):
             line = line.strip()
@@ -512,6 +537,8 @@ def handle_error(err):
 # ---------------------------------------------------------------------
 # Static Routes
 # ---------------------------------------------------------------------
+
+web_dir = os.path.join(os.path.dirname(__file__), 'dist')
 
 @app.route('/css/<path:filename>', methods=['GET'])
 def css(filename):
