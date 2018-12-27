@@ -11,6 +11,7 @@ from thespian.actors import Actor, ActorAddress
 from profiles import Profile
 from audio_recorder import AudioRecorder
 from stt import SpeechDecoder, PocketsphinxDecoder, RemoteDecoder
+from intent import IntentRecognizer, FuzzyWuzzyRecognizer
 
 # -----------------------------------------------------------------------------
 
@@ -24,6 +25,7 @@ class Rhasspy:
 
         self.audio_recorder: Optional[AudioRecorder] = None
         self.speech_decoders: Dict[str, SpeechDecoder] = {}
+        self.intent_recognizers: Dict[str, IntentRecognizer] = {}
 
         # ---------------------------------------------------------------------
 
@@ -73,85 +75,103 @@ class Rhasspy:
 
     # -------------------------------------------------------------------------
 
-    def get_speech_decoder(self, profile_name):
+    def get_speech_decoder(self, profile_name: str):
         decoder = self.speech_decoders.get(profile_name)
         if decoder is None:
             profile = self.profiles[profile_name]
             system = profile.get('speech_to_text.system')
-            assert system in ['pocketsphinx', 'remote'], 'Invalid speech to text system'
+            assert system in ['pocketsphinx', 'remote'], 'Invalid speech to text system: %s' % system
             if system == 'pocketsphinx':
                 decoder = PocketsphinxDecoder(profile)
             elif system == 'remote':
                 decoder = RemoteDecoder(profile)
 
+            # Cache decoder
+            self.speech_decoders[profile_name] = decoder
+
         return decoder
 
+    # -------------------------------------------------------------------------
+
+    def get_intent_recognizer(self, profile_name: str):
+        recognizer = self.intent_recognizers.get(profile_name)
+        if recognizer is None:
+            profile = self.profiles[profile_name]
+            system = profile.get('intent.system')
+            assert system in ['fuzzywuzzy', 'rasa', 'remote'], 'Invalid intent system: %s' % system
+            if system == 'fuzzywuzzy':
+                recognizer = FuzzyWuzzyRecognizer(profile)
+
+            # Cache recognizer
+            self.intent_recognizers[profile_name] = recognizer
+
+        return recognizer
 
 # -----------------------------------------------------------------------------
 
-class StartRhasspy:
-    def __init__(self,
-                 profiles_dirs: List[str],
-                 default_profile_name: Optional[str] = None):
+# class StartRhasspy:
+#     def __init__(self,
+#                  profiles_dirs: List[str],
+#                  default_profile_name: Optional[str] = None):
 
-        self.profiles_dirs = profiles_dirs
-        self.default_profile_name = default_profile_name
+#         self.profiles_dirs = profiles_dirs
+#         self.default_profile_name = default_profile_name
 
-class ProfileEvent:
-    def __init__(self, name: str, event):
-        self.name = name
-        self.event = event
+# class ProfileEvent:
+#     def __init__(self, name: str, event):
+#         self.name = name
+#         self.event = event
 
 # -----------------------------------------------------------------------------
 
-class RhasspyActor(Actor):
+# class RhasspyActor(Actor):
 
-    def __init__(self):
-        self.default_profile_name: Optional[str] = None
-        self.profiles_dirs: List[str] = ['profiles']
-        self.profiles: Dict[str, Profile] = {}
-        self.profile_actors: Dict[str, ActorAddress] = {}
+#     def __init__(self):
+#         self.default_profile_name: Optional[str] = None
+#         self.profiles_dirs: List[str] = ['profiles']
+#         self.profiles: Dict[str, Profile] = {}
+#         self.profile_actors: Dict[str, ActorAddress] = {}
 
-    # -------------------------------------------------------------------------
+#     # -------------------------------------------------------------------------
 
-    def receiveMessage(self, message, sender):
-        try:
-            if isinstance(message, StartRhasspy):
-                self.profiles_dirs = message.profiles_dirs
-                self.default_profile_name = message.default_profile_name
-                self.load_settings()
-                self.load_profiles()
+#     def receiveMessage(self, message, sender):
+#         try:
+#             if isinstance(message, StartRhasspy):
+#                 self.profiles_dirs = message.profiles_dirs
+#                 self.default_profile_name = message.default_profile_name
+#                 self.load_settings()
+#                 self.load_profiles()
 
-        except Exception as ex:
-            logging.exception('receiveMessage')
+#         except Exception as ex:
+#             logging.exception('receiveMessage')
 
-    # -------------------------------------------------------------------------
+#     # -------------------------------------------------------------------------
 
-    def load_settings(self):
-        logging.debug('Profiles dirs: %s' % self.profiles_dirs)
+#     def load_settings(self):
+#         logging.debug('Profiles dirs: %s' % self.profiles_dirs)
 
-        # Load default settings
-        self.defaults_json = Profile.load_defaults(self.profiles_dirs)
+#         # Load default settings
+#         self.defaults_json = Profile.load_defaults(self.profiles_dirs)
 
-        # Load default profile
-        if self.default_profile_name is None:
-            self.default_profile_name = \
-                defaults_json['rhasspy'].get('default_profile', 'en')
+#         # Load default profile
+#         if self.default_profile_name is None:
+#             self.default_profile_name = \
+#                 defaults_json['rhasspy'].get('default_profile', 'en')
 
-        self.default_profile = self.load_profile(self.default_profile_name)
+#         self.default_profile = self.load_profile(self.default_profile_name)
 
-    # -------------------------------------------------------------------------
+#     # -------------------------------------------------------------------------
 
-    def load_profiles(self):
-        for profile_dir in self.profiles_dirs:
-            profile_name = os.path.split(profile_dir)[1]
-            profile = Profile(profile_name, self.profiles_dir)
-            self.profiles[profile_name] = profile
+#     def load_profiles(self):
+#         for profile_dir in self.profiles_dirs:
+#             profile_name = os.path.split(profile_dir)[1]
+#             profile = Profile(profile_name, self.profiles_dir)
+#             self.profiles[profile_name] = profile
 
-            # Create actor
-            actor = self.createActor(ProfileActor)
-            self.profle_actors[profile_name] = actor
-            self.send(actor, profile)
+#             # Create actor
+#             actor = self.createActor(ProfileActor)
+#             self.profle_actors[profile_name] = actor
+#             self.send(actor, profile)
 
     # # -------------------------------------------------------------------------
 
