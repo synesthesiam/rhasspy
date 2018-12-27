@@ -22,7 +22,7 @@
         "system": "pocketsphinx"
     },
     "intent": {
-        "system": "adapt"
+        "system": "fuzzywuzzy"
     },
     "wake": {
         "pocketsphinx": {

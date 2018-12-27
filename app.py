@@ -390,20 +390,22 @@ def api_speech_to_text():
 # Get intent from text
 @app.route('/api/text-to-intent', methods=['POST'])
 def api_text_to_intent():
-    profile = request_to_profile(request, profiles_dirs)
-
+    profile = request_to_profile(request)
     text = request.data.decode()
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
 
+    recognizer = core.get_intent_recognizer(profile.name)
+
+    # Convert text to intent
     start_time = time.time()
-    intent = get_intent(profile, text)
+    intent = recognizer.recognize(text)
 
     intent_sec = time.time() - start_time
     intent['time_sec'] = intent_sec
 
-    if not no_hass:
-        # Send intent to Home Assistant
-        utils.send_intent(profile.home_assistant, intent)
+    # if not no_hass:
+    #     # Send intent to Home Assistant
+    #     utils.send_intent(profile.home_assistant, intent)
 
     return jsonify(intent)
 
@@ -412,25 +414,28 @@ def api_text_to_intent():
 # Get intent from a WAV file
 @app.route('/api/speech-to-intent', methods=['POST'])
 def api_speech_to_intent():
-    profile = request_to_profile(request, profiles_dirs)
-    wav_data = request.data
+    profile = request_to_profile(request)
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
 
+    # Prefer 16-bit 16Khz mono, but will convert with sox if needed
+    wav_data = request.data
+
+    decoder = core.get_speech_decoder(profile.name)
+    recognizer = core.get_intent_recognizer(profile.name)
+
+    # WAV -> text
     start_time = time.time()
-    intent = speech_to_intent(profile, wav_data, no_hass)
+    text = decoder.transcribe_wav(wav_data)
+
+    # text -> intent (JSON)
+    intent = recognizer.recognize(text)
 
     intent_sec = time.time() - start_time
     intent['time_sec'] = intent_sec
 
-    if intent is not None:
-        return jsonify(intent)
+    logging.debug(text)
 
-    return jsonify({
-        'text': '',
-        'intent': '',
-        'entities': [],
-        'time_sec': intent_sec
-    })
+    return jsonify(intent)
 
 # -----------------------------------------------------------------------------
 
