@@ -10,27 +10,9 @@ import itertools
 import collections
 from collections import defaultdict
 from urllib.parse import urljoin
-from typing import Mapping, List, Iterable, Optional
+from typing import Mapping, List, Iterable, Optional, Any
 
 import requests
-
-# -----------------------------------------------------------------------------
-
-def load_phoneme_examples(path):
-    examples = {}
-    with open(path, 'r') as example_file:
-        for line in example_file:
-            line = line.strip()
-            if (len(line) == 0) or line.startswith('#'):
-                continue  # skip blanks and comments
-
-            parts = re.split('\s+', line)
-            examples[parts[0]] = {
-                'word': parts[1],
-                'phonemes': ' '.join(parts[2:])
-            }
-
-    return examples
 
 # -----------------------------------------------------------------------------
 
@@ -84,39 +66,12 @@ def open_maybe_gzip(path, mode_normal='r', mode_gzip='rt'):
 
 # -----------------------------------------------------------------------------
 
-def convert_wav(data):
-    # Convert a WAV to 16-bit, 16Khz mono
-    with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb+', delete=False) as out_wav_file:
-        with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb', delete=False) as in_wav_file:
-            in_wav_file.write(data)
-            in_wav_file.seek(0)
-            subprocess.check_call(['sox',
-                                    in_wav_file.name,
-                                    '-r', '16000',
-                                    '-e', 'signed-integer',
-                                    '-b', '16',
-                                    '-c', '1',
-                                    out_wav_file.name])
-
-            out_wav_file.seek(0)
-
-            # Return converted data
-            with wave.open(out_wav_file.name, 'rb') as wav_file:
-                return wav_file.readframes(wav_file.getnframes())
-
-            # Needed on Windows
-            try:
-                in_wav_file.close()
-                os.unlink(in_wav_file.name)
-            except:
-                pass
-
-        # Needed on Windows
-        try:
-            out_wav_file.close()
-            os.unlink(out_wav_file.name)
-        except:
-            pass
+def recursive_update(base_dict: Mapping[Any, Any], new_dict: Mapping[Any, Any]):
+    for k, v in new_dict.items():
+        if isinstance(v, collections.Mapping) and (k in base_dict):
+            recursive_update(base_dict[k], v)
+        else:
+            base_dict[k] = v
 
 # -----------------------------------------------------------------------------
 
@@ -260,12 +215,3 @@ def extract_entities(phrase):
     phrase = re.sub(r'\[([^]]+)\]\(([^)]+)\)', match, phrase)
 
     return phrase, entities
-
-# -----------------------------------------------------------------------------
-
-def play_wav(path):
-    try:
-        if os.path.exists(path):
-            subprocess.run(['aplay', path])
-    except Exception as ex:
-        logging.exception('play_wav')

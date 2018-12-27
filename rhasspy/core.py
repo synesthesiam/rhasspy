@@ -1,4 +1,7 @@
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import logging
 from typing import List, Dict, Optional
 
@@ -7,6 +10,7 @@ from thespian.actors import Actor, ActorAddress
 
 from profiles import Profile
 from audio_recorder import AudioRecorder
+from stt import SpeechDecoder, PocketsphinxDecoder, RemoteDecoder
 
 # -----------------------------------------------------------------------------
 
@@ -19,6 +23,7 @@ class Rhasspy:
         self.default_profile_name = default_profile_name
 
         self.audio_recorder: Optional[AudioRecorder] = None
+        self.speech_decoders: Dict[str, SpeechDecoder] = {}
 
         # ---------------------------------------------------------------------
 
@@ -56,15 +61,31 @@ class Rhasspy:
             system = self.default_profile.get('microphone.system')
             assert system in ['arecord', 'pyaudio'], 'Unknown microphone system'
             if system == 'arecord':
-                from audio_recorder import ARecordAudioRecorder
+                from .audio_recorder import ARecordAudioRecorder
                 self.audio_recorder = ARecordAudioRecorder()
                 logging.debug('Using arecord for microphone')
             elif system == 'pyaudio':
-                from audio_recorder import PyAudioRecorder
+                from .audio_recorder import PyAudioRecorder
                 self.audio_recorder = PyAudioRecorder()
                 logging.debug('Using PyAudio for microphone')
 
             return self.audio_recorder
+
+    # -------------------------------------------------------------------------
+
+    def get_speech_decoder(self, profile_name):
+        decoder = self.speech_decoders.get(profile_name)
+        if decoder is None:
+            profile = self.profiles[profile_name]
+            system = profile.get('speech_to_text.system')
+            assert system in ['pocketsphinx', 'remote'], 'Invalid speech to text system'
+            if system == 'pocketsphinx':
+                decoder = PocketsphinxDecoder(profile)
+            elif system == 'remote':
+                decoder = RemoteDecoder(profile)
+
+        return decoder
+
 
 # -----------------------------------------------------------------------------
 

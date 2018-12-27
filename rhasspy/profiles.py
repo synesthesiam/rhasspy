@@ -5,9 +5,10 @@ import logging
 from typing import List, Dict, Mapping, Any
 
 import pydash
-from thespian.actors import Actor
+# from thespian.actors import Actor
 
-from audio_player import PlayWavFile
+# from audio_player import PlayWavFile
+import utils
 
 # -----------------------------------------------------------------------------
 
@@ -56,7 +57,7 @@ class Profile:
             self.json_path = self.read_path('profile.json')
             if os.path.exists(self.json_path):
                 with open(self.json_path, 'r') as profile_file:
-                    recursive_update(self.json, json.load(profile_file))
+                    utils.recursive_update(self.json, json.load(profile_file))
 
     def read_path(self, *path_parts):
         for profiles_dir in self.profiles_dirs:
@@ -107,34 +108,34 @@ class Profile:
 
 # -----------------------------------------------------------------------------
 
-class ProfileActor(Actor):
-    def __init__(self):
-        self.parent = None
-        self.profile = None
-        self.audio_player_actor = None
+# class ProfileActor(Actor):
+#     def __init__(self):
+#         self.parent = None
+#         self.profile = None
+#         self.audio_player_actor = None
 
-    def receiveMessage(self, message, sender):
-        try:
-            if isinstance(message, Profile):
-                self.parent = sender
-                self.profile = profile
-            elif isinstance(message, PlayWavFile):
-                self.maybe_load_audio_player()
-                self.send(self.audio_player_actor, message)
+#     def receiveMessage(self, message, sender):
+#         try:
+#             if isinstance(message, Profile):
+#                 self.parent = sender
+#                 self.profile = profile
+#             elif isinstance(message, PlayWavFile):
+#                 self.maybe_load_audio_player()
+#                 self.send(self.audio_player_actor, message)
 
-        except Exception as ex:
-            logging.exception('receiveMessage')
+#         except Exception as ex:
+#             logging.exception('receiveMessage')
 
-    # -------------------------------------------------------------------------
+#     # -------------------------------------------------------------------------
 
-    def maybe_load_audio_player(self):
-        if self.audio_player_actor is None:
-            system = self.profile.get('sounds.system', 'aplay')
-            assert system in ['aplay'], 'Unknown audio player system'
-            if system == 'aplay':
-                from audio_player import APlayActor
-                self.audio_player_actor = self.createActor(APlayActor)
-                self.send(self.audio_player_actor, self.profile)
+#     def maybe_load_audio_player(self):
+#         if self.audio_player_actor is None:
+#             system = self.profile.get('sounds.system', 'aplay')
+#             assert system in ['aplay'], 'Unknown audio player system'
+#             if system == 'aplay':
+#                 from .audio_player import APlayActor
+#                 self.audio_player_actor = self.createActor(APlayActor)
+#                 self.send(self.audio_player_actor, self.profile)
 
 # -----------------------------------------------------------------------------
 
@@ -143,10 +144,3 @@ def request_to_profile(request, profiles_dirs: List[str], layers='all'):
         'profile', os.environ.get('RHASSPY_PROFILE', 'en'))
 
     return Profile(profile_name, profiles_dirs, layers=layers)
-
-def recursive_update(base_dict: Mapping[Any, Any], new_dict: Mapping[Any, Any]):
-    for k, v in new_dict.items():
-        if isinstance(v, collections.Mapping) and (k in base_dict):
-            recursive_update(base_dict[k], v)
-        else:
-            base_dict[k] = v
