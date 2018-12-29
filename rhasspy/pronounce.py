@@ -103,8 +103,8 @@ class PhonetisaurusPronounce(WordPronounce):
 
     def translate_phonemes(self, phonemes: str) -> str:
         # Load map from Sphinx to eSpeak phonemes
-        map_path = profile.read_path(
-            profile.get('text_to_speech.espeak.phoneme_map'))
+        map_path = self.profile.read_path(
+            self.profile.get('text_to_speech.espeak.phoneme_map'))
 
         phoneme_map = WordPronounce.load_phoneme_map(map_path)
 

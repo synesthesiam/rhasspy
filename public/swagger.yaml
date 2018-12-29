@@ -142,12 +142,6 @@ paths:
           type: boolean
           default: false
       - in: query
-        name: speed
-        description: 'Speed in words per minute (default: 80)'
-        schema:
-          type: integer
-          default: 80
-      - in: query
         name: voice
         description: 'Voice/language to use (defaults to profile language)'
         schema:

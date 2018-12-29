@@ -9,9 +9,11 @@ import pydash
 from thespian.actors import Actor, ActorAddress
 
 from profiles import Profile
+from audio_player import AudioPlayer, APlayAudioPlayer
 from audio_recorder import AudioRecorder
 from stt import SpeechDecoder, PocketsphinxDecoder, RemoteDecoder
 from intent import IntentRecognizer, FuzzyWuzzyRecognizer
+from pronounce import WordPronounce, PhonetisaurusPronounce
 
 # -----------------------------------------------------------------------------
 
@@ -24,8 +26,10 @@ class Rhasspy:
         self.default_profile_name = default_profile_name
 
         self.audio_recorder: Optional[AudioRecorder] = None
+        self.audio_player: Optional[AudioPlayer] = None
         self.speech_decoders: Dict[str, SpeechDecoder] = {}
         self.intent_recognizers: Dict[str, IntentRecognizer] = {}
+        self.word_pronouncers: Dict[str, WordPronounce] = {}
 
         # ---------------------------------------------------------------------
 
@@ -42,10 +46,10 @@ class Rhasspy:
 
             # Check each directory
             for name in os.listdir(profiles_dir):
-                if os.path.isdir(os.path.join(profiles_dir, name)):
-                    profile_dir = os.path.join(profiles_dir, name)
+                profile_dir = os.path.join(profiles_dir, name)
+                if os.path.isdir(profile_dir):
                     logging.debug('Loading profile from %s' % profile_dir)
-                    profile = Profile(name, profiles_dirs)
+                    profile = Profile(name, self.profiles_dirs)
                     self.profiles[name] = profile
                     logging.info('Loaded profile %s' % name)
 
@@ -58,10 +62,18 @@ class Rhasspy:
 
     # -------------------------------------------------------------------------
 
-    def get_audio_recorder(self):
+    def get_audio_player(self) -> AudioPlayer:
+        if self.audio_player is None:
+            self.audio_player = APlayAudioPlayer()
+
+        return self.audio_player
+
+    # -------------------------------------------------------------------------
+
+    def get_audio_recorder(self) -> AudioRecorder:
         if self.audio_recorder is None:
             system = self.default_profile.get('microphone.system')
-            assert system in ['arecord', 'pyaudio'], 'Unknown microphone system'
+            assert system in ['arecord', 'pyaudio'], 'Unknown microphone system: %s' % system
             if system == 'arecord':
                 from .audio_recorder import ARecordAudioRecorder
                 self.audio_recorder = ARecordAudioRecorder()
@@ -71,11 +83,11 @@ class Rhasspy:
                 self.audio_recorder = PyAudioRecorder()
                 logging.debug('Using PyAudio for microphone')
 
-            return self.audio_recorder
+        return self.audio_recorder
 
     # -------------------------------------------------------------------------
 
-    def get_speech_decoder(self, profile_name: str):
+    def get_speech_decoder(self, profile_name: str) -> SpeechDecoder:
         decoder = self.speech_decoders.get(profile_name)
         if decoder is None:
             profile = self.profiles[profile_name]
@@ -93,7 +105,7 @@ class Rhasspy:
 
     # -------------------------------------------------------------------------
 
-    def get_intent_recognizer(self, profile_name: str):
+    def get_intent_recognizer(self, profile_name: str) -> IntentRecognizer:
         recognizer = self.intent_recognizers.get(profile_name)
         if recognizer is None:
             profile = self.profiles[profile_name]
@@ -106,6 +118,42 @@ class Rhasspy:
             self.intent_recognizers[profile_name] = recognizer
 
         return recognizer
+
+    # -------------------------------------------------------------------------
+
+    def reload_profile(self, profile_name: str):
+        del self.speech_decoders[profile_name]
+        del self.intent_recognizers[profile_name]
+        del self.profiles[profile_name]
+
+        for profiles_dir in self.profiles_dirs:
+            if not os.path.exists(profiles_dir):
+                continue
+
+            for name in os.listdir(profiles_dir):
+                profile_dir = os.path.join(profiles_dir, name)
+                if (name == profile_name) and os.path.isdir(profile_dir):
+                    logging.debug('Loading profile from %s' % profile_dir)
+                    profile = Profile(name, self.profiles_dirs)
+                    self.profiles[name] = profile
+                    logging.info('Loaded profile %s' % name)
+                    return
+
+    # -------------------------------------------------------------------------
+
+    def get_word_pronouncer(self, profile_name: str) -> WordPronounce:
+        word_pron = self.word_pronouncers.get(profile_name)
+        if word_pron is None:
+            profile = self.profiles[profile_name]
+            word_pron = PhonetisaurusPronounce(profile)
+            self.word_pronouncers[profile_name] = word_pron
+
+        return self.word_pronouncers[profile_name]
+
+    # -------------------------------------------------------------------------
+
+    def get_command_listener(self, profile_name: str):
+        pass
 
 # -----------------------------------------------------------------------------
 

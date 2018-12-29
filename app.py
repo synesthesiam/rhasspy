@@ -89,6 +89,7 @@ def request_to_profile(request):
 
 @app.route('/api/profiles')
 def api_profiles():
+    '''Get list of available profiles'''
     return jsonify({
         'default_profile': core.default_profile_name,
         'profiles': sorted(core.profiles.keys())
@@ -98,6 +99,7 @@ def api_profiles():
 
 @app.route('/api/microphones', methods=['GET'])
 def api_microphones():
+    '''Get a dictionary of available recording devices'''
     mics = core.get_audio_recorder().get_microphones()
     return jsonify(mics)
 
@@ -129,6 +131,7 @@ def api_microphones():
 
 @app.route('/api/profile', methods=['GET', 'POST'])
 def api_profile():
+    '''Read or write profile JSON directly'''
     layers = request.args.get('layers', 'all')
 
     if request.method == 'POST':
@@ -168,106 +171,56 @@ def api_profile():
 
 @app.route('/api/lookup', methods=['POST'])
 def api_lookup():
+    '''Get CMU phonemes from dictionary or guessed pronunciation(s)'''
     n = int(request.args.get('n', 5))
     assert n > 0, 'No pronunciations requested'
+
+    word = request.data.decode('utf-8').strip().lower()
+    assert len(word) > 0, 'No word to look up'
 
     voice = request.args.get('voice', None)
     profile = request_to_profile(request)
 
+    word_pron = core.get_word_pronouncer(profile.name)
+    in_dictionary, pronunciations, espeak_str = word_pron.pronounce(word)
 
-    # ps_config = profile.speech_to_text['pocketsphinx']
-    # espeak_config = profile.text_to_speech['espeak']
-
-    # word = request.data.decode('utf-8').strip().lower()
-    # assert len(word) > 0, 'No word to look up'
-    # logging.debug('Getting pronunciations for %s' % word)
-
-    # # Load base and custom dictionaries
-    # base_dictionary_path = profile.read_path(ps_config['base_dictionary'])
-    # custom_path = profile.read_path(ps_config['custom_words'])
-
-    # word_dict = {}
-    # for word_dict_path in [base_dictionary_path, custom_path]:
-    #     if os.path.exists(word_dict_path):
-    #         with open(word_dict_path, 'r') as dictionary_file:
-    #             utils.read_dict(dictionary_file, word_dict)
-
-    # result = utils.lookup_word(word, word_dict, profile, n=n)
-
-    # # Get phonemes from eSpeak
-    # espeak_command = ['espeak', '-q', '-x']
-
-    # if voice is None:
-    #     if 'voice' in espeak_config:
-    #         # Use profile voice
-    #         voice = espeak_config['voice']
-    #     elif 'language' in profile.json:
-    #         # Use language default voice
-    #         voice = profile.json['language']
-
-    # espeak_command.extend(['-v', voice, word])
-    # logging.debug(espeak_command)
-    # result['espeak_phonemes'] = subprocess.check_output(espeak_command).decode()
-
-    return jsonify(result)
+    return jsonify({
+        'in_dictionary': in_dictionary,
+        'pronunciations': pronunciations,
+        'espeak_phonemes': espeak_str
+    })
 
 # -----------------------------------------------------------------------------
 
 @app.route('/api/pronounce', methods=['POST'])
 def api_pronounce():
-    profile = request_to_profile(request, profiles_dirs)
-    espeak_config = profile.text_to_speech['espeak']
-
+    '''Pronounce CMU phonemes or word using eSpeak'''
+    profile = request_to_profile(request)
     download = request.args.get('download', 'false').lower() == 'true'
-    speed = int(request.args.get('speed', 80))
     voice = request.args.get('voice', None)
 
     pronounce_str = request.data.decode('utf-8').strip()
     assert len(pronounce_str) > 0, 'No string to pronounce'
 
+    word_pron = core.get_word_pronouncer(profile.name)
+
+    # phonemes or word
     pronounce_type = request.args.get('type', 'phonemes')
 
     if pronounce_type == 'phonemes':
-        # Load map from Sphinx to eSpeak phonemes
-        map_path = profile.read_path(espeak_config['phoneme_map'])
-        phoneme_map = WordPronounce.load_phoneme_map(map_path)
-
         # Convert from Sphinx to espeak phonemes
-        espeak_str = "[['%s]]" % ''.join(phoneme_map.get(p, p)
-                                         for p in pronounce_str.split())
+        espeak_str = word_pron.translate_phonemes(pronounce_str)
     else:
         # Speak word directly
         espeak_str = pronounce_str
 
-    # Generate WAV data
-    espeak_command = ['espeak', '-s', str(speed)]
+    espeak_phonemes, wav_data = word_pron.speak(espeak_str, voice)
 
-    if voice is None:
-        if 'voice' in espeak_config:
-            # Use profile voice
-            voice = espeak_config['voice']
-        elif 'language' in profile.json:
-            # Use language default voice
-            voice = profile.json['language']
-
-    if voice is not None:
-        espeak_command.extend(['-v', str(voice)])
-
-    espeak_command.append(espeak_str)
-
-    with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb+') as wav_file:
-        espeak_command.extend(['-w', wav_file.name])
-        logging.debug(espeak_command)
-
-        # Generate WAV data
-        subprocess.check_call(espeak_command)
-        wav_file.seek(0)
-
-        if download:
-            return Response(wav_file.read(), mimetype='audio/wav')
-        else:
-            subprocess.check_call(['aplay', '-t', 'wav', wav_file.name])
-            return espeak_str
+    if download:
+        return Response(wav_data, mimetype='audio/wav')
+    else:
+        core.get_audio_player().play_wav(wav_data)
+        return espeak_phonemes
 
 # -----------------------------------------------------------------------------
 
@@ -348,29 +301,12 @@ def api_custom_words():
 
 # -----------------------------------------------------------------------------
 
-# @app.route('/api/reload', methods=['POST'])
-# def api_reload():
-#     profile = request_to_profile(request)
-#     reload(profile)
+@app.route('/api/reload', methods=['POST'])
+def api_reload():
+    profile = request_to_profile(request)
+    core.reload_profile(profile.name)
 
-#     return 'Reloaded profile "%s"' % profile.name
-
-# def reload(profile):
-#     # Reset speech recognizer
-#     global decoders
-#     decoders.pop(profile.name, None)
-
-#     global wake_decoders
-#     wake_decoders.pop(profile.name, None)
-
-#     # Reset intent recognizer
-#     global intent_projects, intent_examples
-#     intent_projects.pop(profile.name, None)
-#     intent_examples.pop(profile.name, None)
-
-#     # Reload default profile if necessary
-#     if profile.name == default_profile_name:
-#         load_default_profile()
+    return 'Reloaded profile "%s"' % profile.name
 
 # -----------------------------------------------------------------------------
 
@@ -435,77 +371,64 @@ def api_speech_to_intent():
 
     logging.debug(text)
 
+    # if not no_hass:
+    #     # Send intent to Home Assistant
+    #     utils.send_intent(profile.home_assistant, intent)
+
     return jsonify(intent)
 
 # -----------------------------------------------------------------------------
 
-recorder = None
-
 # Start recording a WAV file to a temporary buffer
 @app.route('/api/start-recording', methods=['POST'])
 def api_start_recording():
-    global recorder
-    device_index = int(request.args.get('device', -1))
-    if device_index < 0:
-        device_index = None  # default device
-
-    profile = request_to_profile(request, profiles_dirs)
-    recorder = get_audio_recorder(profile)
-    recorder.start_recording(device_index)
+    device = request.args.get('device', None)
+    profile = request_to_profile(request)
+    recorder = core.get_audio_recorder()
+    recorder.start_recording(device)
 
     return 'OK'
 
 # Stop recording WAV file, transcribe, and get intent
 @app.route('/api/stop-recording', methods=['POST'])
 def api_stop_recording():
-    global decoders, recorder
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
+    recorder = core.get_audio_recorder()
 
-    if recorder is not None:
-        record_buffer = recorder.stop_recording()
-        logging.debug('Stopped recording (got %s byte(s))' % len(record_buffer))
+    if recorder.is_recording:
+        wav_data = recorder.stop_recording()
+        logging.debug('Stopped recording (got %s byte(s))' % len(wav_data))
 
-        profile = request_to_profile(request, profiles_dirs)
+        profile = request_to_profile(request)
 
-        # Convert to WAV
-        with io.BytesIO() as wav_data:
-            with wave.open(wav_data, mode='wb') as wav_file:
-                wav_file.setframerate(16000)
-                wav_file.setsampwidth(2)
-                wav_file.setnchannels(1)
-                wav_file.writeframesraw(record_buffer)
+        # speech to intent
+        decoder = core.get_speech_decoder(profile.name)
+        recognizer = core.get_intent_recognizer(profile.name)
 
-            wav_data.seek(0)
-            record_buffer = None
+        # WAV -> text
+        start_time = time.time()
+        text = decoder.transcribe_wav(wav_data)
 
-            # speech to text
-            decoder = transcribe_wav(profile, wav_data.read(), decoders.get(profile.name))
-            decoders[profile.name] = decoder
+        # text -> intent (JSON)
+        intent = recognizer.recognize(text)
 
-            # text to intent
-            if decoder.hyp() is not None:
-                text = decoder.hyp().hypstr
-                logging.info(text)
-                intent = get_intent(profile, text)
+        intent_sec = time.time() - start_time
+        intent['time_sec'] = intent_sec
 
-                if not no_hass:
-                    # Send intent to Home Assistant
-                    utils.send_intent(profile.home_assistant, intent)
+        logging.debug(text)
 
-                return jsonify(intent)
+        # if not no_hass:
+        #     # Send intent to Home Assistant
+        #     utils.send_intent(profile.home_assistant, intent)
 
+        return jsonify(intent)
+
+    # Empty intent
     return jsonify({
         'text': '',
         'intent': '',
         'entities': []
     })
-
-# def get_audio_recorder(profile):
-#     system = profile.microphone.get('system', 'pyaudio')
-#     if system == 'arecord':
-#         return ARecordAudioRecorder()
-
-#     return PyAudioRecorder()
 
 # -----------------------------------------------------------------------------
 

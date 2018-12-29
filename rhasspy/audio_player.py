@@ -2,35 +2,26 @@
 import os
 import logging
 import subprocess
+import tempfile
+from typing import Optional
 
-from thespian.actors import Actor, ActorSystem
-
-# -----------------------------------------------------------------------------
-# Events
-# -----------------------------------------------------------------------------
-
-class PlayWavFile:
-    def __init__(self, path: str, device: str=None):
-        self.path = path
-        self.device = device
-
-class WavFilePlayed:
-    def __init__(self, path: str):
-        self.path = path
+# from thespian.actors import Actor, ActorSystem
 
 # -----------------------------------------------------------------------------
-# aplay Based Actor
+
+class AudioPlayer:
+    def play_wav(self, path: str, device: Optional[str] = None):
+        pass
+
+    def play_wav(self, wav_data: bytes, device: Optional[str] = None):
+        with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb+') as wav_file:
+            wav_file.write(wav_data)
+            wav_file.seek(0)
+            self.play_wav(wav_file.name)
+
 # -----------------------------------------------------------------------------
 
-class APlayActor(Actor):
-    def receiveMessage(self, message, sender):
-        try:
-            if isinstance(message, PlayWavFile):
-                self.play_wav(message.path, message.device)
-                self.send(sender, WavFilePlayed(message.path))
-        except Exception as e:
-            logging.exception('receiveMessage')
-
+class APlayAudioPlayer(AudioPlayer):
     def play_wav(self, path: str, device: str=None):
         aplay_cmd = ['aplay']
 
@@ -39,6 +30,49 @@ class APlayActor(Actor):
 
         aplay_cmd.append(path)
         subprocess.run(aplay_cmd)
+
+    def play_wav(self, wav_data: bytes, device: str=None):
+        aplay_cmd = ['aplay']
+
+        if device is not None:
+            aplay_cmd.extend(['-D', str(device)])
+
+        subprocess.run(aplay_cmd, input=wav_data)
+
+# -----------------------------------------------------------------------------
+# Events
+# -----------------------------------------------------------------------------
+
+# class PlayWavFile:
+#     def __init__(self, path: str, device: str=None):
+#         self.path = path
+#         self.device = device
+
+# class WavFilePlayed:
+#     def __init__(self, path: str):
+#         self.path = path
+
+# -----------------------------------------------------------------------------
+# aplay Based Actor
+# -----------------------------------------------------------------------------
+
+# class APlayActor(Actor):
+#     def receiveMessage(self, message, sender):
+#         try:
+#             if isinstance(message, PlayWavFile):
+#                 self.play_wav(message.path, message.device)
+#                 self.send(sender, WavFilePlayed(message.path))
+#         except Exception as e:
+#             logging.exception('receiveMessage')
+
+#     def play_wav(self, path: str, device: str=None):
+#         aplay_cmd = ['aplay']
+
+#         if device is not None:
+#             aplay_cmd.extend(['-D', str(device)])
+
+#         aplay_cmd.append(path)
+#         subprocess.run(aplay_cmd)
 
 # -----------------------------------------------------------------------------
 # Tests
