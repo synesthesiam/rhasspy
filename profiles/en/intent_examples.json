@@ -13,14 +13,204 @@
             "slots": {}
         }
     ],
-    "GetGarageState": [
+    "ChangeLightColor": [
         {
-            "text": "is the garage door open",
-            "slots": {}
+            "text": "set the bedroom light to red",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "red"
+                ]
+            }
         },
         {
-            "text": "is the garage door closed",
-            "slots": {}
+            "text": "set the bedroom light to green",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "green"
+                ]
+            }
+        },
+        {
+            "text": "set the bedroom light to blue",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "blue"
+                ]
+            }
+        },
+        {
+            "text": "set the bedroom light red",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "red"
+                ]
+            }
+        },
+        {
+            "text": "set the bedroom light green",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "green"
+                ]
+            }
+        },
+        {
+            "text": "set the bedroom light blue",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "blue"
+                ]
+            }
+        },
+        {
+            "text": "set bedroom light to red",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "red"
+                ]
+            }
+        },
+        {
+            "text": "set bedroom light to green",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "green"
+                ]
+            }
+        },
+        {
+            "text": "set bedroom light to blue",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "blue"
+                ]
+            }
+        },
+        {
+            "text": "set bedroom light red",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "red"
+                ]
+            }
+        },
+        {
+            "text": "set bedroom light green",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "green"
+                ]
+            }
+        },
+        {
+            "text": "set bedroom light blue",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "blue"
+                ]
+            }
+        },
+        {
+            "text": "make the bedroom light red",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "red"
+                ]
+            }
+        },
+        {
+            "text": "make the bedroom light green",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "green"
+                ]
+            }
+        },
+        {
+            "text": "make the bedroom light blue",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "blue"
+                ]
+            }
+        },
+        {
+            "text": "make bedroom light red",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "red"
+                ]
+            }
+        },
+        {
+            "text": "make bedroom light green",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "green"
+                ]
+            }
+        },
+        {
+            "text": "make bedroom light blue",
+            "slots": {
+                "name": [
+                    "bedroom light"
+                ],
+                "color": [
+                    "blue"
+                ]
+            }
         }
     ],
     "GetTime": [
@@ -299,204 +489,14 @@
             }
         }
     ],
-    "ChangeLightColor": [
+    "GetGarageState": [
         {
-            "text": "set the bedroom light to red",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "red"
-                ]
-            }
+            "text": "is the garage door open",
+            "slots": {}
         },
         {
-            "text": "set the bedroom light to green",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "green"
-                ]
-            }
-        },
-        {
-            "text": "set the bedroom light to blue",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "blue"
-                ]
-            }
-        },
-        {
-            "text": "set the bedroom light red",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "red"
-                ]
-            }
-        },
-        {
-            "text": "set the bedroom light green",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "green"
-                ]
-            }
-        },
-        {
-            "text": "set the bedroom light blue",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "blue"
-                ]
-            }
-        },
-        {
-            "text": "set bedroom light to red",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "red"
-                ]
-            }
-        },
-        {
-            "text": "set bedroom light to green",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "green"
-                ]
-            }
-        },
-        {
-            "text": "set bedroom light to blue",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "blue"
-                ]
-            }
-        },
-        {
-            "text": "set bedroom light red",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "red"
-                ]
-            }
-        },
-        {
-            "text": "set bedroom light green",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "green"
-                ]
-            }
-        },
-        {
-            "text": "set bedroom light blue",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "blue"
-                ]
-            }
-        },
-        {
-            "text": "make the bedroom light red",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "red"
-                ]
-            }
-        },
-        {
-            "text": "make the bedroom light green",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "green"
-                ]
-            }
-        },
-        {
-            "text": "make the bedroom light blue",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "blue"
-                ]
-            }
-        },
-        {
-            "text": "make bedroom light red",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "red"
-                ]
-            }
-        },
-        {
-            "text": "make bedroom light green",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "green"
-                ]
-            }
-        },
-        {
-            "text": "make bedroom light blue",
-            "slots": {
-                "name": [
-                    "bedroom light"
-                ],
-                "color": [
-                    "blue"
-                ]
-            }
+            "text": "is the garage door closed",
+            "slots": {}
         }
     ]
 }

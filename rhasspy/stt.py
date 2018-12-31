@@ -7,24 +7,30 @@ import tempfile
 import subprocess
 from urllib.parse import urljoin
 
-# from thespian import Actor
-
-from profile import Profile
+from profiles import Profile
 
 # -----------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
 
 class SpeechDecoder:
+    '''Base class for WAV to text speech transcribers.'''
+
+    def __init__(self, profile: Profile) -> None:
+        self.profile = profile
+
     def preload(self):
+        '''Cache important stuff upfront.'''
         pass
 
     def transcribe_wav(self, wav_data: bytes) -> str:
+        '''Transcribes WAV audio data to text string.
+        The hard part.'''
         pass
 
     @classmethod
     def convert_wav(cls, wav_data: bytes) -> bytes:
-        # Convert a WAV to 16-bit, 16Khz mono
+        '''Converts WAV data to 16-bit, 16Khz mono with sox.'''
         with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb+') as out_wav_file:
             with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb') as in_wav_file:
                 in_wav_file.write(wav_data)
@@ -44,10 +50,15 @@ class SpeechDecoder:
                     return wav_file.readframes(wav_file.getnframes())
 
 # -----------------------------------------------------------------------------
+# Pocketsphinx based WAV to text decoder
+# https://github.com/cmusphinx/pocketsphinx
+# -----------------------------------------------------------------------------
 
 class PocketsphinxDecoder(SpeechDecoder):
-    def __init__(self, profile: Profile):
-        self.profile = profile
+    '''Pocketsphinx based WAV to text decoder.'''
+
+    def __init__(self, profile: Profile) -> None:
+        SpeechDecoder.__init__(self, profile)
         self.decoder = None
 
     def preload(self):
@@ -55,6 +66,7 @@ class PocketsphinxDecoder(SpeechDecoder):
 
     def transcribe_wav(self, wav_data: bytes) -> str:
         self._maybe_load_decoder()
+        assert self.decoder is not None
 
         # Ensure 16-bit 16Khz mono
         data_size = len(wav_data)
@@ -90,6 +102,7 @@ class PocketsphinxDecoder(SpeechDecoder):
     # -------------------------------------------------------------------------
 
     def _maybe_load_decoder(self):
+        '''Load decoder if not cached.'''
         if self.decoder is None:
             import pocketsphinx
             ps_config = self.profile.get('speech_to_text.pocketsphinx')
@@ -109,14 +122,12 @@ class PocketsphinxDecoder(SpeechDecoder):
 
             self.decoder = pocketsphinx.Decoder(decoder_config)
 
+
+# -----------------------------------------------------------------------------
+# HTTP based decoder on remote rhasspy server
 # -----------------------------------------------------------------------------
 
 class RemoteDecoder(SpeechDecoder):
-
-    def __init__(self, profile: Profile):
-        self.profile = profile
-
-    # -------------------------------------------------------------------------
 
     def transcribe_wav(self, wav_data: bytes) -> str:
         import requests
@@ -131,49 +142,3 @@ class RemoteDecoder(SpeechDecoder):
 
         response.raise_for_status()
         return response.text
-
-# -----------------------------------------------------------------------------
-
-# class TranscribeWav:
-#     def __init__(self, wav_data):
-#         self.wav_data = wav_data
-
-# class LoadDecoder:
-#     pass
-
-# -----------------------------------------------------------------------------
-
-# class DecoderActor(Actor):
-#     def __init__(self):
-#         self.profile = None
-#         self.decoder = None
-
-#     def receiveMessage(self, message, sender):
-#         try:
-#             if isinstance(message, str):
-#                 # Load profile
-#                 profile_name = message
-#                 self.profile = Profile(profile_name)
-#                 self.system = self.profile.speech_to_text.get('system', 'pocketsphinx')
-#             elif isinstance(message, LoadDecoder):
-#                 # Pre-load decoder
-#                 if self.system == 'pocketsphinx':
-#                     self.maybe_load_decoder()
-#             elif isinstance(message, TranscribeWav):
-#                 # WAV -> text
-#                 if self.system == 'remote':
-#                     # Use remote server
-#                     text = self.transcribe_remote(message.wav_data)
-#                     self.send(sender, text)
-#                 elif self.system == 'pocketsphinx':
-#                     # Use pocketsphinx locally
-#                     self.maybe_load_decoder()
-#                     text = self.transcribe_wav(wav_data)
-#                     self.send(sender, text)
-#                 else:
-#                     logger.warning('Invalid speech to text system: %s' % self.system)
-#                     return ''
-#         except Exception as ex:
-#             logger.exception('receiveMessage')
-
-# -----------------------------------------------------------------------------

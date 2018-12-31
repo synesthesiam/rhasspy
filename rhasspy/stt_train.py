@@ -5,31 +5,39 @@ import subprocess
 import logging
 import shutil
 from collections import defaultdict
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Set
 
-from utils import read_dict, lcm
 from profiles import Profile
+from pronounce import WordPronounce
+from utils import read_dict, lcm
 
 # -----------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
 
 class SpeechTrainer:
+    '''Base class for all speech to text system trainers.'''
+
+    def __init__(self, profile: Profile) -> None:
+        self.profile = profile
+
     def train(self, tagged_sentences: Dict[str, List[str]]):
+        '''Train a speech recognition system from a set of sentences grouped by intent.
+        Sentences are tagged with Markdown-style entities.'''
         pass
 
 # -----------------------------------------------------------------------------
 
 class PocketsphinxSpeechTrainer(SpeechTrainer):
-    def __init__(self, core, profile: Profile):
-        self.core = core
-        self.profile = profile
+    def __init__(self, profile: Profile, word_pron: WordPronounce) -> None:
+        SpeechTrainer.__init__(self, profile)
+        self.word_pron = word_pron
 
     # -------------------------------------------------------------------------
 
     def train(self, tagged_sentences: Dict[str, List[str]]):
         '''Creates raw sentences and ARPA language model for pocketsphinx'''
-        sentences_by_intent = defaultdict(list)
+        sentences_by_intent: Dict[str, List[str]] = defaultdict(list)
 
         self.write_dictionary(tagged_sentences, sentences_by_intent)
 
@@ -42,7 +50,11 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
     # -------------------------------------------------------------------------
 
     def write_dictionary(self, tagged_sentences, sentences_by_intent):
-        words_needed = set()
+        '''Writes all required words to a CMU dictionary.
+        Unknown words have their pronunciations guessed and written to a separate dictionary.
+        Fails if any unknown words are found.'''
+
+        words_needed: Set[str] = set()
 
         # Extract entities from tagged sentences
         for intent_name, intent_sents in tagged_sentences.items():
@@ -82,7 +94,6 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
             self.profile.get('speech_to_text.pocketsphinx.unknown_words'))
 
         if len(unknown_words) > 0:
-            word_pron = core.get_word_pronouncer(self.profile.name)
             dictionary_upper = self.profile.get('speech_to_text.dictionary_upper', False)
             with open(unknown_path, 'w') as unknown_file:
                 for word in unknown_words:
@@ -120,6 +131,9 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
     # -------------------------------------------------------------------------
 
     def write_sentences(self, sentences_by_intent):
+        '''Writes all raw sentences to a text file.
+        Optionally balances (repeats) sentences so all intents have the same number.'''
+
         # Repeat sentences so that all intents will contain the same number
         balance_sentences = self.profile.get('training.balance_sentences', True)
         if balance_sentences:
@@ -148,7 +162,7 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
     # -------------------------------------------------------------------------
 
     def write_language_model(self):
-        '''Generate ARPA language model using opengrm'''
+        '''Generates an ARPA language model using opengrm'''
         sentences_text_path = self.profile.read_path(
             self.profile.get('speech_to_text.sentences_text'))
 
@@ -204,6 +218,9 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
     # -------------------------------------------------------------------------
 
     def _sanitize_sentence(self, sentence: str) -> Tuple[str, List[str]]:
+        '''Applies profile-specific casing and tokenization to a sentence.
+        Returns the sanitized sentence and tokens.'''
+
         sentence_casing = self.profile.get('training.sentence_casing', None)
         if sentence_casing == 'lower':
             sentence = sentence.lower()
@@ -231,12 +248,14 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
     # -------------------------------------------------------------------------
 
     def _extract_entities(self, phrase: str) -> Tuple[str, List[Tuple[str, str]]]:
-        """
-        Extracts embedded entity markings from a phrase.
+        '''Extracts embedded entity markings from a phrase.
         Returns the phrase with entities removed and a list of entities.
 
         The format [some text](entity name) is used to mark entities in a training phrase.
-        """
+
+        If the synonym format [some text](entity name:something else) is used, then
+        "something else" will be substituted for "some text".
+        '''
         entities = []
         removed_chars = 0
 

@@ -24,7 +24,6 @@ from collections import defaultdict
 from flask import Flask, request, Response, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import requests
-from thespian.actors import ActorSystem
 
 # import wake
 from rhasspy.core import Rhasspy
@@ -39,27 +38,8 @@ app.secret_key = str(uuid.uuid4())
 CORS(app)
 
 # -----------------------------------------------------------------------------
-# Actor System Setup
+# Core Setup
 # -----------------------------------------------------------------------------
-
-system = ActorSystem('multiprocQueueBase')
-# system = ActorSystem('multiprocTCPBase')
-
-# We really, *really* want shutdown to be called
-@atexit.register
-def shutdown(*args, **kwargs):
-    global system
-    if system is not None:
-        try:
-            system.shutdown()
-            system = None
-        except:
-            pass
-
-    sys.exit(0)
-
-signal.signal(signal.SIGINT, shutdown)
-signal.signal(signal.SIGTERM, shutdown)
 
 # Like PATH, searched in reverse order
 profiles_dirs = [path for path in
@@ -73,8 +53,6 @@ default_profile_name = os.environ.get('RHASSPY_PROFILE', None)
 
 # Create top-level actor
 core = Rhasspy(profiles_dirs, default_profile_name)
-# core_actor = system.createActor(RhasspyActor)
-# system.tell(core_actor, StartRhasspy(profiles_dirs, default_profile_name))
 
 # Pre-load default profile
 if core.get_default('rhasspy.preload_profile', False):
@@ -424,7 +402,7 @@ def api_stop_recording():
     # Empty intent
     return jsonify({
         'text': '',
-        'intent': '',
+        'intent': { 'name': '' },
         'entities': []
     })
 

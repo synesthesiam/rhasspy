@@ -4,9 +4,13 @@ import logging
 import threading
 import wave
 
+# -----------------------------------------------------------------------------
+
 logger = logging.getLogger(__name__)
 
 class CommandListener(object):
+    '''Listens to microphone for voice commands bracketed by silence.'''
+
     def __init__(self,
                  audio_recorder,
                  sample_rate,
@@ -30,7 +34,11 @@ class CommandListener(object):
 
         self.vad = None
 
-    def listen_for_command(self):
+    # -------------------------------------------------------------------------
+
+    def listen_for_command(self) -> bytes:
+        '''Listens for a command and returns WAV data once command is finished.'''
+
         if self.vad is None:
             import webrtcvad
             self.vad = webrtcvad.Vad()
@@ -38,7 +46,7 @@ class CommandListener(object):
 
         recorded_data = bytes()
 
-        # PyAudio callback function
+        # Process audio data in a separate thread
         def process_data():
             nonlocal recorded_data
 

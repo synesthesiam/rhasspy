@@ -10,36 +10,56 @@ import re
 from queue import Queue
 from typing import Dict, Any
 
-# from thespian.actors import Actor, ActorSystem
+# -----------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
 
-# -----------------------------------------------------------------------------
-
 class AudioRecorder:
+    '''Base class for microphone audio recorders'''
     def __init__(self, device=None):
         self.device = device
         self._is_recording = False
 
-    def start_recording(self, start_buffer, start_queue, device=None):
+    def start_recording(self, start_buffer: bool, start_queue: bool, device: Any=None):
+        '''Starts recording from the microphone.
+
+        If start_buffer is True, record audio data to an internal buffer.
+        If start_queue is True, publish audio data to the queue returned by get_queue().
+
+        Optional device is handled by specific sub-class.
+        '''
         pass
 
-    def stop_recording(self, stop_buffer, stop_queue) -> bytes:
+    def stop_recording(self, stop_buffer: bool, stop_queue: bool) -> bytes:
+        '''Stops recording from the microphone.
+
+        If stop_buffer is True, stop recording to internal buffer and return buffer contents.
+        If stop_queue is True, stop publishing data to queue.
+
+        Returns internal audio buffer as WAV if stop_buffer is True.
+        '''
         return bytes()
 
     def get_queue(self) -> Queue:
+        '''Returns the queue where audio data is published.'''
         return Queue()
 
     def get_microphones(self) -> Dict[Any, Any]:
+        '''Returns a dictionary of microphone names/descriptions.'''
         return {}
 
     @property
     def is_recording(self):
+        '''True if currently recording from microphone.'''
         return self._is_recording
 
 # -----------------------------------------------------------------------------
+# PyAudio based audio recorder
+# https://people.csail.mit.edu/hubert/pyaudio/
+# -----------------------------------------------------------------------------
 
 class PyAudioRecorder(AudioRecorder):
+    '''Records from microphone using pyaudio'''
     def __init__(self, device=None):
         AudioRecorder.__init__(self, device)
         self.audio = None
@@ -51,7 +71,7 @@ class PyAudioRecorder(AudioRecorder):
         self.queue = Queue()
         self.queue_users = 0
 
-    def start_recording(self, start_buffer, start_queue, device=None):
+    def start_recording(self, start_buffer: bool, start_queue: bool, device: Any=None):
         import pyaudio
 
         device_index = device or self.device
@@ -61,6 +81,7 @@ class PyAudioRecorder(AudioRecorder):
                 # Default device
                 device_index = None
 
+        # Allow for multiple "users" to receive audio data
         if start_buffer:
             self.buffer_users += 1
 
@@ -101,13 +122,14 @@ class PyAudioRecorder(AudioRecorder):
 
     # -------------------------------------------------------------------------
 
-    def stop_recording(self, stop_buffer, stop_queue) -> bytes:
+    def stop_recording(self, stop_buffer: bool, stop_queue: bool) -> bytes:
         if stop_buffer:
             self.buffer_users = max(0, self.buffer_users - 1)
 
         if stop_queue:
             self.queue_users = max(0, self.queue_users - 1)
 
+        # Don't stop until all "users" have disconnected
         if self.is_recording and (self.buffer_users <= 0) and (self.queue_users <= 0):
             # Shut down audio system
             self._is_recording = False
@@ -142,7 +164,7 @@ class PyAudioRecorder(AudioRecorder):
     def get_microphones(self) -> Dict[Any, Any]:
         import pyaudio
 
-        mics = {}
+        mics: Dict[Any, Any] = {}
         audio = pyaudio.PyAudio()
         for i in range(audio.get_device_count()):
             info = audio.get_device_info_by_index(i)
@@ -152,9 +174,14 @@ class PyAudioRecorder(AudioRecorder):
 
         return mics
 
+
+# -----------------------------------------------------------------------------
+# ARecord based audio recorder
 # -----------------------------------------------------------------------------
 
 class ARecordAudioRecorder(AudioRecorder):
+    '''Records from microphone using arecord'''
+
     def __init__(self, device=None):
         AudioRecorder.__init__(self, device)
 
@@ -168,7 +195,8 @@ class ARecordAudioRecorder(AudioRecorder):
 
     # -------------------------------------------------------------------------
 
-    def start_recording(self, start_buffer, start_queue, device=None):
+    def start_recording(self, start_buffer: bool, start_queue: bool, device: Any=None):
+        # Allow multiple "users" to listen for audio data
         if start_buffer:
             self.buffer_users += 1
 
@@ -202,7 +230,8 @@ class ARecordAudioRecorder(AudioRecorder):
             def process_data():
                 proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
                 while self.is_recording:
-                    data = proc.stdout.read(480 * 2)  # 30 ms
+                    # Pull from process STDOUT
+                    data = proc.stdout.read(480 * 2)  # 30 ms for webrtcvad
 
                     if self.buffer_users > 0:
                         self.buffer += data
@@ -221,13 +250,14 @@ class ARecordAudioRecorder(AudioRecorder):
 
     # -------------------------------------------------------------------------
 
-    def stop_recording(self, stop_buffer, stop_queue) -> bytes:
+    def stop_recording(self, stop_buffer: bool, stop_queue: bool) -> bytes:
         if stop_buffer:
             self.buffer_users = max(0, self.buffer_users - 1)
 
         if stop_queue:
             self.queue_users = max(0, self.queue_users - 1)
 
+        # Only stop if all "users" have disconnected
         if self.is_recording and (self.buffer_users <= 0) and (self.queue_users <= 0):
             # Shut down audio system
             self._is_recording = False
@@ -263,7 +293,7 @@ class ARecordAudioRecorder(AudioRecorder):
         output = subprocess.check_output(['arecord', '-L'])\
                            .decode().splitlines()
 
-        mics = {}
+        mics: Dict[Any, Any] = {}
         name, description = None, None
 
         # Parse output of arecord -L
@@ -278,155 +308,3 @@ class ARecordAudioRecorder(AudioRecorder):
                 name = line.strip()
 
         return mics
-
-# -----------------------------------------------------------------------------
-# Events
-# -----------------------------------------------------------------------------
-
-# class RecordingSettings:
-#     def __init__(self, rate, width, channels, buffer_size):
-#         self.rate = rate
-#         self.width = width
-#         self.channels = channels
-#         self.buffer_size = buffer_size
-
-# class StartRecording:
-#     pass
-
-# class StopRecording:
-#     pass
-
-# class StartStreaming:
-#     pass
-
-# class StopStreaming:
-#     pass
-
-# class AudioData:
-#     def __init__(self, data, settings):
-#         self.data = data
-#         self.settings = settings
-
-#     def to_wav(self):
-#         with io.BytesIO() as wav_buffer:
-#             with wave.open(wav_buffer, mode='wb') as wav_file:
-#                 wav_file.setframerate(self.settings.rate)
-#                 wav_file.setsampwidth(self.settings.width)
-#                 wav_file.setnchannels(self.settings.channels)
-#                 wav_file.writeframesraw(self.data)
-
-#             return wav_buffer.getvalue()
-
-# -----------------------------------------------------------------------------
-# arecord Based Actor
-# -----------------------------------------------------------------------------
-
-# class ARecordActor(Actor):
-#     FORMATS = { 8: 'S8', 16: 'S16_LE', 24: 'S24_LE', 32: 'S32_LE' }
-
-#     def __init__(self):
-#         # Defaults to 16-bit 16Khz mono
-#         self.settings = RecordingSettings(16000, 2, 1, 2048)
-
-#         self.proc = None
-#         self.thread = None
-#         self.subscribers = []
-#         self.record_buffer = None
-
-#     def receiveMessage(self, message, sender):
-#         try:
-#             if isinstance(message, RecordingSettings):
-#                 self.settings = message
-#             elif isinstance(message, StartStreaming):
-#                 # Start streaming audio data to an actor
-#                 self.subscribers.append(sender)
-#                 self.maybe_start_proc()
-#             elif isinstance(message, StopStreaming):
-#                 # Stop streaming
-#                 self.subscribers.remove(sender)
-#                 self.maybe_stop_proc()
-#             elif isinstance(message, StartRecording):
-#                 # Start recording audio data to a buffer
-#                 self.record_buffer = bytes()
-#                 self.maybe_start_proc()
-#             elif isinstance(message, StopRecording):
-#                 # Stop recording (return data)
-#                 self.send(sender, AudioData(self.record_buffer, self.settings))
-#                 self.record_buffer = None
-#                 self.maybe_stop_proc()
-#         except Exception as e:
-#             logger.exception('receiveMessage')
-
-#     # -------------------------------------------------------------------------
-
-#     def maybe_start_proc(self):
-#         if self.proc is None:
-#             bits = self.settings.width * 8
-#             record_format = ARecordActor.FORMATS.get(bits, 'S16_LE')
-#             self.proc = subprocess.Popen([
-#                 'arecord',
-#                 '-q',
-#                 '-f', str(record_format),
-#                 '-r', str(self.settings.rate),
-#                 '-c', str(self.settings.channels),
-#                 '-t', 'raw'
-#             ],
-#             stdout=subprocess.PIPE)
-
-#             self.thread = threading.Thread(target=self.read_data, daemon=True)
-#             self.thread.start()
-
-#     def read_data(self):
-#         try:
-#             while self.proc is not None:
-#                 data = self.proc.stdout.read(self.settings.buffer_size)
-
-#                 # Add to recording buffer
-#                 if self.record_buffer is not None:
-#                     self.record_buffer += data
-
-#                 # Forward to subscribers
-#                 if len(self.subscribers) > 0:
-#                     msg = AudioData(data, self.settings)
-#                     for actor in self.subscribers:
-#                         self.send(actor, msg)
-#         except Exception as e:
-#             logger.exception('read_data')
-
-#     # -------------------------------------------------------------------------
-
-#     def maybe_stop_proc(self):
-#         if self.proc is not None:
-#             if (len(self.subscribers) == 0) and (self.record_buffer is None):
-#                 try:
-#                     self.proc.terminate()
-#                 except:
-#                     try:
-#                         self.proc.kill()
-#                     except:
-#                         pass
-#                 finally:
-#                     self.proc = None
-
-# -----------------------------------------------------------------------------
-# Tests
-# -----------------------------------------------------------------------------
-
-# if __name__ == '__main__':
-#     # Start actor system
-#     system = ActorSystem('multiprocQueueBase')
-
-#     try:
-#         actor = system.createActor(ARecordActor)
-
-#         system.tell(actor, StartRecording())
-#         time.sleep(2)
-#         audio_data = system.ask(actor, StopRecording())
-#         print(len(audio_data.data))
-
-#         with open('test.wav', 'wb') as wav_file:
-#             wav_file.write(audio_data.to_wav())
-
-#     finally:
-#         # Shut down actor system
-#         system.shutdown()

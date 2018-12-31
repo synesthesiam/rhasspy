@@ -16,26 +16,38 @@ from profiles import Profile
 logger = logging.getLogger(__name__)
 
 class WordPronounce:
+    '''Base class for word lookup/pronounce-ers.'''
+
+    def __init__(self, profile: Profile) -> None:
+        self.profile = profile
+
+    def preload(self):
+        '''Cache any important stuff upfront.'''
+        pass
+
     def speak(self,
               espeak_str: str,
-              voice: Optional[str] = None,
-              speed: int = 80) -> Tuple[str, bytes]:
+              voice: Optional[str] = None) -> Tuple[str, bytes]:
+        '''Generate WAV data from a word or eSpeak phoneme string.
+        Uses the profile's voice or language if voice isn't given.
+        Returns the eSpeak phonemes and WAV data.'''
         pass
 
-    def translate_phonemes(self,
-                           phonemes: str) -> str:
+    def translate_phonemes(self, phonemes: str) -> str:
+        '''Converts CMU phonemes to eSpeak phonemes using profile's table.'''
         pass
 
-    def pronounce(self,
-                  word: str,
-                  n: int = 5) -> Tuple[bool, List[str], str]:
+    def pronounce(self, word: str, n: int = 5) -> Tuple[bool, List[str], str]:
+        '''Looks up or generates up to n pronunciations for an unknown word.
+        Returns True if the word is in a dictionary, the pronunciations, and eSpeak
+        phonemes for the word.'''
         pass
 
     # -------------------------------------------------------------------------
 
     @classmethod
     def load_phoneme_map(cls, path: str) -> Dict[str, str]:
-        # Load phoneme map from Sphinx to eSpeak (dictionary)
+        '''Load phoneme map from CMU (Sphinx) phonemes to eSpeak phonemes.'''
         phonemes = {}
         with open(path, 'r') as phoneme_file:
             for line in phoneme_file:
@@ -49,7 +61,8 @@ class WordPronounce:
         return phonemes
 
     @classmethod
-    def load_phoneme_examples(cls, path: str) -> Dict[str, Tuple[str, str]]:
+    def load_phoneme_examples(cls, path: str) -> Dict[str, Dict[str, str]]:
+        '''Loads example words and pronunciations for each phoneme.'''
         examples = {}
         with open(path, 'r') as example_file:
             for line in example_file:
@@ -67,19 +80,23 @@ class WordPronounce:
 
 
 # -----------------------------------------------------------------------------
+# Phonetisaurus based word pronouncer
+# https://github.com/AdolfVonKleist/Phonetisaurus
+# -----------------------------------------------------------------------------
 
 class PhonetisaurusPronounce(WordPronounce):
-    def __init__(self, profile: Profile):
-        self.profile = profile
+
+    def __init__(self, profile: Profile) -> None:
+        WordPronounce.__init__(self, profile)
+        self.speed = 80  # wpm for speaking
 
     def speak(self,
               espeak_str: str,
-              voice: Optional[str] = None,
-              speed: int = 80) -> Tuple[str, bytes]:
+              voice: Optional[str] = None) -> Tuple[str, bytes]:
 
         # Use eSpeak to pronounce word
         espeak_command = ['espeak',
-                          '-s', str(speed),
+                          '-s', str(self.speed),
                           '-x']
 
         voice = self._get_voice(voice)
@@ -156,6 +173,8 @@ class PhonetisaurusPronounce(WordPronounce):
     # -------------------------------------------------------------------------
 
     def _lookup_word(self, word: str, word_dict, n=5) -> Tuple[bool, List[str]]:
+        '''Look up or guess word pronunciations.'''
+
         # Dictionary uses upper-case letters
         dictionary_upper = self.profile.get(
             'speech_to_text.dictionary_upper', False)
@@ -210,106 +229,8 @@ class PhonetisaurusPronounce(WordPronounce):
     # -------------------------------------------------------------------------
 
     def _get_voice(self, voice: Optional[str] = None) -> Optional[str]:
+        '''Uses either the provided voice, the profile's text to speech voice,
+        or the profile's language.'''
         return voice \
             or self.profile.get('text_to_speech.espeak.voice') \
             or self.profile.get('language')
-
-# -----------------------------------------------------------------------------
-# Events
-# -----------------------------------------------------------------------------
-
-# class SpeakWord:
-#     def __init__(self, word: str, phonemes: str = None, silent=False):
-#         self.word = word
-#         self.phonemes = phonemes
-#         self.silent = silent
-
-# class WordSpoken:
-#     def __init__(self, word: str, phonemes: str, wav_data: bytes):
-#         self.word = word
-#         self.phonemes = phonemes
-#         self.wav_data = wav_data
-
-# class GetWordPronunciations:
-#     def __init__(self, word: str, n: int = 5):
-#         self.word = word
-#         self.n = n
-
-# class WordPronunciations:
-#     def __init__(self,
-#                  word: str,
-#                  in_dictionary: bool,
-#                  pronunciations: List[str],
-#                  espeak_str: str = ''):
-
-#         self.word = word
-#         self.in_dictionary = in_dictionary
-#         self.pronunciations = pronunciations
-#         self.espeak_str = espeak_str
-
-# -----------------------------------------------------------------------------
-# eSpeak and phonetisaurus Based Actor
-# -----------------------------------------------------------------------------
-
-# class PronounceActor(Actor):
-#     def __init__(self):
-#         self.profile = None
-
-#     def receiveMessage(self, message, sender):
-#         try:
-#             if isinstance(message, Profile):
-#                 self.profile = message
-#             elif isinstance(message, SpeakWord):
-#                 if message.phonemes is not None:
-#                     espeak_str = self.translate_phonemes(message.phonemes)
-#                 else:
-#                     espeak_str = message.word
-
-#                 espeak_phonemes, wav_data = self.speak(espeak_str, silent=message.silent)
-#                 self.send(sender, WordSpoken(message.word, espeak_phonemes, wav_data))
-#             elif isinstance(message, GetWordPronunciations):
-#                 in_dictionary, pronunciations, espeak_str = \
-#                     self.pronounce(message.word, message.n)
-
-#                 self.send(sender, WordPronunciations(message.word,
-#                                                      in_dictionary,
-#                                                      pronunciations,
-#                                                      espeak_str))
-#         except Exception as e:
-#             logger.exception('receiveMessage')
-
-# -----------------------------------------------------------------------------
-# Tests
-# -----------------------------------------------------------------------------
-
-if __name__ == '__main__':
-    profile = Profile('en', ['profiles'])
-
-    p = Pronounce(profile)
-
-    # Test speaking word
-    phonemes, wav_data = p.speak('test')
-    assert len(phonemes) > 0
-    assert len(wav_data) > 0
-    print(phonemes)
-
-    # Test speaking phonemes
-    phonemes, wav_data = p.speak(p.translate_phonemes('T IY S T'))
-    print(phonemes)
-    assert len(wav_data) > 0
-
-    # Test known word pronunciations
-    in_dictionary, pronunciations, espeak_str = p.pronounce('test')
-    assert in_dictionary
-    assert len(pronunciations) > 0
-    print(pronunciations)
-    print(espeak_str)
-
-    # Test unknown word pronunciations
-    in_dictionary, pronunciations, espeak_str = \
-        p.pronounce('raxacoricofallapatorius')
-
-    assert not in_dictionary
-    assert len(pronunciations) > 0
-    print(pronunciations)
-    print(espeak_str)

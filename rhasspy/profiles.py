@@ -18,7 +18,7 @@ class Profile:
     def __init__(self,
                  name: str,
                  profiles_dirs: List[str],
-                 layers: str ='all'):
+                 layers: str ='all') -> None:
 
         self.name = name
         self.profiles_dirs = profiles_dirs

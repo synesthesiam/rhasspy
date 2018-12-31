@@ -237,4 +237,5 @@ The following tools/libraries help to support Rhasspy:
 * [Python 3](https://www.python.org)
 * [Sox](http://sox.sourceforge.net) (WAV conversion)
 * [Vue.js](https://vuejs.org/) (web UI)
+* [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) (microphone recording)
 * [webrtcvad](https://github.com/wiseman/py-webrtcvad) (voice activity detection)

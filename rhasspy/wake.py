@@ -2,31 +2,47 @@
 import os
 import threading
 import logging
+from typing import Callable
+
+from profiles import Profile
+from audio_recorder import AudioRecorder
 
 # -----------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
 
 class WakeListener:
-    def __init__(self, audio_recorder, profile):
+    '''Base class for all wake/hot word listeners.'''
+
+    def __init__(self, audio_recorder: AudioRecorder, profile: Profile) -> None:
         self.audio_recorder = audio_recorder
         self.profile = profile
         self._is_listening = False
 
     def preload(self):
+        '''Cache important stuff up front.'''
         pass
 
     @property
-    def is_listening(self):
+    def is_listening(self) -> bool:
+        '''True if wake system is currently recording.'''
         return self._is_listening
 
     def start_listening(self, **kwargs):
+        '''Start wake system listening in the background and return immedately.'''
         pass
 
 # -----------------------------------------------------------------------------
+# Pocketsphinx based wake word listener
+# https://github.com/cmusphinx/pocketsphinx
+# -----------------------------------------------------------------------------
 
 class PocketsphinxWakeListener(WakeListener):
-    def __init__(self, audio_recorder, profile, detected_callback):
+    def __init__(self, audio_recorder: AudioRecorder, profile: Profile,
+                 detected_callback: Callable[[str, str], None]) -> None:
+        '''Listens for a keyphrase using pocketsphinx.
+        Calls detected_callback when keyphrase is detected and stops.'''
+
         WakeListener.__init__(self, audio_recorder, profile)
         self.callback = detected_callback
         self.decoder = None
@@ -81,6 +97,7 @@ class PocketsphinxWakeListener(WakeListener):
     # -------------------------------------------------------------------------
 
     def _maybe_load_decoder(self):
+        '''Loads speech decoder if not cached.'''
         if self.decoder is None:
             import pocketsphinx
 
