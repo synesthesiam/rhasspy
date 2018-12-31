@@ -217,7 +217,7 @@ class ARecordAudioRecorder(AudioRecorder):
                           '-r', '16000',
                           '-f', 'S16_LE',
                           '-c', '1',
-                          '-t', 'wav']
+                          '-t', 'raw']
 
             device_name = device or self.device
             if device_name is not None:
