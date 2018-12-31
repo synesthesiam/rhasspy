@@ -122,9 +122,9 @@ class Rhasspy:
     # -------------------------------------------------------------------------
 
     def reload_profile(self, profile_name: str):
-        del self.speech_decoders[profile_name]
-        del self.intent_recognizers[profile_name]
-        del self.profiles[profile_name]
+        self.speech_decoders.pop(profile_name, None)
+        self.intent_recognizers.pop(profile_name, None)
+        self.profiles.pop(profile_name, None)
 
         for profiles_dir in self.profiles_dirs:
             if not os.path.exists(profiles_dir):
@@ -154,6 +154,38 @@ class Rhasspy:
 
     def get_command_listener(self, profile_name: str):
         pass
+
+    # -------------------------------------------------------------------------
+
+    def train_profile(self, profile_name: str):
+        from generate_jsgf import get_tagged_sentences
+        profile = self.profiles[profile_name]
+
+        # Generate sentences
+        logging.info('Generating sentences')
+        tagged_sentences = get_tagged_sentences(profile)
+
+        # Train speech system
+        logging.info('Training speech to text system')
+        stt_system = profile.get('speech_to_text.system')
+        assert stt_system in ['pocketsphinx'], 'Invalid speech to text system: %s' % stt_system
+
+        if stt_system == 'pocketsphinx':
+            from stt_train import PocketsphinxSpeechTrainer
+            stt_trainer = PocketsphinxSpeechTrainer(self, profile)
+
+        sentences_by_intent = stt_trainer.train(tagged_sentences)
+
+        # Train intent recognizer
+        logging.info('Training intent recognizer')
+        intent_system = profile.get('intent.system')
+        assert intent_system in ['fuzzywuzzy'], 'Invalid intent system: %s' % intent_system
+
+        if intent_system == 'fuzzywuzzy':
+            from intent_train import FuzzyWuzzyIntentTrainer
+            intent_trainer = FuzzyWuzzyIntentTrainer(profile)
+
+        intent_trainer.train(tagged_sentences, sentences_by_intent)
 
 # -----------------------------------------------------------------------------
 

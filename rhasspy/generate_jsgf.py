@@ -4,8 +4,30 @@ import subprocess
 import logging
 import concurrent.futures
 from collections import defaultdict
+from typing import Mapping, Iterable
 
-def make_grammars(ini_file, grammar_dir):
+from profiles import Profile
+
+def get_tagged_sentences(profile: Profile):
+    ini_path = profile.read_path(
+        profile.get('speech_to_text.sentences_ini'))
+
+    grammars_dir = profile.write_dir(
+        profile.get('speech_to_text.grammars_dir'))
+
+    with open(ini_path, 'r') as ini_file:
+        grammar_paths = make_grammars(ini_file, grammars_dir)
+
+    tagged_sentences = generate_sentences(grammar_paths)
+    num_sentences = sum(len(s) for s in tagged_sentences.values())
+    logging.debug('Generated %s sentence(s) in %s intent(s)' % (num_sentences, len(tagged_sentences)))
+
+    return tagged_sentences
+
+# -----------------------------------------------------------------------------
+
+def make_grammars(ini_file, grammar_dir: str):
+    '''Create JSGF grammars for each intent from sentence ini file'''
     config = configparser.ConfigParser(
         allow_no_value=True,
         strict=False,
@@ -54,7 +76,9 @@ def make_grammars(ini_file, grammar_dir):
 
     return grammar_paths
 
-def generate_sentences(grammar_paths):
+# -----------------------------------------------------------------------------
+
+def generate_sentences(grammar_paths: Mapping[str, str]) -> Mapping[str, Iterable[str]]:
     tagged_sentences = defaultdict(list)
 
     def generate(path):
