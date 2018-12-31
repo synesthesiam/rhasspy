@@ -11,6 +11,8 @@ from profile import Profile
 
 # -----------------------------------------------------------------------------
 
+logger = logging.getLogger(__name__)
+
 class IntentRecognizer:
     def recognize(self, text: str) -> Dict[str, Any]:
         pass
@@ -52,7 +54,7 @@ class FuzzyWuzzyRecognizer(IntentRecognizer):
         with open(examples_path, 'w') as examples_file:
             json.dump(examples, examples_file, indent=4)
 
-        logging.debug('Write fuzzywuzzy examples to %s' % examples_path)
+        logger.debug('Write fuzzywuzzy examples to %s' % examples_path)
 
     # -------------------------------------------------------------------------
 
@@ -100,7 +102,7 @@ class FuzzyWuzzyRecognizer(IntentRecognizer):
             with open(examples_path, 'r') as examples_file:
                 self.examples = json.load(examples_file)
 
-            logging.debug('Loaded examples from %s' % examples_path)
+            logger.debug('Loaded examples from %s' % examples_path)
 
 # -----------------------------------------------------------------------------
 # class FuzzyWuzzyIntentActor(Actor):
@@ -120,7 +122,7 @@ class FuzzyWuzzyRecognizer(IntentRecognizer):
 #                 intent = self.recognize(message.text)
 #                 self.send(sender, IntentRecognized(intent))
 #         except Exception as e:
-#             logging.exception('receiveMessage')
+#             logger.exception('receiveMessage')
 
     # -------------------------------------------------------------------------
 

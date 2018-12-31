@@ -12,6 +12,8 @@ import utils
 
 # -----------------------------------------------------------------------------
 
+logger = logging.getLogger(__name__)
+
 class Profile:
     def __init__(self,
                  name: str,
@@ -80,7 +82,7 @@ class Profile:
                 os.makedirs(dir_path, exist_ok=True)
                 return full_path
             except:
-                logging.exception('Unable to write to %s' % full_path)
+                logger.exception('Unable to write to %s' % full_path)
 
         # Use base dir
         full_path = os.path.join('profiles', self.name, *path_parts)
@@ -98,7 +100,7 @@ class Profile:
                 os.makedirs(dir_path, exist_ok=True)
                 return dir_path
             except:
-                logging.exception('Unable to create %s' % dir_path)
+                logger.exception('Unable to create %s' % dir_path)
 
         # Use base dir
         dir_path = os.path.join('profiles', self.name, *dir_parts)
@@ -124,7 +126,7 @@ class Profile:
 #                 self.send(self.audio_player_actor, message)
 
 #         except Exception as ex:
-#             logging.exception('receiveMessage')
+#             logger.exception('receiveMessage')
 
 #     # -------------------------------------------------------------------------
 

@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+logger = logging.getLogger(__name__)
+
 import os
 import sys
 import subprocess
 import uuid
-import logging
 import json
 import re
 import gzip
@@ -34,8 +38,6 @@ from rhasspy.pronounce import WordPronounce, PhonetisaurusPronounce
 # -----------------------------------------------------------------------------
 # Flask Web App Setup
 # -----------------------------------------------------------------------------
-
-logging.basicConfig(level=logging.DEBUG)
 
 app = Flask('rhasspy')
 app.secret_key = str(uuid.uuid4())
@@ -83,6 +85,24 @@ def request_to_profile(request):
     profile_name = request.args.get('profile', core.default_profile_name)
     return core.profiles[profile_name]
 
+def wav_to_intent(wav_data, profile):
+    decoder = core.get_speech_decoder(profile.name)
+    recognizer = core.get_intent_recognizer(profile.name)
+
+    # WAV -> text
+    start_time = time.time()
+    text = decoder.transcribe_wav(wav_data)
+
+    # text -> intent (JSON)
+    intent = recognizer.recognize(text)
+
+    intent_sec = time.time() - start_time
+    intent['time_sec'] = intent_sec
+
+    logger.debug(text)
+
+    return intent
+
 # -----------------------------------------------------------------------------
 # HTTP API
 # -----------------------------------------------------------------------------
@@ -117,15 +137,16 @@ def api_microphones():
 
 # -----------------------------------------------------------------------------
 
-# @app.route('/api/listen-for-command', methods=['POST'])
-# def api_listen_for_command():
-#     profile = request_to_profile(request, profiles_dirs)
-#     no_hass = request.args.get('nohass', 'false').lower() == 'true'
+@app.route('/api/listen-for-command', methods=['POST'])
+def api_listen_for_command():
+    profile = request_to_profile(request)
+    no_hass = request.args.get('nohass', 'false').lower() == 'true'
 
-#     # Listen until silence
-#     intent = listen_for_command(profile, no_hass)
+    command_listener = core.get_command_listener()
+    wav_data = command_listener.listen_for_command()
+    intent = wav_to_intent(wav_data, profile)
 
-#     return jsonify(intent)
+    return jsonify(intent)
 
 # -----------------------------------------------------------------------------
 
@@ -232,7 +253,7 @@ def api_phonemes():
         profile.get('text_to_speech.phoneme_examples'))
 
     # phoneme -> { word, phonemes }
-    logging.debug('Loading phoneme examples from %s' % examples_path)
+    logger.debug('Loading phoneme examples from %s' % examples_path)
     examples_dict = WordPronounce.load_phoneme_examples(examples_path)
 
     return jsonify(examples_dict)
@@ -294,7 +315,7 @@ def api_train():
     profile = request_to_profile(request)
 
     start_time = time.time()
-    logging.info('Starting training')
+    logger.info('Starting training')
     core.train_profile(profile.name)
     end_time = time.time()
 
@@ -358,21 +379,7 @@ def api_speech_to_intent():
 
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
     wav_data = request.data
-
-    decoder = core.get_speech_decoder(profile.name)
-    recognizer = core.get_intent_recognizer(profile.name)
-
-    # WAV -> text
-    start_time = time.time()
-    text = decoder.transcribe_wav(wav_data)
-
-    # text -> intent (JSON)
-    intent = recognizer.recognize(text)
-
-    intent_sec = time.time() - start_time
-    intent['time_sec'] = intent_sec
-
-    logging.debug(text)
+    intent = wav_to_intent(wav_data, profile)
 
     # if not no_hass:
     #     # Send intent to Home Assistant
@@ -388,7 +395,7 @@ def api_start_recording():
     device = request.args.get('device', None)
     profile = request_to_profile(request)
     recorder = core.get_audio_recorder()
-    recorder.start_recording(device)
+    recorder.start_recording(True, False, device)
 
     return 'OK'
 
@@ -399,26 +406,11 @@ def api_stop_recording():
     recorder = core.get_audio_recorder()
 
     if recorder.is_recording:
-        wav_data = recorder.stop_recording()
-        logging.debug('Stopped recording (got %s byte(s))' % len(wav_data))
+        wav_data = recorder.stop_recording(True, False)
+        logger.debug('Recorded %s byte(s) of audio data' % len(wav_data))
 
         profile = request_to_profile(request)
-
-        # speech to intent
-        decoder = core.get_speech_decoder(profile.name)
-        recognizer = core.get_intent_recognizer(profile.name)
-
-        # WAV -> text
-        start_time = time.time()
-        text = decoder.transcribe_wav(wav_data)
-
-        # text -> intent (JSON)
-        intent = recognizer.recognize(text)
-
-        intent_sec = time.time() - start_time
-        intent['time_sec'] = intent_sec
-
-        logging.debug(text)
+        intent = wav_to_intent(wav_data, profile)
 
         # if not no_hass:
         #     # Send intent to Home Assistant
@@ -456,7 +448,7 @@ def api_unknown_words():
 
 @app.errorhandler(Exception)
 def handle_error(err):
-    logging.exception(err)
+    logger.exception(err)
     return (str(err), 500)
 
 # ---------------------------------------------------------------------

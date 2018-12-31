@@ -13,6 +13,8 @@ from profile import Profile
 
 # -----------------------------------------------------------------------------
 
+logger = logging.getLogger(__name__)
+
 class SpeechDecoder:
     def transcribe_wav(self, wav_data: bytes) -> str:
         pass
@@ -53,10 +55,10 @@ class PocketsphinxDecoder(SpeechDecoder):
         with io.BytesIO(wav_data) as wav_io:
             with wave.open(wav_io, 'rb') as wav_file:
                 rate, width, channels = wav_file.getframerate(), wav_file.getsampwidth(), wav_file.getnchannels()
-                logging.debug('rate=%s, width=%s, channels=%s.' % (rate, width, channels))
+                logger.debug('rate=%s, width=%s, channels=%s.' % (rate, width, channels))
 
                 if (rate != 16000) or (width != 2) or (channels != 1):
-                    logging.info('Need to convert to 16-bit 16Khz mono.')
+                    logger.info('Need to convert to 16-bit 16Khz mono.')
                     # Use converted data
                     audio_data = SpeechDecoder.convert_wav(wav_data)
                 else:
@@ -70,7 +72,7 @@ class PocketsphinxDecoder(SpeechDecoder):
         self.decoder.end_utt()
         end_time = time.time()
 
-        logging.debug('Decoded WAV in %s second(s)' % (end_time - start_time))
+        logger.debug('Decoded WAV in %s second(s)' % (end_time - start_time))
 
         if self.decoder.hyp() is not None:
             # Return best transcription
@@ -91,7 +93,7 @@ class PocketsphinxDecoder(SpeechDecoder):
             dict_path = self.profile.read_path(ps_config['dictionary'])
             lm_path = self.profile.read_path(ps_config['language_model'])
 
-            logging.info('Loading decoder with hmm=%s, dict=%s, lm=%s' % (hmm_path, dict_path, lm_path))
+            logger.info('Loading decoder with hmm=%s, dict=%s, lm=%s' % (hmm_path, dict_path, lm_path))
 
             decoder_config = pocketsphinx.Decoder.default_config()
             decoder_config.set_string('-hmm', hmm_path)
@@ -115,7 +117,7 @@ class RemoteDecoder(SpeechDecoder):
 
         remote_url = self.profile.get('speech_to_text.remote.url')
         headers = { 'Content-Type': 'audio/wav' }
-        logging.debug('POSTing %d byte(s) of WAV data to %s' % (len(wav_data), remote_url))
+        logger.debug('POSTing %d byte(s) of WAV data to %s' % (len(wav_data), remote_url))
         # Pass profile name through
         params = { 'profile': self.profile.name }
         response = requests.post(remote_url, headers=headers,
@@ -163,9 +165,9 @@ class RemoteDecoder(SpeechDecoder):
 #                     text = self.transcribe_wav(wav_data)
 #                     self.send(sender, text)
 #                 else:
-#                     logging.warning('Invalid speech to text system: %s' % self.system)
+#                     logger.warning('Invalid speech to text system: %s' % self.system)
 #                     return ''
 #         except Exception as ex:
-#             logging.exception('receiveMessage')
+#             logger.exception('receiveMessage')
 
 # -----------------------------------------------------------------------------
