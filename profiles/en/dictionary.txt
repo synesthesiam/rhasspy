@@ -20,7 +20,7 @@ on AA N
 on(2) AO N
 open OW P AH N
 red R EH D
-rhasspy R EY S P IY
+rhasspy R AE S P IY
 room R UW M
 set S EH T
 tell T EH L

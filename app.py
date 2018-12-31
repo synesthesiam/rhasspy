@@ -226,6 +226,7 @@ def api_pronounce():
 
 @app.route('/api/phonemes')
 def api_phonemes():
+    '''Get phonemes and example words for a profile'''
     profile = request_to_profile(request)
     examples_path = profile.read_path(
         profile.get('text_to_speech.phoneme_examples'))
@@ -240,6 +241,7 @@ def api_phonemes():
 
 @app.route('/api/sentences', methods=['GET', 'POST'])
 def api_sentences():
+    '''Read or write sentences for a profile'''
     profile = request_to_profile(request)
 
     if request.method == 'POST':
@@ -266,6 +268,7 @@ def api_sentences():
 
 @app.route('/api/custom-words', methods=['GET', 'POST'])
 def api_custom_words():
+    '''Read or write custom word dictionary for a profile'''
     profile = request_to_profile(request)
     custom_words_path = profile.write_path(
         profile.get('speech_to_text.pocketsphinx.custom_words'))
@@ -286,18 +289,18 @@ def api_custom_words():
 
 # -----------------------------------------------------------------------------
 
-# @app.route('/api/train', methods=['POST'])
-# def api_train():
-#     profile = request_to_profile(request, profiles_dirs)
+@app.route('/api/train', methods=['POST'])
+def api_train():
+    profile = request_to_profile(request)
 
-#     start_time = time.time()
-#     logging.info('Starting training')
-#     train(profile)
-#     end_time = time.time()
+    start_time = time.time()
+    logging.info('Starting training')
+    core.train_profile(profile.name)
+    end_time = time.time()
 
-#     reload(profile)
+    core.reload_profile(profile.name)
 
-#     return 'Training completed in %0.2f second(s)' % (end_time - start_time)
+    return 'Training completed in %0.2f second(s)' % (end_time - start_time)
 
 # -----------------------------------------------------------------------------
 
