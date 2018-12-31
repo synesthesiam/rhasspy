@@ -154,8 +154,9 @@ class Rhasspy:
                 from intent import FuzzyWuzzyRecognizer
                 recognizer = FuzzyWuzzyRecognizer(profile)
             elif system == 'adapt':
-                # TODO
                 # Use Mycroft Adapt locally
+                from intent import AdaptIntentRecognizer
+                recognizer = AdaptIntentRecognizer(profile)
                 pass
             elif system == 'rasa':
                 # Use rasaNLU remotely
@@ -337,7 +338,7 @@ class Rhasspy:
         # Train intent recognizer
         logger.info('Training intent recognizer')
         intent_system = profile.get('intent.system')
-        assert intent_system in ['fuzzywuzzy', 'rasa'], 'Invalid intent system: %s' % intent_system
+        assert intent_system in ['fuzzywuzzy', 'rasa', 'adapt'], 'Invalid intent system: %s' % intent_system
 
         if intent_system == 'fuzzywuzzy':
             from intent_train import FuzzyWuzzyIntentTrainer
@@ -345,6 +346,9 @@ class Rhasspy:
         elif intent_system == 'rasa':
             from intent_train import RasaIntentTrainer
             intent_trainer = RasaIntentTrainer(profile)
+        elif intent_system == 'adapt':
+            from intent_train import AdaptIntentTrainer
+            intent_trainer = AdaptIntentTrainer(profile)
 
         intent_trainer.train(tagged_sentences, sentences_by_intent)
 

@@ -120,3 +120,101 @@ class RasaIntentRecognizer(IntentRecognizer):
         response.raise_for_status()
 
         return response.json()
+
+
+# -----------------------------------------------------------------------------
+# Mycroft Adapt Intent Recognizer
+# http://github.com/MycroftAI/adapt
+# -----------------------------------------------------------------------------
+
+class AdaptIntentRecognizer(IntentRecognizer):
+    '''Recognize intents with Mycroft Adapt.'''
+
+    def __init__(self, profile: Profile) -> None:
+        IntentRecognizer.__init__(self, profile)
+        self.engine = None
+
+    def preload(self):
+        self._maybe_load_engine()
+
+    # -------------------------------------------------------------------------
+
+    def recognize(self, text: str) -> Dict[str, Any]:
+        self._maybe_load_engine()
+        assert self.engine is not None
+
+        try:
+            # Get all intents
+            intents =  [intent for intent in
+                        self.engine.determine_intent(text)
+                        if intent]
+
+            if len(intents) > 0:
+                # Return the best intent only
+                intent = max(intents, key=lambda x: x.get('confidence', 0))
+                intent_type = intent['intent_type']
+                entity_prefix = '{0}.'.format(intent_type)
+
+                slots = {}
+                for key, value in intent.items():
+                    if key.startswith(entity_prefix):
+                        key = key[len(entity_prefix):]
+                        slots[key] = value
+
+                # Try to match RasaNLU format for future compatibility
+                return {
+                    'text': text,
+                    'intent': {
+                        'name': intent_type,
+                        'confidence': intent.get('confidence', 0)
+                    },
+                    'entities': [
+                        { 'entity': name, 'value': value } for name, value in slots.items()
+                    ]
+                }
+        except Exception as e:
+            logger.exception('adapt recognize')
+
+        # Empty intent
+        return {
+            'text': '',
+            'intent': { 'name': '' },
+            'entities': []
+        }
+
+    # -------------------------------------------------------------------------
+
+    def _maybe_load_engine(self):
+        '''Configure Adapt engine if not already cached'''
+        if self.engine is None:
+            from adapt.intent import IntentBuilder
+            from adapt.engine import IntentDeterminationEngine
+
+            assert self.profile is not None, 'No profile'
+            config_path = self.profile.read_path('adapt_config.json')
+            assert os.path.exists(config_path), 'Configuration file missing. Need to train.'
+
+            # Create empty engine
+            self.engine = IntentDeterminationEngine()
+
+            # { intents: { ... }, entities: { ... } }
+            with open(config_path, 'r') as config_file:
+                config = json.load(config_file)
+
+            # Register entities
+            for entity_name, entity_values in config['entities'].items():
+                for value in entity_values:
+                    self.engine.register_entity(value, entity_name)
+
+            # Register intents
+            for intent_name, intent_config in config['intents'].items():
+                intent = IntentBuilder(intent_name)
+                for required_entity in intent_config['require']:
+                    intent.require(required_entity)
+
+                for optional_entity in intent_config['optionally']:
+                    intent.optionally(optional_entity)
+
+                self.engine.register_intent_parser(intent.build())
+
+            logger.debug('Loaded engine from config file %s' % config_path)
