@@ -8,6 +8,10 @@ from typing import Mapping, Iterable
 
 from profiles import Profile
 
+# -----------------------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
+
 def get_tagged_sentences(profile: Profile):
     ini_path = profile.read_path(
         profile.get('speech_to_text.sentences_ini'))
@@ -20,7 +24,7 @@ def get_tagged_sentences(profile: Profile):
 
     tagged_sentences = generate_sentences(grammar_paths)
     num_sentences = sum(len(s) for s in tagged_sentences.values())
-    logging.debug('Generated %s sentence(s) in %s intent(s)' % (num_sentences, len(tagged_sentences)))
+    logger.debug('Generated %s sentence(s) in %s intent(s)' % (num_sentences, len(tagged_sentences)))
 
     return tagged_sentences
 
@@ -87,7 +91,7 @@ def generate_sentences(grammar_paths: Mapping[str, str]) -> Mapping[str, Iterabl
                '--exhaustive',
                '--tags']
 
-        logging.debug(cmd)
+        logger.debug(cmd)
         return subprocess.check_output(cmd)\
                          .decode()\
                          .splitlines()

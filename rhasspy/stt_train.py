@@ -12,6 +12,8 @@ from profiles import Profile
 
 # -----------------------------------------------------------------------------
 
+logger = logging.getLogger(__name__)
+
 class SpeechTrainer:
     def train(self, tagged_sentences: Dict[str, List[str]]):
         pass
@@ -113,7 +115,7 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
                     else:
                         print('%s(%s)' % (word, i+1), pronounce, file=dictionary_file)
 
-        logging.debug('Wrote %s word(s) to %s' % (len(words_needed), dictionary_path))
+        logger.debug('Wrote %s word(s) to %s' % (len(words_needed), dictionary_path))
 
     # -------------------------------------------------------------------------
 
@@ -140,7 +142,7 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
                         print(sentence, file=sentences_text_file)
                         num_sentences = num_sentences + 1
 
-        logging.debug('Wrote %s sentence(s) to %s' % (num_sentences, sentences_text_path))
+        logger.debug('Wrote %s sentence(s) to %s' % (num_sentences, sentences_text_path))
 
 
     # -------------------------------------------------------------------------
@@ -197,7 +199,7 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
         if lm_source_path != lm_dest_path:
             shutil.copy(lm_source_path, lm_dest_path)
 
-        logging.debug('Wrote language model to %s' % lm_dest_path)
+        logger.debug('Wrote language model to %s' % lm_dest_path)
 
     # -------------------------------------------------------------------------
 

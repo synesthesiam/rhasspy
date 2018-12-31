@@ -6,6 +6,8 @@ from typing import Dict, List
 
 # -----------------------------------------------------------------------------
 
+logger = logging.getLogger(__name__)
+
 class IntentTrainer:
     def train(self, tagged_sentences: Dict[str, List[str]]):
         pass
@@ -27,7 +29,7 @@ class FuzzyWuzzyIntentTrainer:
         with open(examples_path, 'w') as examples_file:
             json.dump(examples, examples_file, indent=4)
 
-        logging.debug('Wrote intent examples to %s' % examples_path)
+        logger.debug('Wrote intent examples to %s' % examples_path)
 
     # -------------------------------------------------------------------------
 

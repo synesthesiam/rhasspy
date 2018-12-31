@@ -13,6 +13,16 @@
             "slots": {}
         }
     ],
+    "GetGarageState": [
+        {
+            "text": "is the garage door open",
+            "slots": {}
+        },
+        {
+            "text": "is the garage door closed",
+            "slots": {}
+        }
+    ],
     "GetTime": [
         {
             "text": "what time is it",
@@ -487,16 +497,6 @@
                     "blue"
                 ]
             }
-        }
-    ],
-    "GetGarageState": [
-        {
-            "text": "is the garage door open",
-            "slots": {}
-        },
-        {
-            "text": "is the garage door closed",
-            "slots": {}
         }
     ]
 }

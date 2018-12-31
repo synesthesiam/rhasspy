@@ -5,7 +5,9 @@ import generate_jsgf as jsgf
 
 # -----------------------------------------------------------------------------
 
-def SentenceGenerator:
+logger = logging.getLogger(__name__)
+
+class SentenceGenerator:
     def generate_sentences(self, sentences_ini: TextIO):
         pass
 
@@ -22,6 +24,7 @@ class JsgfSentenceGenerator(SentenceGenerator):
         grammars_dir = self.profile.write_dir(stt_config['grammars_dir'])
 
         grammar_paths = jsgf.make_grammars(sentences_ini, grammars_dir)
+        logging.debug(grammar_paths)
 
         # intent -> sentence templates
         return jsgf.generate_sentences(grammar_paths)

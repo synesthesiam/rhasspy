@@ -9,6 +9,8 @@ from typing import Optional
 
 # -----------------------------------------------------------------------------
 
+logger = logging.getLogger(__name__)
+
 class AudioPlayer:
     def play_wav(self, path: str, device: Optional[str] = None):
         pass
@@ -37,6 +39,8 @@ class APlayAudioPlayer(AudioPlayer):
         if device is not None:
             aplay_cmd.extend(['-D', str(device)])
 
+        logger.debug(aplay_cmd)
+
         subprocess.run(aplay_cmd, input=wav_data)
 
 # -----------------------------------------------------------------------------
@@ -63,7 +67,7 @@ class APlayAudioPlayer(AudioPlayer):
 #                 self.play_wav(message.path, message.device)
 #                 self.send(sender, WavFilePlayed(message.path))
 #         except Exception as e:
-#             logging.exception('receiveMessage')
+#             logger.exception('receiveMessage')
 
 #     def play_wav(self, path: str, device: str=None):
 #         aplay_cmd = ['aplay']

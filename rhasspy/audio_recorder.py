@@ -6,9 +6,12 @@ import threading
 import time
 import wave
 import io
+from queue import Queue
 from typing import Dict, Any
 
-from thespian.actors import Actor, ActorSystem
+# from thespian.actors import Actor, ActorSystem
+
+logger = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
@@ -16,11 +19,14 @@ class AudioRecorder:
     def __init__(self):
         self._is_recording = False
 
-    def start_recording(self, device=None):
+    def start_recording(self, start_buffer, start_queue, device=None):
         pass
 
-    def stop_recording(self) -> bytes:
+    def stop_recording(self, stop_buffer, stop_queue) -> bytes:
         return bytes()
+
+    def get_queue(self) -> Queue:
+        return Queue()
 
     def get_microphones(self) -> Dict[Any, Any]:
         return {}
@@ -36,50 +42,100 @@ class PyAudioRecorder(AudioRecorder):
         AudioRecorder.__init__(self)
         self.audio = None
         self.mic = None
-        self.buffer = None
 
-    def start_recording(self, device_index=None):
+        self.buffer = bytes()
+        self.buffer_users = 0
+
+        self.queue = Queue()
+        self.queue_users = 0
+
+    def start_recording(self, start_buffer, start_queue, device=None):
         import pyaudio
 
+        device_index = device
         if device_index is not None:
             device_index = int(device_index)
             if device_index < -1:
                 # Default device
                 device_index = None
 
-        def stream_callback(data, frame_count, time_info, status):
-            if self.buffer is None:
-                self.buffer = data
-            else:
-                self.buffer += data
+        if start_buffer:
+            self.buffer_users += 1
 
-            return (data, pyaudio.paContinue)
+        if start_queue:
+            self.queue_users += 1
 
-        self.audio = pyaudio.PyAudio()
-        data_format = self.audio.get_format_from_width(2)  # 16-bit
-        self.mic = self.audio.open(format=data_format,
-                                   channels=1,
-                                   rate=16000,
-                                   input_device_index=device_index,
-                                   input=True,
-                                   stream_callback=stream_callback)
+        if not self._is_recording:
+            # Reset
+            self.buffer = bytes()
 
-        self.mic.start_stream()
-        self._is_recording = True
+            # Clear queue
+            while not self.queue.empty():
+                self.queue.get_nowait()
 
-    def stop_recording(self) -> bytes:
-        self._is_recording = False
-        self.mic.stop_stream()
-        self.audio.terminate()
+            # Start audio system
+            def stream_callback(data, frame_count, time_info, status):
+                if self.buffer_users > 0:
+                    self.buffer += data
 
-        with io.BytesIO() as wav_buffer:
-            with wave.open(wav_buffer, mode='wb') as wav_file:
-                wav_file.setframerate(16000)
-                wav_file.setsampwidth(2)
-                wav_file.setnchannels(1)
-                wav_file.writeframesraw(self.buffer)
+                if self.queue_users > 0:
+                    self.queue.put(data)
 
-            return wav_buffer.getvalue()
+                return (data, pyaudio.paContinue)
+
+            self.audio = pyaudio.PyAudio()
+            data_format = self.audio.get_format_from_width(2)  # 16-bit
+            self.mic = self.audio.open(format=data_format,
+                                       channels=1,
+                                       rate=16000,
+                                       input_device_index=device_index,
+                                       input=True,
+                                       stream_callback=stream_callback,
+                                       frames_per_buffer=480)
+
+            self.mic.start_stream()
+            self._is_recording = True
+            logger.debug('Recording from microphone')
+
+    # -------------------------------------------------------------------------
+
+    def stop_recording(self, stop_buffer, stop_queue) -> bytes:
+        if stop_buffer:
+            self.buffer_users = max(0, self.buffer_users - 1)
+
+        if stop_queue:
+            self.queue_users = max(0, self.queue_users - 1)
+
+        if self._is_recording and (self.buffer_users <= 0) and (self.queue_users <= 0):
+            # Shut down audio system
+            self._is_recording = False
+            self.mic.stop_stream()
+            self.audio.terminate()
+            logger.debug('Stopped recording from microphone')
+
+            # Write final empty buffer
+            self.queue.put(bytes())
+
+        if stop_buffer:
+            # Return WAV data
+            with io.BytesIO() as wav_buffer:
+                with wave.open(wav_buffer, mode='wb') as wav_file:
+                    wav_file.setframerate(16000)
+                    wav_file.setsampwidth(2)
+                    wav_file.setnchannels(1)
+                    wav_file.writeframesraw(self.buffer)
+
+                return wav_buffer.getvalue()
+
+        # Empty buffer
+        return bytes()
+
+    # -------------------------------------------------------------------------
+
+    def get_queue(self) -> Queue:
+        return self.queue
+
+    # -------------------------------------------------------------------------
 
     def get_microphones(self) -> Dict[Any, Any]:
         import pyaudio
@@ -231,7 +287,7 @@ class ARecordAudioRecorder(AudioRecorder):
 #                 self.record_buffer = None
 #                 self.maybe_stop_proc()
 #         except Exception as e:
-#             logging.exception('receiveMessage')
+#             logger.exception('receiveMessage')
 
 #     # -------------------------------------------------------------------------
 
@@ -267,7 +323,7 @@ class ARecordAudioRecorder(AudioRecorder):
 #                     for actor in self.subscribers:
 #                         self.send(actor, msg)
 #         except Exception as e:
-#             logging.exception('read_data')
+#             logger.exception('read_data')
 
 #     # -------------------------------------------------------------------------
 

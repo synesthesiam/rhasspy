@@ -11,11 +11,14 @@ from thespian.actors import Actor, ActorAddress
 from profiles import Profile
 from audio_player import AudioPlayer, APlayAudioPlayer
 from audio_recorder import AudioRecorder
+from command_listener import CommandListener
 from stt import SpeechDecoder, PocketsphinxDecoder, RemoteDecoder
 from intent import IntentRecognizer, FuzzyWuzzyRecognizer
 from pronounce import WordPronounce, PhonetisaurusPronounce
 
 # -----------------------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
 
 class Rhasspy:
     def __init__(self,
@@ -27,13 +30,15 @@ class Rhasspy:
 
         self.audio_recorder: Optional[AudioRecorder] = None
         self.audio_player: Optional[AudioPlayer] = None
+        self.command_listener: Optional[CommandListener] = None
+
         self.speech_decoders: Dict[str, SpeechDecoder] = {}
         self.intent_recognizers: Dict[str, IntentRecognizer] = {}
         self.word_pronouncers: Dict[str, WordPronounce] = {}
 
         # ---------------------------------------------------------------------
 
-        logging.debug('Profiles dirs: %s' % self.profiles_dirs)
+        logger.debug('Profiles dirs: %s' % self.profiles_dirs)
 
         # Load default settings
         self.defaults_json = Profile.load_defaults(self.profiles_dirs)
@@ -48,10 +53,10 @@ class Rhasspy:
             for name in os.listdir(profiles_dir):
                 profile_dir = os.path.join(profiles_dir, name)
                 if os.path.isdir(profile_dir):
-                    logging.debug('Loading profile from %s' % profile_dir)
+                    logger.debug('Loading profile from %s' % profile_dir)
                     profile = Profile(name, self.profiles_dirs)
                     self.profiles[name] = profile
-                    logging.info('Loaded profile %s' % name)
+                    logger.info('Loaded profile %s' % name)
 
         # Get default profile
         if self.default_profile_name is None:
@@ -77,11 +82,11 @@ class Rhasspy:
             if system == 'arecord':
                 from .audio_recorder import ARecordAudioRecorder
                 self.audio_recorder = ARecordAudioRecorder()
-                logging.debug('Using arecord for microphone')
+                logger.debug('Using arecord for microphone')
             elif system == 'pyaudio':
                 from .audio_recorder import PyAudioRecorder
                 self.audio_recorder = PyAudioRecorder()
-                logging.debug('Using PyAudio for microphone')
+                logger.debug('Using PyAudio for microphone')
 
         return self.audio_recorder
 
@@ -133,10 +138,10 @@ class Rhasspy:
             for name in os.listdir(profiles_dir):
                 profile_dir = os.path.join(profiles_dir, name)
                 if (name == profile_name) and os.path.isdir(profile_dir):
-                    logging.debug('Loading profile from %s' % profile_dir)
+                    logger.debug('Loading profile from %s' % profile_dir)
                     profile = Profile(name, self.profiles_dirs)
                     self.profiles[name] = profile
-                    logging.info('Loaded profile %s' % name)
+                    logger.info('Loaded profile %s' % name)
                     return
 
     # -------------------------------------------------------------------------
@@ -152,8 +157,11 @@ class Rhasspy:
 
     # -------------------------------------------------------------------------
 
-    def get_command_listener(self, profile_name: str):
-        pass
+    def get_command_listener(self):
+        if self.command_listener is None:
+            self.command_listener = CommandListener(self.get_audio_recorder(), 16000)
+
+        return self.command_listener
 
     # -------------------------------------------------------------------------
 
@@ -162,11 +170,11 @@ class Rhasspy:
         profile = self.profiles[profile_name]
 
         # Generate sentences
-        logging.info('Generating sentences')
+        logger.info('Generating sentences')
         tagged_sentences = get_tagged_sentences(profile)
 
         # Train speech system
-        logging.info('Training speech to text system')
+        logger.info('Training speech to text system')
         stt_system = profile.get('speech_to_text.system')
         assert stt_system in ['pocketsphinx'], 'Invalid speech to text system: %s' % stt_system
 
@@ -177,7 +185,7 @@ class Rhasspy:
         sentences_by_intent = stt_trainer.train(tagged_sentences)
 
         # Train intent recognizer
-        logging.info('Training intent recognizer')
+        logger.info('Training intent recognizer')
         intent_system = profile.get('intent.system')
         assert intent_system in ['fuzzywuzzy'], 'Invalid intent system: %s' % intent_system
 
@@ -223,12 +231,12 @@ class Rhasspy:
 #                 self.load_profiles()
 
 #         except Exception as ex:
-#             logging.exception('receiveMessage')
+#             logger.exception('receiveMessage')
 
 #     # -------------------------------------------------------------------------
 
 #     def load_settings(self):
-#         logging.debug('Profiles dirs: %s' % self.profiles_dirs)
+#         logger.debug('Profiles dirs: %s' % self.profiles_dirs)
 
 #         # Load default settings
 #         self.defaults_json = Profile.load_defaults(self.profiles_dirs)
@@ -262,7 +270,7 @@ class Rhasspy:
     #             decoder = maybe_load_decoder(default_profile)
     #             self.stt_decoders[default_profile.name] = decoder
     #         except Exception as e:
-    #             logging.error('Failed to pre-load profile')
+    #             logger.error('Failed to pre-load profile')
 
     #     if self.default_profile.rhasspy.get('listen_on_start', False):
     #         # Start listening for wake word
@@ -324,7 +332,7 @@ class Rhasspy:
 
     #             return intent
     #     except:
-    #         logging.exception('Error processing command')
+    #         logger.exception('Error processing command')
 
     #     return {}
 
@@ -408,7 +416,7 @@ class Rhasspy:
     #     if decoder.hyp() is not None:
     #         text = decoder.hyp().hypstr
     #         intent = get_intent(profile, text)
-    #         logging.debug(intent)
+    #         logger.debug(intent)
 
     #         if not no_hass:
     #             # Send intent to Home Assistant

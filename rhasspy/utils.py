@@ -16,6 +16,10 @@ import requests
 
 # -----------------------------------------------------------------------------
 
+logger = logging.getLogger(__name__)
+
+# -----------------------------------------------------------------------------
+
 def read_dict(dict_file: Iterable[str],
               word_dict: Optional[Mapping[str, List[str]]] = None):
     """
@@ -177,11 +181,11 @@ def send_intent(hass_config, intent):
     try:
         # Send to Home Assistant
         response = requests.post(post_url, headers=headers, json=slots)
-        logging.debug('POSTed intent to %s with headers=%s' % (post_url, headers))
+        logger.debug('POSTed intent to %s with headers=%s' % (post_url, headers))
 
         response.raise_for_status()
     except Exception as e:
-        logging.exception('send_intent')
+        logger.exception('send_intent')
         intent['error'] = str(e)
 
 # -----------------------------------------------------------------------------

@@ -13,6 +13,8 @@ from profiles import Profile
 
 # -----------------------------------------------------------------------------
 
+logger = logging.getLogger(__name__)
+
 class WordPronounce:
     def speak(self,
               espeak_str: str,
@@ -90,7 +92,7 @@ class PhonetisaurusPronounce(WordPronounce):
         # Write WAV to temporary file
         with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb+') as wav_file:
             espeak_command.extend(['-w', wav_file.name])
-            logging.debug(espeak_command)
+            logger.debug(espeak_command)
 
             # Generate WAV data
             espeak_phonemes = subprocess.check_output(espeak_command).decode().strip()
@@ -120,7 +122,7 @@ class PhonetisaurusPronounce(WordPronounce):
         assert n > 0, 'No pronunciations requested'
         assert len(word) > 0, 'No word to look up'
 
-        logging.debug('Getting pronunciations for %s' % word)
+        logger.debug('Getting pronunciations for %s' % word)
 
         # Load base and custom dictionaries
         base_dictionary_path = self.profile.read_path(
@@ -146,7 +148,7 @@ class PhonetisaurusPronounce(WordPronounce):
 
         espeak_command.append(word)
 
-        logging.debug(espeak_command)
+        logger.debug(espeak_command)
         espeak_str = subprocess.check_output(espeak_command).decode().strip()
 
         return in_dictionary, pronunciations, espeak_str
@@ -190,7 +192,7 @@ class PhonetisaurusPronounce(WordPronounce):
                                 '--nbest=' + str(n),
                                 '--words']
 
-                logging.debug(g2p_command)
+                logger.debug(g2p_command)
                 subprocess.check_call(g2p_command, stdout=pronounce_file)
 
                 pronounce_file.seek(0)
@@ -274,7 +276,7 @@ class PhonetisaurusPronounce(WordPronounce):
 #                                                      pronunciations,
 #                                                      espeak_str))
 #         except Exception as e:
-#             logging.exception('receiveMessage')
+#             logger.exception('receiveMessage')
 
 # -----------------------------------------------------------------------------
 # Tests
