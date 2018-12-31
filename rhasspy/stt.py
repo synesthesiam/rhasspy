@@ -16,6 +16,9 @@ from profile import Profile
 logger = logging.getLogger(__name__)
 
 class SpeechDecoder:
+    def preload(self):
+        pass
+
     def transcribe_wav(self, wav_data: bytes) -> str:
         pass
 
@@ -46,6 +49,9 @@ class PocketsphinxDecoder(SpeechDecoder):
     def __init__(self, profile: Profile):
         self.profile = profile
         self.decoder = None
+
+    def preload(self):
+        self._maybe_load_decoder()
 
     def transcribe_wav(self, wav_data: bytes) -> str:
         self._maybe_load_decoder()

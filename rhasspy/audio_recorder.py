@@ -6,6 +6,7 @@ import threading
 import time
 import wave
 import io
+import re
 from queue import Queue
 from typing import Dict, Any
 
@@ -16,7 +17,8 @@ logger = logging.getLogger(__name__)
 # -----------------------------------------------------------------------------
 
 class AudioRecorder:
-    def __init__(self):
+    def __init__(self, device=None):
+        self.device = device
         self._is_recording = False
 
     def start_recording(self, start_buffer, start_queue, device=None):
@@ -38,8 +40,8 @@ class AudioRecorder:
 # -----------------------------------------------------------------------------
 
 class PyAudioRecorder(AudioRecorder):
-    def __init__(self):
-        AudioRecorder.__init__(self)
+    def __init__(self, device=None):
+        AudioRecorder.__init__(self, device)
         self.audio = None
         self.mic = None
 
@@ -52,7 +54,7 @@ class PyAudioRecorder(AudioRecorder):
     def start_recording(self, start_buffer, start_queue, device=None):
         import pyaudio
 
-        device_index = device
+        device_index = device or self.device
         if device_index is not None:
             device_index = int(device_index)
             if device_index < -1:
@@ -65,7 +67,7 @@ class PyAudioRecorder(AudioRecorder):
         if start_queue:
             self.queue_users += 1
 
-        if not self._is_recording:
+        if not self.is_recording:
             # Reset
             self.buffer = bytes()
 
@@ -106,7 +108,7 @@ class PyAudioRecorder(AudioRecorder):
         if stop_queue:
             self.queue_users = max(0, self.queue_users - 1)
 
-        if self._is_recording and (self.buffer_users <= 0) and (self.queue_users <= 0):
+        if self.is_recording and (self.buffer_users <= 0) and (self.queue_users <= 0):
             # Shut down audio system
             self._is_recording = False
             self.mic.stop_stream()
@@ -153,43 +155,109 @@ class PyAudioRecorder(AudioRecorder):
 # -----------------------------------------------------------------------------
 
 class ARecordAudioRecorder(AudioRecorder):
-    def __init__(self):
-        AudioRecorder.__init__(self)
-        self.record_file = None
+    def __init__(self, device=None):
+        AudioRecorder.__init__(self, device)
+
         self.record_proc = None
 
-    def start_recording(self, device_name=None):
-        self.record_file = tempfile.NamedTemporaryFile(suffix='.wav', mode='wb+')
+        self.buffer = bytes()
+        self.buffer_users = 0
 
-        # 16-bit 16Khz mono WAV
-        arecord_cmd = ['arecord',
-                       '-r', '16000',
-                       '-f', 'S16_LE',
-                       '-c', '1',
-                       '-t', 'wav']
+        self.queue = Queue()
+        self.queue_users = 0
 
-        if device_name is not None:
-            # Use specific ALSA device
-            device_name = str(device_name)
-            arecord_cmd.extend(['-D', device_name])
+    # -------------------------------------------------------------------------
 
-        # Add file name
-        arecord_cmd.append(self.record_file.name)
+    def start_recording(self, start_buffer, start_queue, device=None):
+        if start_buffer:
+            self.buffer_users += 1
 
-        self.record_proc = subprocess.Popen(arecord, close_fds=True)
-        self._is_recording = True
+        if start_queue:
+            self.queue_users += 1
 
-    def stop_recording(self) -> bytes:
-        self._is_recording = False
-        self.record_proc.terminate()
-        self.record_file.seek(0)
-        data = open(self.record_file.name, 'rb').read()
-        try:
-            os.unlink(self.record_file.name)
-        except:
-            pass
+        if not self.is_recording:
+            # Reset
+            self.buffer = bytes()
 
-        return data
+            # Clear queue
+            while not self.queue.empty():
+                self.queue.get_nowait()
+
+            # 16-bit 16Khz mono WAV
+            arecord_cmd = ['arecord',
+                          '-q',
+                          '-r', '16000',
+                          '-f', 'S16_LE',
+                          '-c', '1',
+                          '-t', 'wav']
+
+            device_name = device or self.device
+            if device_name is not None:
+                # Use specific ALSA device
+                device_name = str(device_name)
+                arecord_cmd.extend(['-D', device_name])
+
+            logger.debug(arecord_cmd)
+
+            def process_data():
+                proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
+                while self.is_recording:
+                    data = proc.stdout.read(480 * 2)  # 30 ms
+
+                    if self.buffer_users > 0:
+                        self.buffer += data
+
+                    if self.queue_users > 0:
+                        self.queue.put(data)
+
+                proc.terminate()
+
+            # Start recording
+            self._is_recording = True
+            self.record_thread = threading.Thread(target=process_data, daemon=True)
+            self.record_thread.start()
+
+            logger.debug('Recording from microphone')
+
+    # -------------------------------------------------------------------------
+
+    def stop_recording(self, stop_buffer, stop_queue) -> bytes:
+        if stop_buffer:
+            self.buffer_users = max(0, self.buffer_users - 1)
+
+        if stop_queue:
+            self.queue_users = max(0, self.queue_users - 1)
+
+        if self.is_recording and (self.buffer_users <= 0) and (self.queue_users <= 0):
+            # Shut down audio system
+            self._is_recording = False
+            self.record_thread.join()
+
+            logger.debug('Stopped recording from microphone')
+
+            # Write final empty buffer
+            self.queue.put(bytes())
+
+        if stop_buffer:
+            # Return WAV data
+            with io.BytesIO() as wav_buffer:
+                with wave.open(wav_buffer, mode='wb') as wav_file:
+                    wav_file.setframerate(16000)
+                    wav_file.setsampwidth(2)
+                    wav_file.setnchannels(1)
+                    wav_file.writeframesraw(self.buffer)
+
+                return wav_buffer.getvalue()
+
+        # Empty buffer
+        return bytes()
+
+    # -------------------------------------------------------------------------
+
+    def get_queue(self) -> Queue:
+        return self.queue
+
+    # -------------------------------------------------------------------------
 
     def get_microphones(self) -> Dict[Any, Any]:
         output = subprocess.check_output(['arecord', '-L'])\

@@ -8,7 +8,7 @@
                     </div>
                     <div class="col-auto">
                         <select id="device" v-model="device">
-                            <option value="-1">Default Device</option>
+                            <option value="">Default Device</option>
                             <option v-for="(desc, id) in microphones" :value="id" v-bind:key="id">{{ id }}: {{ desc }}</option>
                         </select>
                     </div>
@@ -89,7 +89,7 @@
 
              recording: false,
              interpreting: false,
-             device: '-1',
+             device: '',
 
              microphones: {},
 

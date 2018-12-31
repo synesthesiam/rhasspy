@@ -3,10 +3,11 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import logging
+import time
 from typing import List, Dict, Optional
 
 import pydash
-from thespian.actors import Actor, ActorAddress
+# from thespian.actors import Actor, ActorAddress
 
 from profiles import Profile
 from audio_player import AudioPlayer, APlayAudioPlayer
@@ -15,6 +16,8 @@ from command_listener import CommandListener
 from stt import SpeechDecoder, PocketsphinxDecoder, RemoteDecoder
 from intent import IntentRecognizer, FuzzyWuzzyRecognizer
 from pronounce import WordPronounce, PhonetisaurusPronounce
+from wake import WakeListener, PocketsphinxWakeListener
+from intent_handler import IntentHandler, HomeAssistantIntentHandler
 
 # -----------------------------------------------------------------------------
 
@@ -35,6 +38,8 @@ class Rhasspy:
         self.speech_decoders: Dict[str, SpeechDecoder] = {}
         self.intent_recognizers: Dict[str, IntentRecognizer] = {}
         self.word_pronouncers: Dict[str, WordPronounce] = {}
+        self.wake_listeners: Dict[str, WakeListener] = {}
+        self.intent_handlers: Dict[str, IntentHandler] = {}
 
         # ---------------------------------------------------------------------
 
@@ -61,15 +66,21 @@ class Rhasspy:
         # Get default profile
         if self.default_profile_name is None:
             self.default_profile_name = \
-                pydash.get(self.defaults_json, 'rhasspy.default_profile', 'en')
+                self.get_default('rhasspy.default_profile', 'en')
 
         self.default_profile = self.profiles[self.default_profile_name]
 
     # -------------------------------------------------------------------------
 
+    def get_default(self, path: str, default=None):
+        return pydash.get(self.defaults_json, path, default)
+
+    # -------------------------------------------------------------------------
+
     def get_audio_player(self) -> AudioPlayer:
         if self.audio_player is None:
-            self.audio_player = APlayAudioPlayer()
+            device = self.get_default('sounds.aplay.device')
+            self.audio_player = APlayAudioPlayer(device)
 
         return self.audio_player
 
@@ -81,11 +92,13 @@ class Rhasspy:
             assert system in ['arecord', 'pyaudio'], 'Unknown microphone system: %s' % system
             if system == 'arecord':
                 from .audio_recorder import ARecordAudioRecorder
-                self.audio_recorder = ARecordAudioRecorder()
+                device = self.get_default('microphone.arecord.device')
+                self.audio_recorder = ARecordAudioRecorder(device)
                 logger.debug('Using arecord for microphone')
             elif system == 'pyaudio':
                 from .audio_recorder import PyAudioRecorder
-                self.audio_recorder = PyAudioRecorder()
+                device = self.get_default('microphone.pyaudio.device')
+                self.audio_recorder = PyAudioRecorder(device)
                 logger.debug('Using PyAudio for microphone')
 
         return self.audio_recorder
@@ -97,11 +110,14 @@ class Rhasspy:
         if decoder is None:
             profile = self.profiles[profile_name]
             system = profile.get('speech_to_text.system')
-            assert system in ['pocketsphinx', 'remote'], 'Invalid speech to text system: %s' % system
+            assert system in ['dummy', 'pocketsphinx', 'remote'], 'Invalid speech to text system: %s' % system
             if system == 'pocketsphinx':
                 decoder = PocketsphinxDecoder(profile)
             elif system == 'remote':
                 decoder = RemoteDecoder(profile)
+            elif system == 'dummy':
+                # Does nothing
+                decoder = SpeechDecoder(profile)
 
             # Cache decoder
             self.speech_decoders[profile_name] = decoder
@@ -115,34 +131,23 @@ class Rhasspy:
         if recognizer is None:
             profile = self.profiles[profile_name]
             system = profile.get('intent.system')
-            assert system in ['fuzzywuzzy', 'rasa', 'remote'], 'Invalid intent system: %s' % system
+            assert system in ['dummy', 'fuzzywuzzy', 'rasa', 'remote'], 'Invalid intent system: %s' % system
             if system == 'fuzzywuzzy':
                 recognizer = FuzzyWuzzyRecognizer(profile)
+            elif system == 'rasa':
+                # TODO
+                pass
+            elif system == 'remote':
+                # TODO
+                pass
+            elif system == 'dummy':
+                # Does nothing
+                recognizer = IntentRecognizer(profile)
 
             # Cache recognizer
             self.intent_recognizers[profile_name] = recognizer
 
         return recognizer
-
-    # -------------------------------------------------------------------------
-
-    def reload_profile(self, profile_name: str):
-        self.speech_decoders.pop(profile_name, None)
-        self.intent_recognizers.pop(profile_name, None)
-        self.profiles.pop(profile_name, None)
-
-        for profiles_dir in self.profiles_dirs:
-            if not os.path.exists(profiles_dir):
-                continue
-
-            for name in os.listdir(profiles_dir):
-                profile_dir = os.path.join(profiles_dir, name)
-                if (name == profile_name) and os.path.isdir(profile_dir):
-                    logger.debug('Loading profile from %s' % profile_dir)
-                    profile = Profile(name, self.profiles_dirs)
-                    self.profiles[name] = profile
-                    logger.info('Loaded profile %s' % name)
-                    return
 
     # -------------------------------------------------------------------------
 
@@ -162,6 +167,94 @@ class Rhasspy:
             self.command_listener = CommandListener(self.get_audio_recorder(), 16000)
 
         return self.command_listener
+
+    # -------------------------------------------------------------------------
+
+    def get_wake_listener(self, profile_name: str) -> WakeListener:
+        wake = self.wake_listeners.get(profile_name)
+        if wake is None:
+            profile = self.profiles[profile_name]
+            system = profile.get('wake.system')
+            assert system in ['dummy', 'pocketsphinx'], 'Invalid wake system: %s' % system
+            if system == 'pocketsphinx':
+                wake = PocketsphinxWakeListener(
+                    self.get_audio_recorder(), profile, self._handle_wake)
+            elif system == 'dummy':
+                # Does nothing
+                wake = WakeListener(self.get_audio_recorder(), profile)
+
+            self.wake_listeners[profile_name] = wake
+
+        return wake
+
+    def _handle_wake(self, profile_name: str, keyphrase: str, **kwargs):
+        logger.debug('%s %s' % (profile_name, keyphrase))
+        profile = self.profiles[profile_name]
+
+        audio_player = self.get_audio_player()
+        audio_player.play_file(profile.get('sounds.wake', ''))
+
+        # Listen for a command
+        wav_data = self.get_command_listener().listen_for_command()
+
+        # Beep
+        audio_player.play_file(profile.get('sounds.recorded', ''))
+
+        # speech -> intent
+        intent = self.wav_to_intent(wav_data, profile_name)
+
+        logger.debug(intent)
+
+        # Handle intent
+        no_hass = kwargs.get('no_hass', False)
+        if not no_hass:
+            self.get_intent_handler(profile_name).handle_intent(intent)
+
+    # -------------------------------------------------------------------------
+
+    def get_intent_handler(self, profile_name: str) -> IntentHandler:
+        intent_handler = self.intent_handlers.get(profile_name)
+        if intent_handler is None:
+            profile = self.profiles[profile_name]
+            intent_handler = HomeAssistantIntentHandler(profile)
+
+            self.intent_handlers[profile_name] = intent_handler
+
+        return intent_handler
+
+    # -------------------------------------------------------------------------
+
+    def preload_profile(self, profile_name: str):
+        self.get_speech_decoder(profile_name).preload()
+        self.get_intent_recognizer(profile_name).preload()
+        self.get_wake_listener(profile_name).preload()
+        self.get_intent_handler(profile_name).preload()
+
+    def reload_profile(self, profile_name: str):
+        self.speech_decoders.pop(profile_name, None)
+        self.intent_recognizers.pop(profile_name, None)
+        self.wake_listeners.pop(profile_name, None)
+        self.intent_handlers.pop(profile_name, None)
+        self.profiles.pop(profile_name, None)
+
+        for profiles_dir in self.profiles_dirs:
+            if not os.path.exists(profiles_dir):
+                continue
+
+            for name in os.listdir(profiles_dir):
+                profile_dir = os.path.join(profiles_dir, name)
+                if (name == profile_name) and os.path.isdir(profile_dir):
+                    logger.debug('Loading profile from %s' % profile_dir)
+                    profile = Profile(name, self.profiles_dirs)
+                    self.profiles[name] = profile
+                    logger.info('Loaded profile %s' % name)
+
+                    # Pre-load if default profile
+                    if (profile_name == self.default_profile_name) \
+                       and self.get_default('rhasspy.preload_profile'):
+                        self.preload_profile(profile_name)
+
+                    return
 
     # -------------------------------------------------------------------------
 
@@ -194,6 +287,28 @@ class Rhasspy:
             intent_trainer = FuzzyWuzzyIntentTrainer(profile)
 
         intent_trainer.train(tagged_sentences, sentences_by_intent)
+
+    # -------------------------------------------------------------------------
+
+    def wav_to_intent(self, wav_data: bytes, profile_name: str):
+        '''Transcribes WAV data and does intent recognition for profile'''
+        decoder = self.get_speech_decoder(profile_name)
+        recognizer = self.get_intent_recognizer(profile_name)
+
+        # WAV -> text
+        start_time = time.time()
+        text = decoder.transcribe_wav(wav_data)
+
+        # text -> intent (JSON)
+        intent = recognizer.recognize(text)
+
+        intent_sec = time.time() - start_time
+        intent['time_sec'] = intent_sec
+
+        logger.debug(text)
+
+        return intent
+
 
 # -----------------------------------------------------------------------------
 
@@ -258,7 +373,7 @@ class Rhasspy:
 
 #             # Create actor
 #             actor = self.createActor(ProfileActor)
-#             self.profle_actors[profile_name] = actor
+#             self.profile_actors[profile_name] = actor
 #             self.send(actor, profile)
 
     # # -------------------------------------------------------------------------

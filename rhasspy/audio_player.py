@@ -12,32 +12,43 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 class AudioPlayer:
-    def play_wav(self, path: str, device: Optional[str] = None):
+    def __init__(self, device=None):
+        self.device = device
+
+    def play_file(self, path: str):
         pass
 
-    def play_wav(self, wav_data: bytes, device: Optional[str] = None):
+    def play_data(self, wav_data: bytes):
         with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb+') as wav_file:
             wav_file.write(wav_data)
             wav_file.seek(0)
-            self.play_wav(wav_file.name)
+            self.play_file(wav_file.name)
 
 # -----------------------------------------------------------------------------
 
 class APlayAudioPlayer(AudioPlayer):
-    def play_wav(self, path: str, device: str=None):
-        aplay_cmd = ['aplay']
+    def __init__(self, device=None):
+        AudioPlayer.__init__(self, device)
 
-        if device is not None:
-            aplay_cmd.extend(['-D', str(device)])
+    def play_file(self, path: str):
+        if not os.path.exists(path):
+            return
+
+        aplay_cmd = ['aplay', '-q']
+
+        if self.device is not None:
+            aplay_cmd.extend(['-D', str(self.device)])
 
         aplay_cmd.append(path)
+
+        logger.debug(aplay_cmd)
         subprocess.run(aplay_cmd)
 
-    def play_wav(self, wav_data: bytes, device: str=None):
-        aplay_cmd = ['aplay']
+    def play_data(self, wav_data: bytes):
+        aplay_cmd = ['aplay', '-q']
 
-        if device is not None:
-            aplay_cmd.extend(['-D', str(device)])
+        if self.device is not None:
+            aplay_cmd.extend(['-D', str(self.device)])
 
         logger.debug(aplay_cmd)
 
@@ -82,13 +93,13 @@ class APlayAudioPlayer(AudioPlayer):
 # Tests
 # -----------------------------------------------------------------------------
 
-if __name__ == '__main__':
-    # Start actor system
-    system = ActorSystem('multiprocQueueBase')
+# if __name__ == '__main__':
+#     # Start actor system
+#     system = ActorSystem('multiprocQueueBase')
 
-    try:
-        actor = system.createActor(APlayActor)
-        system.ask(actor, PlayWavFile('etc/wav/beep_lo.wav'))
-    finally:
-        # Shut down actor system
-        system.shutdown()
+#     try:
+#         actor = system.createActor(APlayActor)
+#         system.ask(actor, PlayWavFile('etc/wav/beep_lo.wav'))
+#     finally:
+#         # Shut down actor system
+#         system.shutdown()
