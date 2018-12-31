@@ -18,10 +18,13 @@ logger = logging.getLogger(__name__)
 class SpeechTrainer:
     '''Base class for all speech to text system trainers.'''
 
+    # Type for sentences by intent
+    SBI_TYPE = Dict[str, List[Tuple[str, List[Tuple[str, str]], List[str]]]]
+
     def __init__(self, profile: Profile) -> None:
         self.profile = profile
 
-    def train(self, tagged_sentences: Dict[str, List[str]]):
+    def train(self, tagged_sentences: Dict[str, List[str]]) -> SBI_TYPE:
         '''Train a speech recognition system from a set of sentences grouped by intent.
         Sentences are tagged with Markdown-style entities.'''
         pass
@@ -37,7 +40,7 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
 
     def train(self, tagged_sentences: Dict[str, List[str]]):
         '''Creates raw sentences and ARPA language model for pocketsphinx'''
-        sentences_by_intent: Dict[str, List[str]] = defaultdict(list)
+        sentences_by_intent: SpeechTrainer.SBI_TYPE = defaultdict(list)
 
         self.write_dictionary(tagged_sentences, sentences_by_intent)
 
@@ -49,7 +52,7 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
 
     # -------------------------------------------------------------------------
 
-    def write_dictionary(self, tagged_sentences, sentences_by_intent):
+    def write_dictionary(self, tagged_sentences, sentences_by_intent: SpeechTrainer.SBI_TYPE):
         '''Writes all required words to a CMU dictionary.
         Unknown words have their pronunciations guessed and written to a separate dictionary.
         Fails if any unknown words are found.'''
@@ -76,7 +79,7 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
         custom_path = self.profile.read_path(
             self.profile.get('speech_to_text.pocketsphinx.custom_words'))
 
-        word_dict = {}
+        word_dict: Dict[str, List[str]] = {}
         for word_dict_path in [base_dictionary_path, custom_path]:
             if os.path.exists(word_dict_path):
                 with open(word_dict_path, 'r') as dictionary_file:
@@ -97,7 +100,7 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
             dictionary_upper = self.profile.get('speech_to_text.dictionary_upper', False)
             with open(unknown_path, 'w') as unknown_file:
                 for word in unknown_words:
-                    _, pronounces, _ = word_pron.pronounce(word, n=1)
+                    _, pronounces, _ = self.word_pron.pronounce(word, n=1)
                     phonemes = ' '.join(pronounces[0])
 
                     # Dictionary uses upper-case letters
@@ -130,7 +133,7 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
 
     # -------------------------------------------------------------------------
 
-    def write_sentences(self, sentences_by_intent):
+    def write_sentences(self, sentences_by_intent: SpeechTrainer.SBI_TYPE):
         '''Writes all raw sentences to a text file.
         Optionally balances (repeats) sentences so all intents have the same number.'''
 
