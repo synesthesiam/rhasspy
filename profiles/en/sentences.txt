@@ -70,78 +70,78 @@ how cold is it
 how cold is it
 how cold is it
 how cold is it
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door open
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
-is the garage door closed
+set the bedroom light to red
+set the bedroom light to red
+set the bedroom light to red
+set the bedroom light to red
+set the bedroom light to green
+set the bedroom light to green
+set the bedroom light to green
+set the bedroom light to green
+set the bedroom light to blue
+set the bedroom light to blue
+set the bedroom light to blue
+set the bedroom light to blue
+set the bedroom light red
+set the bedroom light red
+set the bedroom light red
+set the bedroom light red
+set the bedroom light green
+set the bedroom light green
+set the bedroom light green
+set the bedroom light green
+set the bedroom light blue
+set the bedroom light blue
+set the bedroom light blue
+set the bedroom light blue
+set bedroom light to red
+set bedroom light to red
+set bedroom light to red
+set bedroom light to red
+set bedroom light to green
+set bedroom light to green
+set bedroom light to green
+set bedroom light to green
+set bedroom light to blue
+set bedroom light to blue
+set bedroom light to blue
+set bedroom light to blue
+set bedroom light red
+set bedroom light red
+set bedroom light red
+set bedroom light red
+set bedroom light green
+set bedroom light green
+set bedroom light green
+set bedroom light green
+set bedroom light blue
+set bedroom light blue
+set bedroom light blue
+set bedroom light blue
+make the bedroom light red
+make the bedroom light red
+make the bedroom light red
+make the bedroom light red
+make the bedroom light green
+make the bedroom light green
+make the bedroom light green
+make the bedroom light green
+make the bedroom light blue
+make the bedroom light blue
+make the bedroom light blue
+make the bedroom light blue
+make bedroom light red
+make bedroom light red
+make bedroom light red
+make bedroom light red
+make bedroom light green
+make bedroom light green
+make bedroom light green
+make bedroom light green
+make bedroom light blue
+make bedroom light blue
+make bedroom light blue
+make bedroom light blue
 what time is it
 what time is it
 what time is it
@@ -286,75 +286,75 @@ turn bedroom light on
 turn bedroom light off
 turn bedroom light off
 turn bedroom light off
-set the bedroom light to red
-set the bedroom light to red
-set the bedroom light to red
-set the bedroom light to red
-set the bedroom light to green
-set the bedroom light to green
-set the bedroom light to green
-set the bedroom light to green
-set the bedroom light to blue
-set the bedroom light to blue
-set the bedroom light to blue
-set the bedroom light to blue
-set the bedroom light red
-set the bedroom light red
-set the bedroom light red
-set the bedroom light red
-set the bedroom light green
-set the bedroom light green
-set the bedroom light green
-set the bedroom light green
-set the bedroom light blue
-set the bedroom light blue
-set the bedroom light blue
-set the bedroom light blue
-set bedroom light to red
-set bedroom light to red
-set bedroom light to red
-set bedroom light to red
-set bedroom light to green
-set bedroom light to green
-set bedroom light to green
-set bedroom light to green
-set bedroom light to blue
-set bedroom light to blue
-set bedroom light to blue
-set bedroom light to blue
-set bedroom light red
-set bedroom light red
-set bedroom light red
-set bedroom light red
-set bedroom light green
-set bedroom light green
-set bedroom light green
-set bedroom light green
-set bedroom light blue
-set bedroom light blue
-set bedroom light blue
-set bedroom light blue
-make the bedroom light red
-make the bedroom light red
-make the bedroom light red
-make the bedroom light red
-make the bedroom light green
-make the bedroom light green
-make the bedroom light green
-make the bedroom light green
-make the bedroom light blue
-make the bedroom light blue
-make the bedroom light blue
-make the bedroom light blue
-make bedroom light red
-make bedroom light red
-make bedroom light red
-make bedroom light red
-make bedroom light green
-make bedroom light green
-make bedroom light green
-make bedroom light green
-make bedroom light blue
-make bedroom light blue
-make bedroom light blue
-make bedroom light blue
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door open
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed
+is the garage door closed

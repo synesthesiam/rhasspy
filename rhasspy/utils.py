@@ -4,7 +4,7 @@ import logging
 import math
 import itertools
 import collections
-from typing import Mapping, List, Iterable, Optional, Any
+from typing import Dict, List, Iterable, Optional, Any, Mapping
 
 # -----------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # -----------------------------------------------------------------------------
 
 def read_dict(dict_file: Iterable[str],
-              word_dict: Optional[Mapping[str, List[str]]] = None):
+              word_dict: Optional[Dict[str, List[str]]] = None):
     '''
     Loads a CMU word dictionary, optionally into an existing Python dictionary.
     '''
@@ -53,7 +53,7 @@ def lcm(*nums):
 
 # -----------------------------------------------------------------------------
 
-def recursive_update(base_dict: Mapping[Any, Any], new_dict: Mapping[Any, Any]):
+def recursive_update(base_dict: Dict[Any, Any], new_dict: Mapping[Any, Any]):
     '''Recursively overwrites values in base dictionary with values from new dictionary'''
     for k, v in new_dict.items():
         if isinstance(v, collections.Mapping) and (k in base_dict):
