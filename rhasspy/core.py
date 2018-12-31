@@ -10,15 +10,15 @@ import pydash
 
 # Internal imports
 from profiles import Profile
-from audio_player import AudioPlayer, APlayAudioPlayer
+from audio_player import AudioPlayer
 from audio_recorder import AudioRecorder
 from command_listener import CommandListener
-from stt import SpeechDecoder, PocketsphinxDecoder, RemoteDecoder
-from intent import IntentRecognizer, FuzzyWuzzyRecognizer
-from pronounce import WordPronounce, PhonetisaurusPronounce
-from wake import WakeListener, PocketsphinxWakeListener
-from intent_handler import IntentHandler, HomeAssistantIntentHandler
-from train import SentenceGenerator, JsgfSentenceGenerator
+from stt import SpeechDecoder
+from intent import IntentRecognizer
+from pronounce import WordPronounce
+from wake import WakeListener
+from intent_handler import IntentHandler
+from train import SentenceGenerator
 
 # -----------------------------------------------------------------------------
 
@@ -89,6 +89,7 @@ class Rhasspy:
     def get_audio_player(self) -> AudioPlayer:
         '''Gets the shared audio player'''
         if self.audio_player is None:
+            from audio_player import APlayAudioPlayer
             device = self.get_default('sounds.aplay.device')
             self.audio_player = APlayAudioPlayer(device)
 
@@ -103,12 +104,12 @@ class Rhasspy:
             system = self.default_profile.get('microphone.system')
             assert system in ['arecord', 'pyaudio'], 'Unknown microphone system: %s' % system
             if system == 'arecord':
-                from .audio_recorder import ARecordAudioRecorder
+                from audio_recorder import ARecordAudioRecorder
                 device = self.get_default('microphone.arecord.device')
                 self.audio_recorder = ARecordAudioRecorder(device)
                 logger.debug('Using arecord for microphone')
             elif system == 'pyaudio':
-                from .audio_recorder import PyAudioRecorder
+                from audio_recorder import PyAudioRecorder
                 device = self.get_default('microphone.pyaudio.device')
                 self.audio_recorder = PyAudioRecorder(device)
                 logger.debug('Using PyAudio for microphone')
@@ -125,8 +126,10 @@ class Rhasspy:
             system = profile.get('speech_to_text.system')
             assert system in ['dummy', 'pocketsphinx', 'remote'], 'Invalid speech to text system: %s' % system
             if system == 'pocketsphinx':
+                from stt import PocketsphinxDecoder
                 decoder = PocketsphinxDecoder(profile)
             elif system == 'remote':
+                from stt import RemoteDecoder
                 decoder = RemoteDecoder(profile)
             elif system == 'dummy':
                 # Does nothing
@@ -148,14 +151,16 @@ class Rhasspy:
             assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa', 'remote'], 'Invalid intent system: %s' % system
             if system == 'fuzzywuzzy':
                 # Use fuzzy string matching locally
+                from intent import FuzzyWuzzyRecognizer
                 recognizer = FuzzyWuzzyRecognizer(profile)
             elif system == 'adapt':
                 # TODO
                 # Use Mycroft Adapt locally
                 pass
             elif system == 'rasa':
-                # TODO
                 # Use rasaNLU remotely
+                from intent import RasaIntentRecognizer
+                recognizer = RasaIntentRecognizer(profile)
                 pass
             elif system == 'remote':
                 # TODO
@@ -176,6 +181,7 @@ class Rhasspy:
         '''Gets a word lookup/pronounce-er for a profile'''
         word_pron = self.word_pronouncers.get(profile_name)
         if word_pron is None:
+            from pronounce import PhonetisaurusPronounce
             profile = self.profiles[profile_name]
             word_pron = PhonetisaurusPronounce(profile)
             self.word_pronouncers[profile_name] = word_pron
@@ -187,7 +193,8 @@ class Rhasspy:
     def get_command_listener(self):
         '''Gets the shared voice command listener (VAD + silence bracketing).'''
         if self.command_listener is None:
-            self.command_listener = CommandListener(self.get_audio_recorder(), 16000)
+            self.command_listener = CommandListener(
+                self.get_audio_recorder(), 16000)
 
         return self.command_listener
 
@@ -202,6 +209,7 @@ class Rhasspy:
             assert system in ['dummy', 'pocketsphinx'], 'Invalid wake system: %s' % system
             if system == 'pocketsphinx':
                 # Use pocketsphinx locally
+                from wake import PocketsphinxWakeListener
                 wake = PocketsphinxWakeListener(
                     self.get_audio_recorder(), profile, self._handle_wake)
             elif system == 'dummy':
@@ -242,6 +250,7 @@ class Rhasspy:
         '''Gets intent handler for a profile (e.g., send to Home Assistant).'''
         intent_handler = self.intent_handlers.get(profile_name)
         if intent_handler is None:
+            from intent_handler import HomeAssistantIntentHandler
             profile = self.profiles[profile_name]
             intent_handler = HomeAssistantIntentHandler(profile)
 
@@ -255,6 +264,7 @@ class Rhasspy:
         '''Gets sentence generator for training.'''
         sent_gen = self.sentence_generators.get(profile_name)
         if sent_gen is None:
+            from train import JsgfSentenceGenerator
             profile = self.profiles[profile_name]
             sent_gen = JsgfSentenceGenerator(profile)
 
@@ -327,11 +337,14 @@ class Rhasspy:
         # Train intent recognizer
         logger.info('Training intent recognizer')
         intent_system = profile.get('intent.system')
-        assert intent_system in ['fuzzywuzzy'], 'Invalid intent system: %s' % intent_system
+        assert intent_system in ['fuzzywuzzy', 'rasa'], 'Invalid intent system: %s' % intent_system
 
         if intent_system == 'fuzzywuzzy':
             from intent_train import FuzzyWuzzyIntentTrainer
             intent_trainer = FuzzyWuzzyIntentTrainer(profile)
+        elif intent_system == 'rasa':
+            from intent_train import RasaIntentTrainer
+            intent_trainer = RasaIntentTrainer(profile)
 
         intent_trainer.train(tagged_sentences, sentences_by_intent)
 

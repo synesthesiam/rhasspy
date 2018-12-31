@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import logging
+from urllib.parse import urljoin
 from typing import Dict, Any, Optional, Tuple, List
 
 from profiles import Profile
@@ -26,7 +27,7 @@ class IntentRecognizer:
         pass
 
 # -----------------------------------------------------------------------------
-# Fuzzywuzzy-based Intent Parser
+# Fuzzywuzzy-based Intent Recognizer
 # https://github.com/seatgeek/fuzzywuzzy
 # -----------------------------------------------------------------------------
 
@@ -97,3 +98,25 @@ class FuzzyWuzzyRecognizer(IntentRecognizer):
                 self.examples = json.load(examples_file)
 
             logger.debug('Loaded examples from %s' % examples_path)
+
+
+# -----------------------------------------------------------------------------
+# RasaNLU Intent Recognizer (HTTP API)
+# https://rasa.com/
+# -----------------------------------------------------------------------------
+
+class RasaIntentRecognizer(IntentRecognizer):
+    '''Uses rasaNLU HTTP API to recognize intents.'''
+
+    def recognize(self, text: str) -> Dict[str, Any]:
+        import requests
+
+        rasa_config = self.profile.get('intent.rasa', {})
+        url = rasa_config.get('url', 'http://locahost:5000')
+        project_name = rasa_config.get('project_name', 'rhasspy_%s' % self.profile.name)
+
+        parse_url = urljoin(url, 'parse')
+        response = requests.post(parse_url, json={ 'q': text, 'project': project_name })
+        response.raise_for_status()
+
+        return response.json()
