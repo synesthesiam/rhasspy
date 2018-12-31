@@ -22,7 +22,7 @@
         "system": "pocketsphinx"
     },
     "intent": {
-        "system": "rasa"
+        "system": "adapt"
     },
     "wake": {
         "pocketsphinx": {

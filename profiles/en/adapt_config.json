@@ -1,5 +1,12 @@
 {
     "intents": {
+        "GetTemperature": {
+            "name": "GetTemperature",
+            "require": [],
+            "optionally": [
+                "GetTemperatureOptionalKeyword"
+            ]
+        },
         "GetTime": {
             "name": "GetTime",
             "require": [
@@ -7,6 +14,24 @@
             ],
             "optionally": [
                 "GetTimeOptionalKeyword"
+            ]
+        },
+        "ChangeLightState": {
+            "name": "ChangeLightState",
+            "require": [
+                "ChangeLightStateRequiredKeyword",
+                "ChangeLightState.state",
+                "ChangeLightState.name"
+            ],
+            "optionally": []
+        },
+        "GetGarageState": {
+            "name": "GetGarageState",
+            "require": [
+                "GetGarageStateRequiredKeyword"
+            ],
+            "optionally": [
+                "GetGarageStateOptionalKeyword"
             ]
         },
         "ChangeLightColor": {
@@ -21,24 +46,48 @@
         }
     },
     "entities": {
+        "GetTemperatureOptionalKeyword": [
+            "cold",
+            "whats",
+            "hot",
+            "temperature"
+        ],
         "GetTimeRequiredKeyword": [
             "time"
         ],
         "GetTimeOptionalKeyword": [
-            "what",
-            "tell"
+            "tell",
+            "what"
+        ],
+        "ChangeLightState.state": [
+            "off",
+            "on"
+        ],
+        "ChangeLightState.name": [
+            "garage light",
+            "living room lamp",
+            "bedroom light"
+        ],
+        "ChangeLightStateRequiredKeyword": [
+            "turn"
+        ],
+        "GetGarageStateRequiredKeyword": [
+            "door",
+            "garage"
+        ],
+        "GetGarageStateOptionalKeyword": [
+            "open",
+            "closed"
         ],
         "ChangeLightColor.name": [
-            "bedroom light",
-            "kitchen light"
+            "bedroom light"
         ],
         "ChangeLightColor.color": [
+            "blue",
             "green",
-            "red",
-            "blue"
+            "red"
         ],
         "ChangeLightColorOptionalKeyword": [
-            "turn",
             "set",
             "make"
         ]

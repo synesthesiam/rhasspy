@@ -1,4 +1,5 @@
 __pycache__/
+.mypy_cache/
 .venv/
 node_modules/
 sentences.cnts
@@ -14,4 +15,10 @@ etc/homeassistant/config/*.log
 etc/homeassistant/config/.HA_VERSION
 rhasspy-hassio-addon*.tar.gz
 etc/qemu-arm-static
+profiles/de
+profiles/es
 profiles/nl
+profiles/it
+profiles/fr
+profiles/ru
+workbench.xmi
