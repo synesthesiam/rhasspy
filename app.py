@@ -28,12 +28,7 @@ from thespian.actors import ActorSystem
 
 # import wake
 from rhasspy.core import Rhasspy
-# import rhasspy.utils as utils
-from rhasspy.pronounce import WordPronounce, PhonetisaurusPronounce
-# from profiles import request_to_profile, Profile
-# from stt import transcribe_wav, maybe_load_decoder
-# from intent import best_intent
-# from train import train
+from rhasspy.pronounce import WordPronounce
 
 # -----------------------------------------------------------------------------
 # Flask Web App Setup
@@ -81,27 +76,23 @@ core = Rhasspy(profiles_dirs, default_profile_name)
 # core_actor = system.createActor(RhasspyActor)
 # system.tell(core_actor, StartRhasspy(profiles_dirs, default_profile_name))
 
+# Pre-load default profile
+if core.get_default('rhasspy.preload_profile', False):
+    logger.info('Preloading default profile (%s)' % core.default_profile_name)
+    core.preload_profile(core.default_profile_name)
+
+# Listen for wake word
+if core.get_default('rhasspy.listen_on_start', False):
+    logger.info('Automatically listening for wake word')
+    wake = core.get_wake_listener(core.default_profile_name)
+    wake.start_listening()
+
+# -----------------------------------------------------------------------------
+
 def request_to_profile(request):
+    '''Gets profile from HTTP request'''
     profile_name = request.args.get('profile', core.default_profile_name)
     return core.profiles[profile_name]
-
-def wav_to_intent(wav_data, profile):
-    decoder = core.get_speech_decoder(profile.name)
-    recognizer = core.get_intent_recognizer(profile.name)
-
-    # WAV -> text
-    start_time = time.time()
-    text = decoder.transcribe_wav(wav_data)
-
-    # text -> intent (JSON)
-    intent = recognizer.recognize(text)
-
-    intent_sec = time.time() - start_time
-    intent['time_sec'] = intent_sec
-
-    logger.debug(text)
-
-    return intent
 
 # -----------------------------------------------------------------------------
 # HTTP API
@@ -125,15 +116,15 @@ def api_microphones():
 
 # -----------------------------------------------------------------------------
 
-# @app.route('/api/listen-for-wake', methods=['POST'])
-# def api_listen_for_wake():
-#     profile = request_to_profile(request, profiles_dirs)
-#     no_hass = request.args.get('nohass', 'false').lower() == 'true'
-#     device_index = int(request.args.get('device', -1))
-#     if device_index < 0:
-#         device_index = None  # default device
+@app.route('/api/listen-for-wake', methods=['POST'])
+def api_listen_for_wake():
+    profile = request_to_profile(request)
+    no_hass = request.args.get('nohass', 'false').lower() == 'true'
 
-#     return jsonify(listen_for_wake(profile, no_hass, device_index))
+    wake = core.get_wake_listener(profile.name)
+    wake.start_listening(no_hass=no_hass)
+
+    return profile.name
 
 # -----------------------------------------------------------------------------
 
@@ -142,9 +133,18 @@ def api_listen_for_command():
     profile = request_to_profile(request)
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
 
+    audio_player = core.get_audio_player()
+    audio_player.play_file(profile.get('sounds.wake', ''))
+
     command_listener = core.get_command_listener()
     wav_data = command_listener.listen_for_command()
-    intent = wav_to_intent(wav_data, profile)
+    audio_player.play_file(profile.get('sounds.recorded', ''))
+
+    intent = core.wav_to_intent(wav_data, profile.name)
+
+    if not no_hass:
+        # Send intent to Home Assistant
+        intent = core.get_intent_handler(profile.name).handle_intent(intent)
 
     return jsonify(intent)
 
@@ -363,9 +363,9 @@ def api_text_to_intent():
     intent_sec = time.time() - start_time
     intent['time_sec'] = intent_sec
 
-    # if not no_hass:
-    #     # Send intent to Home Assistant
-    #     utils.send_intent(profile.home_assistant, intent)
+    if not no_hass:
+        # Send intent to Home Assistant
+        intent = core.get_intent_handler(profile.name).handle_intent(intent)
 
     return jsonify(intent)
 
@@ -379,11 +379,11 @@ def api_speech_to_intent():
 
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
     wav_data = request.data
-    intent = wav_to_intent(wav_data, profile)
+    intent = core.wav_to_intent(wav_data, profile.name)
 
-    # if not no_hass:
-    #     # Send intent to Home Assistant
-    #     utils.send_intent(profile.home_assistant, intent)
+    if not no_hass:
+        # Send intent to Home Assistant
+        intent = core.get_intent_handler(profile.name).handle_intent(intent)
 
     return jsonify(intent)
 
@@ -392,12 +392,15 @@ def api_speech_to_intent():
 # Start recording a WAV file to a temporary buffer
 @app.route('/api/start-recording', methods=['POST'])
 def api_start_recording():
-    device = request.args.get('device', None)
+    device = request.args.get('device', '')
+    if len(device) == 0:
+        device = None  # default device
+
     profile = request_to_profile(request)
     recorder = core.get_audio_recorder()
     recorder.start_recording(True, False, device)
 
-    return 'OK'
+    return profile.name
 
 # Stop recording WAV file, transcribe, and get intent
 @app.route('/api/stop-recording', methods=['POST'])
@@ -410,11 +413,11 @@ def api_stop_recording():
         logger.debug('Recorded %s byte(s) of audio data' % len(wav_data))
 
         profile = request_to_profile(request)
-        intent = wav_to_intent(wav_data, profile)
+        intent = core.wav_to_intent(wav_data, profile.name)
 
-        # if not no_hass:
-        #     # Send intent to Home Assistant
-        #     utils.send_intent(profile.home_assistant, intent)
+        if not no_hass:
+            # Send intent to Home Assistant
+            intent = core.get_intent_handler(profile.name).handle_intent(intent)
 
         return jsonify(intent)
 

@@ -14,6 +14,9 @@ from profile import Profile
 logger = logging.getLogger(__name__)
 
 class IntentRecognizer:
+    def preload(self):
+        pass
+
     def recognize(self, text: str) -> Dict[str, Any]:
         pass
 
@@ -29,6 +32,11 @@ class FuzzyWuzzyRecognizer(IntentRecognizer):
     def __init__(self, profile: Profile):
         self.profile = profile
         self.examples: Optional[Dict[str, Any]] = None
+
+    def preload(self):
+        self._maybe_load_examples()
+
+    # -------------------------------------------------------------------------
 
     def train(self, sentences_by_intent):
         from fuzzywuzzy import process
