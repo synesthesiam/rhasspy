@@ -27,6 +27,25 @@ class IntentRecognizer:
         pass
 
 # -----------------------------------------------------------------------------
+# Remote HTTP Intent Recognizer
+# -----------------------------------------------------------------------------
+
+class RemoteRecognizer(IntentRecognizer):
+    '''HTTP based recognizer for remote rhasspy server'''
+
+    def recognize(self, text:str) -> Dict[str, Any]:
+        import requests
+
+        remote_url = self.profile.get('intent.remote.url')
+        params = { 'profile': self.profile.name, 'nohass': True }
+        response = requests.post(remote_url, params=params, data=text)
+
+        response.raise_for_status()
+
+        return response.json()
+
+
+# -----------------------------------------------------------------------------
 # Fuzzywuzzy-based Intent Recognizer
 # https://github.com/seatgeek/fuzzywuzzy
 # -----------------------------------------------------------------------------
