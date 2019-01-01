@@ -164,9 +164,9 @@ class Rhasspy:
                 recognizer = RasaIntentRecognizer(profile)
                 pass
             elif system == 'remote':
-                # TODO
                 # Use remote rhasspy server
-                pass
+                from intent import RemoteRecognizer
+                recognizer = RemoteRecognizer(profile)
             elif system == 'dummy':
                 # Does nothing
                 recognizer = IntentRecognizer(profile)

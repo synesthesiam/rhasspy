@@ -15,7 +15,11 @@ else
     export PATH=$DIR/bin/docker:$PATH
 fi
 
+if [[ -z "$RHASSPY_PORT" ]]; then
+    export RHASSPY_PORT=12101
+fi
+
 cd "$DIR"
 source .venv/bin/activate
 export FLASK_APP=app.py
-flask run --host=0.0.0.0 --port=12101
+flask run --host=0.0.0.0 --port=$RHASSPY_PORT
