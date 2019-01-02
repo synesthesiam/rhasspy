@@ -18,8 +18,10 @@ RUN apk update && \
 
 # Install Python dependencies
 COPY requirements.txt /requirements.txt
+COPY etc/nanomsg-python-master.zip /
 RUN python3 -m pip install --no-cache-dir wheel
 RUN python3 -m pip install --no-cache-dir -r /requirements.txt
+RUN python3 -m pip install --no-cache-dir /nanomsg-python-master.zip
 
 # Install Pocketsphinx Python module with no sound
 RUN python3 -m pip install https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz
