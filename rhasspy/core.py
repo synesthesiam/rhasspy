@@ -209,11 +209,16 @@ class Rhasspy:
             callback = callback or self._handle_wake
             profile = self.profiles[profile_name]
             system = profile.get('wake.system')
-            assert system in ['dummy', 'pocketsphinx'], 'Invalid wake system: %s' % system
+            assert system in ['dummy', 'pocketsphinx', 'nanomsg'], 'Invalid wake system: %s' % system
             if system == 'pocketsphinx':
                 # Use pocketsphinx locally
                 from wake import PocketsphinxWakeListener
                 wake = PocketsphinxWakeListener(
+                    self.get_audio_recorder(), profile, callback)
+            elif system == 'nanomsg':
+                # Use remote system via nanomsg
+                from wake import NanomsgWakeListener
+                wake = NanomsgWakeListener(
                     self.get_audio_recorder(), profile, callback)
             elif system == 'dummy':
                 # Does nothing
@@ -246,6 +251,10 @@ class Rhasspy:
         no_hass = kwargs.get('no_hass', False)
         if not no_hass:
             self.get_intent_handler(profile_name).handle_intent(intent)
+
+        # Listen for wake word again
+        wake = core.get_wake_listener(profile_name)
+        wake.start_listening()
 
     # -------------------------------------------------------------------------
 

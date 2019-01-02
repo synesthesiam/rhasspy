@@ -7,7 +7,8 @@ DIR="$( cd "$( dirname "$0" )" && pwd )"
 echo "Installing system dependencies"
 sudo apt-get update
 sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
-     sox espeak swig portaudio19-dev
+     sox espeak swig portaudio19-dev \
+     libnanomsg-dev
 
 if [[ -z "$(which java)" ]]; then
     echo "Installing Java"

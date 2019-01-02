@@ -13,7 +13,8 @@ RUN apk update && \
     apk add --no-cache bash python3 python3-dev \
         build-base portaudio-dev swig \
         sox espeak alsa-utils \
-        openjdk8-jre
+        openjdk8-jre \
+        nanomsg-dev
 
 # Install Python dependencies
 COPY requirements.txt /requirements.txt

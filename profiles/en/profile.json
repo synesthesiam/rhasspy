@@ -27,7 +27,9 @@
     "wake": {
         "pocketsphinx": {
             "keyphrase": "okay rhasspy"
-        }
+        },
+
+        "system": "nanomsg"
     },
     "microphone": {
         "system": "pyaudio"
