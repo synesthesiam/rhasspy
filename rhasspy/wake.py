@@ -61,6 +61,7 @@ class PocketsphinxWakeListener(WakeListener):
         self._maybe_load_decoder()
 
         def process_data():
+            do_callback = False
             self.decoder.start_utt()
 
             try:
@@ -77,12 +78,15 @@ class PocketsphinxWakeListener(WakeListener):
                     if hyp:
                         self.decoder.end_utt()
                         logger.debug('Keyphrase detected (%s)!' % self.keyphrase)
-                        self.callback(self.profile.name, self.keyphrase, **kwargs)
+                        do_callback = True
                         break
             except Exception as e:
                 logger.exception('process_data')
 
             self._is_listening = False
+
+            if do_callback:
+                self.callback(self.profile.name, self.keyphrase, **kwargs)
 
         # Start audio recording
         self.audio_recorder.start_recording(False, True)
@@ -158,6 +162,8 @@ class NanomsgWakeListener(WakeListener):
         self._maybe_create_sockets()
 
         def process_data():
+            do_callback = False
+
             try:
                 while True:
                     # Block until audio data comes in
@@ -175,12 +181,15 @@ class NanomsgWakeListener(WakeListener):
                     if self.pull_socket in result:
                         response = self.pull_socket.recv()
                         logger.debug('Wake word detected: %s' % response)
-                        self.callback(self.profile.name, response, **kwargs)
+                        do_callback = True
                         break
             except Exception as e:
                 logger.exception('process_data')
 
             self._is_listening = False
+
+            if do_callback:
+                self.callback(self.profile.name, response, **kwargs)
 
         # Start audio recording
         self.audio_recorder.start_recording(False, True)
