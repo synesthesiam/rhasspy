@@ -253,7 +253,7 @@ class Rhasspy:
             self.get_intent_handler(profile_name).handle_intent(intent)
 
         # Listen for wake word again
-        wake = core.get_wake_listener(profile_name)
+        wake = self.get_wake_listener(profile_name)
         wake.start_listening()
 
     # -------------------------------------------------------------------------
