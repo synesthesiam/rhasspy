@@ -125,3 +125,89 @@ class PocketsphinxWakeListener(WakeListener):
 
             self.decoder = pocketsphinx.Decoder(decoder_config)
 
+
+# -----------------------------------------------------------------------------
+# Remote wake word detection with audio data streamed via nanomsg
+# https://nanomsg.org
+# -----------------------------------------------------------------------------
+
+class NanomsgWakeListener(WakeListener):
+    def __init__(self, audio_recorder: AudioRecorder, profile: Profile,
+                 detected_callback: Callable[[str, str], None]) -> None:
+        '''Streams audio data via nanomsg PUB socket.
+        Listens for reply on PULL socket.
+        Calls detected_callback when keyphrase is detected and stops.'''
+
+        WakeListener.__init__(self, audio_recorder, profile)
+        self.callback = detected_callback
+        self.pub_socket = None
+        self.pull_socket = None
+
+    def preload(self):
+        self._maybe_create_sockets()
+
+    # -------------------------------------------------------------------------
+
+    def start_listening(self, **kwargs):
+        from nanomsg import DONTWAIT
+
+        if self.is_listening:
+            logger.warn('Already listening')
+            return
+
+        self._maybe_create_sockets()
+
+        def process_data():
+            try:
+                while True:
+                    # Block until audio data comes in
+                    data = self.audio_recorder.get_queue().get()
+                    if len(data) == 0:
+                        self.decoder.end_utt()
+                        logger.debug('Listening cancelled')
+                        break
+
+                    # Stream audio data out via nanomsg
+                    self.pub_socket.send(data)
+
+                    # Check for reply
+                    try:
+                        response = self.pull_socket.recv(flags=DONTWAIT).decode()
+                        logger.debug('Wake word detected: %s' % response)
+                        self.callback(self.profile.name, response, **kwargs)
+                        break
+                    except:
+                        pass
+            except Exception as e:
+                logger.exception('process_data')
+
+            self._is_listening = False
+
+        # Start audio recording
+        self.audio_recorder.start_recording(False, True)
+
+        # Decoder runs in a separate thread
+        thread = threading.Thread(target=process_data, daemon=True)
+        thread.start()
+        self._is_listening = True
+
+        logging.debug('Listening for wake word remotely with nanomsg')
+
+    # -------------------------------------------------------------------------
+
+    def _maybe_create_sockets(self):
+        from nanomsg import Socket, PUB, PULL
+
+        if self.pub_socket is None:
+            pub_address = self.profile.get('wake.nanomsg.pub_address')
+            logger.debug('Binding PUB socket to %s' % pub_address)
+
+            self.pub_socket = Socket(PUB)
+            self.pub_socket.bind(pub_address.encode())
+
+        if self.pull_socket is None:
+            pull_address = self.profile.get('wake.nanomsg.pull_address')
+            logger.debug('Binding PULL socket to %s' % pull_address)
+
+            self.pull_socket = Socket(PULL)
+            self.pull_socket.bind(pull_address.encode())
