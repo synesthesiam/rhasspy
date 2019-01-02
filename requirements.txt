@@ -8,4 +8,3 @@ fuzzywuzzy[speedup]
 webrtcvad
 adapt-parser
 pydash
-nanomsg

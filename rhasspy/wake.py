@@ -149,7 +149,7 @@ class NanomsgWakeListener(WakeListener):
     # -------------------------------------------------------------------------
 
     def start_listening(self, **kwargs):
-        from nanomsg import DONTWAIT
+        from nanomsg import poll
 
         if self.is_listening:
             logger.warn('Already listening')
@@ -171,13 +171,12 @@ class NanomsgWakeListener(WakeListener):
                     self.pub_socket.send(data)
 
                     # Check for reply
-                    try:
-                        response = self.pull_socket.recv(flags=DONTWAIT).decode()
+                    result, _ = poll([self.pull_socket], [], 0)
+                    if self.pull_socket in result:
+                        response = self.pull_socket.recv()
                         logger.debug('Wake word detected: %s' % response)
                         self.callback(self.profile.name, response, **kwargs)
                         break
-                    except:
-                        pass
             except Exception as e:
                 logger.exception('process_data')
 
@@ -203,11 +202,11 @@ class NanomsgWakeListener(WakeListener):
             logger.debug('Binding PUB socket to %s' % pub_address)
 
             self.pub_socket = Socket(PUB)
-            self.pub_socket.bind(pub_address.encode())
+            self.pub_socket.bind(pub_address)
 
         if self.pull_socket is None:
             pull_address = self.profile.get('wake.nanomsg.pull_address')
             logger.debug('Binding PULL socket to %s' % pull_address)
 
             self.pull_socket = Socket(PULL)
-            self.pull_socket.bind(pull_address.encode())
+            self.pull_socket.bind(pull_address)

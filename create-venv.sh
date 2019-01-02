@@ -28,6 +28,7 @@ source "$VENV_PATH"/bin/activate
 python3 -m pip install wheel
 python3 -m pip install -r requirements.txt
 python3 -m pip install https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz
+python3 -m pip install etc/nanomsg-python-master.zip
 
 if [[ -z "$RHASSPY_DOCKER" ]]; then
     echo "Installing pre-compiled binaries"
