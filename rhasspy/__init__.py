@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import argparse
+import threading
 
 def main():
     # Parse command-line arguments
@@ -48,6 +49,9 @@ def main():
     word2wav_parser = sub_parsers.add_parser('word2wav', help='Pronounce word')
     word2wav_parser.add_argument('word', help='Word to pronounce')
 
+    # sleep
+    sleep_parser = sub_parsers.add_parser('sleep', help='Wait for wake word')
+
     # -------------------------------------------------------------------------
 
     args = parser.parse_args()
@@ -80,7 +84,8 @@ def main():
         'mic2intent': mic2intent,
         'mic2wav': mic2wav,
         'word2phonemes': word2phonemes,
-        'word2wav': word2wav
+        'word2wav': word2wav,
+        'sleep': sleep
     }
 
     command_funcs[args.command](core, profile, args)
@@ -263,6 +268,25 @@ def word2wav(core, profile, args):
 
     # Output WAV data
     sys.stdout.buffer.write(wav_data)
+
+# -----------------------------------------------------------------------------
+# sleep: wait for wake word
+# -----------------------------------------------------------------------------
+
+def sleep(core, profile, args):
+    wake_event = threading.Event()
+
+    def handle_wake(profile_name: str, keyphrase: str):
+        print(keyphrase)
+        wake_event.set()
+
+    wake = core.get_wake_listener(profile.name, handle_wake)
+    wake.start_listening()
+
+    try:
+        wake_event.wait()
+    except KeyboardInterrupt:
+        pass
 
 # -----------------------------------------------------------------------------
 

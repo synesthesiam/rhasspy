@@ -120,6 +120,7 @@ class PocketsphinxWakeListener(WakeListener):
             decoder_config.set_string('-hmm', hmm_path)
             decoder_config.set_string('-dict', dict_path)
             decoder_config.set_string('-keyphrase', self.keyphrase)
+            decoder_config.set_string('-logfn', '/dev/null')
             decoder_config.set_float('-kws_threshold', kws_threshold)
 
             self.decoder = pocketsphinx.Decoder(decoder_config)
