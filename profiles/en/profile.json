@@ -1,9 +1,4 @@
 {
-    "home_assistant": {
-        "api_password": "",
-        "url": "http://hassio/homeassistant/",
-        "access_token": ""
-    },
     "language": "en",
     "training": {
         "regex": {
@@ -17,21 +12,5 @@
             ]
         },
         "sentence_casing": "lower"
-    },
-    "speech_to_text": {
-        "system": "pocketsphinx"
-    },
-    "intent": {
-        "system": "adapt"
-    },
-    "wake": {
-        "pocketsphinx": {
-            "keyphrase": "okay rhasspy"
-        },
-
-        "system": "nanomsg"
-    },
-    "microphone": {
-        "system": "pyaudio"
     }
 }
