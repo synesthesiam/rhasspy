@@ -6,6 +6,8 @@ import argparse
 import threading
 import tempfile
 import random
+import time
+import logging
 
 from .utils import extract_entities
 
@@ -15,6 +17,8 @@ def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description='Rhasspy Voice Assistant')
     parser.add_argument('--profile', type=str, help='Name of profile to use', default=None)
+    parser.add_argument('--debug', action='store_true', help='Print DEBUG log to console')
+
     sub_parsers = parser.add_subparsers(dest='command')
     sub_parsers.required = True
 
@@ -37,13 +41,17 @@ def main():
     # train
     train_parser = sub_parsers.add_parser('train', help='Re-train profile')
 
+    # record
+    record_parser = sub_parsers.add_parser('record', help='Record test phrases for profile')
+    record_parser.add_argument('directory', help='Directory to write WAV files and intent JSON files')
+
     # tune
     tune_parser = sub_parsers.add_parser('tune', help='Tune speech acoustic model for profile')
     tune_parser.add_argument('directory', help='Directory with WAV files and intent JSON files')
 
-    # record
-    record_parser = sub_parsers.add_parser('record', help='Record test phrases for profile')
-    record_parser.add_argument('directory', help='Directory to write WAV files and intent JSON files')
+    # test
+    test_parser = sub_parsers.add_parser('test', help='Test speech/intent recognizers for profile')
+    test_parser.add_argument('directory', help='Directory with WAV files and intent JSON files')
 
     # mic2wav
     mic2wav_parser = sub_parsers.add_parser('mic2wav', help='Voice command to WAV data')
@@ -87,6 +95,9 @@ def main():
     else:
         profile = core.default_profile
 
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+
     # Execute command
     command_funcs = {
         'info': info,
@@ -96,6 +107,7 @@ def main():
         'train': train,
         'record': record,
         'tune': tune,
+        'test': test,
         'mic2text': mic2text,
         'mic2intent': mic2intent,
         'mic2wav': mic2wav,
@@ -279,9 +291,79 @@ def record(core, profile, args):
 # -----------------------------------------------------------------------------
 
 def tune(core, profile, args):
-    tuner = core.get_speech_tuner(profile.name)
+    dir_path = args.directory
+    wav_paths = [os.path.join(dir_path, name)
+                 for name in os.listdir(dir_path)
+                 if name.endswith('.wav')]
 
-    # TODO: finish
+    # Load intents for each WAV
+    wav_intents = {}
+    for wav_path in wav_paths:
+        intent_path = wav_path + '.json'
+        if os.path.exists(intent_path):
+            with open(intent_path, 'r') as intent_file:
+                wav_intents[wav_path] = json.load(intent_file)
+
+    tuner = core.get_speech_tuner(profile.name)
+    print('Tuning speech system with %s WAV file(s)' % len(wav_intents))
+    tuner.tune(wav_intents)
+    print('Done')
+
+# -----------------------------------------------------------------------------
+# test: test speech/intent recognizers
+# -----------------------------------------------------------------------------
+
+def test(core, profile, args):
+    dir_path = args.directory
+    wav_paths = [os.path.join(dir_path, name)
+                 for name in os.listdir(dir_path)
+                 if name.endswith('.wav')]
+
+    # Load intents for each WAV
+    wav_intents = {}
+    for wav_path in wav_paths:
+        intent_path = wav_path + '.json'
+        if os.path.exists(intent_path):
+            with open(intent_path, 'r') as intent_file:
+                wav_intents[wav_path] = json.load(intent_file)
+
+    # Transcribe and match intent names/entities
+    decoder = core.get_speech_decoder(profile.name)
+    decoder.preload()
+
+    recognizer = core.get_intent_recognizer(profile.name)
+    recognizer.preload()
+
+    results = {}
+    for wav_path, expected_intent in wav_intents.items():
+        # Transcribe
+        decode_start = time.time()
+        with open(wav_path, 'rb') as wav_file:
+            actual_sentence = decoder.transcribe_wav(wav_file.read())
+
+        decode_sec = time.time() - decode_start
+
+        # Recognize
+        recognize_start = time.time()
+        actual_intent = recognizer.recognize(actual_sentence)
+        recognize_sec = time.time() - recognize_start
+
+        wav_name = os.path.split(wav_path)[1]
+        results[wav_name] = {
+            'profile': profile.name,
+            'expected': expected_intent,
+            'actual': actual_intent,
+            'speech': {
+                'system': profile.get('speech_to_text.system'),
+                'time_sec': decode_sec
+            },
+            'intent': {
+                'system': profile.get('intent.system'),
+                'time_sec': recognize_sec
+            }
+        }
+
+    json.dump(results, sys.stdout, indent=4)
 
 # -----------------------------------------------------------------------------
 # mic2wav: record voice command and output WAV data

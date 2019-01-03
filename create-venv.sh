@@ -8,7 +8,8 @@ echo "Installing system dependencies"
 sudo apt-get update
 sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
      sox espeak swig portaudio19-dev \
-     libnanomsg-dev
+     libnanomsg-dev \
+     sphinxbase-utils sphinxtrain
 
 if [[ -z "$(which java)" ]]; then
     echo "Installing Java"
