@@ -115,13 +115,18 @@ class JsgfSentenceGenerator(SentenceGenerator):
         grammar_paths = {}
         for name, rules in grammar_rules.items():
             grammar_path = os.path.join(grammar_dir, '{0}.gram'.format(name))
-            with open(grammar_path, 'w') as grammar_file:
-                print('#JSGF V1.0;', file=grammar_file)
-                print('grammar {0};'.format(name), file=grammar_file)
-                print('', file=grammar_file)
 
-                for rule in rules:
-                    print(rule, file=grammar_file)
+            # Only overwrite grammar file if it contains rules or doesn't yet exist
+            if (len(rules) > 0) or not os.path.exists(grammar_path):
+                with open(grammar_path, 'w') as grammar_file:
+                    # JSGF header
+                    print('#JSGF V1.0;', file=grammar_file)
+                    print('grammar {0};'.format(name), file=grammar_file)
+                    print('', file=grammar_file)
+
+                    # Grammar rules
+                    for rule in rules:
+                        print(rule, file=grammar_file)
 
             grammar_paths[name] = grammar_path
 
