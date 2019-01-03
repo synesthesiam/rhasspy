@@ -120,6 +120,11 @@ class PocketsphinxDecoder(SpeechDecoder):
             decoder_config.set_string('-lm', lm_path)
             decoder_config.set_string('-logfn', '/dev/null')
 
+            mllr_path = self.profile.read_path(ps_config['mllr_matrix'])
+            if os.path.exists(mllr_path):
+                logger.debug('Using tuned MLLR matrix for acoustic model: %s' % mllr_path)
+                decoder_config.set_string('-mllr', mllr_path)
+
             self.decoder = pocketsphinx.Decoder(decoder_config)
 
 
