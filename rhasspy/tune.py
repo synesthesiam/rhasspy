@@ -40,7 +40,7 @@ class SphinxTrainSpeechTuner(SpeechTuner):
         hmm_path = self.profile.read_path(ps_config['acoustic_model'])
         dict_path = self.profile.read_path(ps_config['dictionary'])
 
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory(prefix='rhasspy-') as temp_dir:
             # Create mdef.txt
             mdef_path = os.path.join(temp_dir, 'mdef.txt')
             mdef_command = ['pocketsphinx_mdef_convert',
@@ -67,13 +67,12 @@ class SphinxTrainSpeechTuner(SpeechTuner):
                 fileid_intents[file_id] = wav_intents[wav_path]
 
             # Write fileids (just the file name, no extension)
-            logger.debug(fileids)
             fileids_path = os.path.join(temp_dir, 'fileids')
             with open(fileids_path, 'w') as fileids_file:
                 for file_id in fileid_intents.keys():
-                    print(name, file=fileids_file)
+                    print(file_id, file=fileids_file)
 
-            logger.debug('Wrote %s fileids' % len(file_names))
+            logger.debug('Wrote %s fileids' % len(fileid_intents))
 
             # Write transcription.txt
             transcription_path = os.path.join(temp_dir, 'transcription.txt')
@@ -121,7 +120,7 @@ class SphinxTrainSpeechTuner(SpeechTuner):
                         param_parts = line.split(maxsplit=1)
                         param_name = param_parts[0]
                         # Only add compatible bw args
-                        if param_name in BW_ARGS:
+                        if param_name in SphinxTrainSpeechTuner.BW_ARGS:
                             # e.g., -agc none
                             bw_args.extend([param_name, param_parts[1]])
 

@@ -6,6 +6,11 @@ DIR="$( cd "$( dirname "$0" )" && pwd )"
 cd "$DIR/.."
 source .venv/bin/activate
 
+# Path to sphinxtrain tools
+if [[ -d "/usr/lib/sphinxtrain" ]]; then
+    export PATH="/usr/lib/sphinxtrain:$PATH"
+fi
+
 profiles_dir=$(realpath "$DIR/../profiles")
 
 export RHASSPY_PROFILES="$HOME/.rhasspy/profiles:$profiles_dir"
