@@ -14,7 +14,22 @@ RUN apk update && \
         build-base portaudio-dev swig \
         sox espeak alsa-utils \
         openjdk8-jre \
-        nanomsg-dev
+        cmake
+
+# Install nanomsg from source (no armhf alpine package currently available).
+# Also need to copy stuff in /usr to avoid a call to ldconfig, which fails
+# for some reason.
+COPY etc/nanomsg-1.1.5.tar.gz /
+RUN tar -xzf /nanomsg-1.1.5.tar.gz && \
+    cd /nanomsg-1.1.5 && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    cmake --build . && \
+    cmake --build . --target install && \
+    cp -R /usr/local/include/nanomsg /usr/include/ && \
+    find /usr/local -name 'libnanomsg.so*' -exec cp {} /usr/lib/ \; && \
+    rm -rf /nanomsg-1.1.5*
 
 # Install Python dependencies
 COPY requirements.txt /requirements.txt

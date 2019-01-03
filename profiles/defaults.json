@@ -27,7 +27,7 @@
     },
     "rhasspy": {
         "default_profile": "en",
-        "listen_on_start": true,
+        "listen_on_start": false,
         "preload_profile": true
     },
     "speech_to_text": {
