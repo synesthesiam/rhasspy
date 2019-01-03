@@ -304,10 +304,14 @@ def tune(core, profile, args):
             with open(intent_path, 'r') as intent_file:
                 wav_intents[wav_path] = json.load(intent_file)
 
+    # Do tuning
     tuner = core.get_speech_tuner(profile.name)
+    tuner.preload()
+
     print('Tuning speech system with %s WAV file(s)' % len(wav_intents))
+    tune_start = time.time()
     tuner.tune(wav_intents)
-    print('Done')
+    print('Finished tuning in %s second(s)' % (time.time() - tune_start))
 
 # -----------------------------------------------------------------------------
 # test: test speech/intent recognizers
@@ -334,6 +338,7 @@ def test(core, profile, args):
     recognizer = core.get_intent_recognizer(profile.name)
     recognizer.preload()
 
+    # TODO: parallelize
     results = {}
     for wav_path, expected_intent in wav_intents.items():
         # Transcribe
