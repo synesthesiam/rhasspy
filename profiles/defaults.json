@@ -27,7 +27,7 @@
     },
     "rhasspy": {
         "default_profile": "en",
-        "listen_on_start": false,
+        "listen_on_start": true,
         "preload_profile": true
     },
     "speech_to_text": {
@@ -72,7 +72,11 @@
             "keyphrase": "okay rhasspy",
             "threshold": 1e-40
         },
-        "system": "pocketsphinx"
+        "system": "pocketsphinx",
+        "nanomsg": {
+            "pub_address": "tcp://0.0.0.0:5000",
+            "pull_address": "tcp://0.0.0.0:5001"
+        }
     },
     "sounds": {
         "system": "aplay",

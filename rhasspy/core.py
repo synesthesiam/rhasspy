@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import logging
 import time
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Callable
 
 import pydash
 
@@ -201,18 +201,25 @@ class Rhasspy:
 
     # -------------------------------------------------------------------------
 
-    def get_wake_listener(self, profile_name: str) -> WakeListener:
+    def get_wake_listener(self, profile_name: str,
+                          callback: Callable[[str, str], None] = None) -> WakeListener:
         '''Gets the wake/hot word listener for a profile.'''
         wake = self.wake_listeners.get(profile_name)
         if wake is None:
+            callback = callback or self._handle_wake
             profile = self.profiles[profile_name]
             system = profile.get('wake.system')
-            assert system in ['dummy', 'pocketsphinx'], 'Invalid wake system: %s' % system
+            assert system in ['dummy', 'pocketsphinx', 'nanomsg'], 'Invalid wake system: %s' % system
             if system == 'pocketsphinx':
                 # Use pocketsphinx locally
                 from wake import PocketsphinxWakeListener
                 wake = PocketsphinxWakeListener(
-                    self.get_audio_recorder(), profile, self._handle_wake)
+                    self.get_audio_recorder(), profile, callback)
+            elif system == 'nanomsg':
+                # Use remote system via nanomsg
+                from wake import NanomsgWakeListener
+                wake = NanomsgWakeListener(
+                    self.get_audio_recorder(), profile, callback)
             elif system == 'dummy':
                 # Does nothing
                 wake = WakeListener(self.get_audio_recorder(), profile)
@@ -244,6 +251,10 @@ class Rhasspy:
         no_hass = kwargs.get('no_hass', False)
         if not no_hass:
             self.get_intent_handler(profile_name).handle_intent(intent)
+
+        # Listen for wake word again
+        wake = self.get_wake_listener(profile_name)
+        wake.start_listening()
 
     # -------------------------------------------------------------------------
 

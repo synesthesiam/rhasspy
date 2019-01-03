@@ -1,10 +1,12 @@
 {
     "intents": {
-        "GetTemperature": {
-            "name": "GetTemperature",
-            "require": [],
+        "GetGarageState": {
+            "name": "GetGarageState",
+            "require": [
+                "GetGarageStateRequiredKeyword"
+            ],
             "optionally": [
-                "GetTemperatureOptionalKeyword"
+                "GetGarageStateOptionalKeyword"
             ]
         },
         "GetTime": {
@@ -25,13 +27,11 @@
             ],
             "optionally": []
         },
-        "GetGarageState": {
-            "name": "GetGarageState",
-            "require": [
-                "GetGarageStateRequiredKeyword"
-            ],
+        "GetTemperature": {
+            "name": "GetTemperature",
+            "require": [],
             "optionally": [
-                "GetGarageStateOptionalKeyword"
+                "GetTemperatureOptionalKeyword"
             ]
         },
         "ChangeLightColor": {
@@ -46,50 +46,50 @@
         }
     },
     "entities": {
-        "GetTemperatureOptionalKeyword": [
-            "cold",
-            "whats",
-            "hot",
-            "temperature"
+        "GetGarageStateRequiredKeyword": [
+            "door",
+            "garage"
+        ],
+        "GetGarageStateOptionalKeyword": [
+            "closed",
+            "open"
         ],
         "GetTimeRequiredKeyword": [
             "time"
         ],
         "GetTimeOptionalKeyword": [
-            "tell",
-            "what"
+            "what",
+            "tell"
         ],
         "ChangeLightState.state": [
             "off",
             "on"
         ],
         "ChangeLightState.name": [
-            "garage light",
+            "bedroom light",
             "living room lamp",
-            "bedroom light"
+            "garage light"
         ],
         "ChangeLightStateRequiredKeyword": [
             "turn"
         ],
-        "GetGarageStateRequiredKeyword": [
-            "door",
-            "garage"
-        ],
-        "GetGarageStateOptionalKeyword": [
-            "open",
-            "closed"
+        "GetTemperatureOptionalKeyword": [
+            "hot",
+            "cold",
+            "temperature",
+            "whats"
         ],
         "ChangeLightColor.name": [
             "bedroom light"
         ],
         "ChangeLightColor.color": [
-            "blue",
             "green",
-            "red"
+            "red",
+            "blue"
         ],
         "ChangeLightColorOptionalKeyword": [
-            "set",
-            "make"
+            "make",
+            "set"
         ]
     }
 }

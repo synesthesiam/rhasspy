@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+# Directory of *this* script
+DIR="$( cd "$( dirname "$0" )" && pwd )"
+
+cd "$DIR/.."
+source .venv/bin/activate
+
+profiles_dir=$(realpath "$DIR/../profiles")
+
+export RHASSPY_PROFILES="$HOME/.rhasspy/profiles:$profiles_dir"
+python3 -m rhasspy "$@"
