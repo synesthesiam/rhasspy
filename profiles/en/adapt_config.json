@@ -9,15 +9,6 @@
                 "GetGarageStateOptionalKeyword"
             ]
         },
-        "GetTime": {
-            "name": "GetTime",
-            "require": [
-                "GetTimeRequiredKeyword"
-            ],
-            "optionally": [
-                "GetTimeOptionalKeyword"
-            ]
-        },
         "ChangeLightState": {
             "name": "ChangeLightState",
             "require": [
@@ -26,6 +17,15 @@
                 "ChangeLightState.name"
             ],
             "optionally": []
+        },
+        "GetTime": {
+            "name": "GetTime",
+            "require": [
+                "GetTimeRequiredKeyword"
+            ],
+            "optionally": [
+                "GetTimeOptionalKeyword"
+            ]
         },
         "GetTemperature": {
             "name": "GetTemperature",
@@ -54,38 +54,38 @@
             "closed",
             "open"
         ],
-        "GetTimeRequiredKeyword": [
-            "time"
-        ],
-        "GetTimeOptionalKeyword": [
-            "what",
-            "tell"
-        ],
         "ChangeLightState.state": [
             "off",
             "on"
         ],
         "ChangeLightState.name": [
             "bedroom light",
-            "living room lamp",
-            "garage light"
+            "garage light",
+            "living room lamp"
         ],
         "ChangeLightStateRequiredKeyword": [
             "turn"
         ],
+        "GetTimeRequiredKeyword": [
+            "time"
+        ],
+        "GetTimeOptionalKeyword": [
+            "tell",
+            "what"
+        ],
         "GetTemperatureOptionalKeyword": [
-            "hot",
             "cold",
-            "temperature",
-            "whats"
+            "whats",
+            "hot",
+            "temperature"
         ],
         "ChangeLightColor.name": [
             "bedroom light"
         ],
         "ChangeLightColor.color": [
+            "blue",
             "green",
-            "red",
-            "blue"
+            "red"
         ],
         "ChangeLightColorOptionalKeyword": [
             "make",

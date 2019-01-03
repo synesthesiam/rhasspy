@@ -9,7 +9,7 @@ from typing import Dict, List, Any, Tuple, Set
 
 from profiles import Profile
 from pronounce import WordPronounce
-from utils import read_dict, lcm
+from utils import read_dict, lcm, extract_entities
 
 # -----------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
         for intent_name, intent_sents in tagged_sentences.items():
             for intent_sent in intent_sents:
                 # Template -> untagged sentence + entities
-                sentence, entities = self._extract_entities(intent_sent)
+                sentence, entities = extract_entities(intent_sent)
 
                 # Split sentence into words (tokens)
                 sentence, tokens = self._sanitize_sentence(sentence)
@@ -247,37 +247,3 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
                       if len(t.strip()) > 0]
 
         return sentence, tokens
-
-    # -------------------------------------------------------------------------
-
-    def _extract_entities(self, phrase: str) -> Tuple[str, List[Tuple[str, str]]]:
-        '''Extracts embedded entity markings from a phrase.
-        Returns the phrase with entities removed and a list of entities.
-
-        The format [some text](entity name) is used to mark entities in a training phrase.
-
-        If the synonym format [some text](entity name:something else) is used, then
-        "something else" will be substituted for "some text".
-        '''
-        entities = []
-        removed_chars = 0
-
-        def match(m):
-            nonlocal removed_chars
-            value, entity = m.group(1), m.group(2)
-            replacement = value
-            removed_chars += 1 + len(entity) + 3  # 1 for [, 3 for ], (, and )
-
-            # Replace value with entity synonym, if present.
-            entity_parts = entity.split(':', maxsplit=1)
-            if len(entity_parts) > 1:
-                entity = entity_parts[0]
-                value = entity_parts[1]
-
-            entities.append((entity, value))
-            return replacement
-
-        # [text](entity label) => text
-        phrase = re.sub(r'\[([^]]+)\]\(([^)]+)\)', match, phrase)
-
-        return phrase, entities
