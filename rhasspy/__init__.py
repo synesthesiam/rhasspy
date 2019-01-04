@@ -4,11 +4,21 @@ import sys
 import json
 import argparse
 import threading
+import tempfile
+import random
+import time
+import logging
+
+from .utils import extract_entities
+
+# -----------------------------------------------------------------------------
 
 def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description='Rhasspy Voice Assistant')
     parser.add_argument('--profile', type=str, help='Name of profile to use', default=None)
+    parser.add_argument('--debug', action='store_true', help='Print DEBUG log to console')
+
     sub_parsers = parser.add_subparsers(dest='command')
     sub_parsers.required = True
 
@@ -30,6 +40,18 @@ def main():
 
     # train
     train_parser = sub_parsers.add_parser('train', help='Re-train profile')
+
+    # record
+    record_parser = sub_parsers.add_parser('record', help='Record test phrases for profile')
+    record_parser.add_argument('directory', help='Directory to write WAV files and intent JSON files')
+
+    # tune
+    tune_parser = sub_parsers.add_parser('tune', help='Tune speech acoustic model for profile')
+    tune_parser.add_argument('directory', help='Directory with WAV files and intent JSON files')
+
+    # test
+    test_parser = sub_parsers.add_parser('test', help='Test speech/intent recognizers for profile')
+    test_parser.add_argument('directory', help='Directory with WAV files and intent JSON files')
 
     # mic2wav
     mic2wav_parser = sub_parsers.add_parser('mic2wav', help='Voice command to WAV data')
@@ -73,6 +95,9 @@ def main():
     else:
         profile = core.default_profile
 
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+
     # Execute command
     command_funcs = {
         'info': info,
@@ -80,6 +105,9 @@ def main():
         'text2intent': text2intent,
         'wav2intent': wav2intent,
         'train': train,
+        'record': record,
+        'tune': tune,
+        'test': test,
         'mic2text': mic2text,
         'mic2intent': mic2intent,
         'mic2wav': mic2wav,
@@ -182,6 +210,165 @@ def wav2intent(core, profile, args):
 
 def train(core, profile, args):
     core.train_profile(profile.name)
+
+# -----------------------------------------------------------------------------
+# record: record phrases for testing/tuning
+# -----------------------------------------------------------------------------
+
+def record(core, profile, args):
+    dir_path = args.directory
+    dir_name = os.path.split(dir_path)[1]
+    os.makedirs(dir_path, exist_ok=True)
+
+    tagged_path = profile.read_path(profile.get('training.tagged_sentences'))
+    assert os.path.exists(tagged_path), 'Missing tagged sentences (%s). Need to train?' % tagged_path
+
+    # Load and parse tagged sentences
+    intent_sentences = []
+    intent_name = ''
+    with open(tagged_path, 'r') as tagged_file:
+        for line in tagged_file:
+            line = line.strip()
+            if len(line) == 0:
+                continue  # skip blank lines
+
+            if line.startswith('# intent:'):
+                intent_name = line.split(':', maxsplit=1)[1]
+            elif line.startswith('-'):
+                tagged_sentence = line[1:].strip()
+                sentence, entities = extract_entities(tagged_sentence)
+                intent_sentences.append((intent_name, sentence, entities))
+
+    assert len(intent_sentences) > 0, 'No tagged sentences available'
+    print('Loaded %s sentence(s)' % len(intent_sentences))
+
+    # Record WAV files
+    audio_recorder = core.get_audio_recorder()
+    wav_prefix = dir_name
+    wav_num = 0
+    try:
+        while True:
+            intent_name, sentence, entities = random.choice(intent_sentences)
+            print('Speak the following sentence. Press ENTER to start (CTRL+C to quit).')
+            print(sentence)
+            input()
+            audio_recorder.start_recording(True, False)
+            print('Recording. Press ENTER to stop (CTRL+C to quit).')
+            input()
+            wav_data = audio_recorder.stop_recording(True, False)
+
+            # Determine WAV file name
+            wav_path = os.path.join(dir_path, '%s-%03d.wav' % (wav_prefix, wav_num))
+            while os.path.exists(wav_path):
+                wav_num += 1
+                wav_path = os.path.join(dir_path, '%s-%03d.wav' % (wav_prefix, wav_num))
+
+            # Write WAV data
+            with open(wav_path, 'wb') as wav_file:
+                wav_file.write(wav_data)
+
+            # Write intent (with transcription)
+            intent_path = os.path.join(dir_path, '%s-%03d.wav.json' % (wav_prefix, wav_num))
+            with open(intent_path, 'w') as intent_file:
+                # Use rasaNLU format
+                intent = {
+                    'text': sentence,
+                    'intent': { 'name': intent_name },
+                    'entities': [
+                        { 'entity': entity, 'value': value }
+                        for entity, value in entities
+                    ]
+                }
+
+                json.dump(intent, intent_file, indent=4)
+
+            print('')
+    except KeyboardInterrupt:
+        print('Done')
+
+# -----------------------------------------------------------------------------
+# tune: fine tune speech acoustic model
+# -----------------------------------------------------------------------------
+
+def tune(core, profile, args):
+    dir_path = args.directory
+    wav_paths = [os.path.join(dir_path, name)
+                 for name in os.listdir(dir_path)
+                 if name.endswith('.wav')]
+
+    # Load intents for each WAV
+    wav_intents = {}
+    for wav_path in wav_paths:
+        intent_path = wav_path + '.json'
+        if os.path.exists(intent_path):
+            with open(intent_path, 'r') as intent_file:
+                wav_intents[wav_path] = json.load(intent_file)
+
+    # Do tuning
+    tuner = core.get_speech_tuner(profile.name)
+    tuner.preload()
+
+    print('Tuning speech system with %s WAV file(s)' % len(wav_intents))
+    tune_start = time.time()
+    tuner.tune(wav_intents)
+    print('Finished tuning in %s second(s)' % (time.time() - tune_start))
+
+# -----------------------------------------------------------------------------
+# test: test speech/intent recognizers
+# -----------------------------------------------------------------------------
+
+def test(core, profile, args):
+    dir_path = args.directory
+    wav_paths = [os.path.join(dir_path, name)
+                 for name in os.listdir(dir_path)
+                 if name.endswith('.wav')]
+
+    # Load intents for each WAV
+    wav_intents = {}
+    for wav_path in wav_paths:
+        intent_path = wav_path + '.json'
+        if os.path.exists(intent_path):
+            with open(intent_path, 'r') as intent_file:
+                wav_intents[wav_path] = json.load(intent_file)
+
+    # Transcribe and match intent names/entities
+    decoder = core.get_speech_decoder(profile.name)
+    decoder.preload()
+
+    recognizer = core.get_intent_recognizer(profile.name)
+    recognizer.preload()
+
+    # TODO: parallelize
+    results = {}
+    for wav_path, expected_intent in wav_intents.items():
+        # Transcribe
+        decode_start = time.time()
+        with open(wav_path, 'rb') as wav_file:
+            actual_sentence = decoder.transcribe_wav(wav_file.read())
+
+        decode_sec = time.time() - decode_start
+
+        # Recognize
+        recognize_start = time.time()
+        actual_intent = recognizer.recognize(actual_sentence)
+        recognize_sec = time.time() - recognize_start
+
+        wav_name = os.path.split(wav_path)[1]
+        results[wav_name] = {
+            'profile': profile.name,
+            'expected': expected_intent,
+            'actual': actual_intent,
+            'speech': {
+                'system': profile.get('speech_to_text.system'),
+                'time_sec': decode_sec
+            },
+            'intent': {
+                'system': profile.get('intent.system'),
+                'time_sec': recognize_sec
+            }
+        }
+
+    json.dump(results, sys.stdout, indent=4)
 
 # -----------------------------------------------------------------------------
 # mic2wav: record voice command and output WAV data

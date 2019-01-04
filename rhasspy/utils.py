@@ -4,7 +4,7 @@ import logging
 import math
 import itertools
 import collections
-from typing import Dict, List, Iterable, Optional, Any, Mapping
+from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple
 
 # -----------------------------------------------------------------------------
 
@@ -60,3 +60,37 @@ def recursive_update(base_dict: Dict[Any, Any], new_dict: Mapping[Any, Any]):
             recursive_update(base_dict[k], v)
         else:
             base_dict[k] = v
+
+# -----------------------------------------------------------------------------
+
+def extract_entities(phrase: str) -> Tuple[str, List[Tuple[str, str]]]:
+    '''Extracts embedded entity markings from a phrase.
+    Returns the phrase with entities removed and a list of entities.
+
+    The format [some text](entity name) is used to mark entities in a training phrase.
+
+    If the synonym format [some text](entity name:something else) is used, then
+    "something else" will be substituted for "some text".
+    '''
+    entities = []
+    removed_chars = 0
+
+    def match(m):
+        nonlocal removed_chars
+        value, entity = m.group(1), m.group(2)
+        replacement = value
+        removed_chars += 1 + len(entity) + 3  # 1 for [, 3 for ], (, and )
+
+        # Replace value with entity synonym, if present.
+        entity_parts = entity.split(':', maxsplit=1)
+        if len(entity_parts) > 1:
+            entity = entity_parts[0]
+            value = entity_parts[1]
+
+        entities.append((entity, value))
+        return replacement
+
+    # [text](entity label) => text
+    phrase = re.sub(r'\[([^]]+)\]\(([^)]+)\)', match, phrase)
+
+    return phrase, entities

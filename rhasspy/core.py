@@ -19,6 +19,7 @@ from pronounce import WordPronounce
 from wake import WakeListener
 from intent_handler import IntentHandler
 from train import SentenceGenerator
+from tune import SpeechTuner
 
 # -----------------------------------------------------------------------------
 
@@ -47,6 +48,7 @@ class Rhasspy:
         self.wake_listeners: Dict[str, WakeListener] = {}
         self.intent_handlers: Dict[str, IntentHandler] = {}
         self.sentence_generators: Dict[str, SentenceGenerator] = {}
+        self.speech_tuners: Dict[str, SpeechTuner] = {}
 
         # ---------------------------------------------------------------------
 
@@ -139,6 +141,27 @@ class Rhasspy:
             self.speech_decoders[profile_name] = decoder
 
         return decoder
+
+    # -------------------------------------------------------------------------
+
+    def get_speech_tuner(self, profile_name: str) -> SpeechTuner:
+        '''Gets the speech tuner for a profile (acoustic model)'''
+        tuner = self.speech_tuners.get(profile_name)
+        if tuner is None:
+            profile = self.profiles[profile_name]
+            system = profile.get('tuning.system')
+            assert system in ['dummy', 'sphinxtrain'], 'Invalid speech tuning system: %s' % system
+            if system == 'sphinxtrain':
+                from tune import SphinxTrainSpeechTuner
+                tuner = SphinxTrainSpeechTuner(profile)
+            elif system == 'dummy':
+                # Does nothing
+                tuner = SpeechTuner(profile)
+
+            # Cache tuner
+            self.speech_tuners[profile_name] = tuner
+
+        return tuner
 
     # -------------------------------------------------------------------------
 
@@ -293,6 +316,7 @@ class Rhasspy:
         self.get_wake_listener(profile_name).preload()
         self.get_intent_handler(profile_name).preload()
         self.get_sentence_generator(profile_name).preload()
+        self.get_speech_tuner(profile_name).preload()
 
     def reload_profile(self, profile_name: str):
         '''Clears caches for a profile and reloads its JSON from disk.
@@ -302,6 +326,7 @@ class Rhasspy:
         self.wake_listeners.pop(profile_name, None)
         self.intent_handlers.pop(profile_name, None)
         self.sentence_generators.pop(profile_name, None)
+        self.speech_tuners.pop(profile_name, None)
         self.profiles.pop(profile_name, None)
 
         for profiles_dir in self.profiles_dirs:
@@ -333,6 +358,19 @@ class Rhasspy:
         logger.info('Generating sentences')
         sent_gen = self.get_sentence_generator(profile_name)
         tagged_sentences = sent_gen.generate_sentences()
+
+        # Write tagged sentences to Markdown file
+        tagged_path = profile.write_path(
+            profile.get('training.tagged_sentences'))
+
+        with open(tagged_path, 'w') as tagged_file:
+            for intent, intent_sents in tagged_sentences.items():
+                print('# intent:%s' % intent, file=tagged_file)
+                for sentence in intent_sents:
+                    print('- %s' % sentence, file=tagged_file)
+                print('', file=tagged_file)
+
+        logger.debug('Wrote tagged sentences to %s' % tagged_path)
 
         # Train speech system
         logger.info('Training speech to text system')
