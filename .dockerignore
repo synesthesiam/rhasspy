@@ -2,3 +2,9 @@
 .venv/
 node_modules/
 etc/homeassistant/config/.storage
+profiles/de
+profiles/es
+profiles/nl
+profiles/it
+profiles/fr
+profiles/ru
