@@ -14,8 +14,8 @@
                     <option disabled value="">Select Profile</option>
                     <option v-for="profile in profiles" v-bind:key="profile">{{ profile }}</option>
                 </select>
-                <button class="btn btn-success ml-3" @click="train" :disabled="this.training">Re-Train</button>
-                <button class="btn btn-info ml-3" @click="reload">Reload</button>
+                <button class="btn btn-success ml-3" @click="train" :disabled="this.training" title="Re-train current profile">Train</button>
+                <button class="btn btn-danger ml-3" @click="restart" :disabled="this.restarting" title="Restart Rhasspy server">Restart</button>
             </div>
         </nav>
 
@@ -67,6 +67,7 @@
  import ProfileService from '@/services/ProfileService'
  import LanguageModelService from '@/services/LanguageModelService'
  import PronounceService from '@/services/PronounceService'
+ import RhasspyService from '@/services/RhasspyService'
 
  import LookupPronounce from './components/LookupPronounce.vue'
  import TrainLanguageModel from './components/TrainLanguageModel.vue'
@@ -95,6 +96,7 @@
              profiles: [],
 
              training: false,
+             restarting: false,
 
              unknownWords: []
          }
@@ -153,10 +155,17 @@
                                  })
          },
 
-         reload: function() {
-             LanguageModelService.reload(this.profile)
-                                 .then(request => this.alert(request.data, 'success'))
-                                 .catch(err => this.alert(err.response.data, 'danger'))
+         restart: function() {
+             this.beginAsync()
+             this.restarting = true
+             RhasspyService.restart()
+                           .then(request => this.alert(request.data, 'success'))
+                           .catch(err => this.alert(err.response.data, 'danger'))
+                           .then(() => {
+                               this.restarting = false
+                               this.training = false
+                               this.endAsync()
+                           })
          },
 
          getUnknownWords: function() {

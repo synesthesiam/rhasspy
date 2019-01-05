@@ -79,9 +79,9 @@ paths:
           type: string
       responses:
         '200':
-          description: OK
+          description: Name of profile
           schema:
-            type: object
+            type: string
   /api/listen-for-command:
     post:
       summary: 'Make Rhasspy listen for a command'
@@ -101,7 +101,7 @@ paths:
           default: false
       responses:
         '200':
-          description: OK
+          description: Name of profile
           schema:
             type: object
   /api/microphones:
@@ -111,7 +111,7 @@ paths:
         - application/json
       responses:
         '200':
-          description: OK
+          description: Available microphone names, descriptions
           schema:
             type: object
   /api/pronounce:
@@ -310,6 +310,17 @@ paths:
             text/plain:
               schema:
                 type: string
+  /api/restart:
+    post:
+      summary: 'Restart the Rhasspy server'
+      parameters:
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
   /api/speech-to-text:
     post:
       summary: 'Transcribe WAV data to text'
@@ -398,11 +409,11 @@ paths:
       summary: 'Record WAV file from microphone until stopped'
       parameters:
       - in: query
-        name: device_index
-        description: 'PyAudio recording device index'
+        name: device
+        description: 'Audio device to record from'
         schema:
-          type: integer
-          default: -1
+          type: string
+          default: ""
       responses:
         '200':
           description: OK

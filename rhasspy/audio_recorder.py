@@ -40,6 +40,10 @@ class AudioRecorder:
         '''
         return bytes()
 
+    def stop_all(self) -> None:
+        '''Immediately stop all recording.'''
+        pass
+
     def get_queue(self) -> Queue:
         '''Returns the queue where audio data is published.'''
         return Queue()
@@ -153,6 +157,21 @@ class PyAudioRecorder(AudioRecorder):
 
         # Empty buffer
         return bytes()
+
+    # -------------------------------------------------------------------------
+
+    def stop_all(self) -> None:
+        if self.is_recording:
+            self._is_recording = False
+            self.mic.stop_stream()
+            self.audio.terminate()
+
+            if self.queue_users > 0:
+                # Write final empty buffer
+                self.queue.put(bytes())
+
+            self.buffer_users = 0
+            self.queue_users = 0
 
     # -------------------------------------------------------------------------
 
@@ -281,6 +300,20 @@ class ARecordAudioRecorder(AudioRecorder):
 
         # Empty buffer
         return bytes()
+
+    # -------------------------------------------------------------------------
+
+    def stop_all(self) -> None:
+        if self.is_recording:
+            self._is_recording = False
+            self.record_thread.join()
+
+            if self.queue_users > 0:
+                # Write final empty buffer
+                self.queue.put(bytes())
+
+            self.buffer_users = 0
+            self.queue_users = 0
 
     # -------------------------------------------------------------------------
 

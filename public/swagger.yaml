@@ -310,6 +310,17 @@ paths:
             text/plain:
               schema:
                 type: string
+  /api/restart:
+    post:
+      summary: 'Restart the Rhasspy server'
+      parameters:
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
   /api/speech-to-text:
     post:
       summary: 'Transcribe WAV data to text'
