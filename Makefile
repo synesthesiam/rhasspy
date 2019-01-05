@@ -5,6 +5,7 @@ RELEASE_FILES := Dockerfile \
                  *.py \
                  requirements.txt \
                  bin/install-profiles.sh \
+                 rhasspy/ \
                  dist/ \
                  docker/run.sh \
                  profiles/defaults.json
@@ -27,6 +28,7 @@ update-addon:
 	rm -rf ${ADDON_DIR}/dist
 	cp Dockerfile *.py requirements.txt ${ADDON_DIR}/
 	cp bin/install-profiles.sh ${ADDON_DIR}/bin/
+	cp -R rhasspy/ ${ADDON_DIR}/
 	cp -R dist/ ${ADDON_DIR}/
 	cp docker/run.sh ${ADDON_DIR}/docker/
 	cp profiles/defaults.json ${ADDON_DIR}/profiles/
