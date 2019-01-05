@@ -130,32 +130,8 @@ Profiles
 
 All of the files Rhasspy needs for wake word detection, speech transcription, and intent recognition are contained in a *profile* directory. Out of the box, Rhasspy contains profiles for English (en), Spanish (es), French (fr), German (de), Italian (it), Dutch (nl), and Russian (ru).
 
-The important files in a profile are:
+Each profile contains a `profile.json` file with settings specific to the profile, such as configuration details for speech/intent recognition and your Home Assistant server. The settings in `profile.json` override settings in the `defaults.json` file in the main profiles directory. See [profile documentation](doc/profiles.md) for more details.
 
-* `acoustic_model/`
-  * Directory with CMU acoustic model (16 Khz)
-* `base_dictionary.txt`
-  * Large CMU dictionary file with general word pronunciations
-* `custom_words.txt`
-  * Small CMU dictionary file with custom word pronunciations for you
-* `unknown_words.txt`
-  * Small CMU dictionary file with guessed word pronunciations by phonetisaurus
-* `g2p.fst`
-  * Finite state transducer used by phonetisaurus to guess unknown word pronunciations
-* `language_model.txt`
-  * ARPA trigram model created from user sentences
-* `phoneme_examples.txt`
-  * Text file with example words/pronunciations for each phoneme
-* `phonemes.txt`
-  * Text file mapping from CMU to eSpeak phonemes 
-* `profile.json`
-  * Overrides profile settings from `defaults.json`
-  * See [profile documentation](doc/profiles.md) for details
-* `sentences.ini`
-  * Intents and sentences used to generate language model and train intent recognizer
-* `rasa_config.yml`
-  * YAML configuration for RasaNLU
-  
 Running
 ---------
 
