@@ -20,7 +20,7 @@
                     <div class="form-group">
                         <div class="form-row">
                             <input type="checkbox" id="wake-on-start" v-model="wakeOnStart">
-                            <label for="wake-on-start" class="col-form-label">Listen for wake word on start-up (default profile)</label>
+                            <label for="wake-on-start" class="col-form-label">Listen for wake word on start-up (restart required)</label>
                         </div>
                     </div>
                 </div>

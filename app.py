@@ -41,29 +41,36 @@ CORS(app)
 # Core Setup
 # -----------------------------------------------------------------------------
 
-# Like PATH, searched in reverse order
-profiles_dirs = [path for path in
-                 os.environ.get('RHASSPY_PROFILES', 'profiles')\
-                 .split(':') if len(path.strip()) > 0]
+core = None
 
-profiles_dirs.reverse()
+def start_rhasspy():
+    global core
 
-# Check for default profile
-default_profile_name = os.environ.get('RHASSPY_PROFILE', None)
+    # Like PATH, searched in reverse order
+    profiles_dirs = [path for path in
+                    os.environ.get('RHASSPY_PROFILES', 'profiles')\
+                    .split(':') if len(path.strip()) > 0]
 
-# Create top-level actor
-core = Rhasspy(profiles_dirs, default_profile_name)
+    profiles_dirs.reverse()
 
-# Pre-load default profile
-if core.get_default('rhasspy.preload_profile', False):
-    logger.info('Preloading default profile (%s)' % core.default_profile_name)
-    core.preload_profile(core.default_profile_name)
+    # Check for default profile
+    default_profile_name = os.environ.get('RHASSPY_PROFILE', None)
 
-# Listen for wake word
-if core.get_default('rhasspy.listen_on_start', False):
-    logger.info('Automatically listening for wake word')
-    wake = core.get_wake_listener(core.default_profile_name)
-    wake.start_listening()
+    # Create top-level actor
+    core = Rhasspy(profiles_dirs, default_profile_name)
+
+    # Pre-load default profile
+    if core.get_default('rhasspy.preload_profile', False):
+        logger.info('Preloading default profile (%s)' % core.default_profile_name)
+        core.preload_profile(core.default_profile_name)
+
+    # Listen for wake word
+    if core.get_default('rhasspy.listen_on_start', False):
+        logger.info('Automatically listening for wake word')
+        wake = core.get_wake_listener(core.default_profile_name)
+        wake.start_listening()
+
+start_rhasspy()
 
 # -----------------------------------------------------------------------------
 
@@ -139,7 +146,7 @@ def api_profile():
 
         if layers == 'default':
             # Write default settings
-            for profiles_dir in profiles_dirs:
+            for profiles_dir in core.profiles_dirs:
                 profile_path = os.path.join(profiles_dir, 'defaults.json')
                 if os.path.exists(profile_path):
                     with open(profile_path, 'wb') as profile_file:
@@ -309,6 +316,21 @@ def api_reload():
     core.reload_profile(profile.name)
 
     return 'Reloaded profile "%s"' % profile.name
+
+# -----------------------------------------------------------------------------
+
+@app.route('/api/restart', methods=['POST'])
+def api_restart():
+    logger.debug('Restarting Rhasspy')
+
+    global core
+    core.get_audio_recorder().stop_all()
+    del core
+
+    start_rhasspy()
+    logger.info('Restarted Rhasspy')
+
+    return 'Restarted Rhasspy'
 
 # -----------------------------------------------------------------------------
 
