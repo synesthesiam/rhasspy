@@ -28,8 +28,12 @@ class WakeListener:
         '''True if wake system is currently recording.'''
         return self._is_listening
 
-    def start_listening(self, **kwargs):
+    def start_listening(self, **kwargs) -> None:
         '''Start wake system listening in the background and return immedately.'''
+        pass
+
+    def stop_listening(self) -> None:
+        '''Stop wake system from listening'''
         pass
 
 # -----------------------------------------------------------------------------
@@ -47,6 +51,8 @@ class PocketsphinxWakeListener(WakeListener):
         self.callback = detected_callback
         self.decoder = None
         self.keyphrase = ''
+        self.threshold = 0.0
+        self.listen_thread = None
 
     def preload(self):
         self._maybe_load_decoder()
@@ -92,11 +98,11 @@ class PocketsphinxWakeListener(WakeListener):
         self.audio_recorder.start_recording(False, True)
 
         # Decoder runs in a separate thread
-        thread = threading.Thread(target=process_data, daemon=True)
-        thread.start()
+        listen_thread = threading.Thread(target=process_data, daemon=True)
+        listen_thread.start()
         self._is_listening = True
 
-        logging.debug('Listening for wake word with pocketsphinx (keyphrase=%s)' % self.keyphrase)
+        logging.debug('Listening for wake word with pocketsphinx (keyphrase=%s, threshold=%s)' % (self.keyphrase, self.threshold))
 
     # -------------------------------------------------------------------------
 
@@ -114,7 +120,7 @@ class PocketsphinxWakeListener(WakeListener):
                 self.profile.get('wake.pocketsphinx.dictionary', None) \
                 or self.profile.get('speech_to_text.pocketsphinx.dictionary'))
 
-            kws_threshold = self.profile.get('wake.pocketsphinx.threshold', 1e-40)
+            self.threshold = float(self.profile.get('wake.pocketsphinx.threshold', 1e-40))
             self.keyphrase = self.profile.get('wake.pocketsphinx.keyphrase', '')
             assert len(self.keyphrase) > 0, 'No wake keyphrase'
 
@@ -125,7 +131,14 @@ class PocketsphinxWakeListener(WakeListener):
             decoder_config.set_string('-dict', dict_path)
             decoder_config.set_string('-keyphrase', self.keyphrase)
             decoder_config.set_string('-logfn', '/dev/null')
-            decoder_config.set_float('-kws_threshold', kws_threshold)
+            decoder_config.set_float('-kws_threshold', self.threshold)
+
+            mllr_path = self.profile.read_path(
+                self.profile.get('wake.pocketsphinx.mllr_matrix'))
+
+            if os.path.exists(mllr_path):
+                logger.debug('Using tuned MLLR matrix for acoustic model: %s' % mllr_path)
+                decoder_config.set_string('-mllr', mllr_path)
 
             self.decoder = pocketsphinx.Decoder(decoder_config)
 
@@ -179,7 +192,7 @@ class NanomsgWakeListener(WakeListener):
                     # Check for reply
                     result, _ = poll([self.pull_socket], [], 0)
                     if self.pull_socket in result:
-                        response = self.pull_socket.recv()
+                        response = self.pull_socket.recv().decode()
                         logger.debug('Wake word detected: %s' % response)
                         do_callback = True
                         break
@@ -188,7 +201,7 @@ class NanomsgWakeListener(WakeListener):
 
             self._is_listening = False
 
-            if do_callback:
+            if do_callback and self.callback is not None:
                 self.callback(self.profile.name, response, **kwargs)
 
         # Start audio recording
@@ -200,6 +213,19 @@ class NanomsgWakeListener(WakeListener):
         self._is_listening = True
 
         logging.debug('Listening for wake word remotely with nanomsg')
+
+    # -------------------------------------------------------------------------
+
+    def stop_listening(self) -> None:
+        if self.pub_socket is not None:
+            self.pub_socket.close()
+            self.pub_socket = None
+
+        if self.pull_socket is not None:
+            self.pull_socket.close()
+            self.pull_socket = None
+
+        logger.debug('Stopped wake listener')
 
     # -------------------------------------------------------------------------
 

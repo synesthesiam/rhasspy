@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
 import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import json
 import argparse
 import threading
@@ -8,8 +10,12 @@ import tempfile
 import random
 import time
 import logging
+import itertools
 
-from .utils import extract_entities
+from utils import extract_entities
+from audio_recorder import WavAudioRecorder
+from wake import PocketsphinxWakeListener
+from tune import SphinxTrainSpeechTuner
 
 # -----------------------------------------------------------------------------
 
@@ -43,15 +49,28 @@ def main():
 
     # record
     record_parser = sub_parsers.add_parser('record', help='Record test phrases for profile')
-    record_parser.add_argument('directory', help='Directory to write WAV files and intent JSON files')
+    record_parser.add_argument('--directory', help='Directory to write WAV files and intent JSON files')
+
+    # record-wake
+    record_wake_parser = sub_parsers.add_parser('record-wake', help='Record wake word examples for profile')
+    record_wake_parser.add_argument('--directory', help='Directory to write WAV files')
+    record_wake_parser.add_argument('--negative', action='store_true', help='Record negative examples (not the wake word)')
 
     # tune
     tune_parser = sub_parsers.add_parser('tune', help='Tune speech acoustic model for profile')
-    tune_parser.add_argument('directory', help='Directory with WAV files and intent JSON files')
+    tune_parser.add_argument('--directory', help='Directory with WAV files and intent JSON files')
+
+    # tune-wake
+    tune_wake_parser = sub_parsers.add_parser('tune-wake', help='Tune wake acoustic model for profile')
+    tune_wake_parser.add_argument('--directory', help='Directory with WAV files')
 
     # test
     test_parser = sub_parsers.add_parser('test', help='Test speech/intent recognizers for profile')
     test_parser.add_argument('directory', help='Directory with WAV files and intent JSON files')
+
+    # test-wake
+    test_wake_parser = sub_parsers.add_parser('test-wake', help='Test wake word examples for profile')
+    test_wake_parser.add_argument('--directory', help='Directory with WAV files')
 
     # mic2wav
     mic2wav_parser = sub_parsers.add_parser('mic2wav', help='Voice command to WAV data')
@@ -106,8 +125,11 @@ def main():
         'wav2intent': wav2intent,
         'train': train,
         'record': record,
+        'record-wake': record_wake,
         'tune': tune,
+        'tune-wake': tune_wake,
         'test': test,
+        'test-wake': test_wake,
         'mic2text': mic2text,
         'mic2intent': mic2intent,
         'mic2wav': mic2wav,
@@ -216,7 +238,7 @@ def train(core, profile, args):
 # -----------------------------------------------------------------------------
 
 def record(core, profile, args):
-    dir_path = args.directory
+    dir_path = args.directory or profile.write_dir('record')
     dir_name = os.path.split(dir_path)[1]
     os.makedirs(dir_path, exist_ok=True)
 
@@ -287,11 +309,62 @@ def record(core, profile, args):
         print('Done')
 
 # -----------------------------------------------------------------------------
+# record-wake: record wake word examples
+# -----------------------------------------------------------------------------
+
+def record_wake(core, profile, args):
+    keyphrase = profile.get('wake.pocketsphinx.keyphrase', '')
+    assert len(keyphrase) > 0, 'No wake word'
+
+    wav_prefix = keyphrase.replace(' ', '-')
+    base_dir_path = args.directory or profile.write_dir('record')
+
+    if args.negative:
+        dir_path = os.path.join(base_dir_path, wav_prefix, 'not-wake-word')
+    else:
+        dir_path = os.path.join(base_dir_path, wav_prefix, 'wake-word')
+
+    os.makedirs(dir_path, exist_ok=True)
+
+    # Record WAV files
+    audio_recorder = core.get_audio_recorder()
+    wav_num = 0
+    try:
+        while True:
+            # Determine WAV file name
+            wav_path = os.path.join(dir_path, '%s-%02d.wav' % (wav_prefix, wav_num))
+            while os.path.exists(wav_path):
+                wav_num += 1
+                wav_path = os.path.join(dir_path, '%s-%02d.wav' % (wav_prefix, wav_num))
+
+            if args.negative:
+                print('Speak anything EXCEPT the wake word. Press ENTER to start (CTRL+C to quit).')
+                print('NOT %s (%s)' % (keyphrase, wav_num))
+            else:
+                print('Speak your wake word. Press ENTER to start (CTRL+C to quit).')
+                print('%s (%s)' % (keyphrase, wav_num))
+
+            input()
+            audio_recorder.start_recording(True, False)
+            print('Recording. Press ENTER to stop (CTRL+C to quit).')
+            input()
+            wav_data = audio_recorder.stop_recording(True, False)
+
+            # Write WAV data
+            with open(wav_path, 'wb') as wav_file:
+                wav_file.write(wav_data)
+
+            print('')
+    except KeyboardInterrupt:
+        print('Done')
+
+# -----------------------------------------------------------------------------
 # tune: fine tune speech acoustic model
 # -----------------------------------------------------------------------------
 
 def tune(core, profile, args):
-    dir_path = args.directory
+    dir_path = args.directory or profile.read_path('record')
+    assert os.path.exists(dir_path), 'Directory does not exist'
     wav_paths = [os.path.join(dir_path, name)
                  for name in os.listdir(dir_path)
                  if name.endswith('.wav')]
@@ -314,11 +387,61 @@ def tune(core, profile, args):
     print('Finished tuning in %s second(s)' % (time.time() - tune_start))
 
 # -----------------------------------------------------------------------------
+# tune-wake: fine tune wake acoustic model
+# -----------------------------------------------------------------------------
+
+def tune_wake(core, profile, args):
+    keyphrase = profile.get('wake.pocketsphinx.keyphrase', '')
+    assert len(keyphrase) > 0, 'No wake word'
+
+    wav_prefix = keyphrase.replace(' ', '-')
+    base_dir_path = args.directory or profile.read_path('record')
+
+    # Path to positive examples
+    true_path = os.path.join(base_dir_path, wav_prefix, 'wake-word')
+    if os.path.exists(true_path):
+        true_wav_paths = [os.path.join(true_path, name)
+                          for name in os.listdir(true_path)
+                          if name.endswith('.wav')]
+    else:
+        true_wav_paths = []
+
+    # Path to negative examples
+    false_path = os.path.join(base_dir_path, wav_prefix, 'not-wake-word')
+    if os.path.exists(false_path):
+        false_wav_paths = [os.path.join(false_path, name)
+                          for name in os.listdir(false_path)
+                          if name.endswith('.wav')]
+    else:
+        false_wav_paths = []
+
+    # Do tuning
+    mllr_path = profile.write_path(
+        profile.get('wake.pocketsphinx.mllr_matrix'))
+
+    tuner = SphinxTrainSpeechTuner(profile)
+    tuner.preload()
+
+    # Add "transcriptions"
+    wav_intents = {}
+    for wav_path in true_wav_paths:
+        wav_intents[wav_path] = { 'text': keyphrase }
+
+    for wav_path in false_wav_paths:
+        wav_intents[wav_path] = { 'text': '' }
+
+    print('Tuning wake word system with %s positive and %s negative example(s)' % (len(true_wav_paths), len(false_wav_paths)))
+    tune_start = time.time()
+    tuner.tune(wav_intents, mllr_path=mllr_path)
+    print('Finished tuning in %s second(s)' % (time.time() - tune_start))
+
+# -----------------------------------------------------------------------------
 # test: test speech/intent recognizers
 # -----------------------------------------------------------------------------
 
 def test(core, profile, args):
-    dir_path = args.directory
+    dir_path = args.directory or profile.read_path('record')
+    assert os.path.exists(dir_path), 'Directory does not exist'
     wav_paths = [os.path.join(dir_path, name)
                  for name in os.listdir(dir_path)
                  if name.endswith('.wav')]
@@ -369,6 +492,103 @@ def test(core, profile, args):
         }
 
     json.dump(results, sys.stdout, indent=4)
+
+# -----------------------------------------------------------------------------
+# test-wake: test wake word examples
+# -----------------------------------------------------------------------------
+
+def test_wake(core, profile, args):
+    keyphrase = profile.get('wake.pocketsphinx.keyphrase', '')
+    assert len(keyphrase) > 0, 'No wake word'
+
+    wav_prefix = keyphrase.replace(' ', '-')
+    base_dir_path = args.directory or profile.read_path('record')
+
+    # Path to positive examples
+    true_path = os.path.join(base_dir_path, wav_prefix, 'wake-word')
+    if os.path.exists(true_path):
+        true_wav_paths = [os.path.join(true_path, name)
+                          for name in os.listdir(true_path)
+                          if name.endswith('.wav')]
+    else:
+        true_wav_paths = []
+
+    # Path to negative examples
+    false_path = os.path.join(base_dir_path, wav_prefix, 'not-wake-word')
+    if os.path.exists(false_path):
+        false_wav_paths = [os.path.join(false_path, name)
+                          for name in os.listdir(false_path)
+                          if name.endswith('.wav')]
+    else:
+        false_wav_paths = []
+
+    # Instantiate wake listener
+    wake_listener = PocketsphinxWakeListener(
+        audio_recorder=None, profile=profile, detected_callback=None)
+
+    wake_listener.preload()
+
+    # TODO: parallelize
+    expected_true = len(true_wav_paths)
+    expected_false = len(false_wav_paths)
+
+    true_positives = 0
+    false_positives = 0
+    true_negatives = 0
+    false_negatives = 0
+
+    should_be_true = True
+    for wav_path in itertools.chain(true_wav_paths, [None], false_wav_paths):
+        # Switch between true and false examples
+        if wav_path is None:
+            should_be_true = not should_be_true
+            continue
+
+        done_event = threading.Event()
+        audio_recorder = WavAudioRecorder(
+            wav_path,
+            lambda wp: done_event.set())
+
+        wake_listener.audio_recorder = audio_recorder
+
+        detected = False
+        def callback(profile_name, keyphrase):
+            nonlocal detected
+            detected = True
+
+        wake_listener.callback = callback
+
+        # Listen and wait until WAV is finished playing
+        wake_listener.start_listening()
+        done_event.wait()
+        audio_recorder.stop_recording(False, True)
+
+        # Wait for listener to finish up
+        while wake_listener.is_listening:
+            time.sleep(0.1)
+
+        if detected:
+            if should_be_true:
+                true_positives += 1
+                status = ''
+            else:
+                false_positives += 1
+                status = ':('
+        else:
+            if should_be_true:
+                false_negatives += 1
+                status = ':('
+            else:
+                true_negatives += 1
+                status = ''
+
+        print('%s %s ' % (wav_path, status))
+
+    print('')
+    print('True positives: %s' % true_positives)
+    print('True negatives: %s' % true_negatives)
+    print('False positives: %s' % false_positives)
+    print('False negatives: %s' % false_negatives)
 
 # -----------------------------------------------------------------------------
 # mic2wav: record voice command and output WAV data

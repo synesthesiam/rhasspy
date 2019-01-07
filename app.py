@@ -325,6 +325,7 @@ def api_restart():
 
     global core
     core.get_audio_recorder().stop_all()
+    core.get_wake_listener().stop_listening()
     del core
 
     start_rhasspy()

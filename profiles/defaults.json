@@ -78,7 +78,8 @@
     "wake": {
         "pocketsphinx": {
             "keyphrase": "okay rhasspy",
-            "threshold": 1e-40
+            "threshold": 1e-30,
+            "mllr_matrix": "wake_mllr"
         },
         "system": "pocketsphinx",
         "nanomsg": {
