@@ -5,10 +5,14 @@ RELEASE_FILES := Dockerfile \
                  *.py \
                  requirements.txt \
                  bin/install-profiles.sh \
+                 bin/rhasspy \
                  rhasspy/ \
                  dist/ \
                  docker/run.sh \
-                 profiles/defaults.json
+                 profiles/defaults.json \
+                 etc/wav/ \
+                 etc/nanomsg-1.1.5.tar.gz \
+                 etc/nanomsg-python-master.zip
 
 ADDON_DIR := ../hassio-addons/rhasspy
 
@@ -30,6 +34,9 @@ update-addon:
 	cp bin/install-profiles.sh ${ADDON_DIR}/bin/
 	cp -R rhasspy/ ${ADDON_DIR}/
 	cp -R dist/ ${ADDON_DIR}/
+	cp -R etc/wav/ ${ADDON_DIR}/etc/
+	cp etc/nanomsg-1.1.5.tar.gz ${ADDON_DIR}/etc/
+	cp etc/nanomsg-python-master.zip ${ADDON_DIR}/etc/
 	cp docker/run.sh ${ADDON_DIR}/docker/
 	cp profiles/defaults.json ${ADDON_DIR}/profiles/
 

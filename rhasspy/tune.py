@@ -33,7 +33,7 @@ class SpeechTuner:
 class SphinxTrainSpeechTuner(SpeechTuner):
     '''Uses sphinxtrain tools to generate an MLLR matrix for an acoustic model.'''
 
-    def tune(self, wav_intents: Dict[str, Dict[str, Any]]) -> None:
+    def tune(self, wav_intents: Dict[str, Dict[str, Any]], mllr_path=None) -> None:
         ps_config = self.profile.get('speech_to_text.pocketsphinx')
 
         # Load decoder settings
@@ -99,13 +99,13 @@ class SphinxTrainSpeechTuner(SpeechTuner):
 
             # Generate statistics
             bw_args = ['-hmmdir', hmm_path,
-                        '-dictfn', dict_path,
-                        '-ctlfn', fileids_path,
-                        '-lsnfn', transcription_path,
-                        '-cepdir', temp_dir,
-                        '-moddeffn', mdef_path,
-                        '-accumdir', temp_dir,
-                        '-ts2cbfn', '.cont.']  # assume continuous model
+                       '-dictfn', dict_path,
+                       '-ctlfn', fileids_path,
+                       '-lsnfn', transcription_path,
+                       '-cepdir', temp_dir,
+                       '-moddeffn', mdef_path,
+                       '-accumdir', temp_dir,
+                       '-ts2cbfn', '.cont.']  # assume continuous model
 
             feature_transform_path = os.path.join(hmm_path, 'feature_transform')
             if os.path.exists(feature_transform_path):
@@ -124,14 +124,14 @@ class SphinxTrainSpeechTuner(SpeechTuner):
                             # e.g., -agc none
                             bw_args.extend([param_name, param_parts[1]])
 
-            bw_command = ['bw'] + bw_args
+            bw_command = ['bw', '-timing', 'no'] + bw_args
             logger.debug(bw_command)
             subprocess.check_call(bw_command)
 
             logger.debug('Generated statistics')
 
             # Generate MLLR matrix
-            mllr_path = self.profile.write_path(
+            mllr_path = mllr_path or self.profile.write_path(
                 self.profile.get('tuning.sphinxtrain.mllr_matrix'))
 
             solve_command = ['mllr_solve',

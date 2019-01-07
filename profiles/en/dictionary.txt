@@ -15,10 +15,12 @@ living L IH V IH NG
 make M EY K
 me M IY
 off AO F
+okay OW K EY
 on AA N
 on(2) AO N
 open OW P AH N
 red R EH D
+rhasspy R AE S P IY
 room R UW M
 set S EH T
 tell T EH L

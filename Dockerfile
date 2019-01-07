@@ -59,8 +59,10 @@ RUN mkdir -p /usr/share/rhasspy/profiles && \
 
 # Copy my code
 COPY *.py /usr/share/rhasspy/
+COPY rhasspy/ /usr/share/rhasspy/
 COPY profiles/ /usr/share/rhasspy/profiles/
 COPY dist/ /usr/share/rhasspy/dist/
+COPY etc/wav/ /usr/share/rhasspy/etc/wav/
 
 # Copy script to run
 COPY docker/run.sh /run.sh

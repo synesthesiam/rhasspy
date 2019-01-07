@@ -13,6 +13,16 @@
             "slots": {}
         }
     ],
+    "GetTime": [
+        {
+            "text": "what time is it",
+            "slots": {}
+        },
+        {
+            "text": "tell me the time",
+            "slots": {}
+        }
+    ],
     "ChangeLightColor": [
         {
             "text": "set the bedroom light to red",
@@ -211,16 +221,6 @@
                     "blue"
                 ]
             }
-        }
-    ],
-    "GetTime": [
-        {
-            "text": "what time is it",
-            "slots": {}
-        },
-        {
-            "text": "tell me the time",
-            "slots": {}
         }
     ],
     "ChangeLightState": [
