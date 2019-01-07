@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+# Directory of *this* script
+DIR="$( cd "$( dirname "$0" )" && pwd )"
+
+cd "$DIR/.."
+
+RHASSPY_APP=/usr/share/rhasspy
+RHASSPY_RUN=$RHASSPY_APP
+
+if [[ -f "$CONFIG_PATH" ]]; then
+    RHASSPY_RUN="$(jq --raw-output '.run_dir' $CONFIG_PATH)"
+    export RHASSPY_PROFILE="$(jq --raw-output '.default_profile' $CONFIG_PATH)"
+fi
+
+if [[ ! -d "$RHASSPY_RUN" ]]; then
+    mkdir -p "$RHASSPY_RUN"
+fi
+
+export RHASSPY_PROFILES="$RHASSPY_APP/profiles:$RHASSPY_RUN/profiles:$RHASSPY_PROFILES"
+python3 -m rhasspy "$@"
+
