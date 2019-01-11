@@ -1,5 +1,11 @@
 <template>
     <div class="container">
+        <div class="text-muted pl-1">
+            <p>
+                You can edit <a href="https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/doc/profiles.md">your Rhasspy profile</a> directly here as JSON. These settings will override the defaults below.
+            </p>
+        </div>
+
         <form class="form" v-on:submit.prevent="saveProfile">
             <h2>{{ this.profile }}</h2>
 
@@ -28,6 +34,12 @@
 
         <form class="form" v-on:submit.prevent="saveDefaults">
             <h2>Defaults</h2>
+
+            <div class="text-muted pl-1">
+                <p>
+                    These are the default settings for all <a href="https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/doc/profiles.md">your Rhasspy profiles</a>. If a setting is missing in any profile, the value here will be used.
+                </p>
+            </div>
 
             <div class="form-group">
                 <div class="form-row">

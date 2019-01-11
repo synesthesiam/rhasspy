@@ -1,11 +1,11 @@
 <template>
     <div class="container">
-        <p>
-            You can look up a word in the dictionary below, or have the system guess how an unknown word is pronounced.
-        </p>
-        <p>
-            New words should be added to the CMU dictionary in your profile (usually <tt>custom_words.txt</tt>).
-        </p>
+        <div class="text-muted pl-1">
+            <p>
+                This is where you manage how Rhasspy expects words to be pronounced in your voice commands.
+                You can look up a word in the dictionary below, or have the system guess how an unknown word is pronounced.
+            </p>
+        </div>
         <form class="form" v-on:submit.prevent="lookupWord">
 
             <div class="form-row form-group">
@@ -16,7 +16,8 @@
                     <input id="dict-word" class="form-control" type="text" v-model="dictWord">
                 </div>
                 <div class="col-xs-auto">
-                    <button type="submit" class="btn btn-primary form-control">Lookup</button>
+                    <button type="submit" class="btn btn-primary form-control"
+                            title="Look up or guess the pronunciation of a word">Lookup</button>
                 </div>
                 <div class="col-xs-auto">
                     <label for="dict-pronunciations" class="col-form-label col-sm-1">Pronunciations:</label>
@@ -36,16 +37,18 @@
                     <input id="dict-phonemes" title="Sphinx Phonemes" class="form-control" type="text" v-model="phonemes">
                 </div>
                 <div class="col-xs-auto">
-                    <button type="button" class="btn btn-success" title="Add to custom words" @click="addToCustomWords">Add</button>
+                    <button type="button" class="btn btn-success" title="Add this pronunciation to your custom words" @click="addToCustomWords">Add</button>
                 </div>
                 <div class="col-xs-auto">
                     <input id="espeak-phonemes" title="eSpeak Phonemes" class="form-control" type="text" v-model="espeakPhonemes" readonly>
                 </div>
                 <div class="col-xs-auto">
-                    <button type="button" class="btn btn-secondary" @click="pronouncePhonemes">Pronounce</button>
+                    <button type="button" class="btn btn-secondary" @click="pronouncePhonemes"
+                            title="Speak the selected pronunciation">Pronounce</button>
                 </div>
                 <div class="col-xs-auto">
-                    <button type="button" class="btn btn-info" @click="downloadPhonemes">Download</button>
+                    <button type="button" class="btn btn-info" @click="downloadPhonemes"
+                            title="Download the selected pronunciation as a WAV file">Download</button>
                 </div>
                 <div class="col-xs-auto">
                     <select class="form-control" v-model="pronounceType">
@@ -59,6 +62,9 @@
         <div class="row mt-5" :hidden="unknownWords.length == 0">
             <div class="col">
                 <h3>Unknown Words</h3>
+                <div class="text-muted pl-1">
+                    <p>Rhasspy isn't sure how you pronounce these words. Click on each word to see guesses above. Add the correct pronunciations to your custom words.</p>
+                </div>
                 <ul>
                     <li v-for="pair in unknownWords" v-bind:key="pair[0]">
                         <a href="#" @click="showUnknownWord(pair[0], pair[1])">{{ pair[0] }}</a>
@@ -71,6 +77,9 @@
             <div class="form-group">
                 <div class="form-row">
                     <label for="custom-words" class="col-form-label col font-weight-bold">Custom Words:</label>
+                </div>
+                <div class="form-row text-muted pl-1">
+                    <p>These are words whose pronunciations you want to customize. Each line contains a word followed by the phonemes, separated by spaces.</p>
                 </div>
                 <div class="form-group">
                     <div class="form-row">

@@ -1,21 +1,27 @@
 <template>
     <div id="app">
         <!-- Top Bar -->
-        <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
-            <div class="navbar-container">
-                <img class="navbar-brand" v-bind:class="spinnerClass" src="/img/microphone.png">
-                <a href="/" class="text-white font-weight-bold">Rhasspy Voice Assistant</a>
-                <a href="/api/" class="badge badge-info ml-2">API</a>
-            </div>
+        <nav class="navbar navbar-expand-sm navbar-dark bg-dark fixed-top">
+            <img class="navbar-brand" v-bind:class="spinnerClass" src="/img/microphone.png">
 
-            <div class="navbar-container ml-auto">
-                <label for="profiles" class="text-white">Profile:</label>
-                <select id="profiles" class="ml-2" v-model="profile">
-                    <option disabled value="">Select Profile</option>
-                    <option v-for="profile in profiles" v-bind:key="profile">{{ profile }}</option>
-                </select>
-                <button class="btn btn-success ml-3" @click="train" :disabled="this.training" title="Re-train current profile">Train</button>
-                <button class="btn btn-danger ml-3" @click="restart" :disabled="this.restarting" title="Restart Rhasspy server">Restart</button>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <div class="navbar-container">
+                    <a href="/" class="text-white font-weight-bold">Rhasspy</a>
+                    <a href="/api/" class="badge badge-info ml-2">API</a>
+                </div>
+                <div class="navbar-container ml-auto">
+                    <label for="profiles" class="text-white">Profile:</label>
+                    <select id="profiles" class="ml-2" v-model="profile">
+                        <option disabled value="">Select</option>
+                        <option v-for="profile in profiles" v-bind:key="profile">{{ profile }}</option>
+                    </select>
+                    <button class="btn btn-success ml-3" @click="train" :disabled="this.training" title="Re-train current profile">Train</button>
+                    <button class="btn btn-danger ml-3" @click="restart" :disabled="this.restarting" title="Restart Rhasspy server">Restart</button>
+                </div>
             </div>
         </nav>
 
