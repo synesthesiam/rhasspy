@@ -1,6 +1,14 @@
 <template>
     <div class="container">
         <form class="form" v-on:submit.prevent="saveSettings">
+            <div class="form-group">
+                <div class="form-row text-muted pl-1">
+                    <p>
+                        This is a simplified interface to edit your <a href="https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/doc/profiles.md">your Rhasspy profile</a>. If you want to access the JSON directly, see the Advanced tab.
+                    </p>
+                </div>
+            </div>
+
             <button class="btn btn-primary">Save Settings</button>
 
             <div class="card mt-3">
@@ -15,12 +23,6 @@
                                     <option v-for="profile in profiles" v-bind:key="profile">{{ profile }}</option>
                                 </select>
                             </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-row">
-                            <input type="checkbox" id="wake-on-start" v-model="wakeOnStart">
-                            <label for="wake-on-start" class="col-form-label">Listen for wake word on start-up (restart required)</label>
                         </div>
                     </div>
                 </div>
@@ -63,9 +65,54 @@
                 <div class="card-body">
                     <div class="form-group">
                         <div class="form-row">
+                            <p><strong>Restart required if changes are made</strong></p>
+                        </div>
+                        <div class="form-row">
+                            <input type="checkbox" id="wake-on-start" v-model="wakeOnStart">
+                            <label for="wake-on-start" class="col-form-label">Listen for wake word on start-up</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="wake-system" id="local-wake" value="local" v-model="rhasspyWake">
+                                <label class="form-check-label" for="local-wake">
+                                    Use pocketsphinx locally
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
                             <label for="wake-keyphrase" class="col-form-label">Wake Keyphrase</label>
                             <div class="col-sm-auto">
-                                <input id="wake-keyphrase" type="text" class="form-control" v-model="wakeKeyphrase">
+                                <input id="wake-keyphrase" type="text" class="form-control" v-model="wakeKeyphrase" :disabled="rhasspyWake != 'local'">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="wake-system" id="remote-wake" value="remote" v-model="rhasspyWake">
+                                <label class="form-check-label" for="remote-wake">
+                                    Use remote system (snowboy, precise)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="wake-pub" class="col-form-label">PUB Address</label>
+                            <div class="col-sm-auto">
+                                <input id="wake-pub" type="text" class="form-control" v-model="wakePub" :disabled="rhasspyWake != 'remote'">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="wake-pull" class="col-form-label">PULL Address</label>
+                            <div class="col-sm-auto">
+                                <input id="wake-pull" type="text" class="form-control" v-model="wakePull" :disabled="rhasspyWake != 'remote'">
                             </div>
                         </div>
                     </div>
@@ -78,7 +125,7 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="localSTT" id="local-stt" value="local" v-model="rhasspySTT">
+                                <input class="form-check-input" type="radio" name="stt-system" id="local-stt" value="local" v-model="rhasspySTT">
                                 <label class="form-check-label" for="local-stt">
                                     Do speech recognition on this device
                                 </label>
@@ -86,7 +133,7 @@
                         </div>
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="remoteSTT" id="remote-stt" value="remote" v-model="rhasspySTT">
+                                <input class="form-check-input" type="radio" name="stt-system" id="remote-stt" value="remote" v-model="rhasspySTT">
                                 <label class="form-check-label" for="remote-stt">
                                     Use remote Rhasspy server for speech recognition
                                 </label>
@@ -214,6 +261,10 @@
              rhasspyIntent: 'local',
              intentURL: '',
 
+             rhasspyWake: 'local',
+             wakePub: '',
+             wakePull: '',
+
              audioSystem: 'pyaudio',
 
              wakeOnStart: false,
@@ -249,6 +300,21 @@
                                this.wakeKeyphrase = this._.get(this.profileSettings,
                                                                'wake.pocketsphinx.keyphrase',
                                                                this.defaultSettings.wake.pocketsphinx.keyphrase)
+
+                               this.wakePub = this._.get(this.profileSettings,
+                                                         'wake.nanomsg.pub_address',
+                                                         this.defaultSettings.wake.nanomsg.pub_address)
+
+                               this.wakePull = this._.get(this.profileSettings,
+                                                          'wake.nanomsg.pull_address',
+                                                          this.defaultSettings.wake.nanomsg.pull_address)
+
+                               var wakeSystem = this._.get(this.profileSettings,
+                                                           'wake.system',
+                                                           this.defaultSettings.wake.system)
+
+                               this.rhasspyWake = (wakeSystem == 'nanomsg') ? 'remote' : 'local'
+
 
                                // Speech
                                var sttSystem = this._.get(this.profileSettings,
@@ -346,9 +412,30 @@
                         'rhasspy.listen_on_start',
                         this.wakeOnStart)
 
-             this._.set(this.profileSettings,
-                        'wake.pocketsphinx.keyphrase',
-                        this.wakeKeyphrase)
+             if (this.rhasspyWake == 'remote') {
+                 // Remote wake word
+                 this._.set(this.profileSettings,
+                            'wake.system',
+                            'nanomsg')
+
+                 this._.set(this.profileSettings,
+                            'wake.nanomsg.pub_address',
+                            this.wakePub)
+
+                 this._.set(this.profileSettings,
+                            'wake.nanomsg.pull_address',
+                            this.wakePull)
+             } else {
+                 // Local wake word
+                 this._.set(this.profileSettings,
+                            'wake.system',
+                            'pocketsphinx')
+
+                 this._.set(this.profileSettings,
+                            'wake.pocketsphinx.keyphrase',
+                            this.wakeKeyphrase)
+             }
+
 
              // Microphone
              this._.set(this.profileSettings,

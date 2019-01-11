@@ -2,6 +2,11 @@
     <div class="container">
         <form class="form" v-on:submit.prevent="getIntent">
             <div class="form-group">
+                <div class="form-row text-muted">
+                    <p>You can test Rhasspy from here by pressing and holding the "Hold to Record" button, speaking a command, then releasing the button.</p>
+                </div>
+            </div>
+            <div class="form-group">
                 <div class="form-row">
                     <div class="col-auto">
                         <label for="device" class="col-form-label col">Audio Device</label>
@@ -16,6 +21,7 @@
                         <button type="button" class="btn"
                                 v-bind:class="{ 'btn-danger': recording, 'btn-primary': !recording }"
                                 @mousedown="startRecording" @mouseup="stopRecording"
+                                title="Record a voice command while held, interpret when released"
                                 :disabled="interpreting">{{ recording ? 'Release to Stop' : 'Hold to Record' }}</button>
                     </div>
                 </div>
@@ -30,7 +36,8 @@
                         <input id="wavFile" ref="wavFile" type="file" class="form-control">
                     </div>
                     <div class="col-auto">
-                        <button type="button" class="btn btn-info" @click="transcribe">Transcribe WAV</button>
+                        <button type="button" class="btn btn-info" @click="transcribe"
+                                title="Upload and process a WAV file with a voice command">Transcribe WAV</button>
                     </div>
                 </div>
                 <div class="form-row">
@@ -49,14 +56,16 @@
                         <input id="sentence" type="text" class="form-control" v-model="sentence">
                     </div>
                     <div class="col-auto">
-                        <button type="submit" class="btn btn-secondary">Get Intent</button>
+                        <button type="submit" class="btn btn-secondary"
+                                title="Send a text command as if it were spoken">Get Intent</button>
                     </div>
                 </div>
             </div>
             <div class="form-group">
                 <div class="form-row mt-5">
                     <div class="col-auto">
-                        <input type="checkbox" id="sendHass" v-model="sendHass">
+                        <input type="checkbox" id="sendHass" v-model="sendHass"
+                               title="If checked, forward all recognized intents to Home Assistant">
                         <label class="ml-1" for="sendHass">Send to Home Assistant</label>
                     </div>
                 </div>

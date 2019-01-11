@@ -6,22 +6,23 @@
         "url": "http://hassio/homeassistant/"
     },
     "intent": {
+        "adapt": {
+            "stop_words": "stop_words.txt"
+        },
         "fuzzywuzzy": {
             "examples_json": "intent_examples.json"
         },
         "rasa": {
-            "url": "http://localhost:5000/",
             "examples_markdown": "intent_examples.md",
-            "project_name": "rhasspy"
+            "project_name": "rhasspy",
+            "url": "http://localhost:5000/"
         },
         "remote": {
             "url": "http://my-server:12101/api/text-to-intent"
         },
-        "adapt": {
-            "stop_words": "stop_words.txt"
-        },
         "system": "fuzzywuzzy"
     },
+    "language": "en",
     "microphone": {
         "system": "pyaudio"
     },
@@ -29,6 +30,11 @@
         "default_profile": "en",
         "listen_on_start": false,
         "preload_profile": true
+    },
+    "sounds": {
+        "recorded": "etc/wav/beep_lo.wav",
+        "system": "aplay",
+        "wake": "etc/wav/beep_hi.wav"
     },
     "speech_to_text": {
         "g2p_model": "g2p.fst",
@@ -39,8 +45,8 @@
             "custom_words": "custom_words.txt",
             "dictionary": "dictionary.txt",
             "language_model": "language_model.txt",
-            "unknown_words": "unknown_words.txt",
-            "mllr_matrix": "acoustic_model_mllr"
+            "mllr_matrix": "acoustic_model_mllr",
+            "unknown_words": "unknown_words.txt"
         },
         "remote": {
             "url": "http://my-server:12101/api/speech-to-text"
@@ -61,35 +67,34 @@
         "regex": {
             "replace": [
                 {
-                    "-": " "
+                    "'s": "s"
+                },
+                {
+                    "[^\\w ]+": " "
                 }
             ],
             "split": "\\s+"
         },
-        "tokenizer": "regex",
-        "tagged_sentences": "tagged_sentences.md"
+        "sentence_casing": "lower",
+        "tagged_sentences": "tagged_sentences.md",
+        "tokenizer": "regex"
     },
     "tuning": {
-        "system": "sphinxtrain",
         "sphinxtrain": {
             "mllr_matrix": "acoustic_model_mllr"
-        }
+        },
+        "system": "sphinxtrain"
     },
     "wake": {
-        "pocketsphinx": {
-            "keyphrase": "okay rhasspy",
-            "threshold": 1e-30,
-            "mllr_matrix": "wake_mllr"
-        },
-        "system": "pocketsphinx",
         "nanomsg": {
             "pub_address": "tcp://0.0.0.0:5000",
             "pull_address": "tcp://0.0.0.0:5001"
-        }
-    },
-    "sounds": {
-        "system": "aplay",
-        "wake": "etc/wav/beep_hi.wav",
-        "recorded": "etc/wav/beep_lo.wav"
+        },
+        "pocketsphinx": {
+            "keyphrase": "okay rhasspy",
+            "mllr_matrix": "wake_mllr",
+            "threshold": 1e-30
+        },
+        "system": "pocketsphinx"
     }
 }

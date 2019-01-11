@@ -175,16 +175,16 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
 
         # Generate symbols
         subprocess.check_call(['ngramsymbols',
-                              sentences_text_path,
-                              'sentences.syms'],
+                               sentences_text_path,
+                               'sentences.syms'],
                               cwd=working_dir)
 
         # Convert to archive (FAR)
         subprocess.check_call(['farcompilestrings',
-                              '-symbols=sentences.syms',
-                              '-keep_symbols=1',
-                              sentences_text_path,
-                              'sentences.far'],
+                               '-symbols=sentences.syms',
+                               '-keep_symbols=1',
+                               sentences_text_path,
+                               'sentences.far'],
                               cwd=working_dir)
 
         # Generate trigram counts
@@ -196,15 +196,15 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
 
         # Create trigram model
         subprocess.check_call(['ngrammake',
-                              'sentences.cnts',
-                              'sentences.mod'],
+                               'sentences.cnts',
+                               'sentences.mod'],
                               cwd=working_dir)
 
         # Convert to ARPA format
         subprocess.check_call(['ngramprint',
-                              '--ARPA',
-                              'sentences.mod',
-                              'sentences.arpa'],
+                               '--ARPA',
+                               'sentences.mod',
+                               'sentences.arpa'],
                               cwd=working_dir)
 
         lm_source_path = os.path.join(working_dir, 'sentences.arpa')
