@@ -98,7 +98,7 @@
         "system": "pocketsphinx"
     },
     "mqtt": {
-        "enabled": true,
+        "enabled": false,
         "siteId": "default",
         "host": "localhost",
         "port": 1883,
