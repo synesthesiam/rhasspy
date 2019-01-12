@@ -8,3 +8,4 @@ fuzzywuzzy[speedup]
 webrtcvad
 adapt-parser
 pydash
+paho-mqtt
