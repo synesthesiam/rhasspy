@@ -70,6 +70,9 @@ def start_rhasspy():
         wake = core.get_wake_listener(core.default_profile_name)
         wake.start_listening()
 
+    if core.get_default('mqtt.enabled', False):
+        core.get_mqtt_client().start_client()
+
 start_rhasspy()
 
 # -----------------------------------------------------------------------------

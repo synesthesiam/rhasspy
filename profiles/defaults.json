@@ -96,5 +96,13 @@
             "threshold": 1e-30
         },
         "system": "pocketsphinx"
+    },
+    "mqtt": {
+        "enabled": true,
+        "siteId": "default",
+        "host": "localhost",
+        "port": 1883,
+        "username": "",
+        "password": ""
     }
 }
