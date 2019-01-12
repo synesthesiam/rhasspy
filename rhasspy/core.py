@@ -20,6 +20,7 @@ from wake import WakeListener
 from intent_handler import IntentHandler
 from train import SentenceGenerator
 from tune import SpeechTuner
+from mqtt import HermesMqtt
 
 # -----------------------------------------------------------------------------
 
@@ -79,6 +80,9 @@ class Rhasspy:
 
         assert self.default_profile_name is not None
         self.default_profile = self.profiles[self.default_profile_name]
+
+        # Load MQTT client
+        self.mqtt_client: HermesMqtt = HermesMqtt(self)
 
     # -------------------------------------------------------------------------
 
@@ -412,6 +416,9 @@ class Rhasspy:
         start_time = time.time()
         text = decoder.transcribe_wav(wav_data)
 
+        decode_time = time.time() - start_time
+        self.get_mqtt_client().text_captured(text, seconds=decode_time)
+
         # text -> intent (JSON)
         intent = recognizer.recognize(text)
 
@@ -421,3 +428,8 @@ class Rhasspy:
         logger.debug(text)
 
         return intent
+
+    # -------------------------------------------------------------------------
+
+    def get_mqtt_client(self):
+        return self.mqtt_client
