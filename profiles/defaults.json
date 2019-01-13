@@ -26,9 +26,18 @@
     "microphone": {
         "system": "pyaudio"
     },
+    "mqtt": {
+        "enabled": false,
+        "host": "localhost",
+        "password": "",
+        "port": 1883,
+        "site_id": "default",
+        "username": "",
+        "reconnect_sec": 5
+    },
     "rhasspy": {
         "default_profile": "en",
-        "listen_on_start": false,
+        "listen_on_start": true,
         "preload_profile": true
     },
     "sounds": {
@@ -95,14 +104,9 @@
             "mllr_matrix": "wake_mllr",
             "threshold": 1e-30
         },
+        "hermes": {
+            "wakeword_id": "default"
+        },
         "system": "pocketsphinx"
-    },
-    "mqtt": {
-        "enabled": false,
-        "siteId": "default",
-        "host": "localhost",
-        "port": 1883,
-        "username": "",
-        "password": ""
     }
 }
