@@ -100,12 +100,12 @@ class Rhasspy:
             if system == 'aplay':
                 from audio_player import APlayAudioPlayer
                 device = self.get_default('sounds.aplay.device')
-                self.audio_player = APlayAudioPlayer(core, device)
+                self.audio_player = APlayAudioPlayer(self, device)
             elif system == 'heremes':
                 from audio_player import HeremesAudioPlayer
-                self.audio_player = HeremesAudioPlayer(core)
+                self.audio_player = HeremesAudioPlayer(self)
             elif system == 'dummy':
-                self.audio_player = AudioPlayer(core)
+                self.audio_player = AudioPlayer(self)
 
         return self.audio_player
 
@@ -120,16 +120,16 @@ class Rhasspy:
             if system == 'arecord':
                 from audio_recorder import ARecordAudioRecorder
                 device = self.get_default('microphone.arecord.device')
-                self.audio_recorder = ARecordAudioRecorder(core, device)
+                self.audio_recorder = ARecordAudioRecorder(self, device)
                 logger.debug('Using arecord for microphone')
             elif system == 'pyaudio':
                 from audio_recorder import PyAudioRecorder
                 device = self.get_default('microphone.pyaudio.device')
-                self.audio_recorder = PyAudioRecorder(core, device)
+                self.audio_recorder = PyAudioRecorder(self, device)
                 logger.debug('Using PyAudio for microphone')
             elif system == 'hermes':
                 from audio_recorder import HermesAudioRecorder
-                self.audio_recorder = HermesAudioRecorder(core, device)
+                self.audio_recorder = HermesAudioRecorder(self, device)
                 logger.debug('Using Hermes for microphone')
 
         return self.audio_recorder
@@ -248,20 +248,25 @@ class Rhasspy:
             callback = callback or self._handle_wake
             profile = self.profiles[profile_name]
             system = profile.get('wake.system')
-            assert system in ['dummy', 'pocketsphinx', 'nanomsg'], 'Invalid wake system: %s' % system
+            assert system in ['dummy', 'pocketsphinx', 'nanomsg', 'hermes'], 'Invalid wake system: %s' % system
             if system == 'pocketsphinx':
                 # Use pocketsphinx locally
                 from wake import PocketsphinxWakeListener
                 wake = PocketsphinxWakeListener(
-                    self.get_audio_recorder(), profile, callback)
+                    self, self.get_audio_recorder(), profile, callback)
             elif system == 'nanomsg':
                 # Use remote system via nanomsg
                 from wake import NanomsgWakeListener
                 wake = NanomsgWakeListener(
-                    self.get_audio_recorder(), profile, callback)
+                    self, self.get_audio_recorder(), profile, callback)
+            elif system == 'hermes':
+                # Use remote system via MQTT
+                from wake import HermesWakeListener
+                wake = HermesWakeListener(
+                    self, self.get_audio_recorder(), profile)
             elif system == 'dummy':
                 # Does nothing
-                wake = WakeListener(self.get_audio_recorder(), profile)
+                wake = WakeListener(self, self.get_audio_recorder(), profile)
 
             self.wake_listeners[profile_name] = wake
 

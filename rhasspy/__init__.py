@@ -524,7 +524,7 @@ def test_wake(core, profile, args):
 
     # Instantiate wake listener
     wake_listener = PocketsphinxWakeListener(
-        audio_recorder=None, profile=profile, detected_callback=None)
+        core, audio_recorder=None, profile=profile, detected_callback=None)
 
     wake_listener.preload()
 
