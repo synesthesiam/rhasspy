@@ -14,9 +14,10 @@ logger = logging.getLogger(__name__)
 class WakeListener:
     '''Base class for all wake/hot word listeners.'''
 
-    def __init__(self, audio_recorder: AudioRecorder, profile: Profile) -> None:
+    def __init__(self, core, audio_recorder: AudioRecorder, profile: Profile) -> None:
         self.audio_recorder = audio_recorder
         self.profile = profile
+        self.core = core
         self._is_listening = False
 
     def preload(self):
@@ -42,12 +43,12 @@ class WakeListener:
 # -----------------------------------------------------------------------------
 
 class PocketsphinxWakeListener(WakeListener):
-    def __init__(self, audio_recorder: AudioRecorder, profile: Profile,
+    def __init__(self, core, audio_recorder: AudioRecorder, profile: Profile,
                  detected_callback: Callable[[str, str], None]) -> None:
         '''Listens for a keyphrase using pocketsphinx.
         Calls detected_callback when keyphrase is detected and stops.'''
 
-        WakeListener.__init__(self, audio_recorder, profile)
+        WakeListener.__init__(self, core, audio_recorder, profile)
         self.callback = detected_callback
         self.decoder = None
         self.keyphrase = ''
@@ -149,13 +150,13 @@ class PocketsphinxWakeListener(WakeListener):
 # -----------------------------------------------------------------------------
 
 class NanomsgWakeListener(WakeListener):
-    def __init__(self, audio_recorder: AudioRecorder, profile: Profile,
+    def __init__(self, core, audio_recorder: AudioRecorder, profile: Profile,
                  detected_callback: Callable[[str, str], None]) -> None:
         '''Streams audio data via nanomsg PUB socket.
         Listens for reply on PULL socket.
         Calls detected_callback when keyphrase is detected and stops.'''
 
-        WakeListener.__init__(self, audio_recorder, profile)
+        WakeListener.__init__(self, core, audio_recorder, profile)
         self.callback = detected_callback
         self.pub_socket = None
         self.pull_socket = None
@@ -245,3 +246,48 @@ class NanomsgWakeListener(WakeListener):
 
             self.pull_socket = Socket(PULL)
             self.pull_socket.bind(pull_address)
+
+# -----------------------------------------------------------------------------
+# MQTT based wake word detection via Snips.AI Hermes protocol
+# https://docs.snips.ai/ressources/hermes-protocol
+# -----------------------------------------------------------------------------
+
+class HermesWakeListener(WakeListener):
+    '''Streams audio data out via MQTT.'''
+
+    def start_listening(self, **kwargs):
+        if self.is_listening:
+            logger.warn('Already listening')
+            return
+
+        def process_data():
+            try:
+                while True:
+                    # Block until audio data comes in
+                    data = self.audio_recorder.get_queue().get()
+                    if len(data) == 0:
+                        self.decoder.end_utt()
+                        logger.debug('Listening cancelled')
+                        break
+
+                    # Stream audio data out via mqtt
+                    self.core.get_mqtt_client().audio_frame(data)
+            except Exception as e:
+                logger.exception('process_data')
+
+            self._is_listening = False
+
+        # Start audio recording
+        self.audio_recorder.start_recording(False, True)
+
+        # Decoder runs in a separate thread
+        thread = threading.Thread(target=process_data, daemon=True)
+        thread.start()
+        self._is_listening = True
+
+        logging.debug('Listening for wake word remotely with MQTT')
+
+    # -------------------------------------------------------------------------
+
+    def stop_listening(self) -> None:
+        logger.debug('Stopped wake listener')

@@ -28,7 +28,7 @@
     },
     "rhasspy": {
         "default_profile": "en",
-        "listen_on_start": false,
+        "listen_on_start": true,
         "preload_profile": true
     },
     "sounds": {
@@ -95,12 +95,13 @@
             "mllr_matrix": "wake_mllr",
             "threshold": 1e-30
         },
-        "system": "pocketsphinx"
+        "system": "hermes"
     },
     "mqtt": {
-        "enabled": false,
-        "siteId": "default",
-        "host": "localhost",
+        "enabled": true,
+        "site_id": "default",
+        "wakeword_id": "default",
+        "host": "strawberry.lan",
         "port": 1883,
         "username": "",
         "password": ""
