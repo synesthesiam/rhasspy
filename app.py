@@ -228,7 +228,7 @@ def api_pronounce():
     if download:
         return Response(wav_data, mimetype='audio/wav')
     else:
-        core.get_audio_player().play_wav(wav_data)
+        core.get_audio_player().play_data(wav_data)
         return espeak_phonemes
 
 # -----------------------------------------------------------------------------
