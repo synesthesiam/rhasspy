@@ -1,22 +1,30 @@
 import json
 import logging
+import uuid
+import wave
 
 import paho.mqtt.client as mqtt
 
+# -----------------------------------------------------------------------------
+# Interoperability with Snips.AI Hermes protocol
+# https://docs.snips.ai/ressources/hermes-protocol
 # -----------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
 
 class HermesMqtt:
-    HOTWORD_DETECTED = 'hermes/hotword/default/detected'
-    TEXT_CAPTURED = 'hermes/asr/textCaptured'
-
-    SUB_TOPICS = [HOTWORD_DETECTED]
-
     def __init__(self, core):
         self.core = core
-        self.siteId = self.core.get_default('mqtt.siteId', 'default')
+        self.site_id = self.core.get_default('mqtt.siteId', 'default')
         self.client = None
+
+        self.topic_hotword_detected = 'hermes/hotword/%s/detected' % self.site_id
+        self.topic_audio_frame = 'hermes/audioServer/%s/audioFrame' % self.site_id
+        self.sub_topics = [self.topic_hotword_detected,
+                           self.topic_audio_frame]
+
+        self.on_audio_frame = None
+
 
     # -------------------------------------------------------------------------
 
@@ -53,19 +61,26 @@ class HermesMqtt:
     def on_connect(self, client, userdata, flags, rc):
         logger.info('Connected to MQTT server')
 
-        for topic in HermesMqtt.SUB_TOPICS:
+        for topic in self.sub_topics:
             self.client.subscribe(topic)
             logger.debug('Subscribed to %s' % topic)
 
 
     def on_message(self, client, userdata, msg):
         try:
-            payload = json.loads(msg.payload.decode())
-
-            if msg.topic == HermesMqtt.HOTWORD_DETECTED:
+            if msg.topic == self.topic_hotword_detected:
                 logger.debug('Hotword detected')
+                payload = json.loads(msg.payload.decode())
                 keyphrase = payload.get('modelId', '')
                 self.core._handle_wake(self.core.default_profile_name, keyphrase)
+            elif msg.topic == self.topic_audio_frame:
+                if self.on_audio_frame is not None:
+                    # Extract audio data
+                    with io.BytesIO() as wav_buffer:
+                        with wave.open(wav_buffer, mode='rb') as wav_file:
+                            audio_data = wav_file.readframes(wav_file.getnframes())
+                            self.on_audio_frame(audio_data)
+
         except Exception as e:
             logger.exception('on_message')
 
@@ -76,10 +91,21 @@ class HermesMqtt:
             return
 
         payload = json.dumps({
-            'siteId': self.siteId,
+            'siteId': self.site_id,
             'text': text,
             'likelihood': likelihood,
             'seconds': seconds
         }).encode()
 
-        self.client.publish(HermesMqtt.TEXT_CAPTURED, payload)
+        topic = 'hermes/asr/textCaptured'
+        self.client.publish(topic, payload)
+
+    # -------------------------------------------------------------------------
+
+    def play_bytes(self, wav_data: bytes):
+        if self.client is None:
+            return
+
+        request_id = str(uuid.uuid4())
+        topic = 'hermes/audioServer/%s/playBytes/%s' % (self.site_id, request_id)
+        self.client.publish(topic, wav_data)

@@ -95,9 +95,17 @@ class Rhasspy:
     def get_audio_player(self) -> AudioPlayer:
         '''Gets the shared audio player'''
         if self.audio_player is None:
-            from audio_player import APlayAudioPlayer
-            device = self.get_default('sounds.aplay.device')
-            self.audio_player = APlayAudioPlayer(device)
+            system = self.get_default('sounds.system', 'dummy')
+            assert system in ['aplay', 'hermes', 'dummy'], 'Unknown sound system: %s' % system
+            if system == 'aplay':
+                from audio_player import APlayAudioPlayer
+                device = self.get_default('sounds.aplay.device')
+                self.audio_player = APlayAudioPlayer(core, device)
+            elif system == 'heremes':
+                from audio_player import HeremesAudioPlayer
+                self.audio_player = HeremesAudioPlayer(core)
+            elif system == 'dummy':
+                self.audio_player = AudioPlayer(core)
 
         return self.audio_player
 
@@ -108,17 +116,21 @@ class Rhasspy:
         if self.audio_recorder is None:
             # Determine which microphone system to use
             system = self.default_profile.get('microphone.system')
-            assert system in ['arecord', 'pyaudio'], 'Unknown microphone system: %s' % system
+            assert system in ['arecord', 'pyaudio', 'hermes'], 'Unknown microphone system: %s' % system
             if system == 'arecord':
                 from audio_recorder import ARecordAudioRecorder
                 device = self.get_default('microphone.arecord.device')
-                self.audio_recorder = ARecordAudioRecorder(device)
+                self.audio_recorder = ARecordAudioRecorder(core, device)
                 logger.debug('Using arecord for microphone')
             elif system == 'pyaudio':
                 from audio_recorder import PyAudioRecorder
                 device = self.get_default('microphone.pyaudio.device')
-                self.audio_recorder = PyAudioRecorder(device)
+                self.audio_recorder = PyAudioRecorder(core, device)
                 logger.debug('Using PyAudio for microphone')
+            elif system == 'hermes':
+                from audio_recorder import HermesAudioRecorder
+                self.audio_recorder = HermesAudioRecorder(core, device)
+                logger.debug('Using Hermes for microphone')
 
         return self.audio_recorder
 

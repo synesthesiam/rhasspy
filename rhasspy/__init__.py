@@ -546,6 +546,7 @@ def test_wake(core, profile, args):
 
         done_event = threading.Event()
         audio_recorder = WavAudioRecorder(
+            core,
             wav_path,
             lambda wp: done_event.set())
 
