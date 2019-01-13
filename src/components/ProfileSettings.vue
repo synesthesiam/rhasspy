@@ -7,6 +7,9 @@
                         This is a simplified interface to edit your <a href="https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/doc/profiles.md">your Rhasspy profile</a>. If you want to access the JSON directly, see the Advanced tab.
                     </p>
                 </div>
+                <div class="form-row pl-1">
+                    <p><strong>Restart required if changes are made</strong></p>
+                </div>
             </div>
 
             <button class="btn btn-primary">Save Settings</button>
@@ -65,9 +68,6 @@
                 <div class="card-body">
                     <div class="form-group">
                         <div class="form-row">
-                            <p><strong>Restart required if changes are made</strong></p>
-                        </div>
-                        <div class="form-row">
                             <input type="checkbox" id="wake-on-start" v-model="wakeOnStart">
                             <label for="wake-on-start" class="col-form-label">Listen for wake word on start-up</label>
                         </div>
@@ -95,24 +95,16 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="wake-system" id="remote-wake" value="remote" v-model="rhasspyWake">
                                 <label class="form-check-label" for="remote-wake">
-                                    Use remote system (snowboy, precise)
+                                    Use remote MQTT system (snowboy, precise)
                                 </label>
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <div class="form-row">
-                            <label for="wake-pub" class="col-form-label">PUB Address</label>
+                            <label for="wake-pub" class="col-form-label">Wakeword Id</label>
                             <div class="col-sm-auto">
-                                <input id="wake-pub" type="text" class="form-control" v-model="wakePub" :disabled="rhasspyWake != 'remote'">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-row">
-                            <label for="wake-pull" class="col-form-label">PULL Address</label>
-                            <div class="col-sm-auto">
-                                <input id="wake-pull" type="text" class="form-control" v-model="wakePull" :disabled="rhasspyWake != 'remote'">
+                                <input id="wake-id" type="text" class="form-control" v-model="wakeId" :disabled="rhasspyWake != 'remote'">
                             </div>
                         </div>
                     </div>
@@ -189,7 +181,7 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="audioPyAudio" id="audio-pyaudio" value="pyaudio" v-model="audioSystem">
+                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-pyaudio" value="pyaudio" v-model="audioSystem">
                                 <label class="form-check-label" for="audio-pyaudio">
                                     Use PyAudio
                                 </label>
@@ -197,15 +189,76 @@
                         </div>
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="audioARecord" id="audio-arecord" value="arecord" v-model="audioSystem">
+                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-arecord" value="arecord" v-model="audioSystem">
                                 <label class="form-check-label" for="audio-arecord">
                                     Use arecord
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-mqtt" value="mqtt" v-model="audioSystem">
+                                <label class="form-check-label" for="audio-mqtt">
+                                    Use MQTT
                                 </label>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <div class="card mt-3">
+                <div class="card-header">MQTT Configuration</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="form-row">
+                            <input type="checkbox" id="mqtt-enabled" v-model="mqttEnabled">
+                            <label for="mqtt-enabled" class="col-form-label">Enable MQTT</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="mqtt-host" class="col-form-label">Host</label>
+                            <div class="col-sm-auto">
+                                <input id="mqtt-host" type="text" class="form-control" v-model="mqttHost" :disabled="!mqttEnabled">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="mqtt-port" class="col-form-label">Port</label>
+                            <div class="col-sm-auto">
+                                <input id="mqtt-port" type="text" class="form-control" v-model="mqttPort" :disabled="!mqttEnabled">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="mqtt-username" class="col-form-label">Username</label>
+                            <div class="col-sm-auto">
+                                <input id="mqtt-username" type="text" class="form-control" v-model="mqttUsername" :disabled="!mqttEnabled">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="mqtt-password" class="col-form-label">Password</label>
+                            <div class="col-sm-auto">
+                                <input id="mqtt-password" type="text" class="form-control" v-model="mqttPassword" :disabled="!mqttEnabled">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="mqtt-siteid" class="col-form-label">Site ID (Hermes)</label>
+                            <div class="col-sm-auto">
+                                <input id="mqtt-siteid" type="text" class="form-control" v-model="mqttSiteId" :disabled="!mqttEnabled">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <button class="btn btn-primary mt-3">Save Settings</button>
 
             <h2 class="mt-5">Current</h2>
@@ -262,13 +315,19 @@
              intentURL: '',
 
              rhasspyWake: 'local',
-             wakePub: '',
-             wakePull: '',
+             wakeId: '',
 
              audioSystem: 'pyaudio',
 
              wakeOnStart: false,
-             wakeKeyphrase: ''
+             wakeKeyphrase: '',
+
+             mqttEnabled: false,
+             mqttHost: '',
+             mqttPort: 0,
+             mqttUsername: '',
+             mqttPassword: '',
+             mqttSiteId: ''
          }
      },
 
@@ -301,19 +360,15 @@
                                                                'wake.pocketsphinx.keyphrase',
                                                                this.defaultSettings.wake.pocketsphinx.keyphrase)
 
-                               this.wakePub = this._.get(this.profileSettings,
-                                                         'wake.nanomsg.pub_address',
-                                                         this.defaultSettings.wake.nanomsg.pub_address)
-
-                               this.wakePull = this._.get(this.profileSettings,
-                                                          'wake.nanomsg.pull_address',
-                                                          this.defaultSettings.wake.nanomsg.pull_address)
+                               this.wakeId = this._.get(this.profileSettings,
+                                                        'wake.hermes.wakeword_id',
+                                                        this.defaultSettings.mqtt.wakeword_id)
 
                                var wakeSystem = this._.get(this.profileSettings,
                                                            'wake.system',
                                                            this.defaultSettings.wake.system)
 
-                               this.rhasspyWake = (wakeSystem == 'nanomsg') ? 'remote' : 'local'
+                               this.rhasspyWake = (wakeSystem == 'hermes') ? 'remote' : 'local'
 
 
                                // Speech
@@ -341,6 +396,31 @@
                                this.audioSystem = this._.get(this.profileSettings,
                                                              'microphone.system',
                                                              this.defaultSettings.microphone.system)
+
+                               // MQTT
+                               this.mqttEnabled = this._.get(this.defaultSettings,
+                                                             'mqtt.enabled',
+                                                             false)
+
+                               this.mqttHost = this._.get(this.defaultSettings,
+                                                          'mqtt.host',
+                                                          'localhost')
+
+                               this.mqttPort = this._.get(this.defaultSettings,
+                                                          'mqtt.port',
+                                                          1883)
+
+                               this.mqttUsername = this._.get(this.defaultSettings,
+                                                              'mqtt.username',
+                                                              '')
+
+                               this.mqttPassword = this._.get(this.defaultSettings,
+                                                              'mqtt.password',
+                                                              '')
+
+                               this.mqttSiteId = this._.get(this.defaultSettings,
+                                                            'mqtt.site_id',
+                                                            'default')
                            })
                            .catch(err => this.$parent.alert(err.response.data, 'danger'))
          },
@@ -416,15 +496,11 @@
                  // Remote wake word
                  this._.set(this.profileSettings,
                             'wake.system',
-                            'nanomsg')
+                            'hermes')
 
                  this._.set(this.profileSettings,
-                            'wake.nanomsg.pub_address',
-                            this.wakePub)
-
-                 this._.set(this.profileSettings,
-                            'wake.nanomsg.pull_address',
-                            this.wakePull)
+                            'wake.hermes.wakeword_id',
+                            this.wakeId)
              } else {
                  // Local wake word
                  this._.set(this.profileSettings,
@@ -441,6 +517,31 @@
              this._.set(this.profileSettings,
                         'microphone.system',
                         this.audioSystem)
+
+             // MQTT
+             this._.set(this.defaultSettings,
+                        'mqtt.enabled',
+                        this.mqttEnabled)
+
+             this._.set(this.defaultSettings,
+                        'mqtt.host',
+                        this.mqttHost)
+
+             this._.set(this.defaultSettings,
+                        'mqtt.password',
+                        this.mqttPassword)
+
+             this._.set(this.defaultSettings,
+                        'mqtt.username',
+                        this.mqttUsername)
+
+             this._.set(this.defaultSettings,
+                        'mqtt.password',
+                        this.mqttPassword)
+
+             this._.set(this.defaultSettings,
+                        'mqtt.site_id',
+                        this.mqttSiteId)
 
              // POST to server
              this.$parent.beginAsync()
