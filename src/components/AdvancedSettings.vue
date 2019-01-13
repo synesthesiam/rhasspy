@@ -5,6 +5,9 @@
                 You can edit <a href="https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/doc/profiles.md">your Rhasspy profile</a> directly here as JSON. These settings will override the defaults below.
             </p>
         </div>
+        <div class="pl-1">
+            <p><strong>Restart required if changes are made</strong></p>
+        </div>
 
         <form class="form" v-on:submit.prevent="saveProfile">
             <h2>{{ this.profile }}</h2>

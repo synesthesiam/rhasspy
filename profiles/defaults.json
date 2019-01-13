@@ -26,6 +26,15 @@
     "microphone": {
         "system": "pyaudio"
     },
+    "mqtt": {
+        "enabled": false,
+        "host": "localhost",
+        "password": "",
+        "port": 1883,
+        "site_id": "default",
+        "username": "",
+        "reconnect_sec": 5
+    },
     "rhasspy": {
         "default_profile": "en",
         "listen_on_start": true,
@@ -95,15 +104,9 @@
             "mllr_matrix": "wake_mllr",
             "threshold": 1e-30
         },
-        "system": "hermes"
-    },
-    "mqtt": {
-        "enabled": true,
-        "site_id": "default",
-        "wakeword_id": "default",
-        "host": "strawberry.lan",
-        "port": 1883,
-        "username": "",
-        "password": ""
+        "hermes": {
+            "wakeword_id": "default"
+        },
+        "system": "pocketsphinx"
     }
 }

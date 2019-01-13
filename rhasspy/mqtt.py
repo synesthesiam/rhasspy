@@ -3,6 +3,7 @@ import json
 import logging
 import uuid
 import wave
+import time
 
 import paho.mqtt.client as mqtt
 
@@ -17,8 +18,12 @@ class HermesMqtt:
     def __init__(self, core):
         self.core = core
         self.site_id = self.core.get_default('mqtt.site_id', 'default')
-        self.wakeword_id = self.core.get_default('mqtt.wakeword_id', 'default')
+        self.wakeword_id = self.core.get_default('wake.hermes.wakeword_id', 'default')
         self.client = None
+
+        self.host = self.core.get_default('mqtt.host', 'localhost')
+        self.port = self.core.get_default('mqtt.port', 1883)
+        self.reconnect_sec = self.core.get_default('mqtt.reconnect_sec', 5)
 
         self.topic_hotword_detected = 'hermes/hotword/%s/detected' % self.wakeword_id
         self.topic_audio_frame = 'hermes/audioServer/%s/audioFrame' % self.site_id
@@ -42,11 +47,7 @@ class HermesMqtt:
             # self.client.enable_logger(logger)
             self.client.on_connect = self.on_connect
             self.client.on_message = self.on_message
-
-            host = self.core.get_default('mqtt.host', 'localhost')
-            port = self.core.get_default('mqtt.port', 1883)
-            logger.debug('Connecting to MQTT broker %s:%s' % (host, port))
-
+            self.client.on_disconnect = self.on_disconnect
 
             username = self.core.get_default('mqtt.username', '')
             password = self.core.get_default('mqtt.password', None)
@@ -55,7 +56,7 @@ class HermesMqtt:
                 logger.debug('Logging in as %s' % username)
                 self.client.username_pw_set(username, password)
 
-            self.client.connect_async(host, port)
+            self.client.connect_async(self.host, self.port)
             self.client.loop_start()
 
     def stop_client(self):
@@ -67,12 +68,18 @@ class HermesMqtt:
     # -------------------------------------------------------------------------
 
     def on_connect(self, client, userdata, flags, rc):
-        logger.info('Connected to MQTT server')
+        logger.info('Connected to %s:%s' % (self.host, self.port))
 
         for topic in self.sub_topics:
             self.client.subscribe(topic)
             logger.debug('Subscribed to %s' % topic)
 
+    def on_disconnect(self, client, userdata, flags, rc):
+        logger.warn('Disconnected')
+        if self.reconnect_sec > 0:
+            logger.debug('Reconnecting in %s second(s)' % self.reconnect_sec)
+            time.sleep(self.reconnect_sec)
+            self.client.connect_async(self.host, self.port)
 
     def on_message(self, client, userdata, msg):
         try:
