@@ -9,6 +9,7 @@ RELEASE_FILES := Dockerfile \
                  rhasspy/ \
                  dist/ \
                  docker/run.sh \
+                 docker/rhasspy \
                  profiles/defaults.json \
                  etc/wav/ \
                  etc/nanomsg-1.1.5.tar.gz \
@@ -37,7 +38,7 @@ update-addon:
 	cp -R etc/wav/ ${ADDON_DIR}/etc/
 	cp etc/nanomsg-1.1.5.tar.gz ${ADDON_DIR}/etc/
 	cp etc/nanomsg-python-master.zip ${ADDON_DIR}/etc/
-	cp docker/run.sh ${ADDON_DIR}/docker/
+	cp docker/run.sh docker/rhasspy ${ADDON_DIR}/docker/
 	cp profiles/defaults.json ${ADDON_DIR}/profiles/
 
 manifest:
