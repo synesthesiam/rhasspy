@@ -362,7 +362,7 @@
 
                                this.wakeId = this._.get(this.profileSettings,
                                                         'wake.hermes.wakeword_id',
-                                                        this.defaultSettings.mqtt.wakeword_id)
+                                                        this.defaultSettings.wake.hermes.wakeword_id)
 
                                var wakeSystem = this._.get(this.profileSettings,
                                                            'wake.system',
