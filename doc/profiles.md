@@ -64,23 +64,33 @@ Available profile sections and settings are:
     * `replace` - list of dictionaries with patterns/replacements used on each example sentence
     * `split` - pattern used to break sentences into words
 * `wake` - waking Rhasspy up for speech input
-  * `system` - wake word recognition system (`pocketsphinx` or `nanomsg`)
+  * `system` - wake word recognition system (`pocketsphinx`, `hermes`, `nanomsg`)
     * `pocketsphinx` - configuration for Pocketsphinx wake word recognizer
       * `keyphrase` - phrase to wake up on (3-4 syllables recommended)
       * `threshold` - sensitivity of detection (recommended range 1e-50 to 1e-5)
+    * `hermes` - configuration for MQTT-based wake word detection (see [snowboy and mycroft-precise add-ons](https://github.com/synesthesiam/hassio-addons))
+      * `wakeword_id` - id of wakeword for [Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)
     * `nanomsg` - configuration for [nanomsg](https://nanomsg.org/) based wake word system
       * `pub_address` - address of PUB socket for audio data (e.g., `tcp://localhost:5000`)
       * `pull_address` - address of PULL socket for feedback (e.g., `tcp://localhost:5001`)
 * `microphone` - configuration for audio recording
-  * `system` - audio recording system (`pyaudio` or `arecord`)
+  * `system` - audio recording system (`pyaudio`, `arecord`, or `hermes`)
 * `sounds` - configuration for feedback sounds from Rhasspy
-  * `system` - which sound output system to use (currently just `aplay`)
+  * `system` - which sound output system to use (`aplay` or `hermes`)
   * `wake` - path to WAV file to play when Rhasspy wakes up
   * `recorded` - path to WAV file to play when a command finishes recording
 * `tuning` - configuration for acoustic model tuning
   * `system` - system for tuning (currently only `sphinxtrain`)
   * `sphinxtrain` - configuration for [sphinxtrain](https://github.com/cmusphinx/sphinxtrain) based acoustic model tuning
     * `mllr_matrix` - name of generated MLLR matrix (should match `speech_to_text.pocketsphinx.mllr_matrix`)
+* `mqtt` - configuration for MQTT ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
+  * `enabled` - true if MQTT client should be started
+  * `host` - MQTT host
+  * `port` - MQTT port
+  * `username` - MQTT username (blank for anonymous)
+  * `password` - MQTT password
+  * `reconnect_sec` - number of seconds before client will reconnect
+  * `site_id` - ID of site ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
 
 The RHASSPY_PROFILES Variable
 -----------------------------
