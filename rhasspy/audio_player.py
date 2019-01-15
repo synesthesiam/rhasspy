@@ -70,7 +70,7 @@ class HeremesAudioPlayer(AudioPlayer):
         if not os.path.exists(path):
             return
 
-        with open(path, 'r') as wav_file:
+        with open(path, 'rb') as wav_file:
             self.play_data(wav_file.read())
 
     def play_data(self, wav_data: bytes):

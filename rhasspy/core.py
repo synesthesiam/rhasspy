@@ -21,6 +21,7 @@ from intent_handler import IntentHandler
 from train import SentenceGenerator
 from tune import SpeechTuner
 from mqtt import HermesMqtt
+from intent_train import IntentTrainer
 
 # -----------------------------------------------------------------------------
 
@@ -107,6 +108,7 @@ class Rhasspy:
             elif system == 'dummy':
                 self.audio_player = AudioPlayer(self)
 
+        assert self.audio_player is not None
         return self.audio_player
 
     # -------------------------------------------------------------------------
@@ -132,6 +134,7 @@ class Rhasspy:
                 self.audio_recorder = HermesAudioRecorder(self)
                 logger.debug('Using Hermes for microphone')
 
+        assert self.audio_recorder is not None
         return self.audio_recorder
 
     # -------------------------------------------------------------------------
@@ -154,6 +157,7 @@ class Rhasspy:
                 decoder = SpeechDecoder(profile)
 
             # Cache decoder
+            assert decoder is not None
             self.speech_decoders[profile_name] = decoder
 
         return decoder
@@ -175,6 +179,7 @@ class Rhasspy:
                 tuner = SpeechTuner(profile)
 
             # Cache tuner
+            assert tuner is not None
             self.speech_tuners[profile_name] = tuner
 
         return tuner
@@ -211,6 +216,7 @@ class Rhasspy:
                 recognizer = IntentRecognizer(profile)
 
             # Cache recognizer
+            assert recognizer is not None
             self.intent_recognizers[profile_name] = recognizer
 
         return recognizer
@@ -226,7 +232,8 @@ class Rhasspy:
             word_pron = PhonetisaurusPronounce(profile)
             self.word_pronouncers[profile_name] = word_pron
 
-        return self.word_pronouncers[profile_name]
+        assert word_pron is not None
+        return word_pron
 
     # -------------------------------------------------------------------------
 
@@ -267,6 +274,7 @@ class Rhasspy:
                 # Does nothing
                 wake = WakeListener(self, self.get_audio_recorder(), profile)
 
+            assert wake is not None
             self.wake_listeners[profile_name] = wake
 
         return wake
@@ -409,6 +417,7 @@ class Rhasspy:
         intent_system = profile.get('intent.system')
         assert intent_system in ['fuzzywuzzy', 'rasa', 'adapt'], 'Invalid intent system: %s' % intent_system
 
+        intent_trainer = IntentTrainer(profile)
         if intent_system == 'fuzzywuzzy':
             from intent_train import FuzzyWuzzyIntentTrainer
             intent_trainer = FuzzyWuzzyIntentTrainer(profile)

@@ -29,7 +29,7 @@ class Profile:
 
     @classmethod
     def load_defaults(cls, profiles_dirs: List[str]):
-        defaults = {}
+        defaults:Dict[str, Any] = {}
         for profiles_dir in profiles_dirs[::-1]:
             defaults_path = os.path.join(profiles_dir, 'defaults.json')
             if os.path.exists(defaults_path):

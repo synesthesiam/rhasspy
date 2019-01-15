@@ -162,7 +162,7 @@ class AdaptIntentTrainer(IntentTrainer):
         intents: Dict[str, Dict[str, Any]] = {}
 
         for intent_name, intent_sents in sentences_by_intent.items():
-            intent = {
+            intent:Dict[str, Any] = {
                 'name': intent_name,
                 'require': [],
                 'optionally': []
