@@ -1,0 +1,21 @@
+version: '2'
+services:
+  rhasspy:
+    image: synesthesiam/rhasspy-server:latest
+    environment:
+      - RHASSPY_PROFILES=/profiles
+    volumes:
+      - $HOME/.rhasspy/profiles:/profiles
+    devices:
+      - /dev/snd:/dev/snd
+    ports:
+      - "12101:12101"
+  snowboy:
+    image: synesthesiam/snowboy:1.3.0
+    volumes:
+      - /run/dbus:/run/dbus
+    command: --host mosquitto --model /models/okay_rhasspy.pmdl
+  mosquitto:
+    image: eclipse-mosquitto
+    ports:
+      - "1883:1883"
