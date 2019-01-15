@@ -3,6 +3,7 @@ import math
 import logging
 import threading
 import wave
+import queue
 
 # -----------------------------------------------------------------------------
 
@@ -12,7 +13,7 @@ class CommandListener(object):
     '''Listens to microphone for voice commands bracketed by silence.'''
 
     def __init__(self,
-                 audio_recorder,
+                 core,
                  sample_rate,
                  chunk_size=480,     # 30 ms
                  vad_mode=0,         # 0-3 (aggressiveness)
@@ -20,7 +21,7 @@ class CommandListener(object):
                  silence_sec=0.5,    # min seconds of silence after command
                  timeout_sec=30.0):  # max seconds that command can last
 
-        self.audio_recorder = audio_recorder
+        self.core = core
         self.sample_rate = sample_rate
         self.chunk_size = chunk_size
 
@@ -60,53 +61,60 @@ class CommandListener(object):
 
             while True:
                 # Block until audio data comes in
-                data = self.audio_recorder.get_queue().get()
-                if len(data) == 0:
-                    break
+                try:
+                    audio_queue = self.core.get_audio_recorder().get_queue()
+                    data = audio_queue.get(True, self.seconds_per_buffer)
+                    if len(data) == 0:
+                        break
+                except queue.Empty:
+                    # No data available
+                    data = None
 
                 # Check maximum number of seconds to record
                 max_buffers -= 1
                 if max_buffers <= 0:
                     # Timeout
                     finished = True
+                    logger.warn('Timeout')
 
                     # Reset
                     in_phrase = False
                     after_phrase = False
 
                 # Detect speech in chunk
-                is_speech = self.vad.is_speech(data, self.sample_rate)
-                if is_speech and not in_phrase:
-                    # Start of phrase
-                    in_phrase = True
-                    after_phrase = False
-                    recorded_data = data
-                    min_phrase_buffers = int(math.ceil(self.min_sec / self.seconds_per_buffer))
-                elif in_phrase and (min_phrase_buffers > 0):
-                    # In phrase, before minimum seconds
-                    recorded_data += data
-                    min_phrase_buffers -= 1
-                elif in_phrase and is_speech:
-                    # In phrase, after minimum seconds
-                    recorded_data += data
-                elif not is_speech:
-                    # Outside of speech
-                    if after_phrase and (silence_buffers > 0):
-                        # After phrase, before stop
-                        recorded_data += data
-                        silence_buffers -= 1
-                    elif after_phrase and (silence_buffers <= 0):
-                        # Phrase complete
-                        recorded_data += data
-                        finished = True
-
-                        # Reset
-                        in_phrase = False
+                if data is not None:
+                    is_speech = self.vad.is_speech(data, self.sample_rate)
+                    if is_speech and not in_phrase:
+                        # Start of phrase
+                        in_phrase = True
                         after_phrase = False
-                    elif in_phrase and (min_phrase_buffers <= 0):
-                        # Transition to after phrase
-                        after_phrase = True
-                        silence_buffers = int(math.ceil(self.silence_sec / self.seconds_per_buffer))
+                        recorded_data = data
+                        min_phrase_buffers = int(math.ceil(self.min_sec / self.seconds_per_buffer))
+                    elif in_phrase and (min_phrase_buffers > 0):
+                        # In phrase, before minimum seconds
+                        recorded_data += data
+                        min_phrase_buffers -= 1
+                    elif in_phrase and is_speech:
+                        # In phrase, after minimum seconds
+                        recorded_data += data
+                    elif not is_speech:
+                        # Outside of speech
+                        if after_phrase and (silence_buffers > 0):
+                            # After phrase, before stop
+                            recorded_data += data
+                            silence_buffers -= 1
+                        elif after_phrase and (silence_buffers <= 0):
+                            # Phrase complete
+                            recorded_data += data
+                            finished = True
+
+                            # Reset
+                            in_phrase = False
+                            after_phrase = False
+                        elif in_phrase and (min_phrase_buffers <= 0):
+                            # Transition to after phrase
+                            after_phrase = True
+                            silence_buffers = int(math.ceil(self.silence_sec / self.seconds_per_buffer))
 
                 if finished:
                     break
@@ -114,7 +122,7 @@ class CommandListener(object):
         # -----------------------------------------------------------------
 
         # Stream data into queue
-        self.audio_recorder.start_recording(False, True)
+        self.core.get_audio_recorder().start_recording(False, True)
 
         # Start listening
         logger.debug('Listening')
@@ -125,7 +133,7 @@ class CommandListener(object):
         thread.join()
 
         # Stop listening and clean up
-        self.audio_recorder.stop_recording(False, True)
+        self.core.get_audio_recorder().stop_recording(False, True)
 
         logger.debug('Stopped listening')
         logger.info('Recorded %s byte(s) of audio data' % len(recorded_data))

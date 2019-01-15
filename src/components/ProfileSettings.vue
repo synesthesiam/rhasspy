@@ -197,7 +197,7 @@
                         </div>
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-mqtt" value="mqtt" v-model="audioSystem">
+                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-mqtt" value="hermes" v-model="audioSystem">
                                 <label class="form-check-label" for="audio-mqtt">
                                     Use MQTT
                                 </label>

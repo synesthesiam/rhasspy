@@ -30,6 +30,10 @@ class HomeAssistantIntentHandler(IntentHandler):
     '''Forward intents to Home Assistant as events.'''
 
     def handle_intent(self, intent: Dict[str, Any]) -> Dict[str, Any]:
+        if len(intent['intent']['name']) == 0:
+            logger.warn('Empty intent. Not sending to Home Assistant')
+            return
+
         import requests
 
         hass_config = self.profile.get('home_assistant', {})

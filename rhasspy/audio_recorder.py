@@ -127,7 +127,7 @@ class PyAudioRecorder(AudioRecorder):
 
             self.mic.start_stream()
             self._is_recording = True
-            logger.debug('Recording from microphone')
+            logger.debug('Recording from microphone (PyAudio)')
 
     # -------------------------------------------------------------------------
 
@@ -272,7 +272,7 @@ class ARecordAudioRecorder(AudioRecorder):
             self.record_thread = threading.Thread(target=process_data, daemon=True)
             self.record_thread.start()
 
-            logger.debug('Recording from microphone')
+            logger.debug('Recording from microphone (arecord)')
 
     # -------------------------------------------------------------------------
 
@@ -420,7 +420,7 @@ class WavAudioRecorder(AudioRecorder):
             self.record_thread = threading.Thread(target=process_data, daemon=True)
             self.record_thread.start()
 
-            logger.debug('Recording from microphone')
+            logger.debug('Reading from WAV file')
 
     # -------------------------------------------------------------------------
 
@@ -437,7 +437,7 @@ class WavAudioRecorder(AudioRecorder):
             self._is_recording = False
             self.record_thread.join()
 
-            logger.debug('Stopped recording from microphone')
+            logger.debug('Stopped reading from WAV file')
 
             # Write final empty buffer
             self.queue.put(bytes())
@@ -506,16 +506,17 @@ class HermesAudioRecorder(AudioRecorder):
         # Accumulate in a chunk
         self.chunk += audio_data
 
-        if len(self.chunk) >= self.chunk_size:
+        while len(self.chunk) >= self.chunk_size:
             # Pull out a chunk
             data = self.chunk[:self.chunk_size]
             self.chunk = self.chunk[self.chunk_size:]
 
-        if self.buffer_users > 0:
-            self.buffer += data
+            # Distribute
+            if self.buffer_users > 0:
+                self.buffer += data
 
-        if self.queue_users > 0:
-            self.queue.put(data)
+            if self.queue_users > 0:
+                self.queue.put(data)
 
     # -------------------------------------------------------------------------
 
@@ -542,7 +543,7 @@ class HermesAudioRecorder(AudioRecorder):
             # Start recording
             self._is_recording = True
 
-            logger.debug('Recording from microphone')
+            logger.debug('Listening for audio frames')
 
     # -------------------------------------------------------------------------
 
@@ -561,7 +562,7 @@ class HermesAudioRecorder(AudioRecorder):
             # Remove callback
             self.core.get_mqtt_client().on_audio_frame = None
 
-            logger.debug('Stopped recording from microphone')
+            logger.debug('Stopped listening for audio frames')
 
             # Write final empty buffer
             self.queue.put(bytes())
