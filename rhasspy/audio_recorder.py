@@ -360,7 +360,7 @@ class WavAudioRecorder(AudioRecorder):
                  core,
                  wav_path: str,
                  end_of_file_callback: Optional[Callable[[str], None]]=None,
-                 chunk_size=480):
+                 chunk_size:int=480) -> None:
 
         # Chunk size set to 30 ms for webrtcvad
         AudioRecorder.__init__(self, core, device=None)
@@ -371,7 +371,7 @@ class WavAudioRecorder(AudioRecorder):
         self.buffer = bytes()
         self.buffer_users = 0
 
-        self.queue = Queue()
+        self.queue:Queue = Queue()
         self.queue_users = 0
 
     # -------------------------------------------------------------------------

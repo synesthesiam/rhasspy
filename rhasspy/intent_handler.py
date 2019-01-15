@@ -32,7 +32,7 @@ class HomeAssistantIntentHandler(IntentHandler):
     def handle_intent(self, intent: Dict[str, Any]) -> Dict[str, Any]:
         if len(intent['intent']['name']) == 0:
             logger.warn('Empty intent. Not sending to Home Assistant')
-            return
+            return intent
 
         import requests
 
