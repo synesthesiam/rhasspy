@@ -129,7 +129,7 @@ class Rhasspy:
                 logger.debug('Using PyAudio for microphone')
             elif system == 'hermes':
                 from audio_recorder import HermesAudioRecorder
-                self.audio_recorder = HermesAudioRecorder(self, device)
+                self.audio_recorder = HermesAudioRecorder(self)
                 logger.debug('Using Hermes for microphone')
 
         return self.audio_recorder
@@ -233,8 +233,7 @@ class Rhasspy:
     def get_command_listener(self):
         '''Gets the shared voice command listener (VAD + silence bracketing).'''
         if self.command_listener is None:
-            self.command_listener = CommandListener(
-                self.get_audio_recorder(), 16000)
+            self.command_listener = CommandListener(self, 16000)
 
         return self.command_listener
 

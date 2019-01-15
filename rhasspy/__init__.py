@@ -3,6 +3,7 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import io
 import json
 import argparse
 import threading
@@ -11,6 +12,8 @@ import random
 import time
 import logging
 import itertools
+import wave
+import math
 
 from utils import extract_entities
 from audio_recorder import WavAudioRecorder
@@ -90,6 +93,18 @@ def main():
     word2wav_parser = sub_parsers.add_parser('word2wav', help='Pronounce word')
     word2wav_parser.add_argument('word', help='Word to pronounce')
 
+    # wav2mqtt
+    wav2mqtt_parser = sub_parsers.add_parser('wav2mqtt', help='Push WAV file(s) to MQTT')
+    wav2mqtt_parser.add_argument('wav_files', nargs='*', help='Paths to WAV files')
+    wav2mqtt_parser.add_argument('--frames', type=int,
+                                 default=480, help='WAV frames per MQTT message (default=480)')
+    wav2mqtt_parser.add_argument('--site-id', type=str,
+                                 default='default', help='Hermes siteId (default=default)')
+    wav2mqtt_parser.add_argument('--silence-before', type=float,
+                                 default=0, help='Seconds of silence to add before each WAV')
+    wav2mqtt_parser.add_argument('--silence-after', type=float,
+                                 default=0, help='Seconds of silence to add after each WAV')
+
     # sleep
     sleep_parser = sub_parsers.add_parser('sleep', help='Wait for wake word')
 
@@ -135,6 +150,7 @@ def main():
         'mic2wav': mic2wav,
         'word2phonemes': word2phonemes,
         'word2wav': word2wav,
+        'wav2mqtt': wav2mqtt,
         'sleep': sleep
     }
 
@@ -678,6 +694,69 @@ def word2wav(core, profile, args):
     sys.stdout.buffer.write(wav_data)
 
 # -----------------------------------------------------------------------------
+# wav2mqtt: output WAV data to MQTT via Hermes protocol
+# -----------------------------------------------------------------------------
+
+def _send_frame(core, topic: str, audio_data: bytes, hermes, rate: int, width: int, channels: int):
+    with io.BytesIO() as mqtt_buffer:
+        with wave.open(mqtt_buffer, mode='wb') as mqtt_file:
+            mqtt_file.setframerate(rate)
+            mqtt_file.setsampwidth(width)
+            mqtt_file.setnchannels(channels)
+            mqtt_file.writeframesraw(audio_data)
+
+        # Send audio frame WAV
+        mqtt_payload = mqtt_buffer.getvalue()
+        hermes.client.publish(topic, mqtt_payload)
+
+def wav2mqtt(core, profile, args):
+    from mqtt import HermesMqtt
+
+    # hermes/audioServer/<SITE_ID>/audioFrame
+    topic = 'hermes/audioServer/%s/audioFrame' % args.site_id
+    hermes = HermesMqtt(core, subscribe=False)
+    hermes.start_client()
+
+    # Wait for a connection
+    while not hermes.connected:
+        time.sleep(0.1)
+
+    if len(args.wav_files) > 0:
+        # Read WAV paths from argument list
+        for wav_path in args.wav_files:
+            with wave.open(wav_path, 'rb') as wav_file:
+                rate = wav_file.getframerate()
+                width = wav_file.getsampwidth()
+                channels = wav_file.getnchannels()
+                chunk_size = args.frames * width * channels
+
+                if args.silence_before > 0:
+                    # Silence
+                    num_chunks = int((args.silence_before * rate * width * channels) / chunk_size)
+                    for i in range(num_chunks):
+                        _send_frame(core, topic, bytes(chunk_size), hermes, rate, width, channels)
+
+                # Read actual audio data
+                audio_data = wav_file.readframes(args.frames)
+
+                while len(audio_data) > 0:
+                    _send_frame(core, topic, audio_data, hermes, rate, width, channels)
+
+                    # Read next chunk
+                    audio_data = wav_file.readframes(args.frames)
+
+                if args.silence_after > 0:
+                    # Silence
+                    num_chunks = int((args.silence_after * rate * width * channels) / chunk_size)
+                    for i in range(num_chunks):
+                        _send_frame(core, topic, bytes(chunk_size), hermes, rate, width, channels)
+
+            print(wav_path)
+
+    hermes.stop_client()
+
+# -----------------------------------------------------------------------------
+
 # sleep: wait for wake word
 # -----------------------------------------------------------------------------
 

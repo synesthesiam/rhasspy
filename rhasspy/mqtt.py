@@ -4,6 +4,7 @@ import logging
 import uuid
 import wave
 import time
+import threading
 
 import paho.mqtt.client as mqtt
 
@@ -15,7 +16,7 @@ import paho.mqtt.client as mqtt
 logger = logging.getLogger(__name__)
 
 class HermesMqtt:
-    def __init__(self, core):
+    def __init__(self, core, subscribe=True):
         self.core = core
         self.site_id = self.core.get_default('mqtt.site_id', 'default')
         self.wakeword_id = self.core.get_default('wake.hermes.wakeword_id', 'default')
@@ -31,13 +32,17 @@ class HermesMqtt:
         self.topic_hotword_off = 'hermes/hotword/toggleOff'
         self.topic_nlu_query = 'hermes/nlu/query'
 
-        self.sub_topics = [self.topic_hotword_detected,
-                           self.topic_audio_frame,
-                           self.topic_hotword_on,
-                           self.topic_hotword_off,
-                           self.topic_nlu_query]
+        if subscribe:
+            self.sub_topics = [self.topic_hotword_detected,
+                              self.topic_audio_frame,
+                              self.topic_hotword_on,
+                              self.topic_hotword_off,
+                              self.topic_nlu_query]
+        else:
+            self.sub_topics = []  # no subscriptions
 
         self.on_audio_frame = None
+        self.connected = False
 
     # -------------------------------------------------------------------------
 
@@ -61,6 +66,7 @@ class HermesMqtt:
 
     def stop_client(self):
         if self.client is not None:
+            self.connected = False
             logger.debug('Stopping MQTT client')
             self.client.loop_stop()
             self.client = None
@@ -74,7 +80,10 @@ class HermesMqtt:
             self.client.subscribe(topic)
             logger.debug('Subscribed to %s' % topic)
 
+        self.connected = True
+
     def on_disconnect(self, client, userdata, flags, rc):
+        self.connected = False
         logger.warn('Disconnected')
         if self.reconnect_sec > 0:
             logger.debug('Reconnecting in %s second(s)' % self.reconnect_sec)
@@ -92,8 +101,12 @@ class HermesMqtt:
                 logger.debug('Hotword detected!')
                 keyphrase = payload.get('modelId', '')
                 self.core.get_audio_recorder().stop_recording(False, True)
-                self.core.get_wake_listener(self.core.default_profile_name).stop_listening()
-                self.core._handle_wake(self.core.default_profile_name, keyphrase)
+
+                # Handle in separate thread to avoid blocking.
+                # I'll get around to using asyncio one of these days.
+                threading.Thread(target=self.core._handle_wake,
+                                 args=(self.core.default_profile_name, keyphrase),
+                                 daemon=True).start()
             elif msg.topic == self.topic_hotword_on:
                 # hermes/hotword/toggleOn
                 payload = json.loads(msg.payload.decode())
@@ -148,10 +161,10 @@ class HermesMqtt:
                 # Handle intent
                 self.core.get_intent_handler(self.core.default_profile_name).handle_intent(intent)
             elif msg.topic == self.topic_audio_frame:
-                # hermes/audioServer/<SITE_ID>/audioFrame/<REQUEST_ID>
+                # hermes/audioServer/<SITE_ID>/audioFrame
                 if self.on_audio_frame is not None:
                     # Extract audio data
-                    with io.BytesIO() as wav_buffer:
+                    with io.BytesIO(msg.payload) as wav_buffer:
                         with wave.open(wav_buffer, mode='rb') as wav_file:
                             audio_data = wav_file.readframes(wav_file.getnframes())
                             self.on_audio_frame(audio_data)

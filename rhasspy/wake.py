@@ -285,8 +285,3 @@ class HermesWakeListener(WakeListener):
         self._is_listening = True
 
         logging.debug('Listening for wake word remotely with MQTT')
-
-    # -------------------------------------------------------------------------
-
-    def stop_listening(self) -> None:
-        logger.debug('Stopped wake listener')

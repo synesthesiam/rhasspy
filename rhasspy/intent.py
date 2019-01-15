@@ -63,38 +63,39 @@ class FuzzyWuzzyRecognizer(IntentRecognizer):
     # -------------------------------------------------------------------------
 
     def recognize(self, text: str) -> Dict[str, Any]:
-        from fuzzywuzzy import process
+        if len(text) > 0:
+            from fuzzywuzzy import process
 
-        self._maybe_load_examples()
-        assert self.examples is not None
+            self._maybe_load_examples()
+            assert self.examples is not None
 
-        # sentence -> (sentence, intent, slots)
-        choices: Dict[str, Tuple[str, str, Dict[str, List[str]]]] = {}
-        for intent, intent_examples in self.examples.items():
-            for example in intent_examples:
-                example_text = example['text']
-                choices[example_text] = (example_text, intent, example['slots'])
+            # sentence -> (sentence, intent, slots)
+            choices: Dict[str, Tuple[str, str, Dict[str, List[str]]]] = {}
+            for intent, intent_examples in self.examples.items():
+                for example in intent_examples:
+                    example_text = example['text']
+                    choices[example_text] = (example_text, intent, example['slots'])
 
-        # Find closest matching sentence
-        best_text, best_score = process.extractOne(text, choices.keys())
+            # Find closest matching sentence
+            best_text, best_score = process.extractOne(text, choices.keys())
 
-        if best_text in choices:
-            # (text, intent, slots)
-            best_text, best_intent, best_slots = choices[best_text]
+            if best_text in choices:
+                # (text, intent, slots)
+                best_text, best_intent, best_slots = choices[best_text]
 
-            # Try to match RasaNLU format for future compatibility
-            confidence = best_score / 100
-            return {
-                'text': best_text,
-                'intent': {
-                    'name': best_intent,
-                    'confidence': confidence
-                },
-                'entities': [
-                    { 'entity': name, 'value': values[0] }
-                    for name, values in best_slots.items()
-                ]
-            }
+                # Try to match RasaNLU format for future compatibility
+                confidence = best_score / 100
+                return {
+                    'text': best_text,
+                    'intent': {
+                        'name': best_intent,
+                        'confidence': confidence
+                    },
+                    'entities': [
+                        { 'entity': name, 'value': values[0] }
+                        for name, values in best_slots.items()
+                    ]
+                }
 
         # Empty intent
         return {
