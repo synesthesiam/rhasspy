@@ -17,7 +17,7 @@ export default {
         }
 
         return Api().post('/api/profile', settings, {
-            params: { 'layers': 'default' },
+            params: { 'layers': 'defaults' },
             headers: { 'Content-Type': 'application/json' }
         })
     },

@@ -29,11 +29,14 @@ class Profile:
 
     @classmethod
     def load_defaults(cls, profiles_dirs: List[str]):
-        for profiles_dir in profiles_dirs:
+        defaults = {}
+        for profiles_dir in profiles_dirs[::-1]:
             defaults_path = os.path.join(profiles_dir, 'defaults.json')
             if os.path.exists(defaults_path):
                 with open(defaults_path, 'r') as defaults_file:
-                    return json.load(defaults_file)
+                    utils.recursive_update(defaults, json.load(defaults_file))
+
+        return defaults
 
     # -------------------------------------------------------------------------
 
@@ -47,12 +50,11 @@ class Profile:
         self.json = {}  # no defaults
 
         if self.layers in ['all', 'defaults']:
-            for profiles_dir in self.profiles_dirs:
+            for profiles_dir in self.profiles_dirs[::-1]:
                 defaults_path = os.path.join(profiles_dir, 'defaults.json')
                 if os.path.exists(defaults_path):
                     with open(defaults_path, 'r') as defaults_file:
-                        self.json = json.load(defaults_file)
-                        break
+                        utils.recursive_update(self.json, json.load(defaults_file))
 
         # Overlay with profile
         if self.layers in ['all', 'profile']:

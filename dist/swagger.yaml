@@ -30,7 +30,7 @@ paths:
       - in: query
         name: layers
         description: ''
-        enum: [all, default, profile]
+        enum: [all, defaults, profile]
         schema:
           type: string
       responses:

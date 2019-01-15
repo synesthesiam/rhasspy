@@ -266,7 +266,6 @@ class HermesWakeListener(WakeListener):
                     # Block until audio data comes in
                     data = self.audio_recorder.get_queue().get()
                     if len(data) == 0:
-                        self.decoder.end_utt()
                         logger.debug('Listening cancelled')
                         break
 
