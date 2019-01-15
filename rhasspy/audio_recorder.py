@@ -489,11 +489,33 @@ class HermesAudioRecorder(AudioRecorder):
         AudioRecorder.__init__(self, core, device=None)
         self.chunk_size = chunk_size
 
+        self.chunk = bytes()
+
         self.buffer = bytes()
         self.buffer_users = 0
 
         self.queue = Queue()
         self.queue_users = 0
+
+    # -------------------------------------------------------------------------
+
+    def on_audio_frame(self, audio_data):
+        if not self.is_recording:
+            return
+
+        # Accumulate in a chunk
+        self.chunk += audio_data
+
+        if len(self.chunk) >= self.chunk_size:
+            # Pull out a chunk
+            data = self.chunk[:self.chunk_size]
+            self.chunk = self.chunk[self.chunk_size:]
+
+        if self.buffer_users > 0:
+            self.buffer += data
+
+        if self.queue_users > 0:
+            self.queue.put(data)
 
     # -------------------------------------------------------------------------
 
@@ -507,39 +529,18 @@ class HermesAudioRecorder(AudioRecorder):
 
         if not self.is_recording:
             # Reset
+            self.chunk = bytes()
             self.buffer = bytes()
 
             # Clear queue
             while not self.queue.empty():
                 self.queue.get_nowait()
 
-            def process_data():
-                with wave.open(self.wav_path, 'rb') as wav_file:
-                    rate, width, channels = wav_file.getframerate(), wav_file.getsampwidth(), wav_file.getnchannels()
-                    if (rate != 16000) or (width != 2) or (channels != 1):
-                        audio_data = SpeechDecoder.convert_wav(wav_file.read())
-                    else:
-                        # Use original data
-                        audio_data = wav_file.readframes(wav_file.getnframes())
-
-                i = 0
-                while (i+self.chunk_size) < len(audio_data):
-                    data = audio_data[i:i+self.chunk_size]
-                    i += self.chunk_size
-
-                    if self.buffer_users > 0:
-                        self.buffer += data
-
-                    if self.queue_users > 0:
-                        self.queue.put(data)
-
-                if self.end_of_file_callback is not None:
-                    self.end_of_file_callback(self.wav_path)
+            # Set callback
+            self.core.get_mqtt_client().on_audio_frame = self.on_audio_frame
 
             # Start recording
             self._is_recording = True
-            self.record_thread = threading.Thread(target=process_data, daemon=True)
-            self.record_thread.start()
 
             logger.debug('Recording from microphone')
 
@@ -556,7 +557,9 @@ class HermesAudioRecorder(AudioRecorder):
         if self.is_recording and (self.buffer_users <= 0) and (self.queue_users <= 0):
             # Shut down audio system
             self._is_recording = False
-            self.record_thread.join()
+
+            # Remove callback
+            self.core.get_mqtt_client().on_audio_frame = None
 
             logger.debug('Stopped recording from microphone')
 
@@ -582,7 +585,7 @@ class HermesAudioRecorder(AudioRecorder):
     def stop_all(self) -> None:
         if self.is_recording:
             self._is_recording = False
-            self.record_thread.join()
+            self.core.get_mqtt_client().on_audio_frame = None
 
             if self.queue_users > 0:
                 # Write final empty buffer
