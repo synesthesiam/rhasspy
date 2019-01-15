@@ -147,13 +147,16 @@ def api_profile():
         # Ensure that JSON is valid
         json.loads(request.data)
 
-        if layers == 'default':
+        if layers == 'defaults':
             # Write default settings
             for profiles_dir in core.profiles_dirs:
                 profile_path = os.path.join(profiles_dir, 'defaults.json')
-                if os.path.exists(profile_path):
+                try:
                     with open(profile_path, 'wb') as profile_file:
                         profile_file.write(request.data)
+                    break
+                except:
+                    pass
         else:
             # Write local profile settings
             profile = request_to_profile(request)
@@ -161,9 +164,11 @@ def api_profile():
             with open(profile_path, 'wb') as profile_file:
                 profile_file.write(request.data)
 
-        return 'Wrote %d byte(s) to %s' % (len(request.data), profile_path)
+        msg = 'Wrote %d byte(s) to %s' % (len(request.data), profile_path)
+        logger.debug(msg)
+        return msg
 
-    if layers == 'default':
+    if layers == 'defaults':
         # Read default settings
         return jsonify(core.defaults_json)
     elif layers == 'profile':
@@ -328,7 +333,10 @@ def api_restart():
 
     global core
     core.get_audio_recorder().stop_all()
-    core.get_wake_listener().stop_listening()
+
+    for wake_listener in core.wake_listeners.values():
+        wake_listener.stop_listening()
+
     del core
 
     start_rhasspy()

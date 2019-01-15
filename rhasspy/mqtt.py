@@ -89,8 +89,9 @@ class HermesMqtt:
                 if payload.get('siteId', '') != self.site_id:
                     return
 
-                logger.debug('Hotword detected')
+                logger.debug('Hotword detected!')
                 keyphrase = payload.get('modelId', '')
+                self.core.get_audio_recorder().stop_recording(False, True)
                 self.core.get_wake_listener(self.core.default_profile_name).stop_listening()
                 self.core._handle_wake(self.core.default_profile_name, keyphrase)
             elif msg.topic == self.topic_hotword_on:
