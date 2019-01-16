@@ -26,6 +26,9 @@
                                     <option v-for="profile in profiles" v-bind:key="profile">{{ profile }}</option>
                                 </select>
                             </div>
+                            <div class="col-auto text-muted">
+                                Profile that Rhasspy will load at startup and use unless told otherwise
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -42,6 +45,9 @@
                             <div class="col">
                                 <input id="hass-url" type="text" class="form-control" v-model="hassURL">
                             </div>
+                            <div class="col-auto text-muted">
+                                Address of your Home Assistant server
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
@@ -50,6 +56,9 @@
                             <div class="col">
                                 <input id="hass-token" type="text" class="form-control" v-model="hassToken">
                             </div>
+                            <div class="col-auto text-muted">
+                                Long-lived access token (automatically filled in Hass.IO)
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
@@ -57,6 +66,9 @@
                             <label for="hass-password" class="col-form-label">API Password</label>
                             <div class="col">
                                 <input id="hass-password" type="text" class="form-control" v-model="hassPassword">
+                            </div>
+                            <div class="col-auto text-muted">
+                                Home Assistant password (deprecated)
                             </div>
                         </div>
                     </div>
@@ -70,6 +82,7 @@
                         <div class="form-row">
                             <input type="checkbox" id="wake-on-start" v-model="wakeOnStart">
                             <label for="wake-on-start" class="col-form-label">Listen for wake word on start-up</label>
+                            <span class="col-form-label text-muted">(default profile)</span>
                         </div>
                     </div>
                     <div class="form-group">
@@ -77,7 +90,7 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="wake-system" id="local-wake" value="local" v-model="rhasspyWake">
                                 <label class="form-check-label" for="local-wake">
-                                    Use pocketsphinx locally
+                                    Use Pocketsphinx locally
                                 </label>
                             </div>
                         </div>
@@ -88,6 +101,9 @@
                             <div class="col-sm-auto">
                                 <input id="wake-keyphrase" type="text" class="form-control" v-model="wakeKeyphrase" :disabled="rhasspyWake != 'local'">
                             </div>
+                            <div class="col-auto text-muted">
+                                3-4 syllables recommended
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
@@ -95,8 +111,20 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="wake-system" id="remote-wake" value="remote" v-model="rhasspyWake">
                                 <label class="form-check-label" for="remote-wake">
-                                    Use remote MQTT system (snowboy, precise)
+                                    Use external MQTT system (Hermes protocol)
                                 </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="col text-muted">
+                                Audio data will be published to <tt>hermes/audioServer/&lt;SITE_ID&gt;/audioFrame</tt>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col text-muted">
+                                Make sure to enable MQTT below.
                             </div>
                         </div>
                     </div>
@@ -105,6 +133,9 @@
                             <label for="wake-pub" class="col-form-label">Wakeword Id</label>
                             <div class="col-sm-auto">
                                 <input id="wake-id" type="text" class="form-control" v-model="wakeId" :disabled="rhasspyWake != 'remote'">
+                            </div>
+                            <div class="col-auto text-muted">
+                                Expecting <tt>hermes/hotword/&lt;WAKEWORD_ID&gt;/detected</tt>
                             </div>
                         </div>
                     </div>
@@ -123,6 +154,8 @@
                                 </label>
                             </div>
                         </div>
+                    </div>
+                    <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="stt-system" id="remote-stt" value="remote" v-model="rhasspySTT">
@@ -137,6 +170,9 @@
                             <label for="stt-url" class="col-form-label">Rhasspy Speech-to-Text URL</label>
                             <div class="col">
                                 <input id="stt-url" type="text" class="form-control" v-model="sttURL" :disabled="rhasspySTT == 'local'">
+                            </div>
+                            <div class="col-auto text-muted">
+                                Example: http://localhost:12101/api/speech-to-text
                             </div>
                         </div>
                     </div>
@@ -155,6 +191,8 @@
                                 </label>
                             </div>
                         </div>
+                    </div>
+                    <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="remoteIntent" id="remote-intent" value="remote" v-model="rhasspyIntent">
@@ -169,6 +207,9 @@
                             <label for="intent-url" class="col-form-label">Rhasspy Text-to-Intent URL</label>
                             <div class="col">
                                 <input id="intent-url" type="text" class="form-control" v-model="intentURL" :disabled="rhasspyIntent == 'local'">
+                            </div>
+                            <div class="col-auto text-muted">
+                                Example: http://localhost:12101/api/text-to-intent
                             </div>
                         </div>
                     </div>
