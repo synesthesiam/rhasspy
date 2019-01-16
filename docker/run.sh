@@ -13,6 +13,7 @@ if [[ ! -d "$RHASSPY_RUN" ]]; then
 fi
 
 export RHASSPY_PROFILES="$RHASSPY_APP/profiles:$RHASSPY_RUN/profiles:$RHASSPY_PROFILES"
+export RHASSPY_ARGS="$@"
 
 export FLASK_APP=app.py
 cd "$RHASSPY_APP"

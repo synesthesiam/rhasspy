@@ -22,4 +22,5 @@ fi
 cd "$DIR"
 source .venv/bin/activate
 export FLASK_APP=app.py
+export RHASSPY_ARGS="$@"
 flask run --host=0.0.0.0 --port=$RHASSPY_PORT

@@ -18,28 +18,8 @@ logger = logging.getLogger(__name__)
 class HermesMqtt:
     def __init__(self, core, subscribe=True):
         self.core = core
-        self.site_id = self.core.get_default('mqtt.site_id', 'default')
-        self.wakeword_id = self.core.get_default('wake.hermes.wakeword_id', 'default')
         self.client = None
-
-        self.host = self.core.get_default('mqtt.host', 'localhost')
-        self.port = self.core.get_default('mqtt.port', 1883)
-        self.reconnect_sec = self.core.get_default('mqtt.reconnect_sec', 5)
-
-        self.topic_hotword_detected = 'hermes/hotword/%s/detected' % self.wakeword_id
-        self.topic_audio_frame = 'hermes/audioServer/%s/audioFrame' % self.site_id
-        self.topic_hotword_on = 'hermes/hotword/toggleOn'
-        self.topic_hotword_off = 'hermes/hotword/toggleOff'
-        self.topic_nlu_query = 'hermes/nlu/query'
-
-        if subscribe:
-            self.sub_topics = [self.topic_hotword_detected,
-                              self.topic_audio_frame,
-                              self.topic_hotword_on,
-                              self.topic_hotword_off,
-                              self.topic_nlu_query]
-        else:
-            self.sub_topics = []  # no subscriptions
+        self.subscribe = subscribe
 
         self.on_audio_frame = None
         self.connected = False
@@ -48,8 +28,29 @@ class HermesMqtt:
 
     def start_client(self):
         if self.client is None:
+            self.site_id = self.core.get_default('mqtt.site_id', 'default')
+            self.wakeword_id = self.core.get_default('wake.hermes.wakeword_id', 'default')
+            self.host = self.core.get_default('mqtt.host', 'localhost')
+            self.port = self.core.get_default('mqtt.port', 1883)
+            self.reconnect_sec = self.core.get_default('mqtt.reconnect_sec', 5)
+
+            self.topic_hotword_detected = 'hermes/hotword/%s/detected' % self.wakeword_id
+            self.topic_audio_frame = 'hermes/audioServer/%s/audioFrame' % self.site_id
+            self.topic_hotword_on = 'hermes/hotword/toggleOn'
+            self.topic_hotword_off = 'hermes/hotword/toggleOff'
+            self.topic_nlu_query = 'hermes/nlu/query'
+
+            if self.subscribe:
+                self.sub_topics = [self.topic_hotword_detected,
+                                  self.topic_audio_frame,
+                                  self.topic_hotword_on,
+                                  self.topic_hotword_off,
+                                  self.topic_nlu_query]
+            else:
+                self.sub_topics = []  # no subscriptions
+
+
             self.client = mqtt.Client()
-            # self.client.enable_logger(logger)
             self.client.on_connect = self.on_connect
             self.client.on_message = self.on_message
             self.client.on_disconnect = self.on_disconnect
@@ -61,6 +62,7 @@ class HermesMqtt:
                 logger.debug('Logging in as %s' % username)
                 self.client.username_pw_set(username, password)
 
+            logger.debug('Connecting to MQTT broker %s:%s' % (self.host, self.port))
             self.client.connect_async(self.host, self.port)
             self.client.loop_start()
 

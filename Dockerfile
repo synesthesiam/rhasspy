@@ -91,4 +91,4 @@ RUN chmod a+x /run.sh
 
 ENV CONFIG_PATH /data/options.json
 
-CMD ["/run.sh"]
+ENTRYPOINT ["/run.sh"]
