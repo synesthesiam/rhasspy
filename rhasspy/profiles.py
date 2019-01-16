@@ -112,37 +112,6 @@ class Profile:
 
 # -----------------------------------------------------------------------------
 
-# class ProfileActor(Actor):
-#     def __init__(self):
-#         self.parent = None
-#         self.profile = None
-#         self.audio_player_actor = None
-
-#     def receiveMessage(self, message, sender):
-#         try:
-#             if isinstance(message, Profile):
-#                 self.parent = sender
-#                 self.profile = profile
-#             elif isinstance(message, PlayWavFile):
-#                 self.maybe_load_audio_player()
-#                 self.send(self.audio_player_actor, message)
-
-#         except Exception as ex:
-#             logger.exception('receiveMessage')
-
-#     # -------------------------------------------------------------------------
-
-#     def maybe_load_audio_player(self):
-#         if self.audio_player_actor is None:
-#             system = self.profile.get('sounds.system', 'aplay')
-#             assert system in ['aplay'], 'Unknown audio player system'
-#             if system == 'aplay':
-#                 from .audio_player import APlayActor
-#                 self.audio_player_actor = self.createActor(APlayActor)
-#                 self.send(self.audio_player_actor, self.profile)
-
-# -----------------------------------------------------------------------------
-
 def request_to_profile(request, profiles_dirs: List[str], layers='all'):
     profile_name = request.args.get(
         'profile', os.environ.get('RHASSPY_PROFILE', 'en'))

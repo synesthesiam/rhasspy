@@ -17,17 +17,19 @@ import wave
 import tempfile
 import threading
 import functools
-import signal
-import atexit
+import argparse
+import shlex
 from collections import defaultdict
 
 from flask import Flask, request, Response, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import requests
+import pydash
 
 # import wake
 from rhasspy.core import Rhasspy
 from rhasspy.pronounce import WordPronounce
+from rhasspy.utils import recursive_update
 
 # -----------------------------------------------------------------------------
 # Flask Web App Setup
@@ -36,6 +38,25 @@ from rhasspy.pronounce import WordPronounce
 app = Flask('rhasspy')
 app.secret_key = str(uuid.uuid4())
 CORS(app)
+
+# -----------------------------------------------------------------------------
+# Parse Arguments
+# -----------------------------------------------------------------------------
+
+parser = argparse.ArgumentParser('Rhasspy')
+parser.add_argument('--default', '-d', nargs=2,
+                    action='append',
+                    help='Set a default setting value',
+                    default=[])
+
+parser.add_argument('--set', '-s', nargs=2,
+                    action='append',
+                    help='Set a profile setting value',
+                    default=[])
+
+arg_str = os.environ.get('RHASSPY_ARGS', '')
+args = parser.parse_args(shlex.split(arg_str))
+logger.debug(args)
 
 # -----------------------------------------------------------------------------
 # Core Setup
@@ -59,6 +80,32 @@ def start_rhasspy():
     # Create top-level actor
     core = Rhasspy(profiles_dirs, default_profile_name)
 
+    # Add defaults from the command line
+    for key, value in args.default:
+        try:
+            value = json.loads(value)
+        except:
+            pass
+
+        logger.debug('Default: {0}={1}'.format(key, value))
+        core.defaults_json = \
+            pydash.set_(core.defaults_json, key, value)
+
+    # Add profile settings from the command line
+    extra_settings = {}
+    for key, value in args.set:
+        try:
+            value = json.loads(value)
+        except:
+            pass
+
+        logger.debug('Profile: {0}={1}'.format(key, value))
+        extra_settings[key] = value
+
+    for profile in core.profiles.values():
+        for key, value in extra_settings.items():
+            profile.json = pydash.set_(profile.json, key, value)
+
     # Pre-load default profile
     if core.get_default('rhasspy.preload_profile', False):
         logger.info('Preloading default profile (%s)' % core.default_profile_name)
@@ -70,6 +117,7 @@ def start_rhasspy():
         wake = core.get_wake_listener(core.default_profile_name)
         wake.start_listening()
 
+    # json.dump(core.defaults_json, sys.stdout, indent=4)
     if core.get_default('mqtt.enabled', False):
         core.get_mqtt_client().start_client()
 
