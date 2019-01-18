@@ -254,7 +254,7 @@ class Rhasspy:
             callback = callback or self._handle_wake
             profile = self.profiles[profile_name]
             system = profile.get('wake.system')
-            assert system in ['dummy', 'pocketsphinx', 'nanomsg', 'hermes'], 'Invalid wake system: %s' % system
+            assert system in ['dummy', 'pocketsphinx', 'nanomsg', 'hermes', 'snowboy'], 'Invalid wake system: %s' % system
             if system == 'pocketsphinx':
                 # Use pocketsphinx locally
                 from wake import PocketsphinxWakeListener
@@ -270,6 +270,11 @@ class Rhasspy:
                 from wake import HermesWakeListener
                 wake = HermesWakeListener(
                     self, self.get_audio_recorder(), profile)
+            elif system == 'snowboy':
+                # Use snowboy locally
+                from wake import SnowboyWakeListener
+                wake = SnowboyWakeListener(
+                    self, self.get_audio_recorder(), profile, callback)
             elif system == 'dummy':
                 # Does nothing
                 wake = WakeListener(self, self.get_audio_recorder(), profile)
