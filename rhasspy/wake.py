@@ -285,3 +285,93 @@ class HermesWakeListener(WakeListener):
         self._is_listening = True
 
         logging.debug('Listening for wake word remotely with MQTT')
+
+# -----------------------------------------------------------------------------
+# Snowboy wake listener
+# https://snowboy.kitt.ai
+# -----------------------------------------------------------------------------
+
+class SnowboyWakeListener(WakeListener):
+    def __init__(self, core, audio_recorder: AudioRecorder, profile: Profile,
+                 detected_callback: Callable[[str, str], None]) -> None:
+        '''Listens for a wake word using snowboy.
+        Calls detected_callback when wake word is detected and stops.'''
+
+        WakeListener.__init__(self, core, audio_recorder, profile)
+        self.callback = detected_callback
+        self.detector = None
+        self.listen_thread = None
+
+    def preload(self):
+        self._maybe_load_detector()
+
+    # -------------------------------------------------------------------------
+
+    def start_listening(self, **kwargs):
+        if self.is_listening:
+            logger.warn('Already listening')
+            return
+
+        self._maybe_load_detector()
+
+        def process_data():
+            do_callback = False
+
+            try:
+                while True:
+                    # Block until audio data comes in
+                    data = self.audio_recorder.get_queue().get()
+                    if len(data) == 0:
+                        logger.debug('Listening cancelled')
+                        break
+
+                    index = self.detector.RunDetection(data)
+                    # Return is:
+                    # -2 silence
+                    # -1 error
+                    #  0 voice
+                    #  n index n-1
+                    if index > 0:
+                        # Hotword detected
+                        logger.debug('Hotword detected (%s)!' % self.model_name)
+                        do_callback = True
+                        break
+            except Exception as e:
+                logger.exception('process_data')
+
+            self._is_listening = False
+
+            if do_callback:
+                self.callback(self.profile.name, self.model_name, **kwargs)
+
+        # Start audio recording
+        self.audio_recorder.start_recording(False, True)
+
+        # Decoder runs in a separate thread
+        listen_thread = threading.Thread(target=process_data, daemon=True)
+        listen_thread.start()
+        self._is_listening = True
+
+        logging.debug('Listening for wake word with snowboy')
+
+    # -------------------------------------------------------------------------
+
+    def _maybe_load_detector(self):
+        if self.detector is None:
+            from snowboy import snowboydetect, snowboydecoder
+
+            self.model_name = self.profile.get('wake.snowboy.model')
+            model_path = self.profile.read_path(self.model_name)
+
+            sensitivity = float(self.profile.get('wake.snowboy.sensitivity', 0.5))
+            audio_gain = float(self.profile.get('wake.snowboy.audio_gain', 1.0))
+
+            self.detector = snowboydetect.SnowboyDetect(
+                snowboydecoder.RESOURCE_FILE.encode(), model_path.encode())
+
+            sensitivity_str = str(sensitivity).encode()
+            self.detector.SetSensitivity(sensitivity_str)
+            self.detector.SetAudioGain(audio_gain)
+
+            logger.debug('Loaded snowboy (model=%s, sensitivity=%s, audio_gain=%s)' \
+                         % (model_path, sensitivity, audio_gain))
