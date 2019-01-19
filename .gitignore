@@ -17,3 +17,4 @@ rhasspy-hassio-addon*.tar.gz
 etc/qemu-arm-static
 profiles/en/record/
 workbench.xmi
+etc/*.deb
