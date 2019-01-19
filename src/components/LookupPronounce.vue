@@ -174,8 +174,8 @@
 
                      this.espeakPhonemes = request.data.espeak_phonemes
                  })
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => this.$parent.endAsync())
+                 .catch(err => this.$parent.error(err))
          },
 
          showUnknownWord: function(word, phonemes) {
@@ -191,8 +191,8 @@
                                  ? this.dictWord : this.phonemes
 
              PronounceService.pronounce(this.profile, pronounceString, this.pronounceType)
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => this.$parent.endAsync())
+                 .catch(err => this.$parent.error(err))
          },
 
          // Generate WAV file with pronuncation
@@ -214,8 +214,8 @@
                      link.click()
                      document.body.removeChild(link)
                  })
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => this.$parent.endAsync())
+                 .catch(err => this.$parent.error(err))
          },
 
          refreshExamples: function() {
@@ -224,18 +224,18 @@
                                  this.examples = Object.entries(request.data)
                                  this.examples.sort()
                              })
-                             .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                             .catch(err => this.$parent.error(err))
          },
 
          saveCustomWords: function() {
              this.$parent.beginAsync()
              PronounceService.updateCustomWords(this.profile, this.customWords)
                  .then(request => this.$parent.alert(request.data, 'success'))
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => {
                      this.$parent.endAsync()
                      this.customWordsDirty = false
                  })
+                 .catch(err => this.$parent.error(err))
          },
 
          getCustomWords: function() {
@@ -243,7 +243,7 @@
                              .then(request => {
                                  this.customWords = request.data
                              })
-                             .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                             .catch(err => this.$parent.error(err))
          },
 
          addToCustomWords: function() {

@@ -87,7 +87,7 @@
                            .then(request => {
                                this.profileSettings = JSON.stringify(request.data, null, 4)
                            })
-                           .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                           .catch(err => this.$parent.error(err))
          },
 
          refreshDefaults: function() {
@@ -95,29 +95,29 @@
                            .then(request => {
                                this.defaultSettings = JSON.stringify(request.data, null, 4)
                            })
-                           .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                           .catch(err => this.$parent.error(err))
          },
 
          saveProfile: function() {
              this.$parent.beginAsync()
              ProfileService.updateProfileSettings(this.profile, this.profileSettings)
                  .then(request => this.$parent.alert(request.data, 'success'))
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => {
                      this.$parent.endAsync()
                      this.profileSettingsDirty = false
                  })
+                 .catch(err => this.$parent.error(err))
          },
 
          saveDefaults: function() {
              this.$parent.beginAsync()
              ProfileService.updateDefaultSettings(this.defaultSettings)
                  .then(request => this.$parent.alert(request.data, 'success'))
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => {
                      this.$parent.endAsync()
                      this.defaultSettingsDirty = false
                  })
+                 .catch(err => this.$parent.error(err))
          }
      },
 

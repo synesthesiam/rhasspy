@@ -15,7 +15,7 @@ RUN apt-get update && \
         openjdk-8-jre-headless \
         cmake git \
         autoconf libtool automake bison \
-        sphinxtrain
+        sphinxbase-utils sphinxtrain
 
 # Install nanomsg from source (no armhf alpine package currently available).
 # Also need to copy stuff in /usr to avoid a call to ldconfig, which fails
@@ -43,18 +43,22 @@ RUN python3 -m pip install --no-cache-dir /nanomsg-python-master.zip
 RUN python3 -m pip install https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz
 
 # Install JSGF sentence generator
-RUN cd / && wget -qO - https://github.com/synesthesiam/jsgf-gen/releases/download/v1.0/jsgf-gen.tar.gz | tar xzf - && \
-    ln -s /jsgf-gen/bin/jsgf-gen /usr/bin/jsgf-gen
+RUN cd / && wget -q https://github.com/synesthesiam/jsgf-gen/releases/download/v1.0/jsgf-gen-1.0_all.deb
 
 # Install phoentisaurus
-RUN cd / && wget -qO - https://github.com/synesthesiam/phonetisaurus-2013/releases/download/v1.0-$BUILD_ARCH-alpine/phonetisaurus_2013-1_$BUILD_ARCH-alpine.tar.gz | tar xzf -
+RUN cd / && wget -q https://github.com/synesthesiam/phonetisaurus-2013/releases/download/v1.0-${BUILD_ARCH}/phonetisaurus_2013-1_${BUILD_ARCH}.deb
 
 # Install opengrm
-RUN cd / && wget -qO - https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-$BUILD_ARCH-alpine/opengrm-1.3.4_$BUILD_ARCH-alpine.tar.gz | tar xzf -
+RUN cd / && wget -q https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${BUILD_ARCH}/openfst_1.6.9-1_${BUILD_ARCH}.deb
+RUN cd / && wget -q https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${BUILD_ARCH}/opengrm_1.3.4-1_${BUILD_ARCH}.deb
+
+RUN dpkg -i /*.deb
 
 # Copy bw and mllr_solve to /usr/bin
 RUN find / -name bw -exec cp '{}' /usr/bin/ \;
 RUN find / -name mllr_solve -exec cp '{}' /usr/bin/ \;
+
+RUN ldconfig
 
 # Copy my code
 COPY *.py /usr/share/rhasspy/
@@ -63,8 +67,6 @@ COPY profiles/ /usr/share/rhasspy/profiles/
 COPY dist/ /usr/share/rhasspy/dist/
 COPY etc/wav/ /usr/share/rhasspy/etc/wav/
 COPY docker/rhasspy /usr/share/rhasspy/bin/
-
-RUN ldconfig
 
 # Copy script to run
 COPY docker/run.sh /run.sh

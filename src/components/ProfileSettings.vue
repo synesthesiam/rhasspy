@@ -140,8 +140,8 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="wake-system" id="local-wake" value="local" v-model="rhasspyWake">
-                                <label class="form-check-label" for="local-wake">
+                                <input class="form-check-input" type="radio" name="wake-system" id="pocketsphinx-wake" value="pocketsphinx" v-model="rhasspyWake">
+                                <label class="form-check-label" for="pocketsphinx-wake">
                                     Use Pocketsphinx locally
                                 </label>
                             </div>
@@ -151,7 +151,7 @@
                         <div class="form-row">
                             <label for="wake-keyphrase" class="col-form-label">Wake Keyphrase</label>
                             <div class="col-sm-auto">
-                                <input id="wake-keyphrase" type="text" class="form-control" v-model="wakeKeyphrase" :disabled="rhasspyWake != 'local'">
+                                <input id="wake-keyphrase" type="text" class="form-control" v-model="wakeKeyphrase" :disabled="rhasspyWake != 'pocketsphinx'">
                             </div>
                             <div class="col text-muted">
                                 3-4 syllables recommended
@@ -161,32 +161,18 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="wake-system" id="remote-wake" value="remote" v-model="rhasspyWake">
-                                <label class="form-check-label" for="remote-wake">
-                                    Use external MQTT system (Hermes protocol)
+                                <input class="form-check-input" type="radio" name="wake-system" id="snowboy-wake" value="snowboy" v-model="rhasspyWake">
+                                <label class="form-check-label" for="snowboy-wake">
+                                    Use snowboy <a href="https://snowboy.kitt.ai">(Kitt.AI)</a>
                                 </label>
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <div class="form-row">
-                            <div class="col text-muted">
-                                Audio data will be published to <tt>hermes/audioServer/{{ this.mqttSiteId }}/audioFrame</tt>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-row">
-                            <label for="wake-pub" class="col-form-label">Wakeword Id</label>
+                            <label for="snowboy-model" class="col-form-label">Model Name</label>
                             <div class="col-sm-auto">
-                                <input id="wake-id" type="text" class="form-control" v-model="wakeId" :disabled="rhasspyWake != 'remote'">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-row">
-                            <div class="col text-muted">
-                                Rhasspy will listen for <tt>hermes/hotword/{{ wakeId }}/detected</tt>
+                                <input id="snowboy-model" type="text" class="form-control" v-model="snowboyModel" :disabled="rhasspyWake != 'snowboy'">
                             </div>
                         </div>
                     </div>
@@ -376,8 +362,8 @@
              rhasspyIntent: 'local',
              intentURL: '',
 
-             rhasspyWake: 'local',
-             wakeId: '',
+             rhasspyWake: 'pocketsphinx',
+             snowboyModel: '',
 
              audioSystem: 'pyaudio',
 
@@ -394,7 +380,7 @@
      },
 
      methods: {
-         refreshSettings: function() {
+         loadSettings: function() {
              ProfileService.getProfileSettings(this.profile, 'profile')
                            .then(request => {
                                this.profileSettings = request.data
@@ -422,16 +408,13 @@
                                                                'wake.pocketsphinx.keyphrase',
                                                                this.defaultSettings.wake.pocketsphinx.keyphrase)
 
-                               this.wakeId = this._.get(this.profileSettings,
-                                                        'wake.hermes.wakeword_id',
-                                                        this.defaultSettings.wake.hermes.wakeword_id)
+                               this.snowboyModel = this._.get(this.profileSettings,
+                                                              'wake.snowboy.model',
+                                                              this.defaultSettings.wake.snowboy.model)
 
-                               var wakeSystem = this._.get(this.profileSettings,
-                                                           'wake.system',
-                                                           this.defaultSettings.wake.system)
-
-                               this.rhasspyWake = (wakeSystem == 'hermes') ? 'remote' : 'local'
-
+                               this.rhasspyWake = this._.get(this.profileSettings,
+                                                             'wake.system',
+                                                             this.defaultSettings.wake.system)
 
                                // Speech
                                var sttSystem = this._.get(this.profileSettings,
@@ -484,15 +467,16 @@
                                                             'mqtt.site_id',
                                                             'default')
                            })
-                           .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                           .catch(err => this.$parent.error(err))
          },
 
-         refreshDefaults: function() {
+         refreshSettings: function() {
              ProfileService.getProfileSettings(this.profile, 'defaults')
                            .then(request => {
                                this.defaultSettings = request.data
+                               this.loadSettings()
                            })
-                           .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                           .catch(err => this.$parent.error(err))
          },
 
          saveSettings: function() {
@@ -554,26 +538,16 @@
                         'rhasspy.listen_on_start',
                         this.wakeOnStart)
 
-             if (this.rhasspyWake == 'remote') {
-                 // Remote wake word
-                 this._.set(this.profileSettings,
-                            'wake.system',
-                            'hermes')
+             this._.set(this.profileSettings,
+                        'wake.system',
+                        this.rhasspyWake)
 
-                 this._.set(this.profileSettings,
-                            'wake.hermes.wakeword_id',
-                            this.wakeId)
-             } else {
-                 // Local wake word
-                 this._.set(this.profileSettings,
-                            'wake.system',
-                            'pocketsphinx')
-
-                 this._.set(this.profileSettings,
-                            'wake.pocketsphinx.keyphrase',
-                            this.wakeKeyphrase)
-             }
-
+             this._.set(this.profileSettings,
+                        'wake.snowboy.model',
+                        this.wakeId)
+             this._.set(this.profileSettings,
+                        'wake.pocketsphinx.keyphrase',
+                        this.wakeKeyphrase)
 
              // Microphone
              this._.set(this.profileSettings,
@@ -608,7 +582,6 @@
              // POST to server
              this.$parent.beginAsync()
              ProfileService.updateDefaultSettings(this.defaultSettings)
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => {
                      ProfileService.updateProfileSettings(this.profile, this.profileSettings)
                                    .then(request => this.$parent.alert(request.data, 'success'))
@@ -617,17 +590,16 @@
                                        this.$parent.endAsync()
                                    })
                  })
+                 .catch(err => this.$parent.error(err))
          }
      },
 
      mounted: function() {
-         this.refreshDefaults()
          this.refreshSettings()
      },
 
      watch: {
          profile() {
-             this.refreshDefaults()
              this.refreshSettings()
          }
      }

@@ -127,8 +127,8 @@
                          that.sentence = request.data.text
                          that.jsonSource = request.data
                      })
-                     .catch(err => that.$parent.alert(err.response.data, 'danger'))
                      .then(() => that.$parent.endAsync())
+                     .catch(err => this.$parent.error(err))
              }
 
              var files = this.$refs.wavFile.files;
@@ -151,8 +151,8 @@
 
                      this.jsonSource = request.data
                  })
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => this.$parent.endAsync())
+                 .catch(err => this.$parent.error(err))
          },
 
          startRecording: function() {
@@ -160,7 +160,7 @@
                               .then(() => {
                                   this.recording = true
                               })
-                              .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                              .catch(err => this.$parent.error(err))
          },
 
          stopRecording: function() {
@@ -172,19 +172,18 @@
                      this.jsonSource = request.data
                      this.sentence = request.data.text
                  })
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => {
                      this.recording = false
                      this.interpreting = false
                      this.$parent.endAsync()
                  })
+                 .catch(err => this.$parent.error(err))
          },
 
          testMicrophones: function() {
              this.testing = true
              this.$parent.beginAsync()
              TranscribeService.testMicrophones()
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(request => {
                      this.microphones = request.data
                      for (var key in this.microphones) {
@@ -198,6 +197,7 @@
                      this.testing = false
                      this.$parent.endAsync()
                  })
+                 .catch(err => this.$parent.error(err))
          }
      },
 
@@ -206,7 +206,7 @@
                           .then(request => {
                               this.microphones = request.data
                           })
-                          .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                          .catch(err => this.$parent.error(err))
      }
  }
 </script>

@@ -138,6 +138,10 @@
              this.stopSpinning()
          },
 
+         error: function(err) {
+             this.alert(this._.get(err, 'response.data', err.toString()), 'danger')
+         },
+
          // Load profile names
          getProfiles: function() {
              ProfileService.getProfiles()
@@ -145,7 +149,7 @@
                                this.profile = request.data.default_profile
                                this.profiles = request.data.profiles
                            })
-                           .catch(err => this.alert(err.response.data, 'danger'))
+                           .catch(err => this.error(err))
          },
 
          train: function() {
@@ -153,12 +157,12 @@
              this.training = true
              LanguageModelService.train(this.profile)
                                  .then(request => this.alert(request.data, 'success'))
-                                 .catch(err => this.alert(err.response.data, 'danger'))
                                  .then(() => {
                                      this.training = false
                                      this.getUnknownWords()
                                      this.endAsync()
                                  })
+                                 .catch(err => this.error(err))
          },
 
          restart: function() {
@@ -166,12 +170,12 @@
              this.restarting = true
              RhasspyService.restart()
                            .then(request => this.alert(request.data, 'success'))
-                           .catch(err => this.alert(err.response.data, 'danger'))
                            .then(() => {
                                this.restarting = false
                                this.training = false
                                this.endAsync()
                            })
+                           .catch(err => this.error(err))
          },
 
          getUnknownWords: function() {
@@ -180,7 +184,7 @@
                                  this.unknownWords = Object.entries(request.data)
                                  this.unknownWords.sort()
                              })
-                             .catch(err => this.alert(err.response.data, 'danger'))
+                             .catch(err => this.error(err))
          }
      },
 
