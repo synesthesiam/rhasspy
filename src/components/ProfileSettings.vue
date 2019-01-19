@@ -174,6 +174,9 @@
                             <div class="col-sm-auto">
                                 <input id="snowboy-model" type="text" class="form-control" v-model="snowboyModel" :disabled="rhasspyWake != 'snowboy'">
                             </div>
+                            <div class="col text-muted">
+                                Put models in your profile directory
+                            </div>
                         </div>
                     </div>
                 </div>

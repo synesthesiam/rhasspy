@@ -195,9 +195,13 @@ class PyAudioRecorder(AudioRecorder):
 
         mics: Dict[Any, Any] = {}
         audio = pyaudio.PyAudio()
+        default_name = audio.get_default_input_device_info().get('name')
         for i in range(audio.get_device_count()):
             info = audio.get_device_info_by_index(i)
             mics[i] = info['name']
+
+            if mics[i] == default_name:
+                mics[i] = mics[i] + '*'
 
         audio.terminate()
 
@@ -230,12 +234,12 @@ class PyAudioRecorder(AudioRecorder):
                         rate=16000,
                         input=True)
                     try:
-                        buffer = pyaudio_stream.read(1024)
+                        buffer = pyaudio_stream.read(chunk_size)
                         if not pyaudio_stream.is_stopped():
                             pyaudio_stream.stop_stream()
                     finally:
                         pyaudio_stream.close()
-                except Exception:
+                except:
                     result[device_index] = '%s (error)' % device_name
                     continue
 
@@ -392,10 +396,14 @@ class ARecordAudioRecorder(AudioRecorder):
         name, description = None, None
 
         # Parse output of arecord -L
+        first_mic = True
         for line in output:
             line = line.rstrip()
             if re.match(r'^\s', line):
                 description = line.strip()
+                if first_mic:
+                    description = description + '*'
+                    first_mic = False
             else:
                 if name is not None:
                     mics[name] = description
@@ -403,6 +411,44 @@ class ARecordAudioRecorder(AudioRecorder):
                 name = line.strip()
 
         return mics
+
+    # -------------------------------------------------------------------------
+
+    def test_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+        # Thanks to the speech_recognition library!
+        # https://github.com/Uberi/speech_recognition/blob/master/speech_recognition/__init__.py
+        mics = self.get_microphones()
+        result = {}
+        for device_id, device_name in mics.items():
+            try:
+                # read audio
+                arecord_cmd = ['arecord',
+                              '-q',
+                              '-D', device_id,
+                              '-r', '16000',
+                              '-f', 'S16_LE',
+                              '-c', '1',
+                              '-t', 'raw']
+
+                proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
+                buffer = proc.stdout.read(chunk_size * 2)
+                proc.terminate()
+            except:
+                result[device_id] = '%s (error)' % device_name
+                continue
+
+            # compute RMS of debiased audio
+            energy = -audioop.rms(buffer, 2)
+            energy_bytes = bytes([energy & 0xFF, (energy >> 8) & 0xFF])
+            debiased_energy = audioop.rms(
+                audioop.add(buffer, energy_bytes * (len(buffer) // 2), 2), 2)
+
+            if debiased_energy > 30:  # probably actually audio
+                result[device_id] = '%s (working!)' % device_name
+            else:
+                result[device_id] = '%s (no sound)' % device_name
+
+        return result
 
 # -----------------------------------------------------------------------------
 # WAV based audio "recorder"
