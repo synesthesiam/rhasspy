@@ -174,6 +174,7 @@
                                this.restarting = false
                                this.training = false
                                this.endAsync()
+                               window.location.reload()
                            })
                            .catch(err => this.error(err))
          },

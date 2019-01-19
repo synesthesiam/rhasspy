@@ -9,15 +9,6 @@
             <div class="form-group">
                 <div class="form-row">
                     <div class="col-auto">
-                        <label for="device" class="col-form-label col">Audio Device</label>
-                    </div>
-                    <div class="col-auto">
-                        <select id="device" v-model="device">
-                            <option value="">Default Device</option>
-                            <option v-for="(desc, id) in microphones" :value="id" v-bind:key="id">{{ id }}: {{ desc }}</option>
-                        </select>
-                    </div>
-                    <div class="col-auto">
                         <button type="button" class="btn"
                                 v-bind:class="{ 'btn-danger': recording, 'btn-primary': !recording }"
                                 @mousedown="startRecording" @mouseup="stopRecording"
@@ -29,6 +20,23 @@
                                 @click="testMicrophones"
                                 title="Test microphones and update the list"
                                 :disabled="testing">Test Microphones</button>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-warning"
+                                @click="wakeup"
+                                title="Make Rhasspy listen for a voice command">Wake-up</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="col-auto">
+                        <label for="device" class="col-form-label col">Audio Device</label>
+                    </div>
+                    <div class="col-auto">
+                        <select id="device" v-model="device">
+                            <option v-for="(desc, id) in microphones" :value="id" v-bind:key="id">{{ id }}: {{ desc }}</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -186,18 +194,26 @@
              TranscribeService.testMicrophones()
                  .then(request => {
                      this.microphones = request.data
+
+                     // Select default
                      for (var key in this.microphones) {
                          var value = this.microphones[key]
                          if (value.indexOf('*') >= 0) {
                              this.device = key
                          }
                      }
+
+                     this.$parent.alert('Successfully tested microphones', 'success')
                  })
                  .then(() => {
                      this.testing = false
                      this.$parent.endAsync()
                  })
                  .catch(err => this.$parent.error(err))
+         },
+
+         wakeup: function() {
+             TranscribeService.wakeup()
          }
      },
 
@@ -205,6 +221,14 @@
          TranscribeService.getMicrophones()
                           .then(request => {
                               this.microphones = request.data
+
+                              // Select default
+                              for (var key in this.microphones) {
+                                  var value = this.microphones[key]
+                                  if (value.indexOf('*') >= 0) {
+                                      this.device = key
+                                  }
+                              }
                           })
                           .catch(err => this.$parent.error(err))
      }

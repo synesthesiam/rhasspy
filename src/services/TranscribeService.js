@@ -45,5 +45,9 @@ export default {
 
     testMicrophones(profile) {
         return Api().get('/api/test-microphones')
+    },
+
+    wakeup() {
+        return Api().post('/api/listen-for-command')
     }
 }
