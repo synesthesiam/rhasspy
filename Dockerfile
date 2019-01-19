@@ -40,7 +40,8 @@ RUN python3 -m pip install --no-cache-dir -r /requirements.txt
 RUN python3 -m pip install --no-cache-dir /nanomsg-python-master.zip
 
 # Install Pocketsphinx Python module with no sound
-RUN python3 -m pip install https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz
+COPY etc/pocketsphinx-python.tar.gz /
+RUN python3 -m pip install --no-cache-dir /pocketsphinx-python.tar.gz
 
 # Install JSGF sentence generator
 RUN cd / && wget -q https://github.com/synesthesiam/jsgf-gen/releases/download/v1.0/jsgf-gen-1.0_all.deb
@@ -52,7 +53,7 @@ RUN cd / && wget -q https://github.com/synesthesiam/phonetisaurus-2013/releases/
 RUN cd / && wget -q https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${BUILD_ARCH}/openfst_1.6.9-1_${BUILD_ARCH}.deb
 RUN cd / && wget -q https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${BUILD_ARCH}/opengrm_1.3.4-1_${BUILD_ARCH}.deb
 
-RUN dpkg -i /*.deb
+RUN dpkg -i /*.deb && rm -f /*.deb
 
 # Copy bw and mllr_solve to /usr/bin
 RUN find / -name bw -exec cp '{}' /usr/bin/ \;
