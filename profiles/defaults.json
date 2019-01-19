@@ -31,9 +31,9 @@
         "host": "localhost",
         "password": "",
         "port": 1883,
+        "reconnect_sec": 5,
         "site_id": "default",
-        "username": "",
-        "reconnect_sec": 5
+        "username": ""
     },
     "rhasspy": {
         "default_profile": "en",
@@ -95,6 +95,9 @@
         "system": "sphinxtrain"
     },
     "wake": {
+        "hermes": {
+            "wakeword_id": "default"
+        },
         "nanomsg": {
             "pub_address": "tcp://0.0.0.0:5000",
             "pull_address": "tcp://0.0.0.0:5001"
@@ -104,8 +107,10 @@
             "mllr_matrix": "wake_mllr",
             "threshold": 1e-30
         },
-        "hermes": {
-            "wakeword_id": "default"
+        "snowboy": {
+            "audio_gain": 1,
+            "model": "snowboy.umdl",
+            "sensitivity": 0.5
         },
         "system": "pocketsphinx"
     }

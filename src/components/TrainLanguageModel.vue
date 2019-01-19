@@ -50,11 +50,11 @@
              this.$parent.beginAsync()
              LanguageModelService.update_sentences(this.profile, this.sentences)
                  .then(request => this.$parent.alert(request.data, 'success'))
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => {
                      this.$parent.endAsync()
                      this.sentencesDirty = false
                  })
+                 .catch(err => this.$parent.error(err))
          },
 
          getSentences: function() {
@@ -62,7 +62,7 @@
                                  .then(request => {
                                      this.sentences = request.data
                                  })
-                                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                                 .catch(err => this.$parent.error(err))
          }
      },
 
