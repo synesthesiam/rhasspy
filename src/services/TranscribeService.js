@@ -40,7 +40,10 @@ export default {
     },
 
     getMicrophones(profile) {
-        return Api().get('/api/microphones',
-                         { params: { 'profile': profile } })
+        return Api().get('/api/microphones')
+    },
+
+    testMicrophones(profile) {
+        return Api().get('/api/test-microphones')
     }
 }

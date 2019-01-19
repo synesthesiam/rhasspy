@@ -7,6 +7,7 @@ import time
 import wave
 import io
 import re
+import audioop
 from queue import Queue
 from typing import Dict, Any, Callable, Optional
 
@@ -53,6 +54,10 @@ class AudioRecorder:
 
     def get_microphones(self) -> Dict[Any, Any]:
         '''Returns a dictionary of microphone names/descriptions.'''
+        return {}
+
+    def test_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+        '''Listen to each microphone and return a relevant description'''
         return {}
 
     @property
@@ -198,6 +203,56 @@ class PyAudioRecorder(AudioRecorder):
 
         return mics
 
+    # -------------------------------------------------------------------------
+
+    def test_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+        import pyaudio
+
+        # Thanks to the speech_recognition library!
+        # https://github.com/Uberi/speech_recognition/blob/master/speech_recognition/__init__.py
+        result = {}
+        audio = pyaudio.PyAudio()
+        try:
+            default_name = audio.get_default_input_device_info().get('name')
+            for device_index in range(audio.get_device_count()):
+                device_info = audio.get_device_info_by_index(device_index)
+                device_name = device_info.get("name")
+                if device_name == default_name:
+                    device_name = device_name + '*'
+
+                try:
+                    # read audio
+                    data_format = audio.get_format_from_width(2)  # 16-bit
+                    pyaudio_stream = audio.open(
+                        input_device_index=device_index,
+                        channels=1,
+                        format=pyaudio.paInt16,
+                        rate=16000,
+                        input=True)
+                    try:
+                        buffer = pyaudio_stream.read(1024)
+                        if not pyaudio_stream.is_stopped():
+                            pyaudio_stream.stop_stream()
+                    finally:
+                        pyaudio_stream.close()
+                except Exception:
+                    result[device_index] = '%s (error)' % device_name
+                    continue
+
+                # compute RMS of debiased audio
+                energy = -audioop.rms(buffer, 2)
+                energy_bytes = bytes([energy & 0xFF, (energy >> 8) & 0xFF])
+                debiased_energy = audioop.rms(
+                    audioop.add(buffer, energy_bytes * (len(buffer) // 2), 2), 2)
+
+                if debiased_energy > 30:  # probably actually audio
+                    result[device_index] = '%s (working!)' % device_name
+                else:
+                    result[device_index] = '%s (no sound)' % device_name
+        finally:
+            audio.terminate()
+
+        return result
 
 # -----------------------------------------------------------------------------
 # ARecord based audio recorder

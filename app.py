@@ -152,6 +152,14 @@ def api_microphones():
 
 # -----------------------------------------------------------------------------
 
+@app.route('/api/test-microphones', methods=['GET'])
+def api_test_microphones():
+    '''Get a dictionary of available, functioning recording devices'''
+    mics = core.get_audio_recorder().test_microphones(1024)
+    return jsonify(mics)
+
+# -----------------------------------------------------------------------------
+
 @app.route('/api/listen-for-wake', methods=['POST'])
 def api_listen_for_wake():
     profile = request_to_profile(request)

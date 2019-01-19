@@ -114,6 +114,16 @@ paths:
           description: Available microphone names, descriptions
           schema:
             type: object
+  /api/test-microphones:
+    get:
+      summary: 'Get list of available microphones and if they are working'
+      produces: 
+        - application/json
+      responses:
+        '200':
+          description: Available microphone names, descriptions
+          schema:
+            type: object
   /api/pronounce:
     post:
       summary: 'Pronounce a word or set of phonemes'

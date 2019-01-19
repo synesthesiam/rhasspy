@@ -1,0 +1,39 @@
+a0 а a0
+a1 я j a1
+b бы b y1
+bj себя sj e0 bj a1
+ch чем ch o1 m
+d да d a1
+dj где g dj e1
+e0 её j e0 j o1
+e1 не nj e1
+g его j e0 g o1
+i0 и i0
+i1 из i1 z
+j ему j e0 m u1
+k к k
+l был b y1 l
+lj ли lj i1
+m мы m y1
+mj меня mj e0 nj a1
+n на n a1
+nj ни nj i1
+o0 о o0
+o1 во v o1
+p по p o1
+pj теперь tj e0 pj e1 rj
+r раз r a1 z
+rj время v rj e1 mj a0
+s с s
+sch ещё j e0 sch o1
+sh что sh t o1
+sj все v sj o1
+t от o1 t
+tj быть b y1 tj
+u0 у u0
+u1 ну n u1
+v в v
+y0 была b y0 l a1
+y1 вы v y1
+z за z a1
+zh же zh e0

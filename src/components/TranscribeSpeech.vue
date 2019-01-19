@@ -24,6 +24,12 @@
                                 title="Record a voice command while held, interpret when released"
                                 :disabled="interpreting">{{ recording ? 'Release to Stop' : 'Hold to Record' }}</button>
                     </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-success"
+                                @click="testMicrophones"
+                                title="Test microphones and update the list"
+                                :disabled="testing">Test Microphones</button>
+                    </div>
                 </div>
             </div>
 
@@ -97,6 +103,7 @@
              sentence: '',
 
              recording: false,
+             testing: false,
              interpreting: false,
              device: '',
 
@@ -171,11 +178,31 @@
                      this.interpreting = false
                      this.$parent.endAsync()
                  })
+         },
+
+         testMicrophones: function() {
+             this.testing = true
+             this.$parent.beginAsync()
+             TranscribeService.testMicrophones()
+                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                 .then(request => {
+                     this.microphones = request.data
+                     for (var key in this.microphones) {
+                         var value = this.microphones[key]
+                         if (value.indexOf('*') >= 0) {
+                             this.device = key
+                         }
+                     }
+                 })
+                 .then(() => {
+                     this.testing = false
+                     this.$parent.endAsync()
+                 })
          }
      },
 
      mounted: function() {
-         TranscribeService.getMicrophones(this.profile)
+         TranscribeService.getMicrophones()
                           .then(request => {
                               this.microphones = request.data
                           })

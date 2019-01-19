@@ -1,0 +1,47 @@
+allumé aa ll uu mm ei
+ce ss
+ce(2) ss ee
+ce(3) ss ei ee
+chambre ch an bb rr
+chambre(2) ch an bb rr ee
+coucher kk ou ch ei
+coucher(2) kk ou ch ei rr
+dans dd an
+dans(2) dd an zz
+de dd
+de(2) dd ee
+elle ai ll
+elle(2) ai ll ee
+est ai
+est(2) ai ss tt
+est(3) ai ss tt ee
+est(4) ai tt
+fermée ff ai rr mm ei
+garage gg aa rr aa jj
+garage(2) gg aa rr aa jj ee
+heure oe rr
+heure(2) oe rr ee
+il ii ll
+l ai ll
+la ll aa
+lampe ll an pp
+lampe(2) ll an pp ee
+lumière ll uu mm yy ai rr
+lumière(2) ll uu mm yy ai rr ee
+ou ou
+ouverte ou vv ai rr tt
+ouverte(2) ou vv ai rr tt ee
+porte pp oo rr tt
+porte(2) pp oo rr tt ee
+que kk
+que(2) kk ee
+quelle kk ai ll
+quelle(2) kk ai ll ee
+salon ss aa ll on
+température tt an pp ai rr aa tt uu rr
+température(2) tt an pp ai rr aa tt uu rr ee
+à aa
+éclairage ai kk ll ai rr aa jj
+éclairage(2) ai kk ll ai rr aa jj ee
+éteindre ai tt in dd rr
+éteindre(2) ai tt in dd rr ee
