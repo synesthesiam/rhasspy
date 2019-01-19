@@ -1,0 +1,12 @@
+https://sourceforge.net/projects/cmusphinx/files/G2P%20Models/fst/
+
+This archive contains grapheme-to-phoneme model (model.fst.ser) which can be 
+used in cmu sphinx4 in conjunction with the French F0 Broadcast News and 
+French F2 Telephone acoustic models.
+
+Files
+- frenchWords62K.dic: The dictionary used to train the model.
+- model.fst.ser: Model in java fst format.
+- model.fst: Model in binary openFST format.
+- model.fst.txt, model.input.syms, model.output.syms: Model in text openFST format.
+- evaluation.txt: Evaluation results.

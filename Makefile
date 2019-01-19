@@ -1,6 +1,5 @@
 .PHONY: web-dist docker release update-addon manifest
 SHELL := bash
-BUILD_ARCH ?= amd64
 RELEASE_FILES := Dockerfile \
                  *.py \
                  requirements.txt \
@@ -19,9 +18,11 @@ ADDON_DIR := ../hassio-addons/rhasspy
 
 docker:
 	docker build . \
-    --build-arg BUILD_FROM=homeassistant/${BUILD_ARCH}-base:latest \
-    --build-arg BUILD_ARCH=${BUILD_ARCH} \
-    -t synesthesiam/rhasspy-server:${BUILD_ARCH}
+    --build-arg BUILD_ARCH=amd64 \
+    -t synesthesiam/rhasspy-server:amd64
+	# docker build . \
+  #   --build-arg BUILD_ARCH=armhf \
+  #   -t synesthesiam/rhasspy-server:armhf
 
 web-dist:
 	yarn build
