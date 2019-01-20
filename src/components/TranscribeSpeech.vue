@@ -38,6 +38,11 @@
                             <option v-for="(desc, id) in microphones" :value="id" v-bind:key="id">{{ id }}: {{ desc }}</option>
                         </select>
                     </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-primary"
+                                @click="setDefaultMicrophone"
+                                title="Make this audio device the default for Rhasspy">Set Default</button>
+                    </div>
                 </div>
             </div>
 
@@ -101,6 +106,7 @@
 
 <script>
  import TranscribeService from '@/services/TranscribeService'
+ import ProfileService from '@/services/ProfileService'
 
  export default {
      name: 'TranscribeSpeech',
@@ -214,6 +220,33 @@
 
          wakeup: function() {
              TranscribeService.wakeup()
+         },
+
+         setDefaultMicrophone: function() {
+             this.$parent.beginAsync()
+             ProfileService.getProfileSettings(this.profile, 'profile')
+                           .then(request => {
+                               var profileSettings = request.data
+                               ProfileService.getProfileSettings(this.profile, 'defaults')
+                                             .then(request => {
+                                                 var defaultSettings = request.data
+                                                 var micSystem = this._.get(profileSettings,
+                                                                            'microphone.system',
+                                                                            defaultSettings.microphone.system)
+
+                                                 this._.set(profileSettings,
+                                                            'microphone.' + micSystem + '.device',
+                                                            this.device)
+
+                                                 ProfileService.updateProfileSettings(this.profile, profileSettings)
+                                             })
+                                             .catch(err => this.$parent.error(err))
+                           })
+                           .catch(err => this.$parent.error(err))
+                           .then(() => {
+                               this.$parent.endAsync()
+                               this.$parent.alert('Set microphone to ' + this.microphones[this.device], 'success')
+                           })
          }
      },
 

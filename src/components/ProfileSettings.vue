@@ -547,7 +547,8 @@
 
              this._.set(this.profileSettings,
                         'wake.snowboy.model',
-                        this.wakeId)
+                        this.snowboyModel)
+
              this._.set(this.profileSettings,
                         'wake.pocketsphinx.keyphrase',
                         this.wakeKeyphrase)
