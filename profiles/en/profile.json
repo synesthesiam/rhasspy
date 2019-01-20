@@ -26,12 +26,17 @@
     },
     "wake": {
         "system": "snowboy",
-        "snowboy": {},
+        "snowboy": {
+            "model": "okay_rhasspy.pmdl"
+        },
         "pocketsphinx": {
             "keyphrase": "okay rhasspy"
         }
     },
     "microphone": {
-        "system": "pyaudio"
+        "system": "pyaudio",
+        "pyaudio": {
+            "device": "14"
+        }
     }
 }
