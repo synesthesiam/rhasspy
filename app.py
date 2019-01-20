@@ -19,6 +19,7 @@ import threading
 import functools
 import argparse
 import shlex
+import time
 from collections import defaultdict
 
 from flask import Flask, request, Response, jsonify, send_file, send_from_directory
@@ -111,15 +112,19 @@ def start_rhasspy():
         logger.info('Preloading default profile (%s)' % core.default_profile_name)
         core.preload_profile(core.default_profile_name)
 
+    if core.get_default('mqtt.enabled', False):
+        core.get_mqtt_client().start_client()
+        for i in range(20):
+            time.sleep(0.1)
+            if core.get_mqtt_client().connected:
+                break
+
     # Listen for wake word
     if core.get_default('rhasspy.listen_on_start', False):
         logger.info('Automatically listening for wake word')
         wake = core.get_wake_listener(core.default_profile_name)
         wake.start_listening()
-
-    # json.dump(core.defaults_json, sys.stdout, indent=4)
-    if core.get_default('mqtt.enabled', False):
-        core.get_mqtt_client().start_client()
+        core.get_mqtt_client().rhasspy_asleep(core.default_profile_name)
 
 start_rhasspy()
 

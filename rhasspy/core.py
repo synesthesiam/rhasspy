@@ -292,25 +292,35 @@ class Rhasspy:
         audio_player = self.get_audio_player()
         audio_player.play_file(profile.get('sounds.wake', ''))
 
+        self.mqtt_client.rhasspy_awake(profile_name)
+
         # Listen for a command
         wav_data = self.get_command_listener().listen_for_command()
 
         # Beep
         audio_player.play_file(profile.get('sounds.recorded', ''))
 
+        self.mqtt_client.rhasspy_decoding(profile_name)
+
         # speech -> intent
         intent = self.wav_to_intent(wav_data, profile_name)
 
         logger.debug(intent)
+
+        self.mqtt_client.rhasspy_recognizing(profile_name, intent['text'])
 
         # Handle intent
         no_hass = kwargs.get('no_hass', False)
         if not no_hass:
             self.get_intent_handler(profile_name).handle_intent(intent)
 
+        self.mqtt_client.rhasspy_handled(intent)
+
         # Listen for wake word again
         wake = self.get_wake_listener(profile_name)
         wake.start_listening()
+
+        self.mqtt_client.rhasspy_asleep(profile_name)
 
     # -------------------------------------------------------------------------
 
