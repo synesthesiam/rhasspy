@@ -5,6 +5,7 @@ import uuid
 import wave
 import time
 import threading
+from typing import Dict, Any
 
 import paho.mqtt.client as mqtt
 
@@ -216,3 +217,38 @@ class HermesMqtt:
 
             wav_data = wav_buffer.getvalue()
             self.client.publish(self.topic_audio_frame, wav_data)
+
+    # -------------------------------------------------------------------------
+
+    def rhasspy_asleep(self, profile_name: str):
+        if self.client is None:
+            return
+        self.client.publish('rhasspy/events/asleep', profile_name.encode())
+
+    def rhasspy_awake(self, profile_name: str):
+        if self.client is None:
+            return
+        self.client.publish('rhasspy/events/awake', profile_name.encode())
+
+    def rhasspy_decoding(self, profile_name: str):
+        if self.client is None:
+            return
+        self.client.publish('rhasspy/events/decoding', profile_name.encode())
+
+    def rhasspy_recognizing(self, profile_name: str, text: str):
+        if self.client is None:
+            return
+
+        payload = json.dumps({
+            'profile': profile_name,
+            'text': text
+        }).encode()
+
+        self.client.publish('rhasspy/events/recognizing', payload)
+
+    def rhasspy_handled(self, intent: Dict[Any, Any]):
+        if self.client is None:
+            return
+
+        payload = json.dumps(intent).encode()
+        self.client.publish('rhasspy/events/handled', payload)
