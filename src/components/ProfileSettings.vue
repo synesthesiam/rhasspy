@@ -189,6 +189,27 @@
                             </div>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="wake-system" id="precise-wake" value="precise" v-model="rhasspyWake">
+                                <label class="form-check-label" for="precise-wake">
+                                    Use <a href="https://github.com/MycroftAI/mycroft-precise">Mycroft Precise</a> on this device
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="precise-model" class="col-form-label">Model Name</label>
+                            <div class="col-sm-auto">
+                                <input id="precise-model" type="text" class="form-control" v-model="preciseModel" :disabled="rhasspyWake != 'precise'">
+                            </div>
+                            <div class="col text-muted">
+                                Put models in your profile directory
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -407,6 +428,7 @@
 
              rhasspyWake: '',
              snowboyModel: '',
+             preciseModel: '',
 
              audioSystem: '',
 
@@ -454,6 +476,10 @@
                                this.snowboyModel = this._.get(this.profileSettings,
                                                               'wake.snowboy.model',
                                                               this.defaultSettings.wake.snowboy.model)
+
+                               this.preciseModel = this._.get(this.profileSettings,
+                                                              'wake.precise.model',
+                                                              this.defaultSettings.wake.precise.model)
 
                                this.rhasspyWake = this._.get(this.profileSettings,
                                                              'wake.system',
@@ -567,6 +593,10 @@
              this._.set(this.profileSettings,
                         'wake.snowboy.model',
                         this.snowboyModel)
+
+             this._.set(this.profileSettings,
+                        'wake.precise.model',
+                        this.preciseModel)
 
              this._.set(this.profileSettings,
                         'wake.pocketsphinx.keyphrase',

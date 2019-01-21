@@ -352,7 +352,7 @@ class SnowboyWakeListener(WakeListener):
         listen_thread.start()
         self._is_listening = True
 
-        logging.debug('Listening for wake word with snowboy')
+        logging.debug('Listening for wake word with snowboy (%s)' % self.model_name)
 
     # -------------------------------------------------------------------------
 
@@ -375,3 +375,108 @@ class SnowboyWakeListener(WakeListener):
 
             logger.debug('Loaded snowboy (model=%s, sensitivity=%s, audio_gain=%s)' \
                          % (model_path, sensitivity, audio_gain))
+
+# -----------------------------------------------------------------------------
+# Mycroft Precise wake listener
+# https://github.com/MycroftAI/mycroft-precise
+# -----------------------------------------------------------------------------
+
+class PreciseWakeListener(WakeListener):
+    def __init__(self, core, audio_recorder: AudioRecorder, profile: Profile,
+                 detected_callback: Callable[[str, str], None]) -> None:
+        '''Listens for a wake word using Mycroft Precise.
+        Calls detected_callback when wake word is detected and stops.'''
+
+        WakeListener.__init__(self, core, audio_recorder, profile)
+        self.callback = detected_callback
+        self.engine = None
+        self.runner = None
+        self.stream = None
+        self.listen_thread = None
+        self.detected = False
+
+    def preload(self):
+        self._maybe_load_runner()
+
+    # -------------------------------------------------------------------------
+
+    def start_listening(self, **kwargs):
+        if self.is_listening:
+            logger.warn('Already listening')
+            return
+
+        self.detected = False
+        self._maybe_load_runner()
+
+        def process_data():
+            do_callback = False
+
+            try:
+                while True:
+                    # Block until audio data comes in
+                    data = self.audio_recorder.get_queue().get()
+                    if len(data) == 0:
+                        logger.debug('Listening cancelled')
+                        break
+
+                    self.stream.write(data)
+
+                    if self.detected:
+                        # Hotword detected
+                        logger.debug('Hotword detected (%s)!' % self.model_name)
+                        do_callback = True
+                        break
+            except Exception as e:
+                logger.exception('process_data')
+
+            self._is_listening = False
+
+            try:
+                self.stream.close()
+                self.runner.stop()
+            except Exception as e:
+                logger.exception('precise-detected')
+
+            if do_callback:
+                self.callback(self.profile.name, self.model_name, **kwargs)
+
+        # Start audio recording
+        self.audio_recorder.start_recording(False, True)
+
+        # Decoder runs in a separate thread
+        listen_thread = threading.Thread(target=process_data, daemon=True)
+        listen_thread.start()
+        self._is_listening = True
+
+        logging.debug('Listening for wake word with Mycroft Precise (%s)' % self.model_name)
+
+    # -------------------------------------------------------------------------
+
+    def _maybe_load_runner(self):
+        if self.engine is None:
+            from precise_runner import PreciseEngine
+            self.model_name = self.profile.get('wake.precise.model')
+            self.model_path = self.profile.read_path(self.model_name)
+            self.engine = PreciseEngine('precise-engine', self.model_path)
+
+        if self.runner is None:
+            from precise_runner import PreciseRunner
+            from utils import ByteStream
+
+            self.stream = ByteStream()
+
+            sensitivity = float(self.profile.get('wake.precise.sensitivity', 0.5))
+            trigger_level = int(self.profile.get('wake.precise.trigger_level', 3))
+
+            def on_activation():
+                self.detected = True
+
+            self.runner = PreciseRunner(self.engine, stream=self.stream,
+                                        sensitivity=sensitivity,
+                                        trigger_level=trigger_level,
+                                        on_activation=on_activation)
+
+            self.runner.start()
+
+            logger.debug('Loaded Mycroft Precise (model=%s, sensitivity=%s, trigger_level=%s)' \
+                         % (self.model_path, sensitivity, trigger_level))

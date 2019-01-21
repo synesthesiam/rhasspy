@@ -258,7 +258,7 @@ class Rhasspy:
             callback = callback or self._handle_wake
             profile = self.profiles[profile_name]
             system = profile.get('wake.system')
-            assert system in ['dummy', 'pocketsphinx', 'nanomsg', 'hermes', 'snowboy'], 'Invalid wake system: %s' % system
+            assert system in ['dummy', 'pocketsphinx', 'nanomsg', 'hermes', 'snowboy', 'precise'], 'Invalid wake system: %s' % system
             if system == 'pocketsphinx':
                 # Use pocketsphinx locally
                 from wake import PocketsphinxWakeListener
@@ -278,6 +278,11 @@ class Rhasspy:
                 # Use snowboy locally
                 from wake import SnowboyWakeListener
                 wake = SnowboyWakeListener(
+                    self, self.get_audio_recorder(), profile, callback)
+            elif system == 'precise':
+                # Use Mycroft Precise locally
+                from wake import PreciseWakeListener
+                wake = PreciseWakeListener(
                     self, self.get_audio_recorder(), profile, callback)
             elif system == 'dummy':
                 # Does nothing

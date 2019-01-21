@@ -112,6 +112,11 @@
             "model": "snowboy.umdl",
             "sensitivity": 0.5
         },
+        "precise": {
+            "trigger_level": 3,
+            "model": "okay-rhasspy.pb",
+            "sensitivity": 0.5
+        },
         "system": "pocketsphinx"
     }
 }
