@@ -300,6 +300,16 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
+                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-dummy" value="dummy" v-model="audioSystem">
+                                <label class="form-check-label" for="audio-dummy">
+                                    No recording on this device
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
                                 <input class="form-check-input" type="radio" name="audioSystem" id="audio-pyaudio" value="pyaudio" v-model="audioSystem">
                                 <label class="form-check-label" for="audio-pyaudio">
                                     Use PyAudio (default)
