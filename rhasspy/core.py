@@ -118,7 +118,7 @@ class Rhasspy:
         if self.audio_recorder is None:
             # Determine which microphone system to use
             system = self.default_profile.get('microphone.system')
-            assert system in ['arecord', 'pyaudio', 'hermes'], 'Unknown microphone system: %s' % system
+            assert system in ['arecord', 'pyaudio', 'hermes', 'dummy'], 'Unknown microphone system: %s' % system
             if system == 'arecord':
                 from audio_recorder import ARecordAudioRecorder
                 device = self.get_default('microphone.arecord.device')
@@ -133,6 +133,10 @@ class Rhasspy:
                 from audio_recorder import HermesAudioRecorder
                 self.audio_recorder = HermesAudioRecorder(self)
                 logger.debug('Using Hermes for microphone')
+            else:
+                from audio_recorder import AudioRecorder
+                self.audio_recorder = AudioRecorder(self)
+                logging.debug('Using dummy audio recorder')
 
         assert self.audio_recorder is not None
         return self.audio_recorder
