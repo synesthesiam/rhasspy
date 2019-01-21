@@ -326,6 +326,8 @@ class Rhasspy:
 
         self.mqtt_client.rhasspy_asleep(profile_name)
 
+        return intent
+
     # -------------------------------------------------------------------------
 
     def get_intent_handler(self, profile_name: str) -> IntentHandler:

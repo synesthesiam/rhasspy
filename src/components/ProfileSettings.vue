@@ -229,7 +229,7 @@
                         <div class="form-row">
                             <label for="stt-url" class="col-form-label">Rhasspy Speech-to-Text URL</label>
                             <div class="col">
-                                <input id="stt-url" type="text" class="form-control" v-model="sttURL" :disabled="rhasspySTT == 'pocketsphinx'">
+                                <input id="stt-url" type="text" class="form-control" v-model="sttURL" :disabled="rhasspySTT != 'remote'">
                             </div>
                         </div>
                     </div>
@@ -280,7 +280,7 @@
                         <div class="form-row">
                             <label for="intent-url" class="col-form-label">Rhasspy Text-to-Intent URL</label>
                             <div class="col">
-                                <input id="intent-url" type="text" class="form-control" v-model="intentURL" :disabled="rhasspyIntent == 'local'">
+                                <input id="intent-url" type="text" class="form-control" v-model="intentURL" :disabled="rhasspyIntent != 'remote'">
                             </div>
                         </div>
                     </div>
