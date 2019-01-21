@@ -4,6 +4,7 @@ import logging
 import math
 import itertools
 import collections
+import threading
 from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple
 
 # -----------------------------------------------------------------------------
@@ -94,3 +95,35 @@ def extract_entities(phrase: str) -> Tuple[str, List[Tuple[str, str]]]:
     phrase = re.sub(r'\[([^]]+)\]\(([^)]+)\)', match, phrase)
 
     return phrase, entities
+
+# -----------------------------------------------------------------------------
+
+class ByteStream:
+    '''Read/write file-like interface to a buffer.'''
+    def __init__(self):
+        self.buffer = bytes()
+        self.event = threading.Event()
+        self.closed = False
+
+    def read(self, n=-1):
+        # Block until enough data is available
+        while len(self.buffer) < n:
+            if not self.closed:
+                self.event.wait()
+            else:
+                self.buffer += bytearray(n - len(self.buffer))
+
+        chunk = self.buffer[:n]
+        self.buffer = self.buffer[n:]
+        return chunk
+
+    def write(self, data):
+        if self.closed:
+            return
+
+        self.buffer += data
+        self.event.set()
+
+    def close(self):
+        self.closed = True
+        self.event.set()
