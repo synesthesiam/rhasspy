@@ -140,9 +140,19 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
+                                <input class="form-check-input" type="radio" name="wake-system" id="dummy-wake" value="dummy" v-model="rhasspyWake">
+                                <label class="form-check-label" for="dummy-wake">
+                                    No wake word on this device
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
                                 <input class="form-check-input" type="radio" name="wake-system" id="pocketsphinx-wake" value="pocketsphinx" v-model="rhasspyWake">
                                 <label class="form-check-label" for="pocketsphinx-wake">
-                                    Use Pocketsphinx locally
+                                    Use <a href="https://github.com/cmusphinx/pocketsphinx">Pocketsphinx</a> on this device
                                 </label>
                             </div>
                         </div>
@@ -163,7 +173,7 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="wake-system" id="snowboy-wake" value="snowboy" v-model="rhasspyWake">
                                 <label class="form-check-label" for="snowboy-wake">
-                                    Use snowboy <a href="https://snowboy.kitt.ai">(Kitt.AI)</a>
+                                    Use <a href="https://snowboy.kitt.ai">snowboy</a> on this device
                                 </label>
                             </div>
                         </div>
@@ -188,9 +198,19 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="stt-system" id="local-stt" value="local" v-model="rhasspySTT">
+                                <input class="form-check-input" type="radio" name="stt-system" id="dummy-stt" value="dummy" v-model="rhasspySTT">
                                 <label class="form-check-label" for="local-stt">
-                                    Do speech recognition on this device
+                                    No speech recognition on this device
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="stt-system" id="pocketsphinx-stt" value="pocketsphinx" v-model="rhasspySTT">
+                                <label class="form-check-label" for="pocketsphinx-stt">
+                                    Do speech recognition with <a href="https://github.com/cmusphinx/pocketsphinx">pocketsphinx</a> on this device
                                 </label>
                             </div>
                         </div>
@@ -209,7 +229,7 @@
                         <div class="form-row">
                             <label for="stt-url" class="col-form-label">Rhasspy Speech-to-Text URL</label>
                             <div class="col">
-                                <input id="stt-url" type="text" class="form-control" v-model="sttURL" :disabled="rhasspySTT == 'local'">
+                                <input id="stt-url" type="text" class="form-control" v-model="sttURL" :disabled="rhasspySTT == 'pocketsphinx'">
                             </div>
                         </div>
                     </div>
@@ -229,9 +249,9 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="localIntent" id="local-intent" value="local" v-model="rhasspyIntent">
-                                <label class="form-check-label" for="local-intent">
-                                    Do intent recognition on this device
+                                <input class="form-check-input" type="radio" name="intent-system" id="dummy-intent" value="dummy" v-model="rhasspyIntent">
+                                <label class="form-check-label" for="dummy-intent">
+                                    No intent recognition on this device
                                 </label>
                             </div>
                         </div>
@@ -239,7 +259,17 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="remoteIntent" id="remote-intent" value="remote" v-model="rhasspyIntent">
+                                <input class="form-check-input" type="radio" name="intent-system" id="fuzzywuzzy-intent" value="fuzzywuzzy" v-model="rhasspyIntent">
+                                <label class="form-check-label" for="fuzzywuzzy-intent">
+                                    Do intent recognition with <a href="https://github.com/seatgeek/fuzzywuzzy">fuzzywuzzy</a> on this device
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="intent-system" id="remote-intent" value="remote" v-model="rhasspyIntent">
                                 <label class="form-check-label" for="remote-intent">
                                     Use remote Rhasspy server for intent recognition
                                 </label>
@@ -359,16 +389,16 @@
              hassToken: '',
              hassPassword: '',
 
-             rhasspySTT: 'local',
+             rhasspySTT: '',
              sttURL: '',
 
-             rhasspyIntent: 'local',
+             rhasspyIntent: '',
              intentURL: '',
 
-             rhasspyWake: 'pocketsphinx',
+             rhasspyWake: '',
              snowboyModel: '',
 
-             audioSystem: 'pyaudio',
+             audioSystem: '',
 
              wakeOnStart: false,
              wakeKeyphrase: '',
@@ -420,22 +450,19 @@
                                                              this.defaultSettings.wake.system)
 
                                // Speech
-                               var sttSystem = this._.get(this.profileSettings,
-                                                          'speech_to_text.system',
-                                                          this.defaultSettings.speech_to_text.system)
-
-                               this.sttRemote = (sttSystem == 'remote') ? 'remote' : 'local'
+                               this.rhasspySTT = this._.get(this.profileSettings,
+                                                            'speech_to_text.system',
+                                                            this.defaultSettings.speech_to_text.system)
 
                                this.sttURL = this._.get(this.profileSettings,
                                                         'speech_to_text.remote.url',
                                                         this.defaultSettings.speech_to_text.remote.url)
 
                                // Intent
-                               var intentSystem = this._.get(this.profileSettings,
-                                                          'intent.system',
-                                                          this.defaultSettings.intent.system)
+                               this.rhasspyIntent = this._.get(this.profileSettings,
+                                                               'intent.system',
+                                                               this.defaultSettings.intent.system)
 
-                               this.intentRemote = (intentSystem == 'remote') ? 'remote' : 'local'
                                this.intentURL = this._.get(this.profileSettings,
                                                         'intent.remote.url',
                                                         this.defaultSettings.intent.remote.url)
@@ -500,41 +527,23 @@
                         'home_assistant.access_token',
                         this.hassToken)
 
-             if (this.rhasspySTT == 'remote') {
-                 // Remote speech to text
-                 this._.set(this.profileSettings,
-                            'speech_to_text.system',
-                            'remote')
+             // Speech recognition
+             this._.set(this.profileSettings,
+                        'speech_to_text.system',
+                        this.rhasspySTT)
 
-                 this._.set(this.profileSettings,
-                            'speech_to_text.remote.url',
-                            this.sttURL)
-             } else {
-                 // Local speech to text
-                 this._.set(this.profileSettings,
-                            'speech_to_text.system',
-                            this._.get(this.defaultSettings,
-                                       'speech_to_text.system',
-                                       'pocketsphinx'))
-             }
+             this._.set(this.profileSettings,
+                        'speech_to_text.remote.url',
+                        this.sttURL)
 
-             if (this.rhasspyIntent == 'remote') {
-                 // Remote intent recognition
-                 this._.set(this.profileSettings,
-                            'intent.system',
-                            'remote')
+             // Intent recognition
+             this._.set(this.profileSettings,
+                        'intent.system',
+                        this.rhasspyIntent)
 
-                 this._.set(this.profileSettings,
-                            'intent.remote.url',
-                            this.intentURL)
-             } else {
-                 // Local intent recognition
-                 this._.set(this.profileSettings,
-                            'intent.system',
-                            this._.get(this.defaultSettings,
-                                       'intent.system',
-                                       'fuzzywuzzy'))
-             }
+             this._.set(this.profileSettings,
+                        'intent.remote.url',
+                        this.intentURL)
 
              // Wake
              this._.set(this.defaultSettings,
