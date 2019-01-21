@@ -182,18 +182,7 @@ def api_listen_for_command():
     profile = request_to_profile(request)
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
 
-    audio_player = core.get_audio_player()
-    audio_player.play_file(profile.get('sounds.wake', ''))
-
-    command_listener = core.get_command_listener()
-    wav_data = command_listener.listen_for_command()
-    audio_player.play_file(profile.get('sounds.recorded', ''))
-
-    intent = core.wav_to_intent(wav_data, profile.name)
-
-    if not no_hass:
-        # Send intent to Home Assistant
-        intent = core.get_intent_handler(profile.name).handle_intent(intent)
+    intent = core._handle_wake(profile.name, 'api', no_hass=no_hass)
 
     return jsonify(intent)
 
