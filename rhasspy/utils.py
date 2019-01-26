@@ -135,6 +135,25 @@ def convert_wav(cls, wav_data: bytes) -> bytes:
 
 # -----------------------------------------------------------------------------
 
+def load_phoneme_examples(path: str) -> Dict[str, Dict[str, str]]:
+    '''Loads example words and pronunciations for each phoneme.'''
+    examples = {}
+    with open(path, 'r') as example_file:
+        for line in example_file:
+            line = line.strip()
+            if (len(line) == 0) or line.startswith('#'):
+                continue  # skip blanks and comments
+
+            parts = re.split('\s+', line)
+            examples[parts[0]] = {
+                'word': parts[1],
+                'phonemes': ' '.join(parts[2:])
+            }
+
+    return examples
+
+# -----------------------------------------------------------------------------
+
 class ByteStream:
     '''Read/write file-like interface to a buffer.'''
     def __init__(self):

@@ -8,8 +8,9 @@ from .profiles import Profile
 # -----------------------------------------------------------------------------
 
 class ConfigureEvent:
-    def __init__(self, profile: Profile):
+    def __init__(self, profile: Profile, **kwargs):
         self.profile = profile
+        self.config = kwargs
 
 # -----------------------------------------------------------------------------
 
@@ -27,6 +28,7 @@ class RhasspyActor(Actor):
         try:
             if isinstance(message, ConfigureEvent):
                 self.profile = message.profile
+                self.config = message.config
                 self.parent = sender
                 self.transition('started')
             else:

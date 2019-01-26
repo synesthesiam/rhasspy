@@ -180,7 +180,7 @@
          stopRecording: function() {
              this.interpreting = true
              this.$parent.beginAsync()
-             TranscribeService.stopRecording(this.profile, this.sendHass)
+             TranscribeService.stopRecording(this.profile, this.device, this.sendHass)
                  .then(request => {
                      this.recording = false
                      this.jsonSource = request.data
