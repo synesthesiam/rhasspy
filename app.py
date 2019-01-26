@@ -35,7 +35,7 @@ from rhasspy.stt import TranscribeWav
 from rhasspy.intent import RecognizeIntent
 from rhasspy.intent_handler import HandleIntent
 # from rhasspy.pronounce import WordPronounce
-from rhasspy.utils import recursive_update, buffer_to_wav
+from rhasspy.utils import recursive_update, buffer_to_wav, load_phoneme_examples
 
 # -----------------------------------------------------------------------------
 
@@ -172,7 +172,8 @@ def api_profiles():
 @app.route('/api/microphones', methods=['GET'])
 def api_microphones():
     '''Get a dictionary of available recording devices'''
-    mics = core.get_audio_recorder().get_microphones()
+    profile = request_to_profile(request)
+    mics = core.get_microphones(profile.name)
     return jsonify(mics)
 
 # -----------------------------------------------------------------------------
@@ -180,7 +181,8 @@ def api_microphones():
 @app.route('/api/test-microphones', methods=['GET'])
 def api_test_microphones():
     '''Get a dictionary of available, functioning recording devices'''
-    mics = core.get_audio_recorder().test_microphones(1024)
+    profile = request_to_profile(request)
+    mics = core.test_microphones(profile.name)
     return jsonify(mics)
 
 # -----------------------------------------------------------------------------
@@ -317,7 +319,7 @@ def api_phonemes():
 
     # phoneme -> { word, phonemes }
     logger.debug('Loading phoneme examples from %s' % examples_path)
-    examples_dict = WordPronounce.load_phoneme_examples(examples_path)
+    examples_dict = load_phoneme_examples(examples_path)
 
     return jsonify(examples_dict)
 
@@ -478,8 +480,11 @@ def api_speech_to_intent():
 # Start recording a WAV file to a temporary buffer
 @app.route('/api/start-recording', methods=['POST'])
 def api_start_recording():
+    device = request.args.get('device', None)
+    profile = request_to_profile(request)
+
     buffer_name = request.args.get('name', '')
-    system.tell(core.get_audio_recorder(),
+    system.tell(core.get_audio_recorder(profile.name, device),
                 StartRecordingToBuffer(buffer_name))
 
     return 'OK'
@@ -487,16 +492,17 @@ def api_start_recording():
 # Stop recording WAV file, transcribe, and get intent
 @app.route('/api/stop-recording', methods=['POST'])
 def api_stop_recording():
+    device = request.args.get('device', None)
+    profile = request_to_profile(request)
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
 
     buffer_name = request.args.get('name', '')
-    result = system.ask(core.get_audio_recorder(),
-                        StopRecordingToBuffer(buffer_name))
+    recorder = core.get_audio_recorder(profile.name, device)
+    result = system.ask(recorder, StopRecordingToBuffer(buffer_name))
 
     wav_data = buffer_to_wav(result.data)
     logger.debug('Recorded %s byte(s) of audio data' % len(wav_data))
 
-    profile = request_to_profile(request)
     intent = core.wav_to_intent(wav_data, profile.name)
 
     if not no_hass:

@@ -104,6 +104,19 @@ class PyAudioRecorder(RhasspyActor):
         self.receivers = set()
         self.buffers = defaultdict(bytes)
 
+    def to_started(self, from_state):
+        self.device_index = self.config.get('device') \
+            or self.profile.get('microphone.pyaudio.device')
+
+        if self.device_index is not None:
+            self.device_index = int(self.device_index)
+            if self.device_index < -1:
+                # Default device
+                self.device_index = None
+
+        self.frames_per_buffer = int(self.profile.get(
+            'microphone.pyaudio.frames_per_buffer', 480))
+
     def in_started(self, message, sender):
         if isinstance(message, StartStreaming):
             self.receivers.add(message.receiver)
@@ -114,16 +127,6 @@ class PyAudioRecorder(RhasspyActor):
 
     def to_recording(self, from_state):
         import pyaudio
-
-        device_index = self.profile.get('microphone.pyaudio.device', None)
-        if device_index is not None:
-            device_index = int(device_index)
-            if device_index < -1:
-                # Default device
-                device_index = None
-
-        frames_per_buffer = int(self.profile.get(
-            'microphone.pyaudio.frames_per_buffer', 480))
 
         # Start audio system
         def stream_callback(data, frame_count, time_info, status):
@@ -136,10 +139,10 @@ class PyAudioRecorder(RhasspyActor):
         self.mic = self.audio.open(format=data_format,
                                     channels=1,
                                     rate=16000,
-                                    input_device_index=device_index,
+                                    input_device_index=self.device_index,
                                     input=True,
                                     stream_callback=stream_callback,
-                                    frames_per_buffer=frames_per_buffer)
+                                    frames_per_buffer=self.frames_per_buffer)
 
         self.mic.start_stream()
         logger.debug('Recording from microphone (PyAudio)')
@@ -184,6 +187,7 @@ class PyAudioRecorder(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
+    @classmethod
     def get_microphones(self) -> Dict[Any, Any]:
         import pyaudio
 
@@ -203,6 +207,7 @@ class PyAudioRecorder(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
+    @classmethod
     def test_microphones(self, chunk_size:int) -> Dict[Any, Any]:
         import pyaudio
 

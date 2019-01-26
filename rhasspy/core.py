@@ -4,7 +4,7 @@ import sys
 
 import logging
 import time
-from typing import List, Dict, Optional, Any, Callable
+from typing import List, Dict, Optional, Any, Callable, Tuple
 
 import pydash
 from thespian.actors import ActorSystem, ActorAddress
@@ -44,7 +44,7 @@ class RhasspyCore:
         self.profiles_dirs = profiles_dirs
         self.default_profile_name = default_profile_name
 
-        self.audio_recorder: Optional[ActorAddress] = None
+        self.audio_recorders: Dict[Tuple[str, Any], ActorAddress] = {}
         # self.audio_player: Optional[AudioPlayer] = None
         # self.command_listener: Optional[CommandListener] = None
 
@@ -117,35 +117,52 @@ class RhasspyCore:
 
     # -------------------------------------------------------------------------
 
-    def get_audio_recorder(self) -> ActorAddress:
-        '''Gets the shared audio recorder'''
-        if self.audio_recorder is None:
+    def get_audio_recorder(self, profile_name: str, device=None) -> ActorAddress:
+        '''Gets the shared audio recorder for a device'''
+        profile = self.profiles[profile_name]
+        system = profile.get('microphone.system')
+        recorder = self.audio_recorders.get((system, device))
+
+        if recorder is None:
             # Determine which microphone system to use
-            system = self.default_profile.get('microphone.system')
-            assert system in ['arecord', 'pyaudio', 'hermes', 'dummy'], 'Unknown microphone system: %s' % system
-            if system == 'arecord':
-                from audio_recorder import ARecordAudioRecorder
-                # device = self.get_default('microphone.arecord.device')
-                # self.audio_recorder = ARecordAudioRecorder(self, device)
-                # logger.debug('Using arecord for microphone')
-            elif system == 'pyaudio':
-                from .audio_recorder import PyAudioRecorder
-                self.audio_recorder = self.actor_system.createActor(PyAudioRecorder)
-                logger.debug('Using PyAudio for microphone')
-            elif system == 'hermes':
-                from audio_recorder import HermesAudioRecorder
-                # self.audio_recorder = HermesAudioRecorder(self)
-                # logger.debug('Using Hermes for microphone')
-            else:
-                from audio_recorder import AudioRecorder
-                # self.audio_recorder = AudioRecorder(self)
-                # logging.debug('Using dummy audio recorder')
+            recorder_class = self._get_microphone_class(system)
+            recorder = self.actor_system.createActor(recorder_class)
+            self.actor_system.tell(recorder, ConfigureEvent(profile, device=device))
+            self.audio_recorders[(system, device)] = recorder
 
-            self.actor_system.tell(self.audio_recorder,
-                                   ConfigureEvent(self.default_profile))
+        return recorder
 
-        assert self.audio_recorder is not None
-        return self.audio_recorder
+    def _get_microphone_class(self, system: str):
+        assert system in ['arecord', 'pyaudio', 'hermes', 'dummy'], \
+            'Unknown microphone system: %s' % system
+
+        if system == 'arecord':
+            from audio_recorder import ARecordAudioRecorder
+            return ARecordAudioRecorder
+        elif system == 'pyaudio':
+            from .audio_recorder import PyAudioRecorder
+            return PyAudioRecorder
+        elif system == 'hermes':
+            from audio_recorder import HermesAudioRecorder
+            return HermesAudioRecorder
+        else:
+            from audio_recorder import AudioRecorder
+            return AudioRecorder
+
+    def get_microphones(self, profile_name: str) -> Dict[Any, Any]:
+        profile = self.profiles[profile_name]
+        system = profile.get('microphone.system')
+        recorder_class = self._get_microphone_class(system)
+
+        return recorder_class.get_microphones()
+
+    def test_microphones(self, profile_name: str) -> Dict[Any, Any]:
+        profile = self.profiles[profile_name]
+        system = profile.get('microphone.system')
+        recorder_class = self._get_microphone_class(system)
+        chunk_size = int(profile.get('microphone.%s.test_chunk_size', 1024))
+
+        return recorder_class.test_microphones(chunk_size)
 
     # -------------------------------------------------------------------------
 

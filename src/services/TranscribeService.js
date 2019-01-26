@@ -29,8 +29,8 @@ export default {
                                       'device': device } })
     },
 
-    stopRecording(profile, sendHass) {
-        var params = { 'profile': profile }
+    stopRecording(profile, device, sendHass) {
+        var params = { 'profile': profile, 'device': device }
         if (!sendHass) {
             params['nohass'] = true
         }
@@ -40,11 +40,13 @@ export default {
     },
 
     getMicrophones(profile) {
-        return Api().get('/api/microphones')
+        return Api().get('/api/microphones',
+                         { params: { 'profile': profile }})
     },
 
     testMicrophones(profile) {
-        return Api().get('/api/test-microphones')
+        return Api().get('/api/test-microphones',
+                         { params: { 'profile': profile }})
     },
 
     wakeup() {
