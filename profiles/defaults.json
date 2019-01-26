@@ -24,7 +24,10 @@
     },
     "language": "en",
     "microphone": {
-        "system": "pyaudio"
+        "system": "pyaudio",
+        "pyaudio": {
+            "frames_per_buffer": 480
+        }
     },
     "mqtt": {
         "enabled": false,

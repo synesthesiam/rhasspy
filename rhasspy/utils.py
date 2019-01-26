@@ -1,10 +1,14 @@
 import os
 import re
+import io
+import wave
 import logging
 import math
 import itertools
 import collections
 import threading
+import tempfile
+import subprocess
 from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple
 
 # -----------------------------------------------------------------------------
@@ -95,6 +99,39 @@ def extract_entities(phrase: str) -> Tuple[str, List[Tuple[str, str]]]:
     phrase = re.sub(r'\[([^]]+)\]\(([^)]+)\)', match, phrase)
 
     return phrase, entities
+
+# -----------------------------------------------------------------------------
+
+def buffer_to_wav(buffer: bytes) -> bytes:
+    '''Wraps a buffer of raw audio data (16-bit, 16Khz mono) in a WAV'''
+    with io.BytesIO() as wav_buffer:
+        with wave.open(wav_buffer, mode='wb') as wav_file:
+            wav_file.setframerate(16000)
+            wav_file.setsampwidth(2)
+            wav_file.setnchannels(1)
+            wav_file.writeframesraw(buffer)
+
+        return wav_buffer.getvalue()
+
+def convert_wav(cls, wav_data: bytes) -> bytes:
+    '''Converts WAV data to 16-bit, 16Khz mono with sox.'''
+    with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb+') as out_wav_file:
+        with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb') as in_wav_file:
+            in_wav_file.write(wav_data)
+            in_wav_file.seek(0)
+            subprocess.check_call(['sox',
+                                    in_wav_file.name,
+                                    '-r', '16000',
+                                    '-e', 'signed-integer',
+                                    '-b', '16',
+                                    '-c', '1',
+                                    out_wav_file.name])
+
+            out_wav_file.seek(0)
+
+            # Return converted data
+            with wave.open(out_wav_file.name, 'rb') as wav_file:
+                return wav_file.readframes(wav_file.getnframes())
 
 # -----------------------------------------------------------------------------
 

@@ -20,17 +20,37 @@ import functools
 import argparse
 import shlex
 import time
+import atexit
+from uuid import uuid4
 from collections import defaultdict
 
 from flask import Flask, request, Response, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import requests
 import pydash
+from thespian.actors import ActorSystem
 
-# import wake
-from rhasspy.core import Rhasspy
-from rhasspy.pronounce import WordPronounce
-from rhasspy.utils import recursive_update
+from rhasspy.core import RhasspyCore
+from rhasspy.stt import TranscribeWav
+from rhasspy.intent import RecognizeIntent
+from rhasspy.intent_handler import HandleIntent
+# from rhasspy.pronounce import WordPronounce
+from rhasspy.utils import recursive_update, buffer_to_wav
+
+# -----------------------------------------------------------------------------
+
+system = ActorSystem('multiprocQueueBase')
+
+# We really, *really* want shutdown to be called
+@atexit.register
+def shutdown(*args, **kwargs):
+    global system
+    if system is not None:
+        system.shutdown()
+        system = None
+
+from rhasspy.actor import ConfigureEvent
+from rhasspy.audio_recorder import PyAudioRecorder, StartRecordingToBuffer, StopRecordingToBuffer
 
 # -----------------------------------------------------------------------------
 # Flask Web App Setup
@@ -79,7 +99,7 @@ def start_rhasspy():
     default_profile_name = os.environ.get('RHASSPY_PROFILE', None)
 
     # Create top-level actor
-    core = Rhasspy(profiles_dirs, default_profile_name)
+    core = RhasspyCore(system, profiles_dirs, default_profile_name)
 
     # Add defaults from the command line
     for key, value in args.default:
@@ -110,21 +130,21 @@ def start_rhasspy():
     # Pre-load default profile
     if core.get_default('rhasspy.preload_profile', False):
         logger.info('Preloading default profile (%s)' % core.default_profile_name)
-        core.preload_profile(core.default_profile_name)
+        # core.preload_profile(core.default_profile_name)
 
-    if core.get_default('mqtt.enabled', False):
-        core.get_mqtt_client().start_client()
-        for i in range(20):
-            time.sleep(0.1)
-            if core.get_mqtt_client().connected:
-                break
+#     if core.get_default('mqtt.enabled', False):
+#         core.get_mqtt_client().start_client()
+#         for i in range(20):
+#             time.sleep(0.1)
+#             if core.get_mqtt_client().connected:
+#                 break
 
-    # Listen for wake word
-    if core.get_default('rhasspy.listen_on_start', False):
-        logger.info('Automatically listening for wake word')
-        wake = core.get_wake_listener(core.default_profile_name)
-        wake.start_listening()
-        core.get_mqtt_client().rhasspy_asleep(core.default_profile_name)
+#     # Listen for wake word
+#     if core.get_default('rhasspy.listen_on_start', False):
+#         logger.info('Automatically listening for wake word')
+#         wake = core.get_wake_listener(core.default_profile_name)
+#         wake.start_listening()
+#         core.get_mqtt_client().rhasspy_asleep(core.default_profile_name)
 
 start_rhasspy()
 
@@ -404,8 +424,9 @@ def api_speech_to_text():
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
     wav_data = request.data
     decoder = core.get_speech_decoder(profile.name)
+    result = system.ask(decoder, TranscribeWav(wav_data))
 
-    return decoder.transcribe_wav(wav_data)
+    return result.text
 
 # -----------------------------------------------------------------------------
 
@@ -420,14 +441,16 @@ def api_text_to_intent():
 
     # Convert text to intent
     start_time = time.time()
-    intent = recognizer.recognize(text)
+    result = system.ask(recognizer, RecognizeIntent(text))
+    intent = result.intent
 
     intent_sec = time.time() - start_time
     intent['time_sec'] = intent_sec
 
     if not no_hass:
         # Send intent to Home Assistant
-        intent = core.get_intent_handler(profile.name).handle_intent(intent)
+        handler = core.get_intent_handler(profile.name)
+        intent = system.ask(handler, HandleIntent(intent)).intent
 
     return jsonify(intent)
 
@@ -445,7 +468,8 @@ def api_speech_to_intent():
 
     if not no_hass:
         # Send intent to Home Assistant
-        intent = core.get_intent_handler(profile.name).handle_intent(intent)
+        handler = core.get_intent_handler(profile.name)
+        intent = system.ask(handler, HandleIntent(intent)).intent
 
     return jsonify(intent)
 
@@ -454,41 +478,33 @@ def api_speech_to_intent():
 # Start recording a WAV file to a temporary buffer
 @app.route('/api/start-recording', methods=['POST'])
 def api_start_recording():
-    device = request.args.get('device', '')
-    if len(device) == 0:
-        device = None  # default device
+    buffer_name = request.args.get('name', '')
+    system.tell(core.get_audio_recorder(),
+                StartRecordingToBuffer(buffer_name))
 
-    profile = request_to_profile(request)
-    recorder = core.get_audio_recorder()
-    recorder.start_recording(True, False, device)
-
-    return profile.name
+    return 'OK'
 
 # Stop recording WAV file, transcribe, and get intent
 @app.route('/api/stop-recording', methods=['POST'])
 def api_stop_recording():
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
-    recorder = core.get_audio_recorder()
 
-    if recorder.is_recording:
-        wav_data = recorder.stop_recording(True, False)
-        logger.debug('Recorded %s byte(s) of audio data' % len(wav_data))
+    buffer_name = request.args.get('name', '')
+    result = system.ask(core.get_audio_recorder(),
+                        StopRecordingToBuffer(buffer_name))
 
-        profile = request_to_profile(request)
-        intent = core.wav_to_intent(wav_data, profile.name)
+    wav_data = buffer_to_wav(result.data)
+    logger.debug('Recorded %s byte(s) of audio data' % len(wav_data))
 
-        if not no_hass:
-            # Send intent to Home Assistant
-            intent = core.get_intent_handler(profile.name).handle_intent(intent)
+    profile = request_to_profile(request)
+    intent = core.wav_to_intent(wav_data, profile.name)
 
-        return jsonify(intent)
+    if not no_hass:
+        # Send intent to Home Assistant
+        handler = core.get_intent_handler(profile.name)
+        intent = system.ask(handler, HandleIntent(intent)).intent
 
-    # Empty intent
-    return jsonify({
-        'text': '',
-        'intent': { 'name': '' },
-        'entities': []
-    })
+    return jsonify(intent)
 
 # -----------------------------------------------------------------------------
 
