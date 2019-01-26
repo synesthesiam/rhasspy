@@ -7,7 +7,8 @@ import tempfile
 import subprocess
 from urllib.parse import urljoin
 
-from profiles import Profile
+from .actor import RhasspyActor
+from .profiles import Profile
 
 # -----------------------------------------------------------------------------
 
@@ -54,20 +55,59 @@ class SpeechDecoder:
 # https://github.com/cmusphinx/pocketsphinx
 # -----------------------------------------------------------------------------
 
-class PocketsphinxDecoder(SpeechDecoder):
-    '''Pocketsphinx based WAV to text decoder.'''
+class TranscribeWav:
+    def __init__(self, wav_data: bytes, receiver = None):
+        self.wav_data = wav_data
+        self.receiver = receiver
 
-    def __init__(self, profile: Profile) -> None:
-        SpeechDecoder.__init__(self, profile)
+class WavTranscription:
+    def __init__(self, text: str):
+        self.text = text
+
+class PocketsphinxDecoder(RhasspyActor):
+    '''Pocketsphinx based WAV to text decoder.'''
+    def __init__(self):
+        RhasspyActor.__init__(self)
         self.decoder = None
 
-    def preload(self):
-        self._maybe_load_decoder()
+    def to_started(self, from_state):
+        self.load_decoder()
+        self.transition('loaded')
+
+    def in_loaded(self, message, sender):
+        if isinstance(message, TranscribeWav):
+            text = self.transcribe_wav(message.wav_data)
+            self.send(message.receiver or sender,
+                      WavTranscription(text))
+
+    # -------------------------------------------------------------------------
+
+    def load_decoder(self):
+        # Load decoder
+        import pocketsphinx
+        ps_config = self.profile.get('speech_to_text.pocketsphinx')
+
+        # Load decoder settings
+        hmm_path = self.profile.read_path(ps_config['acoustic_model'])
+        dict_path = self.profile.read_path(ps_config['dictionary'])
+        lm_path = self.profile.read_path(ps_config['language_model'])
+
+        logger.info('Loading decoder with hmm=%s, dict=%s, lm=%s' % (hmm_path, dict_path, lm_path))
+
+        decoder_config = pocketsphinx.Decoder.default_config()
+        decoder_config.set_string('-hmm', hmm_path)
+        decoder_config.set_string('-dict', dict_path)
+        decoder_config.set_string('-lm', lm_path)
+        decoder_config.set_string('-logfn', '/dev/null')
+
+        mllr_path = self.profile.read_path(ps_config['mllr_matrix'])
+        if os.path.exists(mllr_path):
+            logger.debug('Using tuned MLLR matrix for acoustic model: %s' % mllr_path)
+            decoder_config.set_string('-mllr', mllr_path)
+
+        self.decoder = pocketsphinx.Decoder(decoder_config)
 
     def transcribe_wav(self, wav_data: bytes) -> str:
-        self._maybe_load_decoder()
-        assert self.decoder is not None
-
         # Ensure 16-bit 16Khz mono
         data_size = len(wav_data)
         with io.BytesIO(wav_data) as wav_io:
@@ -98,35 +138,6 @@ class PocketsphinxDecoder(SpeechDecoder):
 
         # No transcription
         return ''
-
-    # -------------------------------------------------------------------------
-
-    def _maybe_load_decoder(self):
-        '''Load decoder if not cached.'''
-        if self.decoder is None:
-            import pocketsphinx
-            ps_config = self.profile.get('speech_to_text.pocketsphinx')
-
-            # Load decoder settings
-            hmm_path = self.profile.read_path(ps_config['acoustic_model'])
-            dict_path = self.profile.read_path(ps_config['dictionary'])
-            lm_path = self.profile.read_path(ps_config['language_model'])
-
-            logger.info('Loading decoder with hmm=%s, dict=%s, lm=%s' % (hmm_path, dict_path, lm_path))
-
-            decoder_config = pocketsphinx.Decoder.default_config()
-            decoder_config.set_string('-hmm', hmm_path)
-            decoder_config.set_string('-dict', dict_path)
-            decoder_config.set_string('-lm', lm_path)
-            decoder_config.set_string('-logfn', '/dev/null')
-
-            mllr_path = self.profile.read_path(ps_config['mllr_matrix'])
-            if os.path.exists(mllr_path):
-                logger.debug('Using tuned MLLR matrix for acoustic model: %s' % mllr_path)
-                decoder_config.set_string('-mllr', mllr_path)
-
-            self.decoder = pocketsphinx.Decoder(decoder_config)
-
 
 # -----------------------------------------------------------------------------
 # HTTP based decoder on remote rhasspy server

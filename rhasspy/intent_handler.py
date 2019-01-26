@@ -4,30 +4,31 @@ import logging
 from urllib.parse import urljoin
 from typing import Dict, Any
 
-from profiles import Profile
+from .actor import RhasspyActor
+from .profiles import Profile
 
 # -----------------------------------------------------------------------------
 
-logger = logging.getLogger(__name__)
+class HandleIntent:
+    def __init__(self, intent: Dict[str, Any], receiver = None) -> None:
+        self.intent = intent
+        self.receiver = receiver
 
-class IntentHandler:
-    '''Base class for all intent handlers.'''
-
-    def __init__(self, profile: Profile) -> None:
-        self.profile = profile
-
-    def preload(self):
-        '''Cache anything useful upfront.'''
-        pass
-
-    def handle_intent(self, intent: Dict[str, Any]) -> Dict[str, Any]:
-        '''Do something with an intent, optionally transforming and returning it.'''
-        return intent
+class IntentHandled:
+    def __init__(self, intent: Dict[str, Any]) -> None:
+        self.intent = intent
 
 # -----------------------------------------------------------------------------
 
-class HomeAssistantIntentHandler(IntentHandler):
+class HomeAssistantIntentHandler(RhasspyActor):
     '''Forward intents to Home Assistant as events.'''
+
+    def in_started(self, message, sender):
+        if isinstance(message, HandleIntent):
+            intent = self.handle_intent(message.intent)
+            self.send(message.receiver or sender, IntentHandled(intent))
+
+    # -------------------------------------------------------------------------
 
     def handle_intent(self, intent: Dict[str, Any]) -> Dict[str, Any]:
         if len(intent['intent']['name']) == 0:
@@ -73,12 +74,12 @@ class HomeAssistantIntentHandler(IntentHandler):
         try:
             # Send to Home Assistant
             response = requests.post(post_url, headers=headers, json=slots)
-            logger.debug('POSTed intent to %s with headers=%s' % (post_url, headers))
+            self._logger.debug('POSTed intent to %s with headers=%s' % (post_url, headers))
 
             response.raise_for_status()
         except Exception as e:
             # Fail gracefully
-            logger.exception('send_intent')
+            self._logger.exception('send_intent')
             intent['error'] = str(e)
 
         return intent

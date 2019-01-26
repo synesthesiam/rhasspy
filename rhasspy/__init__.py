@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import io
 import json
@@ -15,10 +15,10 @@ import itertools
 import wave
 import math
 
-from utils import extract_entities
-from audio_recorder import WavAudioRecorder
-from wake import PocketsphinxWakeListener
-from tune import SphinxTrainSpeechTuner
+# from utils import extract_entities
+# from audio_recorder import WavAudioRecorder
+# from wake import PocketsphinxWakeListener
+# from tune import SphinxTrainSpeechTuner
 
 # -----------------------------------------------------------------------------
 

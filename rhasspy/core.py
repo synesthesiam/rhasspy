@@ -1,56 +1,60 @@
 import os
 import sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import logging
 import time
 from typing import List, Dict, Optional, Any, Callable
 
 import pydash
+from thespian.actors import ActorSystem, ActorAddress
 
 # Internal imports
-from profiles import Profile
-from audio_player import AudioPlayer
-from audio_recorder import AudioRecorder
-from command_listener import CommandListener
-from stt import SpeechDecoder
-from intent import IntentRecognizer
-from pronounce import WordPronounce
-from wake import WakeListener
-from intent_handler import IntentHandler
-from train import SentenceGenerator
-from tune import SpeechTuner
-from mqtt import HermesMqtt
-from intent_train import IntentTrainer
+from .actor import ConfigureEvent
+from .profiles import Profile
+# from audio_player import AudioPlayer
+# from audio_recorder import AudioRecorder
+# from command_listener import CommandListener
+from .stt import TranscribeWav
+from .intent import RecognizeIntent
+# from pronounce import WordPronounce
+# from wake import WakeListener
+from .intent_handler import HandleIntent
+# from train import SentenceGenerator
+# from tune import SpeechTuner
+# from mqtt import HermesMqtt
+# from intent_train import IntentTrainer
 
 # -----------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
 
-class Rhasspy:
+class RhasspyCore:
     '''Core class for Rhasspy functionality. Loads profiles and caches stuff.'''
 
     def __init__(self,
+                 actor_system: ActorSystem,
                  profiles_dirs: List[str],
                  default_profile_name: Optional[str] = None) -> None:
 
         '''profiles_dirs: List of directories to search for profiles.
         default_profile_name: name of default profile.'''
 
+        self.actor_system = actor_system
         self.profiles_dirs = profiles_dirs
         self.default_profile_name = default_profile_name
 
-        self.audio_recorder: Optional[AudioRecorder] = None
-        self.audio_player: Optional[AudioPlayer] = None
-        self.command_listener: Optional[CommandListener] = None
+        self.audio_recorder: Optional[ActorAddress] = None
+        # self.audio_player: Optional[AudioPlayer] = None
+        # self.command_listener: Optional[CommandListener] = None
 
-        self.speech_decoders: Dict[str, SpeechDecoder] = {}
-        self.intent_recognizers: Dict[str, IntentRecognizer] = {}
-        self.word_pronouncers: Dict[str, WordPronounce] = {}
-        self.wake_listeners: Dict[str, WakeListener] = {}
-        self.intent_handlers: Dict[str, IntentHandler] = {}
-        self.sentence_generators: Dict[str, SentenceGenerator] = {}
-        self.speech_tuners: Dict[str, SpeechTuner] = {}
+        self.speech_decoders: Dict[str, ActorAddress] = {}
+        self.intent_recognizers: Dict[str, ActorAddress] = {}
+        # self.word_pronouncers: Dict[str, WordPronounce] = {}
+        # self.wake_listeners: Dict[str, WakeListener] = {}
+        self.intent_handlers: Dict[str, ActorAddress] = {}
+        # self.sentence_generators: Dict[str, SentenceGenerator] = {}
+        # self.speech_tuners: Dict[str, SpeechTuner] = {}
 
         # ---------------------------------------------------------------------
 
@@ -83,7 +87,7 @@ class Rhasspy:
         self.default_profile = self.profiles[self.default_profile_name]
 
         # Load MQTT client
-        self.mqtt_client: HermesMqtt = HermesMqtt(self)
+        # self.mqtt_client: HermesMqtt = HermesMqtt(self)
 
     # -------------------------------------------------------------------------
 
@@ -93,7 +97,7 @@ class Rhasspy:
 
     # -------------------------------------------------------------------------
 
-    def get_audio_player(self) -> AudioPlayer:
+    def get_audio_player(self) -> ActorAddress:
         '''Gets the shared audio player'''
         if self.audio_player is None:
             system = self.get_default('sounds.system', 'dummy')
@@ -113,7 +117,7 @@ class Rhasspy:
 
     # -------------------------------------------------------------------------
 
-    def get_audio_recorder(self) -> AudioRecorder:
+    def get_audio_recorder(self) -> ActorAddress:
         '''Gets the shared audio recorder'''
         if self.audio_recorder is None:
             # Determine which microphone system to use
@@ -121,29 +125,31 @@ class Rhasspy:
             assert system in ['arecord', 'pyaudio', 'hermes', 'dummy'], 'Unknown microphone system: %s' % system
             if system == 'arecord':
                 from audio_recorder import ARecordAudioRecorder
-                device = self.get_default('microphone.arecord.device')
-                self.audio_recorder = ARecordAudioRecorder(self, device)
-                logger.debug('Using arecord for microphone')
+                # device = self.get_default('microphone.arecord.device')
+                # self.audio_recorder = ARecordAudioRecorder(self, device)
+                # logger.debug('Using arecord for microphone')
             elif system == 'pyaudio':
-                from audio_recorder import PyAudioRecorder
-                device = self.get_default('microphone.pyaudio.device')
-                self.audio_recorder = PyAudioRecorder(self, device)
+                from .audio_recorder import PyAudioRecorder
+                self.audio_recorder = self.actor_system.createActor(PyAudioRecorder)
                 logger.debug('Using PyAudio for microphone')
             elif system == 'hermes':
                 from audio_recorder import HermesAudioRecorder
-                self.audio_recorder = HermesAudioRecorder(self)
-                logger.debug('Using Hermes for microphone')
+                # self.audio_recorder = HermesAudioRecorder(self)
+                # logger.debug('Using Hermes for microphone')
             else:
                 from audio_recorder import AudioRecorder
-                self.audio_recorder = AudioRecorder(self)
-                logging.debug('Using dummy audio recorder')
+                # self.audio_recorder = AudioRecorder(self)
+                # logging.debug('Using dummy audio recorder')
+
+            self.actor_system.tell(self.audio_recorder,
+                                   ConfigureEvent(self.default_profile))
 
         assert self.audio_recorder is not None
         return self.audio_recorder
 
     # -------------------------------------------------------------------------
 
-    def get_speech_decoder(self, profile_name: str) -> SpeechDecoder:
+    def get_speech_decoder(self, profile_name: str) -> ActorAddress:
         '''Gets the speech transcriber for a profile (WAV to text)'''
         decoder = self.speech_decoders.get(profile_name)
         if decoder is None:
@@ -151,8 +157,8 @@ class Rhasspy:
             system = profile.get('speech_to_text.system')
             assert system in ['dummy', 'pocketsphinx', 'remote'], 'Invalid speech to text system: %s' % system
             if system == 'pocketsphinx':
-                from stt import PocketsphinxDecoder
-                decoder = PocketsphinxDecoder(profile)
+                from .stt import PocketsphinxDecoder
+                decoder = self.actor_system.createActor(PocketsphinxDecoder)
             elif system == 'remote':
                 from stt import RemoteDecoder
                 decoder = RemoteDecoder(profile)
@@ -162,13 +168,14 @@ class Rhasspy:
 
             # Cache decoder
             assert decoder is not None
+            self.actor_system.tell(decoder, ConfigureEvent(self.default_profile))
             self.speech_decoders[profile_name] = decoder
 
         return decoder
 
     # -------------------------------------------------------------------------
 
-    def get_speech_tuner(self, profile_name: str) -> SpeechTuner:
+    def get_speech_tuner(self, profile_name: str) -> ActorAddress:
         '''Gets the speech tuner for a profile (acoustic model)'''
         tuner = self.speech_tuners.get(profile_name)
         if tuner is None:
@@ -190,7 +197,7 @@ class Rhasspy:
 
     # -------------------------------------------------------------------------
 
-    def get_intent_recognizer(self, profile_name: str) -> IntentRecognizer:
+    def get_intent_recognizer(self, profile_name: str) -> ActorAddress:
         '''Gets the intent recognizer for a profile (text to intent dict)'''
         recognizer = self.intent_recognizers.get(profile_name)
         if recognizer is None:
@@ -199,8 +206,8 @@ class Rhasspy:
             assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa', 'remote'], 'Invalid intent system: %s' % system
             if system == 'fuzzywuzzy':
                 # Use fuzzy string matching locally
-                from intent import FuzzyWuzzyRecognizer
-                recognizer = FuzzyWuzzyRecognizer(profile)
+                from .intent import FuzzyWuzzyRecognizer
+                recognizer = self.actor_system.createActor(FuzzyWuzzyRecognizer)
             elif system == 'adapt':
                 # Use Mycroft Adapt locally
                 from intent import AdaptIntentRecognizer
@@ -221,13 +228,14 @@ class Rhasspy:
 
             # Cache recognizer
             assert recognizer is not None
+            self.actor_system.tell(recognizer, ConfigureEvent(self.default_profile))
             self.intent_recognizers[profile_name] = recognizer
 
         return recognizer
 
     # -------------------------------------------------------------------------
 
-    def get_word_pronouncer(self, profile_name: str) -> WordPronounce:
+    def get_word_pronouncer(self, profile_name: str) -> ActorAddress:
         '''Gets a word lookup/pronounce-er for a profile'''
         word_pron = self.word_pronouncers.get(profile_name)
         if word_pron is None:
@@ -251,7 +259,7 @@ class Rhasspy:
     # -------------------------------------------------------------------------
 
     def get_wake_listener(self, profile_name: str,
-                          callback: Callable[[str, str], None] = None) -> WakeListener:
+                          callback: Callable[[str, str], None] = None) -> ActorAddress:
         '''Gets the wake/hot word listener for a profile.'''
         wake = self.wake_listeners.get(profile_name)
         if wake is None:
@@ -335,21 +343,22 @@ class Rhasspy:
 
     # -------------------------------------------------------------------------
 
-    def get_intent_handler(self, profile_name: str) -> IntentHandler:
+    def get_intent_handler(self, profile_name: str) -> ActorAddress:
         '''Gets intent handler for a profile (e.g., send to Home Assistant).'''
         intent_handler = self.intent_handlers.get(profile_name)
         if intent_handler is None:
-            from intent_handler import HomeAssistantIntentHandler
+            from .intent_handler import HomeAssistantIntentHandler
             profile = self.profiles[profile_name]
-            intent_handler = HomeAssistantIntentHandler(profile)
+            intent_handler = self.actor_system.createActor(HomeAssistantIntentHandler)
 
+            self.actor_system.tell(intent_handler, ConfigureEvent(self.default_profile))
             self.intent_handlers[profile_name] = intent_handler
 
         return intent_handler
 
     # -------------------------------------------------------------------------
 
-    def get_sentence_generator(self, profile_name: str) -> SentenceGenerator:
+    def get_sentence_generator(self, profile_name: str) -> ActorAddress:
         '''Gets sentence generator for training.'''
         sent_gen = self.sentence_generators.get(profile_name)
         if sent_gen is None:
@@ -465,13 +474,13 @@ class Rhasspy:
 
         # WAV -> text
         start_time = time.time()
-        text = decoder.transcribe_wav(wav_data)
+        text = self.actor_system.ask(decoder, TranscribeWav(wav_data)).text
 
         decode_time = time.time() - start_time
-        self.get_mqtt_client().text_captured(text, seconds=decode_time)
+        # self.get_mqtt_client().text_captured(text, seconds=decode_time)
 
         # text -> intent (JSON)
-        intent = recognizer.recognize(text)
+        intent = self.actor_system.ask(recognizer, RecognizeIntent(text)).intent
 
         intent_sec = time.time() - start_time
         intent['time_sec'] = intent_sec

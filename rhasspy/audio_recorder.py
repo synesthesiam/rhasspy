@@ -10,8 +10,33 @@ import re
 import audioop
 from queue import Queue
 from typing import Dict, Any, Callable, Optional
+from collections import defaultdict
 
-from stt import SpeechDecoder
+from .actor import RhasspyActor
+# from stt import SpeechDecoder
+
+# -----------------------------------------------------------------------------
+
+class AudioData:
+    def __init__(self, data: bytes):
+        self.data = data
+
+class StartStreaming:
+    def __init__(self, receiver):
+        self.receiver = receiver
+
+class StopStreaming:
+    def __init__(self, receiver):
+        self.receiver = receiver
+
+class StartRecordingToBuffer:
+    def __init__(self, buffer_name):
+        self.buffer_name = buffer_name
+
+class StopRecordingToBuffer:
+    def __init__(self, buffer_name, receiver=None):
+        self.buffer_name = buffer_name
+        self.receiver = receiver
 
 # -----------------------------------------------------------------------------
 
@@ -70,123 +95,92 @@ class AudioRecorder:
 # https://people.csail.mit.edu/hubert/pyaudio/
 # -----------------------------------------------------------------------------
 
-class PyAudioRecorder(AudioRecorder):
+class PyAudioRecorder(RhasspyActor):
     '''Records from microphone using pyaudio'''
-    def __init__(self, core, device=None, frames_per_buffer=480):
-        # Frames per buffer is set to 30 ms for webrtcvad
-        AudioRecorder.__init__(self, core, device)
-        self.audio = None
+    def __init__(self):
+        RhasspyActor.__init__(self)
         self.mic = None
-        self.frames_per_buffer = frames_per_buffer
+        self.audio = None
+        self.receivers = set()
+        self.buffers = defaultdict(bytes)
 
-        self.buffer = bytes()
-        self.buffer_users = 0
+    def in_started(self, message, sender):
+        if isinstance(message, StartStreaming):
+            self.receivers.add(message.receiver)
+            self.transition('recording')
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+            self.transition('recording')
 
-        self.queue = Queue()
-        self.queue_users = 0
-
-    def start_recording(self, start_buffer: bool, start_queue: bool, device: Any=None):
+    def to_recording(self, from_state):
         import pyaudio
 
-        device_index = device or self.device
+        device_index = self.profile.get('microphone.pyaudio.device', None)
         if device_index is not None:
             device_index = int(device_index)
             if device_index < -1:
                 # Default device
                 device_index = None
 
-        # Allow for multiple "users" to receive audio data
-        if start_buffer:
-            self.buffer_users += 1
+        frames_per_buffer = int(self.profile.get(
+            'microphone.pyaudio.frames_per_buffer', 480))
 
-        if start_queue:
-            self.queue_users += 1
+        # Start audio system
+        def stream_callback(data, frame_count, time_info, status):
+            # Send to this actor to avoid threading issues
+            self.send(self.myAddress, AudioData(data))
+            return (data, pyaudio.paContinue)
 
-        if not self.is_recording:
-            # Reset
-            self.buffer = bytes()
+        self.audio = pyaudio.PyAudio()
+        data_format = self.audio.get_format_from_width(2)  # 16-bit
+        self.mic = self.audio.open(format=data_format,
+                                    channels=1,
+                                    rate=16000,
+                                    input_device_index=device_index,
+                                    input=True,
+                                    stream_callback=stream_callback,
+                                    frames_per_buffer=frames_per_buffer)
 
-            # Clear queue
-            while not self.queue.empty():
-                self.queue.get_nowait()
-
-            # Start audio system
-            def stream_callback(data, frame_count, time_info, status):
-                if self.buffer_users > 0:
-                    self.buffer += data
-
-                if self.queue_users > 0:
-                    self.queue.put(data)
-
-                return (data, pyaudio.paContinue)
-
-            self.audio = pyaudio.PyAudio()
-            data_format = self.audio.get_format_from_width(2)  # 16-bit
-            self.mic = self.audio.open(format=data_format,
-                                       channels=1,
-                                       rate=16000,
-                                       input_device_index=device_index,
-                                       input=True,
-                                       stream_callback=stream_callback,
-                                       frames_per_buffer=self.frames_per_buffer)
-
-            self.mic.start_stream()
-            self._is_recording = True
-            logger.debug('Recording from microphone (PyAudio)')
+        self.mic.start_stream()
+        logger.debug('Recording from microphone (PyAudio)')
 
     # -------------------------------------------------------------------------
 
-    def stop_recording(self, stop_buffer: bool, stop_queue: bool) -> bytes:
-        if stop_buffer:
-            self.buffer_users = max(0, self.buffer_users - 1)
+    def in_recording(self, message, sender):
+        if isinstance(message, AudioData):
+            # Forward to subscribers
+            for receiver in self.receivers:
+                self.send(receiver, message)
 
-        if stop_queue:
-            self.queue_users = max(0, self.queue_users - 1)
+            # Append to buffers
+            for receiver in self.buffers:
+                self.buffers[receiver] += message.data
+        elif isinstance(message, StartStreaming):
+            self.receivers.add(message.receiver)
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+        elif isinstance(message, StopStreaming):
+            if message.receiver is None:
+                # Clear all receivers
+                self.receivers.clear()
+            else:
+                self.receivers.discard(message.receiver)
+        elif isinstance(message, StopRecordingToBuffer):
+            if message.buffer_name is None:
+                # Clear all buffers
+                self.buffers.clear()
+            else:
+                # Respond with buffer
+                buffer = self.buffers.pop(message.buffer_name, bytes())
+                self.send(message.receiver or sender, AudioData(buffer))
 
-        # Don't stop until all "users" have disconnected
-        if self.is_recording and (self.buffer_users <= 0) and (self.queue_users <= 0):
-            # Shut down audio system
-            self._is_recording = False
+        # Check to see if anyone is still listening
+        if (len(self.receivers) == 0) and (len(self.buffers) == 0):
+            # Terminate audio recording
             self.mic.stop_stream()
             self.audio.terminate()
-            logger.debug('Stopped recording from microphone')
-
-            # Write final empty buffer
-            self.queue.put(bytes())
-
-        if stop_buffer:
-            # Return WAV data
-            with io.BytesIO() as wav_buffer:
-                with wave.open(wav_buffer, mode='wb') as wav_file:
-                    wav_file.setframerate(16000)
-                    wav_file.setsampwidth(2)
-                    wav_file.setnchannels(1)
-                    wav_file.writeframesraw(self.buffer)
-
-                return wav_buffer.getvalue()
-
-        # Empty buffer
-        return bytes()
-
-    # -------------------------------------------------------------------------
-
-    def stop_all(self) -> None:
-        if self.is_recording:
-            self._is_recording = False
-            self.mic.stop_stream()
-            self.audio.terminate()
-
-            if self.queue_users > 0:
-                # Write final empty buffer
-                self.queue.put(bytes())
-
-            self.buffer_users = 0
-            self.queue_users = 0
-
-    # -------------------------------------------------------------------------
-
-    def get_queue(self) -> Queue:
-        return self.queue
+            self.transition('started')
+            logger.debug('Stopped recording from microphone (PyAudio)')
 
     # -------------------------------------------------------------------------
 

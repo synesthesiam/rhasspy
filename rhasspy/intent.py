@@ -6,7 +6,8 @@ import logging
 from urllib.parse import urljoin
 from typing import Dict, Any, Optional, Tuple, List
 
-from profiles import Profile
+from .actor import RhasspyActor
+from .profiles import Profile
 
 # -----------------------------------------------------------------------------
 
@@ -50,24 +51,37 @@ class RemoteRecognizer(IntentRecognizer):
 # https://github.com/seatgeek/fuzzywuzzy
 # -----------------------------------------------------------------------------
 
-class FuzzyWuzzyRecognizer(IntentRecognizer):
+class RecognizeIntent:
+    def __init__(self, text: str, receiver = None):
+        self.text = text
+        self.receiver = receiver
+
+class IntentRecognized:
+    def __init__(self, intent: Dict[str, Any]):
+        self.intent = intent
+
+class FuzzyWuzzyRecognizer(RhasspyActor):
     '''Recognize intents using fuzzy string matching'''
 
-    def __init__(self, profile: Profile) -> None:
-        IntentRecognizer.__init__(self, profile)
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
         self.examples: Optional[Dict[str, Any]] = None
 
-    def preload(self):
-        self._maybe_load_examples()
+    def to_started(self, from_state):
+        self.load_examples()
+        self.transition('loaded')
+
+    def in_loaded(self, message, sender):
+        if isinstance(message, RecognizeIntent):
+            intent = self.recognize(message.text)
+            self.send(message.receiver or sender,
+                      IntentRecognized(intent))
 
     # -------------------------------------------------------------------------
 
     def recognize(self, text: str) -> Dict[str, Any]:
         if len(text) > 0:
             from fuzzywuzzy import process
-
-            self._maybe_load_examples()
-            assert self.examples is not None
 
             # sentence -> (sentence, intent, slots)
             choices: Dict[str, Tuple[str, str, Dict[str, List[str]]]] = {}
@@ -106,18 +120,17 @@ class FuzzyWuzzyRecognizer(IntentRecognizer):
 
     # -------------------------------------------------------------------------
 
-    def _maybe_load_examples(self):
+    def load_examples(self):
         '''Load JSON file with intent examples if not already cached'''
-        if self.examples is None:
-            examples_path = self.profile.read_path(
-                self.profile.get('intent.fuzzywuzzy.examples_json'))
+        examples_path = self.profile.read_path(
+            self.profile.get('intent.fuzzywuzzy.examples_json'))
 
-            assert os.path.exists(examples_path), 'No examples JSON'
+        assert os.path.exists(examples_path), 'No examples JSON'
 
-            with open(examples_path, 'r') as examples_file:
-                self.examples = json.load(examples_file)
+        with open(examples_path, 'r') as examples_file:
+            self.examples = json.load(examples_file)
 
-            logger.debug('Loaded examples from %s' % examples_path)
+        logger.debug('Loaded examples from %s' % examples_path)
 
 
 # -----------------------------------------------------------------------------
