@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from thespian.actors import Actor, ActorExitRequest
+from thespian.actors import Actor, ActorExitRequest, ChildActorExited
 
 from .profiles import Profile
 
@@ -39,6 +39,9 @@ class RhasspyActor(Actor):
                 # Call in_<state> method
                 if self._state_method is not None:
                     self._state_method(message, sender)
+                elif not isinstance(message, ChildActorExited):
+                    self._logger.warn('Unhandled message in state %s: %s',
+                                      self._state, message)
         except:
             self._logger.exception('receiveMessage')
 
@@ -59,3 +62,5 @@ class RhasspyActor(Actor):
             self._state_method = getattr(self, state_method_name)
         else:
             self._state_method = None
+
+        self._logger.debug('%s -> %s', from_state, to_state)

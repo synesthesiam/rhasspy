@@ -7,9 +7,9 @@ import shutil
 from collections import defaultdict
 from typing import Dict, List, Any, Tuple, Set
 
-from profiles import Profile
-from pronounce import WordPronounce
-from utils import read_dict, lcm, extract_entities
+from .actor import RhasspyActor
+from .profiles import Profile
+from .utils import read_dict, lcm, extract_entities
 
 # -----------------------------------------------------------------------------
 
@@ -31,10 +31,27 @@ class SpeechTrainer:
 
 # -----------------------------------------------------------------------------
 
-class PocketsphinxSpeechTrainer(SpeechTrainer):
-    def __init__(self, profile: Profile, word_pron: WordPronounce) -> None:
-        SpeechTrainer.__init__(self, profile)
-        self.word_pron = word_pron
+class TrainSpeech:
+    def __init__(self, tagged_sentences: Dict[str, List[str]],
+                 receiver=None):
+        self.tagged_sentences = tagged_sentences
+        self.receiver = receiver
+
+class SpeechTrainingComplete:
+    def __init__(self, tagged_sentences: Dict[str, List[str]],
+                 sentences_by_intent):
+        self.tagged_sentences = tagged_sentences
+        self.sentences_by_intent = sentences_by_intent
+
+class PocketsphinxSpeechTrainer(RhasspyActor):
+    '''Trains an ARPA language model using opengrm.'''
+
+    def in_started(self, message, sender):
+        if isinstance(message, TrainSpeech):
+            sentences_by_intent = self.train(message.tagged_sentences)
+            self.send(message.receiver or sender,
+                      SpeechTrainingComplete(message.tagged_sentences,
+                                             sentences_by_intent))
 
     # -------------------------------------------------------------------------
 
@@ -52,7 +69,8 @@ class PocketsphinxSpeechTrainer(SpeechTrainer):
 
     # -------------------------------------------------------------------------
 
-    def write_dictionary(self, tagged_sentences, sentences_by_intent: SpeechTrainer.SBI_TYPE):
+    def write_dictionary(self, tagged_sentences: Dict[str, List[str]],
+                         sentences_by_intent: SpeechTrainer.SBI_TYPE):
         '''Writes all required words to a CMU dictionary.
         Unknown words have their pronunciations guessed and written to a separate dictionary.
         Fails if any unknown words are found.'''
