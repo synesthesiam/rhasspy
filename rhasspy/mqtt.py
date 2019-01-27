@@ -10,6 +10,14 @@ from typing import Dict, Any
 import paho.mqtt.client as mqtt
 
 # -----------------------------------------------------------------------------
+# Events
+# -----------------------------------------------------------------------------
+
+class PlayBytes:
+    def __init__(self, wav_data: bytes):
+        self.wav_data = wav_data
+
+# -----------------------------------------------------------------------------
 # Interoperability with Snips.AI Hermes protocol
 # https://docs.snips.ai/ressources/hermes-protocol
 # -----------------------------------------------------------------------------

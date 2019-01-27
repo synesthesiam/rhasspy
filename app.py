@@ -35,7 +35,9 @@ from rhasspy.intent import RecognizeIntent
 from rhasspy.intent_handler import HandleIntent
 from rhasspy.dialogue import (DialogueManager, GetMicrophones, TestMicrophones,
                               ListenForCommand, ListenForWakeWord,
-                              TrainProfile)
+                              TrainProfile,
+                              GetWordPhonemes, SpeakWord, GetWordPronunciations,
+                              PlayWavData)
 
 from rhasspy.profiles import Profile
 from rhasspy.utils import recursive_update, buffer_to_wav, load_phoneme_examples
@@ -236,11 +238,11 @@ def api_lookup():
     word = request.data.decode('utf-8').strip().lower()
     assert len(word) > 0, 'No word to look up'
 
-    voice = request.args.get('voice', None)
-    profile = request_to_profile(request)
-
-    word_pron = core.get_word_pronouncer(profile.name)
-    in_dictionary, pronunciations, espeak_str = word_pron.pronounce(word)
+    with system.private() as sys:
+        result = sys.ask(dialogue_manager, GetWordPronunciations(word, n))
+        pronunciations = result.pronunciations
+        in_dictionary = result.in_dictionary
+        espeak_str = result.phonemes
 
     return jsonify({
         'in_dictionary': in_dictionary,
@@ -253,31 +255,32 @@ def api_lookup():
 @app.route('/api/pronounce', methods=['POST'])
 def api_pronounce():
     '''Pronounce CMU phonemes or word using eSpeak'''
-    profile = request_to_profile(request)
     download = request.args.get('download', 'false').lower() == 'true'
-    voice = request.args.get('voice', None)
 
     pronounce_str = request.data.decode('utf-8').strip()
     assert len(pronounce_str) > 0, 'No string to pronounce'
-
-    word_pron = core.get_word_pronouncer(profile.name)
 
     # phonemes or word
     pronounce_type = request.args.get('type', 'phonemes')
 
     if pronounce_type == 'phonemes':
         # Convert from Sphinx to espeak phonemes
-        espeak_str = word_pron.translate_phonemes(pronounce_str)
+        with system.private() as sys:
+            result = sys.ask(dialogue_manager, GetWordPhonemes(pronounce_str))
+            espeak_str = result.phonemes
     else:
         # Speak word directly
         espeak_str = pronounce_str
 
-    espeak_phonemes, wav_data = word_pron.speak(espeak_str, voice)
+    with system.private() as sys:
+        result = sys.ask(dialogue_manager, SpeakWord(espeak_str))
+        wav_data = result.wav_data
+        espeak_phonemes = result.phonemes
 
     if download:
         return Response(wav_data, mimetype='audio/wav')
     else:
-        core.get_audio_player().play_data(wav_data)
+        system.tell(dialogue_manager, PlayWavData(wav_data))
         return espeak_phonemes
 
 # -----------------------------------------------------------------------------

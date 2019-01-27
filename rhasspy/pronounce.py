@@ -6,89 +6,82 @@ import subprocess
 import tempfile
 from typing import Dict, Tuple, List, Optional
 
-# from thespian.actors import Actor, ActorSystem
-
-import utils
-from profiles import Profile
+from .actor import RhasspyActor
+from .utils import read_dict, load_phoneme_map
 
 # -----------------------------------------------------------------------------
+# Events
+# -----------------------------------------------------------------------------
 
-logger = logging.getLogger(__name__)
+class SpeakWord:
+    def __init__(self, word: str, receiver=None):
+        self.word = word
+        self.receiver = receiver
 
-class WordPronounce:
-    '''Base class for word lookup/pronounce-ers.'''
+class WordSpoken:
+    def __init__(self, wav_data: bytes, phonemes: str):
+        self.wav_data = wav_data
+        self.phonemes = phonemes
 
-    def __init__(self, profile: Profile) -> None:
-        self.profile = profile
+class GetWordPhonemes:
+    def __init__(self, word: str, receiver=None):
+        self.word = word
+        self.receiver = receiver
 
-    def preload(self):
-        '''Cache any important stuff upfront.'''
-        pass
+class WordPhonemes:
+    def __init__(self, phonemes: str):
+        self.phonemes = phonemes
 
-    def speak(self,
-              espeak_str: str,
-              voice: Optional[str] = None) -> Tuple[str, bytes]:
-        '''Generate WAV data from a word or eSpeak phoneme string.
-        Uses the profile's voice or language if voice isn't given.
-        Returns the eSpeak phonemes and WAV data.'''
-        pass
+class GetWordPronunciations:
+    def __init__(self, word: str, n: int=5, receiver=None):
+        self.word = word
+        self.n = n
+        self.receiver = receiver
 
-    def translate_phonemes(self, phonemes: str) -> str:
-        '''Converts CMU phonemes to eSpeak phonemes using profile's table.'''
-        pass
+class WordPronunciation:
+    def __init__(self, pronunciations: List[str],
+                 in_dictionary: bool,
+                 phonemes: str):
+        self.pronunciations = pronunciations
+        self.in_dictionary = in_dictionary
+        self.phonemes = phonemes
 
-    def pronounce(self, word: str, n: int = 5) -> Tuple[bool, List[str], str]:
-        '''Looks up or generates up to n pronunciations for an unknown word.
-        Returns True if the word is in a dictionary, the pronunciations, and eSpeak
-        phonemes for the word.'''
-        pass
+# -----------------------------------------------------------------------------
+# Dummy word pronouncer
+# -----------------------------------------------------------------------------
 
-    # -------------------------------------------------------------------------
-
-    @classmethod
-    def load_phoneme_map(cls, path: str) -> Dict[str, str]:
-        '''Load phoneme map from CMU (Sphinx) phonemes to eSpeak phonemes.'''
-        phonemes = {}
-        with open(path, 'r') as phoneme_file:
-            for line in phoneme_file:
-                line = line.strip()
-                if (len(line) == 0) or line.startswith('#'):
-                    continue  # skip blanks and comments
-
-                parts = re.split('\s+', line, maxsplit=1)
-                phonemes[parts[0]] = parts[1]
-
-        return phonemes
-
-    @classmethod
-    def load_phoneme_examples(cls, path: str) -> Dict[str, Dict[str, str]]:
-        '''Loads example words and pronunciations for each phoneme.'''
-        examples = {}
-        with open(path, 'r') as example_file:
-            for line in example_file:
-                line = line.strip()
-                if (len(line) == 0) or line.startswith('#'):
-                    continue  # skip blanks and comments
-
-                parts = re.split('\s+', line)
-                examples[parts[0]] = {
-                    'word': parts[1],
-                    'phonemes': ' '.join(parts[2:])
-                }
-
-        return examples
-
+class DummyWordPronounce:
+    '''Returns junk.'''
 
 # -----------------------------------------------------------------------------
 # Phonetisaurus based word pronouncer
 # https://github.com/AdolfVonKleist/Phonetisaurus
 # -----------------------------------------------------------------------------
 
-class PhonetisaurusPronounce(WordPronounce):
-
-    def __init__(self, profile: Profile) -> None:
-        WordPronounce.__init__(self, profile)
+class PhonetisaurusPronounce(RhasspyActor):
+    '''Uses phonetisaurus/espeak to pronounce words.'''
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
         self.speed = 80  # wpm for speaking
+
+    def in_started(self, message, sender):
+        if isinstance(message, SpeakWord):
+            espeak_phonemes, wav_data = self.speak(message.word)
+            self.send(message.receiver or sender,
+                      WordSpoken(wav_data, espeak_phonemes))
+        elif isinstance(message, GetWordPronunciations):
+            in_dictionary, pronunciations, espeak_str = \
+                self.pronounce(message.word, message.n)
+            self.send(message.receiver or sender,
+                      WordPronunciation(pronunciations,
+                                        in_dictionary,
+                                        espeak_str))
+        elif isinstance(message, GetWordPhonemes):
+            phonemes = self.translate_phonemes(message.word)
+            self.send(message.receiver or sender,
+                      WordPhonemes(phonemes))
+
+    # -------------------------------------------------------------------------
 
     def speak(self,
               espeak_str: str,
@@ -109,7 +102,7 @@ class PhonetisaurusPronounce(WordPronounce):
         # Write WAV to temporary file
         with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb+') as wav_file:
             espeak_command.extend(['-w', wav_file.name])
-            logger.debug(espeak_command)
+            self._logger.debug(espeak_command)
 
             # Generate WAV data
             espeak_phonemes = subprocess.check_output(espeak_command).decode().strip()
@@ -125,7 +118,7 @@ class PhonetisaurusPronounce(WordPronounce):
         map_path = self.profile.read_path(
             self.profile.get('text_to_speech.espeak.phoneme_map'))
 
-        phoneme_map = WordPronounce.load_phoneme_map(map_path)
+        phoneme_map = load_phoneme_map(map_path)
 
         # Convert from Sphinx to espeak phonemes
         espeak_str = "[['%s]]" % ''.join(phoneme_map.get(p, p)
@@ -139,7 +132,7 @@ class PhonetisaurusPronounce(WordPronounce):
         assert n > 0, 'No pronunciations requested'
         assert len(word) > 0, 'No word to look up'
 
-        logger.debug('Getting pronunciations for %s' % word)
+        self._logger.debug('Getting pronunciations for %s' % word)
 
         # Load base and custom dictionaries
         base_dictionary_path = self.profile.read_path(
@@ -152,7 +145,7 @@ class PhonetisaurusPronounce(WordPronounce):
         for word_dict_path in [base_dictionary_path, custom_path]:
             if os.path.exists(word_dict_path):
                 with open(word_dict_path, 'r') as dictionary_file:
-                    utils.read_dict(dictionary_file, word_dict)
+                    read_dict(dictionary_file, word_dict)
 
         in_dictionary, pronunciations = self._lookup_word(word, word_dict, n)
 
@@ -165,7 +158,7 @@ class PhonetisaurusPronounce(WordPronounce):
 
         espeak_command.append(word)
 
-        logger.debug(espeak_command)
+        self._logger.debug(espeak_command)
         espeak_str = subprocess.check_output(espeak_command).decode().strip()
 
         return in_dictionary, pronunciations, espeak_str
@@ -211,7 +204,7 @@ class PhonetisaurusPronounce(WordPronounce):
                                 '--nbest=' + str(n),
                                 '--words']
 
-                logger.debug(g2p_command)
+                self._logger.debug(g2p_command)
                 subprocess.check_call(g2p_command, stdout=pronounce_file)
 
                 pronounce_file.seek(0)

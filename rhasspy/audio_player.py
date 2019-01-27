@@ -5,31 +5,10 @@ import subprocess
 import tempfile
 
 from .actor import RhasspyActor
+from .mqtt import PlayBytes
 
 # -----------------------------------------------------------------------------
-
-logger = logging.getLogger(__name__)
-
-class AudioPlayer:
-    '''Base class for WAV based audio players'''
-    def __init__(self, core, device=None):
-        '''Optional audio device handled by sub-classes.'''
-        self.core = core
-        self.device = device
-
-    def play_file(self, path: str):
-        '''Plays a WAV file from a path'''
-        pass
-
-    def play_data(self, wav_data: bytes):
-        '''Plays a WAV file from a buffer'''
-        with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb+') as wav_file:
-            wav_file.write(wav_data)
-            wav_file.seek(0)
-            self.play_file(wav_file.name)
-
-# -----------------------------------------------------------------------------
-# APlay based audio player
+# Events
 # -----------------------------------------------------------------------------
 
 class PlayWavFile:
@@ -40,9 +19,20 @@ class PlayWavData:
     def __init__(self, wav_data: bytes):
         self.wav_data = wav_data
 
+# -----------------------------------------------------------------------------
+# Dummy audio player
+# -----------------------------------------------------------------------------
+
+class DummyAudioPlayer(RhasspyActor):
+    '''Does nothing'''
+    pass
+
+# -----------------------------------------------------------------------------
+# APlay based audio player
+# -----------------------------------------------------------------------------
+
 class APlayAudioPlayer(RhasspyActor):
     '''Plays WAV files using aplay'''
-
     def to_started(self, from_state):
         self.device = self.config.get('device') \
             or self.profile.get('sounds.aplay.device')
@@ -57,6 +47,7 @@ class APlayAudioPlayer(RhasspyActor):
 
     def play_file(self, path: str):
         if not os.path.exists(path):
+            self._logger.warn('Path does not exist: %s', path)
             return
 
         aplay_cmd = ['aplay', '-q']
@@ -86,14 +77,23 @@ class APlayAudioPlayer(RhasspyActor):
 # https://docs.snips.ai/ressources/hermes-protocol
 # -----------------------------------------------------------------------------
 
-class HeremesAudioPlayer(AudioPlayer):
+class HeremesAudioPlayer(RhasspyActor):
     '''Sends audio data over MQTT via Hermes protocol'''
+    def in_started(self, message, sender):
+        if isinstance(message, PlayWavFile):
+            self.play_file(message.wav_path)
+        elif isinstance(message, PlayWavData):
+            self.play_data(message.wav_data)
+
+    # -------------------------------------------------------------------------
+
     def play_file(self, path: str):
         if not os.path.exists(path):
+            self._logger.warn('Path does not exist: %s', path)
             return
 
         with open(path, 'rb') as wav_file:
             self.play_data(wav_file.read())
 
     def play_data(self, wav_data: bytes):
-        self.core.get_mqtt_client().play_bytes(wav_data)
+        self.send(self.mqtt, PlayBytes(wav_data))
