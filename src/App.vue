@@ -14,11 +14,7 @@
                     <a href="/api/" class="badge badge-info ml-2">API</a>
                 </div>
                 <div class="navbar-container ml-auto">
-                    <label for="profiles" class="text-white">Profile:</label>
-                    <select id="profiles" class="ml-2" v-model="profile">
-                        <option disabled value="">Select</option>
-                        <option v-for="profile in profiles" v-bind:key="profile">{{ profile }}</option>
-                    </select>
+                    <span class="text-white">{{ this.profile }}</span>
                     <button class="btn btn-success ml-3" @click="train" :disabled="this.training" title="Re-train current profile">Train</button>
                     <button class="btn btn-danger ml-3" @click="restart" :disabled="this.restarting" title="Restart Rhasspy server">Restart</button>
                 </div>

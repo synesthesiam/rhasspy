@@ -12,6 +12,9 @@ class ConfigureEvent:
         self.profile = profile
         self.config = kwargs
 
+class Configured:
+    pass
+
 # -----------------------------------------------------------------------------
 
 class RhasspyActor(Actor):
@@ -20,7 +23,6 @@ class RhasspyActor(Actor):
         self._logger = logging.getLogger(self._name)
         self._state = ''
         self._state_method = None
-        self.parent = None
 
     # -------------------------------------------------------------------------
 
@@ -31,8 +33,8 @@ class RhasspyActor(Actor):
             elif isinstance(message, ConfigureEvent):
                 self.profile = message.profile
                 self.config = message.config
-                self.parent = sender
                 self.transition('started')
+                self.send(sender, Configured())
             else:
                 # Call in_<state> method
                 if self._state_method is not None:
