@@ -7,7 +7,8 @@ from urllib.parse import urljoin
 from collections import defaultdict, Counter
 from typing import Dict, List, Set, Any
 
-from stt_train import SpeechTrainer
+from .actor import RhasspyActor
+from .stt_train import SpeechTrainer
 
 # -----------------------------------------------------------------------------
 
@@ -32,8 +33,27 @@ class IntentTrainer:
 # https://github.com/seatgeek/fuzzywuzzy
 # -----------------------------------------------------------------------------
 
-class FuzzyWuzzyIntentTrainer(IntentTrainer):
+class TrainIntent:
+    def __init__(self, tagged_sentences: Dict[str, List[str]],
+                 sentences_by_intent,
+                 receiver=None):
+        self.tagged_sentences = tagged_sentences
+        self.sentences_by_intent = sentences_by_intent
+        self.receiver = receiver
+
+class IntentTrainingComplete:
+    pass
+
+class FuzzyWuzzyIntentTrainer(RhasspyActor):
     '''Save examples to JSON for fuzzy string matching later.'''
+
+    def in_started(self, message, sender):
+        if isinstance(message, TrainIntent):
+            self.train(message.tagged_sentences,
+                       message.sentences_by_intent)
+
+            self.send(message.receiver or sender,
+                      IntentTrainingComplete())
 
     def train(self,
               tagged_sentences: Dict[str, List[str]],

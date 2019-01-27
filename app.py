@@ -34,7 +34,8 @@ from rhasspy.stt import TranscribeWav
 from rhasspy.intent import RecognizeIntent
 from rhasspy.intent_handler import HandleIntent
 from rhasspy.dialogue import (DialogueManager, GetMicrophones, TestMicrophones,
-                              ListenForCommand, ListenForWakeWord)
+                              ListenForCommand, ListenForWakeWord,
+                              TrainProfile)
 
 from rhasspy.profiles import Profile
 from rhasspy.utils import recursive_update, buffer_to_wav, load_phoneme_examples
@@ -119,18 +120,13 @@ def start_rhasspy():
 
     # Create top level actor
     dialogue_manager = system.createActor(DialogueManager)
-    system.ask(dialogue_manager, ConfigureEvent(profile))
+
+    with system.private() as sys:
+        sys.ask(dialogue_manager, ConfigureEvent(profile))
 
 # -----------------------------------------------------------------------------
 
 start_rhasspy()
-
-# -----------------------------------------------------------------------------
-
-# def request_to_profile(request):
-#     '''Gets profile from HTTP request'''
-#     profile_name = request.args.get('profile', core.default_profile_name)
-#     return core.profiles[profile_name]
 
 # -----------------------------------------------------------------------------
 # HTTP API
@@ -149,7 +145,9 @@ def api_profiles():
 @app.route('/api/microphones', methods=['GET'])
 def api_microphones():
     '''Get a dictionary of available recording devices'''
-    mics = system.ask(dialogue_manager, GetMicrophones())
+    with system.private() as sys:
+        mics = sys.ask(dialogue_manager, GetMicrophones())
+
     return jsonify(mics)
 
 # -----------------------------------------------------------------------------
@@ -157,7 +155,9 @@ def api_microphones():
 @app.route('/api/test-microphones', methods=['GET'])
 def api_test_microphones():
     '''Get a dictionary of available, functioning recording devices'''
-    mics = system.ask(dialogue_manager, TestMicrophones())
+    with system.private() as sys:
+        mics = sys.ask(dialogue_manager, TestMicrophones())
+
     return jsonify(mics)
 
 # -----------------------------------------------------------------------------
@@ -174,7 +174,9 @@ def api_listen_for_wake():
 @app.route('/api/listen-for-command', methods=['POST'])
 def api_listen_for_command():
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
-    intent = system.ask(dialogue_manager, ListenForCommand())
+
+    with system.private() as sys:
+        intent = sys.ask(dialogue_manager, ListenForCommand())
 
     return jsonify(intent)
 
@@ -347,14 +349,13 @@ def api_custom_words():
 
 @app.route('/api/train', methods=['POST'])
 def api_train():
-    profile = request_to_profile(request)
-
     start_time = time.time()
     logger.info('Starting training')
-    core.train_profile(profile.name)
-    end_time = time.time()
 
-    core.reload_profile(profile.name)
+    with system.private() as sys:
+        sys.ask(dialogue_manager, TrainProfile())
+
+    end_time = time.time()
 
     return 'Training completed in %0.2f second(s)' % (end_time - start_time)
 
@@ -385,7 +386,9 @@ def api_speech_to_text():
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
     wav_data = request.data
     decoder = core.get_speech_decoder(profile.name)
-    result = system.ask(decoder, TranscribeWav(wav_data))
+
+    with system.private() as sys:
+        result = sys.ask(decoder, TranscribeWav(wav_data))
 
     return result.text
 
@@ -402,7 +405,10 @@ def api_text_to_intent():
 
     # Convert text to intent
     start_time = time.time()
-    result = system.ask(recognizer, RecognizeIntent(text))
+
+    with system.private() as sys:
+        result = sys.ask(recognizer, RecognizeIntent(text))
+
     intent = result.intent
 
     intent_sec = time.time() - start_time
@@ -411,7 +417,9 @@ def api_text_to_intent():
     if not no_hass:
         # Send intent to Home Assistant
         handler = core.get_intent_handler(profile.name)
-        intent = system.ask(handler, HandleIntent(intent)).intent
+
+        with system.private() as sys:
+            intent = sys.ask(handler, HandleIntent(intent)).intent
 
     return jsonify(intent)
 
@@ -430,7 +438,9 @@ def api_speech_to_intent():
     if not no_hass:
         # Send intent to Home Assistant
         handler = core.get_intent_handler(profile.name)
-        intent = system.ask(handler, HandleIntent(intent)).intent
+
+        with system.private() as sys:
+            intent = sys.ask(handler, HandleIntent(intent)).intent
 
     return jsonify(intent)
 
@@ -457,7 +467,9 @@ def api_stop_recording():
 
     buffer_name = request.args.get('name', '')
     recorder = core.get_audio_recorder(profile.name, device)
-    result = system.ask(recorder, StopRecordingToBuffer(buffer_name))
+
+    with system.private() as sys:
+        result = sys.ask(recorder, StopRecordingToBuffer(buffer_name))
 
     wav_data = buffer_to_wav(result.data)
     logger.debug('Recorded %s byte(s) of audio data' % len(wav_data))
@@ -467,7 +479,9 @@ def api_stop_recording():
     if not no_hass:
         # Send intent to Home Assistant
         handler = core.get_intent_handler(profile.name)
-        intent = system.ask(handler, HandleIntent(intent)).intent
+
+        with system.private() as sys:
+            intent = sys.ask(handler, HandleIntent(intent)).intent
 
     return jsonify(intent)
 

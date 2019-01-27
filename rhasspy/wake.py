@@ -294,11 +294,11 @@ logger = logging.getLogger(__name__)
 # -----------------------------------------------------------------------------
 
 class ListenForWakeWord:
-    def __init__(self, receiver):
+    def __init__(self, receiver=None):
         self.receiver = receiver
 
 class StopListeningForWakeWord:
-    def __init__(self, receiver):
+    def __init__(self, receiver=None):
         self.receiver = receiver
 
 class WakeWordDetected:
@@ -317,7 +317,7 @@ class SnowboyWakeListener(RhasspyActor):
 
     def in_loaded(self, message, sender):
         if isinstance(message, ListenForWakeWord):
-            self.receivers.append(message.receiver)
+            self.receivers.append(message.receiver or sender)
             self.transition('listening')
             self.send(self.recorder, StartStreaming(self.myAddress))
 
@@ -330,8 +330,8 @@ class SnowboyWakeListener(RhasspyActor):
                 for receiver in self.receivers:
                     self.send(receiver, result)
         elif isinstance(message, StopListeningForWakeWord):
-            self.receivers.remove(message.receiver)
-            if len(self.receiver) == 0:
+            self.receivers.remove(message.receiver or sender)
+            if len(self.receivers) == 0:
                 self.send(self.recorder, StopStreaming(self.myAddress))
                 self.transition('loaded')
 

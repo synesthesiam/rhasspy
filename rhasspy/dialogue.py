@@ -1,14 +1,17 @@
 from typing import Dict, Any
 
-from thespian.actors import ActorAddress
+from thespian.actors import ActorAddress, ActorExitRequest
 
 from .actor import RhasspyActor, ConfigureEvent, Configured
-from .wake import ListenForWakeWord, WakeWordDetected
+from .wake import ListenForWakeWord, StopListeningForWakeWord, WakeWordDetected
 from .command_listener import ListenForCommand, VoiceCommand
 from .audio_player import PlayWavFile
 from .stt import TranscribeWav, WavTranscription
+from .stt_train import TrainSpeech, SpeechTrainingComplete
 from .intent import RecognizeIntent, IntentRecognized
+from .intent_train import TrainIntent, IntentTrainingComplete
 from .intent_handler import HandleIntent, IntentHandled
+from .train import GenerateSentences, SentencesGenerated
 from .utils import buffer_to_wav
 
 # -----------------------------------------------------------------------------
@@ -19,12 +22,22 @@ class GetMicrophones:
 class TestMicrophones:
     pass
 
+class TrainProfile:
+    def __init__(self, receiver=None):
+        self.receiver = receiver
+
+class ProfileTrainingComplete:
+    pass
+
 # -----------------------------------------------------------------------------
 
 class DialogueManager(RhasspyActor):
+    '''Manages the overall state of Rhasspy.'''
 
     def to_started(self, from_state):
         self.intent_receiver = None
+        self.training_receiver = None
+
         self.load_actors()
         self.transition('loading')
 
@@ -39,10 +52,10 @@ class DialogueManager(RhasspyActor):
         if self.profile.get('rhasspy.listen_on_start', False):
             self._logger.info('Automatically listening for wake word')
             self.transition('asleep')
-            self.send(self.wake, ListenForWakeWord(self.myAddress))
+            self.send(self.wake, ListenForWakeWord())
 
     def in_ready(self, message, sender):
-        if isinstance(message, ListenForWake):
+        if isinstance(message, ListenForWakeWord):
             self._logger.info('Listening for wake word')
             self.transition('asleep')
         else:
@@ -56,6 +69,8 @@ class DialogueManager(RhasspyActor):
             self.handle_any(message, sender)
 
     def to_awake(self, from_state):
+        self.send(self.wake, StopListeningForWakeWord())
+
         # Wake up beep
         wav_path = self.profile.get('sounds.wake', None)
         if wav_path is not None:
@@ -106,6 +121,76 @@ class DialogueManager(RhasspyActor):
             self.handle_any(message, sender)
 
     # -------------------------------------------------------------------------
+    # Training
+    # -------------------------------------------------------------------------
+
+    def in_training_sentences(self, message, sender):
+        if isinstance(message, SentencesGenerated):
+            tagged_sentences = message.tagged_sentences
+
+            # Write tagged sentences to Markdown file
+            tagged_path = self.profile.write_path(
+                self.profile.get('training.tagged_sentences'))
+
+            with open(tagged_path, 'w') as tagged_file:
+                for intent, intent_sents in tagged_sentences.items():
+                    print('# intent:%s' % intent, file=tagged_file)
+                    for sentence in intent_sents:
+                        print('- %s' % sentence, file=tagged_file)
+                    print('', file=tagged_file)
+
+            self._logger.debug('Wrote tagged sentences to %s' % tagged_path)
+
+            # Train speech system
+            self.transition('training_speech')
+            self.send(self.speech_trainer,
+                      TrainSpeech(message.tagged_sentences))
+
+    def in_training_speech(self, message, sender):
+        if isinstance(message, SpeechTrainingComplete):
+            self.transition('training_intent')
+            self.send(self.intent_trainer,
+                      TrainIntent(message.tagged_sentences,
+                                  message.sentences_by_intent))
+
+    def in_training_intent(self, message, sender):
+        if isinstance(message, IntentTrainingComplete):
+            self._logger.debug('Reloading actors')
+
+            # Wake listener
+            self.send(self.wake, ActorExitRequest())
+            self.wake = self.createActor(self.wake_class)
+            self.actors['wake'] = self.wake
+
+            # Speech decoder
+            self.send(self.decoder, ActorExitRequest())
+            self.decoder = self.createActor(self.decoder_class)
+            self.actors['decoder'] = self.decoder
+
+            # Intent recognizer
+            self.send(self.recognizer, ActorExitRequest())
+            self.recognizer = self.createActor(self.recognizer_class)
+            self.actors['recognizer'] = self.recognizer
+
+            # Configure actors
+            self.wait_actors = []
+            for actor in [self.wake, self.decoder, self.recognizer]:
+                self.send(actor, ConfigureEvent(self.profile, **self.actors))
+                self.wait_actors.append(actor)
+
+            self._logger.info('Training complete')
+            self.transition('training_loading')
+
+    def in_training_loading(self, message, sender):
+        if isinstance(message, Configured):
+            self.wait_actors.remove(sender)
+            if len(self.wait_actors) == 0:
+                self._logger.info('Actors reloaded')
+                self.transition('ready')
+                self.send(self.training_receiver,
+                          ProfileTrainingComplete())
+
+    # -------------------------------------------------------------------------
 
     def handle_any(self, message, sender):
         if isinstance(message, GetMicrophones):
@@ -118,9 +203,16 @@ class DialogueManager(RhasspyActor):
         elif isinstance(message, ListenForCommand):
             self.intent_receiver = message.receiver or sender
             self.transition('awake')
+        elif isinstance(message, TrainProfile):
+            self.send(self.wake, StopListeningForWakeWord())
+            self.training_receiver = message.receiver or sender
+            self.transition('training_sentences')
+            self.send(self.sentence_generator, GenerateSentences())
         else:
             self._logger.warn('Unhandled message: %s' % message)
 
+    # -------------------------------------------------------------------------
+    # Utilities
     # -------------------------------------------------------------------------
 
     def load_actors(self):
@@ -167,6 +259,24 @@ class DialogueManager(RhasspyActor):
         self.handler_class = HomeAssistantIntentHandler
         self.handler = self.createActor(self.handler_class)
         self.actors['handler'] = self.handler
+
+        # Sentence generator
+        from .train import JsgfSentenceGenerator
+        self.sentence_generator_class = JsgfSentenceGenerator
+        self.sentence_generator = self.createActor(self.sentence_generator_class)
+        self.actors['sentence_generator'] = self.sentence_generator
+
+        # Speech trainer
+        from .stt_train import PocketsphinxSpeechTrainer
+        self.speech_trainer_class = PocketsphinxSpeechTrainer
+        self.speech_trainer = self.createActor(self.speech_trainer_class)
+        self.actors['speech_trainer'] = self.speech_trainer
+
+        # Intent trainer
+        from .intent_train import FuzzyWuzzyIntentTrainer
+        self.intent_trainer_class = FuzzyWuzzyIntentTrainer
+        self.intent_trainer = self.createActor(self.intent_trainer_class)
+        self.actors['intent_trainer'] = self.intent_trainer
 
         # Configure actors
         self.wait_actors = []

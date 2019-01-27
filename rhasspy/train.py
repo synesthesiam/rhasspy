@@ -6,34 +6,36 @@ import concurrent.futures
 from collections import defaultdict
 from typing import TextIO, Dict, List, Tuple
 
-from profiles import Profile
+from .actor import RhasspyActor
+from .profiles import Profile
 
 # -----------------------------------------------------------------------------
 
-logger = logging.getLogger(__name__)
+class GenerateSentences:
+    def __init__(self, receiver=None):
+        self.receiver = receiver
 
-class SentenceGenerator:
-    '''Base class for all sentence generators.'''
+class SentencesGenerated:
+    def __init__(self, tagged_sentences):
+        self.tagged_sentences = tagged_sentences
 
-    def __init__(self, profile: Profile) -> None:
-        self.profile = profile
-
-    def preload(self):
-        '''Cache important stuff up front.'''
-        pass
-
-    def generate_sentences(self) -> Dict[str, List[str]]:
-        '''Generate tagged sentences with Markdown-style entities.
-        Returns tagged sentences grouped by intent.'''
-        pass
+# -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
 # jsgf-gen based sentence generator
 # https://github.com/synesthesiam/jsgf-gen
 # -----------------------------------------------------------------------------
 
-class JsgfSentenceGenerator(SentenceGenerator):
+class JsgfSentenceGenerator(RhasspyActor):
     '''Uses jsgf-gen to generate sentences.'''
+
+    def in_started(self, message, sender):
+        if isinstance(message, GenerateSentences):
+            tagged_sentences = self.generate_sentences()
+            self.send(message.receiver or sender,
+                      SentencesGenerated(tagged_sentences))
+
+    # -------------------------------------------------------------------------
 
     def generate_sentences(self):
         ini_path = self.profile.read_path(
@@ -54,7 +56,7 @@ class JsgfSentenceGenerator(SentenceGenerator):
                   '--exhaustive',
                   '--tags']
 
-            logger.debug(cmd)
+            self._logger.debug(cmd)
             return subprocess.check_output(cmd)\
                             .decode()\
                             .splitlines()
@@ -70,7 +72,7 @@ class JsgfSentenceGenerator(SentenceGenerator):
                 tagged_sentences[name] = future.result()
 
         num_sentences = sum(len(s) for s in tagged_sentences.values())
-        logger.debug('Generated %s sentence(s) in %s intent(s)' % (num_sentences, len(tagged_sentences)))
+        self._logger.debug('Generated %s sentence(s) in %s intent(s)' % (num_sentences, len(tagged_sentences)))
 
         return tagged_sentences
 
