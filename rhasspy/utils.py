@@ -152,7 +152,28 @@ def load_phoneme_examples(path: str) -> Dict[str, Dict[str, str]]:
 
     return examples
 
+def load_phoneme_map(path: str) -> Dict[str, str]:
+    '''Load phoneme map from CMU (Sphinx) phonemes to eSpeak phonemes.'''
+    phonemes = {}
+    with open(path, 'r') as phoneme_file:
+        for line in phoneme_file:
+            line = line.strip()
+            if (len(line) == 0) or line.startswith('#'):
+                continue  # skip blanks and comments
+
+            parts = re.split('\s+', line, maxsplit=1)
+            phonemes[parts[0]] = parts[1]
+
+    return phonemes
+
 # -----------------------------------------------------------------------------
+
+def empty_intent() -> Dict[str, Any]:
+    return {
+        'text': '',
+        'intent': { 'name': '' },
+        'entities': {}
+    }
 
 class ByteStream:
     '''Read/write file-like interface to a buffer.'''

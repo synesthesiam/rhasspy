@@ -11,33 +11,17 @@ from .audio_recorder import StartStreaming, StopStreaming, AudioData
 
 # -----------------------------------------------------------------------------
 
-logger = logging.getLogger(__name__)
+class ListenForWakeWord:
+    def __init__(self, receiver=None):
+        self.receiver = receiver
 
-# class WakeListener:
-#     '''Base class for all wake/hot word listeners.'''
+class StopListeningForWakeWord:
+    def __init__(self, receiver=None):
+        self.receiver = receiver
 
-#     def __init__(self, core, audio_recorder: AudioRecorder, profile: Profile) -> None:
-#         self.audio_recorder = audio_recorder
-#         self.profile = profile
-#         self.core = core
-#         self._is_listening = False
-
-#     def preload(self):
-#         '''Cache important stuff up front.'''
-#         pass
-
-#     @property
-#     def is_listening(self) -> bool:
-#         '''True if wake system is currently recording.'''
-#         return self._is_listening
-
-#     def start_listening(self, **kwargs) -> None:
-#         '''Start wake system listening in the background and return immedately.'''
-#         pass
-
-#     def stop_listening(self) -> None:
-#         '''Stop wake system from listening'''
-#         pass
+class WakeWordDetected:
+    def __init__(self, name: str):
+        self.name = name
 
 # -----------------------------------------------------------------------------
 # Pocketsphinx based wake word listener
@@ -145,165 +129,10 @@ logger = logging.getLogger(__name__)
 
 #             self.decoder = pocketsphinx.Decoder(decoder_config)
 
-
-# -----------------------------------------------------------------------------
-# Remote wake word detection with audio data streamed via nanomsg
-# https://nanomsg.org
-# -----------------------------------------------------------------------------
-
-# class NanomsgWakeListener(WakeListener):
-#     def __init__(self, core, audio_recorder: AudioRecorder, profile: Profile,
-#                  detected_callback: Callable[[str, str], None]) -> None:
-#         '''Streams audio data via nanomsg PUB socket.
-#         Listens for reply on PULL socket.
-#         Calls detected_callback when keyphrase is detected and stops.'''
-
-#         WakeListener.__init__(self, core, audio_recorder, profile)
-#         self.callback = detected_callback
-#         self.pub_socket = None
-#         self.pull_socket = None
-
-#     def preload(self):
-#         self._maybe_create_sockets()
-
-#     # -------------------------------------------------------------------------
-
-#     def start_listening(self, **kwargs):
-#         from nanomsg import poll
-
-#         if self.is_listening:
-#             logger.warn('Already listening')
-#             return
-
-#         self._maybe_create_sockets()
-
-#         def process_data():
-#             do_callback = False
-
-#             try:
-#                 while True:
-#                     # Block until audio data comes in
-#                     data = self.audio_recorder.get_queue().get()
-#                     if len(data) == 0:
-#                         self.decoder.end_utt()
-#                         logger.debug('Listening cancelled')
-#                         break
-
-#                     # Stream audio data out via nanomsg
-#                     self.pub_socket.send(data)
-
-#                     # Check for reply
-#                     result, _ = poll([self.pull_socket], [], 0)
-#                     if self.pull_socket in result:
-#                         response = self.pull_socket.recv().decode()
-#                         logger.debug('Wake word detected: %s' % response)
-#                         do_callback = True
-#                         break
-#             except Exception as e:
-#                 logger.exception('process_data')
-
-#             self._is_listening = False
-
-#             if do_callback and self.callback is not None:
-#                 self.callback(self.profile.name, response, **kwargs)
-
-#         # Start audio recording
-#         self.audio_recorder.start_recording(False, True)
-
-#         # Decoder runs in a separate thread
-#         thread = threading.Thread(target=process_data, daemon=True)
-#         thread.start()
-#         self._is_listening = True
-
-#         logging.debug('Listening for wake word remotely with nanomsg')
-
-#     # -------------------------------------------------------------------------
-
-#     def stop_listening(self) -> None:
-#         if self.pub_socket is not None:
-#             self.pub_socket.close()
-#             self.pub_socket = None
-
-#         if self.pull_socket is not None:
-#             self.pull_socket.close()
-#             self.pull_socket = None
-
-#         logger.debug('Stopped wake listener')
-
-#     # -------------------------------------------------------------------------
-
-#     def _maybe_create_sockets(self):
-#         from nanomsg import Socket, PUB, PULL
-
-#         if self.pub_socket is None:
-#             pub_address = self.profile.get('wake.nanomsg.pub_address')
-#             logger.debug('Binding PUB socket to %s' % pub_address)
-
-#             self.pub_socket = Socket(PUB)
-#             self.pub_socket.bind(pub_address)
-
-#         if self.pull_socket is None:
-#             pull_address = self.profile.get('wake.nanomsg.pull_address')
-#             logger.debug('Binding PULL socket to %s' % pull_address)
-
-#             self.pull_socket = Socket(PULL)
-#             self.pull_socket.bind(pull_address)
-
-# -----------------------------------------------------------------------------
-# MQTT based wake word detection via Snips.AI Hermes protocol
-# https://docs.snips.ai/ressources/hermes-protocol
-# -----------------------------------------------------------------------------
-
-# class HermesWakeListener(WakeListener):
-#     '''Streams audio data out via MQTT.'''
-
-#     def start_listening(self, **kwargs):
-#         if self.is_listening:
-#             logger.warn('Already listening')
-#             return
-
-#         def process_data():
-#             try:
-#                 while True:
-#                     # Block until audio data comes in
-#                     data = self.audio_recorder.get_queue().get()
-#                     if len(data) == 0:
-#                         logger.debug('Listening cancelled')
-#                         break
-
-#                     # Stream audio data out via mqtt
-#                     self.core.get_mqtt_client().audio_frame(data)
-#             except Exception as e:
-#                 logger.exception('process_data')
-
-#             self._is_listening = False
-
-#         # Start audio recording
-#         self.audio_recorder.start_recording(False, True)
-
-#         # Decoder runs in a separate thread
-#         thread = threading.Thread(target=process_data, daemon=True)
-#         thread.start()
-#         self._is_listening = True
-
-#         logging.debug('Listening for wake word remotely with MQTT')
-
 # -----------------------------------------------------------------------------
 # Snowboy wake listener
 # https://snowboy.kitt.ai
 # -----------------------------------------------------------------------------
-
-class ListenForWakeWord:
-    def __init__(self, receiver=None):
-        self.receiver = receiver
-
-class StopListeningForWakeWord:
-    def __init__(self, receiver=None):
-        self.receiver = receiver
-
-class WakeWordDetected:
-    def __init__(self, name: str):
-        self.name = name
 
 class SnowboyWakeListener(RhasspyActor):
     def __init__(self):

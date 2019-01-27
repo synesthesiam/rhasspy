@@ -5,13 +5,14 @@ from thespian.actors import ActorAddress, ActorExitRequest
 from .actor import RhasspyActor, ConfigureEvent, Configured
 from .wake import ListenForWakeWord, StopListeningForWakeWord, WakeWordDetected
 from .command_listener import ListenForCommand, VoiceCommand
-from .audio_player import PlayWavFile
+from .audio_player import PlayWavFile, PlayWavData
 from .stt import TranscribeWav, WavTranscription
 from .stt_train import TrainSpeech, SpeechTrainingComplete
 from .intent import RecognizeIntent, IntentRecognized
 from .intent_train import TrainIntent, IntentTrainingComplete
 from .intent_handler import HandleIntent, IntentHandled
 from .train import GenerateSentences, SentencesGenerated
+from .pronounce import GetWordPhonemes, SpeakWord, GetWordPronunciations
 from .utils import buffer_to_wav
 
 # -----------------------------------------------------------------------------
@@ -47,6 +48,10 @@ class DialogueManager(RhasspyActor):
             if len(self.wait_actors) == 0:
                 self._logger.info('Actors loaded')
                 self.transition('ready')
+
+    # -------------------------------------------------------------------------
+    # Wake
+    # -------------------------------------------------------------------------
 
     def to_ready(self, from_state):
         if self.profile.get('rhasspy.listen_on_start', False):
@@ -92,6 +97,10 @@ class DialogueManager(RhasspyActor):
             self.transition('decoding')
         else:
             self.handle_any(message, sender)
+
+    # -------------------------------------------------------------------------
+    # Recognition
+    # -------------------------------------------------------------------------
 
     def in_decoding(self, message, sender):
         if isinstance(message, WavTranscription):
@@ -194,16 +203,37 @@ class DialogueManager(RhasspyActor):
 
     def handle_any(self, message, sender):
         if isinstance(message, GetMicrophones):
+            # Get all microphones
             mics = self.recorder_class.get_microphones()
             self.send(sender, mics)
         elif isinstance(message, TestMicrophones):
+            # Get working microphones
             chunk_size = int(self.profile.get('microphone.%s.test_chunk_size', 1024))
             test_mics = self.recorder_class.test_microphones(chunk_size)
             self.send(sender, test_mics)
         elif isinstance(message, ListenForCommand):
+            # Force voice command
             self.intent_receiver = message.receiver or sender
             self.transition('awake')
+        elif isinstance(message, GetWordPhonemes):
+            # eSpeak -> CMU
+            self.send(self.word_pronouncer,
+                      GetWordPhonemes(message.word, receiver=sender))
+        elif isinstance(message, SpeakWord):
+            # eSpeak -> WAV
+            self.send(self.word_pronouncer,
+                      SpeakWord(message.word, receiver=sender))
+        elif isinstance(message, GetWordPronunciations):
+            # word -> [CMU]
+            self.send(self.word_pronouncer,
+                      GetWordPronunciations(message.word,
+                                            n=message.n,
+                                            receiver=sender))
+        elif isinstance(message, PlayWavData):
+            # Forward to audio player
+            self.send(self.player, message)
         elif isinstance(message, TrainProfile):
+            # Training
             self.send(self.wake, StopListeningForWakeWord())
             self.training_receiver = message.receiver or sender
             self.transition('training_sentences')
@@ -278,6 +308,12 @@ class DialogueManager(RhasspyActor):
         self.intent_trainer = self.createActor(self.intent_trainer_class)
         self.actors['intent_trainer'] = self.intent_trainer
 
+        # Word pronouncer
+        from .pronounce import PhonetisaurusPronounce
+        self.word_pronouncer_class = PhonetisaurusPronounce
+        self.word_pronouncer = self.createActor(self.word_pronouncer_class)
+        self.actors['word_pronouncer'] = self.word_pronouncer
+
         # Configure actors
         self.wait_actors = []
         for name, actor in self.actors.items():
@@ -295,11 +331,12 @@ class DialogueManager(RhasspyActor):
         if system == 'aplay':
             from .audio_player import APlayAudioPlayer
             return APlayAudioPlayer
-        # elif system == 'heremes':
-        #     from audio_player import HeremesAudioPlayer
-        #     self.audio_player = HeremesAudioPlayer(self)
-        # elif system == 'dummy':
-        #     self.audio_player = AudioPlayer(self)
+        elif system == 'heremes':
+            from .audio_player import HermesAudioPlayer
+            return HermesAudioPlayer
+        elif system == 'dummy':
+            from .audio_player import DummyAudioPlayer
+            return DummyAudioPlayer
 
     def _get_wake_class(self, system):
         assert system in ['dummy', 'pocketsphinx', 'nanomsg',
@@ -335,21 +372,28 @@ class DialogueManager(RhasspyActor):
             'Unknown microphone system: %s' % system
 
         if system == 'arecord':
-            from audio_recorder import ARecordAudioRecorder
+            from .audio_recorder import ARecordAudioRecorder
             return ARecordAudioRecorder
         elif system == 'pyaudio':
             from .audio_recorder import PyAudioRecorder
             return PyAudioRecorder
         elif system == 'hermes':
-            from audio_recorder import HermesAudioRecorder
+            from .audio_recorder import HermesAudioRecorder
             return HermesAudioRecorder
         else:
-            from audio_recorder import AudioRecorder
-            return AudioRecorder
+            from .audio_recorder import DummyAudioRecorder
+            return DummyAudioRecorder
 
     def _get_command_class(self, system: str):
-        from .command_listener import WebrtcvadCommandListener
-        return WebrtcvadCommandListener
+        assert system in ['dummy', 'webrtcvad'], \
+            'Unknown voice command system: %s' % system
+
+        if system == 'webrtcvad':
+            from .command_listener import WebrtcvadCommandListener
+            return WebrtcvadCommandListener
+        else:
+            from .command_listener import DummyCommandListener
+            return DummyCommandListener
 
     def _get_decoder_class(self, system: str):
         assert system in ['dummy', 'pocketsphinx', 'remote'], \
@@ -362,8 +406,8 @@ class DialogueManager(RhasspyActor):
             from .stt import RemoteDecoder
             return RemoteDecoder
         else:
-            # TODO
-            pass
+            from .stt import DummyDecoder
+            return DummyDecoder
 
     def _get_recognizer_class(self, system: str):
         assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa', 'remote'], \
@@ -375,18 +419,17 @@ class DialogueManager(RhasspyActor):
             return FuzzyWuzzyRecognizer
         elif system == 'adapt':
             # Use Mycroft Adapt locally
-            from intent import AdaptIntentRecognizer
-            recognizer = AdaptIntentRecognizer(profile)
-            pass
+            from .intent import AdaptIntentRecognizer
+            return AdaptIntentRecognizer
         elif system == 'rasa':
             # Use rasaNLU remotely
-            from intent import RasaIntentRecognizer
-            recognizer = RasaIntentRecognizer(profile)
-            pass
+            from .intent import RasaIntentRecognizer
+            return RasaIntentRecognizer
         elif system == 'remote':
             # Use remote rhasspy server
-            from intent import RemoteRecognizer
-            recognizer = RemoteRecognizer(profile)
-        elif system == 'dummy':
+            from .intent import RemoteRecognizer
+            return RemoteRecognizer
+        else:
             # Does nothing
-            recognizer = IntentRecognizer(profile)
+            from .intent import DummyIntentRecognizer
+            return DummyIntentRecognizer

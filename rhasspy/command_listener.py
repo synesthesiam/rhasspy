@@ -15,9 +15,22 @@ class ListenForCommand:
         self.receiver = receiver
 
 class VoiceCommand:
-    def __init__(self, data: bytes):
+    def __init__(self, data: bytes, timeout=False):
         self.data = data
+        self.timeout = timeout
 
+# -----------------------------------------------------------------------------
+
+class DummyCommandListener(RhasspyActor):
+    '''Always sends an empty voice command'''
+    def in_started(self, message, sender):
+        if isinstance(message, ListenForCommand):
+            self.send(message.receiver or sender,
+                      VoiceCommand(bytes()))
+
+# -----------------------------------------------------------------------------
+# webrtcvad based voice command listener
+# https://github.com/wiseman/py-webrtcvad
 # -----------------------------------------------------------------------------
 
 class WebrtcvadCommandListener(RhasspyActor):
@@ -71,12 +84,19 @@ class WebrtcvadCommandListener(RhasspyActor):
         if isinstance(message, AudioData):
             self.chunk += message.data
             if len(self.chunk) >= self.chunk_size:
+                # Ensure audio data is properly chunked (for webrtcvad)
                 data = self.chunk[:self.chunk_size]
                 self.chunk = self.chunk[self.chunk_size:]
-                finished = self.process_data(data)
+
+                # Process chunk
+                finished, timeout = self.process_data(data)
+
                 if finished:
+                    # Stop recording
                     self.send(self.recorder, StopStreaming(self.myAddress))
-                    self.send(self.receiver, VoiceCommand(self.buffer))
+
+                    # Response
+                    self.send(self.receiver, VoiceCommand(self.buffer, timeout))
                     self.buffer = None
                     self.transition('loaded')
 
@@ -84,12 +104,14 @@ class WebrtcvadCommandListener(RhasspyActor):
 
     def process_data(self, data):
         finished = False
+        timeout = False
 
         # Check maximum number of seconds to record
         self.max_buffers -= 1
         if self.max_buffers <= 0:
             # Timeout
             finished = True
+            timeout = True
             self._logger.warn('Timeout')
 
         # Detect speech in chunk
@@ -122,4 +144,4 @@ class WebrtcvadCommandListener(RhasspyActor):
                 self.after_phrase = True
                 self.silence_buffers = int(math.ceil(self.silence_sec / self.seconds_per_buffer))
 
-        return finished
+        return finished, timeout

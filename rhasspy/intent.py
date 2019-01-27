@@ -8,47 +8,10 @@ from typing import Dict, Any, Optional, Tuple, List
 
 from .actor import RhasspyActor
 from .profiles import Profile
+from .utils import empty_intent
 
 # -----------------------------------------------------------------------------
-
-logger = logging.getLogger(__name__)
-
-class IntentRecognizer:
-    '''Base class for intent recognizers'''
-
-    def __init__(self, profile: Profile) -> None:
-        self.profile = profile
-
-    def preload(self):
-        '''Cache anything useful upfront.'''
-        pass
-
-    def recognize(self, text: str) -> Dict[str, Any]:
-        '''Recognize intent from text.'''
-        pass
-
-# -----------------------------------------------------------------------------
-# Remote HTTP Intent Recognizer
-# -----------------------------------------------------------------------------
-
-class RemoteRecognizer(IntentRecognizer):
-    '''HTTP based recognizer for remote rhasspy server'''
-
-    def recognize(self, text:str) -> Dict[str, Any]:
-        import requests
-
-        remote_url = self.profile.get('intent.remote.url')
-        params = { 'profile': self.profile.name, 'nohass': True }
-        response = requests.post(remote_url, params=params, data=text)
-
-        response.raise_for_status()
-
-        return response.json()
-
-
-# -----------------------------------------------------------------------------
-# Fuzzywuzzy-based Intent Recognizer
-# https://github.com/seatgeek/fuzzywuzzy
+# Events
 # -----------------------------------------------------------------------------
 
 class RecognizeIntent:
@@ -59,6 +22,52 @@ class RecognizeIntent:
 class IntentRecognized:
     def __init__(self, intent: Dict[str, Any]):
         self.intent = intent
+
+# -----------------------------------------------------------------------------
+
+class DummyIntentRecognizer:
+    '''Always returns an empty intent'''
+    def in_started(self, message, sender):
+        if isinstance(message, RecognizeIntent):
+            self.send(message.receiver or sender,
+                      IntentRecognized(empty_intent()))
+
+# -----------------------------------------------------------------------------
+# Remote HTTP Intent Recognizer
+# -----------------------------------------------------------------------------
+
+class RemoteRecognizer(RhasspyActor):
+    '''HTTP based recognizer for remote rhasspy server'''
+    def to_started(self, from_state):
+        self.remote_url = self.profile.get('intent.remote.url')
+
+    def in_started(self, message, sender):
+        if isinstance(message, RecognizeIntent):
+            try:
+                intent = self.recognize(message.text)
+            except Exception as e:
+                self._logger.exception()
+                intent = empty_intent()
+
+            self.send(message.receiver or sender,
+                      IntentRecognized(intent))
+
+    # -------------------------------------------------------------------------
+
+    def recognize(self, text: str) -> Dict[str, Any]:
+        import requests
+
+        params = { 'profile': self.profile.name, 'nohass': True }
+        response = requests.post(self.remote_url, params=params, data=text)
+        response.raise_for_status()
+
+        return response.json()
+
+
+# -----------------------------------------------------------------------------
+# Fuzzywuzzy-based Intent Recognizer
+# https://github.com/seatgeek/fuzzywuzzy
+# -----------------------------------------------------------------------------
 
 class FuzzyWuzzyRecognizer(RhasspyActor):
     '''Recognize intents using fuzzy string matching'''
@@ -73,7 +82,12 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
 
     def in_loaded(self, message, sender):
         if isinstance(message, RecognizeIntent):
-            intent = self.recognize(message.text)
+            try:
+                intent = self.recognize(message.text)
+            except Exception as e:
+                self._logger.exception()
+                intent = empty_intent()
+
             self.send(message.receiver or sender,
                       IntentRecognized(intent))
 
@@ -112,11 +126,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                 }
 
         # Empty intent
-        return {
-            'text': '',
-            'intent': { 'name': '' },
-            'entities': {}
-        }
+        return empty_intent()
 
     # -------------------------------------------------------------------------
 
@@ -130,7 +140,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
         with open(examples_path, 'r') as examples_file:
             self.examples = json.load(examples_file)
 
-        logger.debug('Loaded examples from %s' % examples_path)
+        self._logger.debug('Loaded examples from %s' % examples_path)
 
 
 # -----------------------------------------------------------------------------
@@ -138,18 +148,34 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
 # https://rasa.com/
 # -----------------------------------------------------------------------------
 
-class RasaIntentRecognizer(IntentRecognizer):
+class RasaIntentRecognizer(RhasspyActor):
     '''Uses rasaNLU HTTP API to recognize intents.'''
+    def to_started(self, from_state):
+        rasa_config = self.profile.get('intent.rasa', {})
+        url = rasa_config.get('url', 'http://locahost:5000')
+        self.project_name = rasa_config.get('project_name', 'rhasspy_%s' % self.profile.name)
+        self.parse_url = urljoin(url, 'parse')
+
+    def in_started(self, message, sender):
+        if isinstance(message, RecognizeIntent):
+            try:
+                intent = self.recognize(message.text)
+            except Exception as e:
+                self._logger.exception()
+                intent = empty_intent()
+
+            self.send(message.receiver or sender,
+                      IntentRecognized(intent))
+
+    # -------------------------------------------------------------------------
 
     def recognize(self, text: str) -> Dict[str, Any]:
         import requests
 
-        rasa_config = self.profile.get('intent.rasa', {})
-        url = rasa_config.get('url', 'http://locahost:5000')
-        project_name = rasa_config.get('project_name', 'rhasspy_%s' % self.profile.name)
+        response = requests.post(
+            self.parse_url,
+            json={ 'q': text, 'project': self.project_name })
 
-        parse_url = urljoin(url, 'parse')
-        response = requests.post(parse_url, json={ 'q': text, 'project': project_name })
         response.raise_for_status()
 
         return response.json()
@@ -160,94 +186,92 @@ class RasaIntentRecognizer(IntentRecognizer):
 # http://github.com/MycroftAI/adapt
 # -----------------------------------------------------------------------------
 
-class AdaptIntentRecognizer(IntentRecognizer):
+class AdaptIntentRecognizer(RhasspyActor):
     '''Recognize intents with Mycroft Adapt.'''
 
-    def __init__(self, profile: Profile) -> None:
-        IntentRecognizer.__init__(self, profile)
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
         self.engine = None
 
-    def preload(self):
-        self._maybe_load_engine()
+    def to_started(self):
+        self.load_engine()
+        self.transition('loaded')
+
+    def in_loaded(self, message, sender):
+        if isinstance(message, RecognizeIntent):
+            try:
+                intent = self.recognize(message.text)
+            except Exception as e:
+                self._logger.exception()
+                intent = empty_intent()
+
+            self.send(message.receiver or sender,
+                      IntentRecognized(intent))
 
     # -------------------------------------------------------------------------
 
     def recognize(self, text: str) -> Dict[str, Any]:
-        self._maybe_load_engine()
-        assert self.engine is not None
+        # Get all intents
+        intents =  [intent for intent in
+                    self.engine.determine_intent(text)
+                    if intent]
 
-        try:
-            # Get all intents
-            intents =  [intent for intent in
-                        self.engine.determine_intent(text)
-                        if intent]
+        if len(intents) > 0:
+            # Return the best intent only
+            intent = max(intents, key=lambda x: x.get('confidence', 0))
+            intent_type = intent['intent_type']
+            entity_prefix = '{0}.'.format(intent_type)
 
-            if len(intents) > 0:
-                # Return the best intent only
-                intent = max(intents, key=lambda x: x.get('confidence', 0))
-                intent_type = intent['intent_type']
-                entity_prefix = '{0}.'.format(intent_type)
+            slots = {}
+            for key, value in intent.items():
+                if key.startswith(entity_prefix):
+                    key = key[len(entity_prefix):]
+                    slots[key] = value
 
-                slots = {}
-                for key, value in intent.items():
-                    if key.startswith(entity_prefix):
-                        key = key[len(entity_prefix):]
-                        slots[key] = value
-
-                # Try to match RasaNLU format for future compatibility
-                return {
-                    'text': text,
-                    'intent': {
-                        'name': intent_type,
-                        'confidence': intent.get('confidence', 0)
-                    },
-                    'entities': [
-                        { 'entity': name, 'value': value } for name, value in slots.items()
-                    ]
-                }
-        except Exception as e:
-            logger.exception('adapt recognize')
-
-        # Empty intent
-        return {
-            'text': '',
-            'intent': { 'name': '' },
-            'entities': []
-        }
+            # Try to match RasaNLU format for future compatibility
+            return {
+                'text': text,
+                'intent': {
+                    'name': intent_type,
+                    'confidence': intent.get('confidence', 0)
+                },
+                'entities': [
+                    { 'entity': name, 'value': value } for name, value in slots.items()
+                ]
+            }
 
     # -------------------------------------------------------------------------
 
-    def _maybe_load_engine(self):
+    def load_engine(self):
         '''Configure Adapt engine if not already cached'''
-        if self.engine is None:
-            from adapt.intent import IntentBuilder
-            from adapt.engine import IntentDeterminationEngine
+        from adapt.intent import IntentBuilder
+        from adapt.engine import IntentDeterminationEngine
 
-            assert self.profile is not None, 'No profile'
-            config_path = self.profile.read_path('adapt_config.json')
-            assert os.path.exists(config_path), 'Configuration file missing. Need to train.'
+        assert self.profile is not None, 'No profile'
+        config_path = self.profile.read_path('adapt_config.json')
+        assert os.path.exists(config_path), 'Configuration file missing. Need to train.'
 
-            # Create empty engine
-            self.engine = IntentDeterminationEngine()
+        # Create empty engine
+        self.engine = IntentDeterminationEngine()
 
-            # { intents: { ... }, entities: { ... } }
-            with open(config_path, 'r') as config_file:
-                config = json.load(config_file)
+        # { intents: { ... }, entities: { ... } }
+        with open(config_path, 'r') as config_file:
+            config = json.load(config_file)
 
-            # Register entities
-            for entity_name, entity_values in config['entities'].items():
-                for value in entity_values:
-                    self.engine.register_entity(value, entity_name)
+        # Register entities
+        for entity_name, entity_values in config['entities'].items():
+            for value in entity_values:
+                self.engine.register_entity(value, entity_name)
 
-            # Register intents
-            for intent_name, intent_config in config['intents'].items():
-                intent = IntentBuilder(intent_name)
-                for required_entity in intent_config['require']:
-                    intent.require(required_entity)
+        # Register intents
+        for intent_name, intent_config in config['intents'].items():
+            intent = IntentBuilder(intent_name)
+            for required_entity in intent_config['require']:
+                intent.require(required_entity)
 
-                for optional_entity in intent_config['optionally']:
-                    intent.optionally(optional_entity)
+            for optional_entity in intent_config['optionally']:
+                intent.optionally(optional_entity)
 
-                self.engine.register_intent_parser(intent.build())
+            self.engine.register_intent_parser(intent.build())
 
-            logger.debug('Loaded engine from config file %s' % config_path)
+        self._logger.debug('Loaded engine from config file %s' % config_path)
