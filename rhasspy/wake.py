@@ -293,11 +293,11 @@ logger = logging.getLogger(__name__)
 # https://snowboy.kitt.ai
 # -----------------------------------------------------------------------------
 
-class StartListening:
+class ListenForWakeWord:
     def __init__(self, receiver):
         self.receiver = receiver
 
-class StopListening:
+class StopListeningForWakeWord:
     def __init__(self, receiver):
         self.receiver = receiver
 
@@ -316,7 +316,7 @@ class SnowboyWakeListener(RhasspyActor):
         self.transition('loaded')
 
     def in_loaded(self, message, sender):
-        if isinstance(message, StartListening):
+        if isinstance(message, ListenForWakeWord):
             self.receivers.append(message.receiver)
             self.transition('listening')
             self.send(self.recorder, StartStreaming(self.myAddress))
@@ -329,7 +329,7 @@ class SnowboyWakeListener(RhasspyActor):
                 result = WakeWordDetected(self.model_name)
                 for receiver in self.receivers:
                     self.send(receiver, result)
-        elif isinstance(message, StopListening):
+        elif isinstance(message, StopListeningForWakeWord):
             self.receivers.remove(message.receiver)
             if len(self.receiver) == 0:
                 self.send(self.recorder, StopStreaming(self.myAddress))

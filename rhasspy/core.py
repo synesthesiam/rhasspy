@@ -112,18 +112,6 @@ class RhasspyCore:
 
         return player
 
-    def _get_sound_class(self, system):
-        assert system in ['aplay', 'hermes', 'dummy'], \
-            'Unknown sound system: %s' % system
-
-        if system == 'aplay':
-            from .audio_player import APlayAudioPlayer
-            return APlayAudioPlayer
-        # elif system == 'heremes':
-        #     from audio_player import HeremesAudioPlayer
-        #     self.audio_player = HeremesAudioPlayer(self)
-        # elif system == 'dummy':
-        #     self.audio_player = AudioPlayer(self)
 
     # -------------------------------------------------------------------------
 

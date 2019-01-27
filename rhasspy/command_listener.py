@@ -20,7 +20,7 @@ class VoiceCommand:
 
 # -----------------------------------------------------------------------------
 
-class CommandListener(RhasspyActor):
+class WebrtcvadCommandListener(RhasspyActor):
     '''Listens to microphone for voice commands bracketed by silence.'''
     def __init__(self):
         RhasspyActor.__init__(self)
@@ -33,13 +33,13 @@ class CommandListener(RhasspyActor):
         import webrtcvad
         self.recorder = self.config['recorder']
 
-        commands = self.profile.get('commands')
-        self.sample_rate = commands['sample_rate']  # 16Khz
-        self.chunk_size = commands['chunk_size']  # 10,20,30 ms
-        self.vad_mode = commands['vad_mode'] # 0-3 (aggressiveness)
-        self.min_sec = commands['min_sec']  # min seconds that command must last
-        self.silence_sec = commands['silence_sec']  # min seconds of silence after command
-        self.timeout_sec = commands['timeout_sec']  # max seconds that command can last
+        settings = self.profile.get('command.webrtcvad')
+        self.sample_rate = settings['sample_rate']  # 16Khz
+        self.chunk_size = settings['chunk_size']  # 10,20,30 ms
+        self.vad_mode = settings['vad_mode'] # 0-3 (aggressiveness)
+        self.min_sec = settings['min_sec']  # min seconds that command must last
+        self.silence_sec = settings['silence_sec']  # min seconds of silence after command
+        self.timeout_sec = settings['timeout_sec']  # max seconds that command can last
 
         self.seconds_per_buffer = self.chunk_size / self.sample_rate
         self.max_buffers = int(math.ceil(self.timeout_sec / self.seconds_per_buffer))

@@ -43,6 +43,9 @@ class Profile:
     def get(self, path: str, default=None):
         return pydash.get(self.json, path, default)
 
+    def set(self, path: str, value: Any):
+        pydash.set_(self.json, path, value)
+
     # -------------------------------------------------------------------------
 
     def load_profile(self):

@@ -30,13 +30,13 @@ import pydash
 from thespian.actors import ActorSystem
 
 from rhasspy.actor import ConfigureEvent
-from rhasspy.core import RhasspyCore
 from rhasspy.stt import TranscribeWav
 from rhasspy.intent import RecognizeIntent
 from rhasspy.intent_handler import HandleIntent
-from rhasspy.wake import StartListening
-from rhasspy.dialogue import DialogueManager
-# from rhasspy.pronounce import WordPronounce
+from rhasspy.dialogue import (DialogueManager, GetMicrophones, TestMicrophones,
+                              ListenForCommand, ListenForWakeWord)
+
+from rhasspy.profiles import Profile
 from rhasspy.utils import recursive_update, buffer_to_wav, load_phoneme_examples
 
 # -----------------------------------------------------------------------------
@@ -67,10 +67,9 @@ CORS(app)
 # -----------------------------------------------------------------------------
 
 parser = argparse.ArgumentParser('Rhasspy')
-parser.add_argument('--default', '-d', nargs=2,
-                    action='append',
-                    help='Set a default setting value',
-                    default=[])
+parser.add_argument('--profile', '-p', type=str,
+                    help='Name of profile to load',
+                    default=None)
 
 parser.add_argument('--set', '-s', nargs=2,
                     action='append',
@@ -85,10 +84,11 @@ logger.debug(args)
 # Core Setup
 # -----------------------------------------------------------------------------
 
-core = None
+dialogue_manager = None
+profile = None
 
 def start_rhasspy():
-    global core
+    global dialogue_manager, profile
 
     # Like PATH, searched in reverse order
     profiles_dirs = [path for path in
@@ -97,22 +97,13 @@ def start_rhasspy():
 
     profiles_dirs.reverse()
 
-    # Check for default profile
-    default_profile_name = os.environ.get('RHASSPY_PROFILE', None)
+    # Get name of profile
+    profile_name = args.profile \
+        or os.environ.get('RHASSPY_PROFILE', None) \
+        or 'en'
 
-    # Create top-level actor
-    core = RhasspyCore(system, profiles_dirs, default_profile_name)
-
-    # Add defaults from the command line
-    for key, value in args.default:
-        try:
-            value = json.loads(value)
-        except:
-            pass
-
-        logger.debug('Default: {0}={1}'.format(key, value))
-        core.defaults_json = \
-            pydash.set_(core.defaults_json, key, value)
+    # Load profile
+    profile = Profile(profile_name, profiles_dirs)
 
     # Add profile settings from the command line
     extra_settings = {}
@@ -124,46 +115,22 @@ def start_rhasspy():
 
         logger.debug('Profile: {0}={1}'.format(key, value))
         extra_settings[key] = value
+        profile.set(key, value)
 
-    for profile in core.profiles.values():
-        for key, value in extra_settings.items():
-            profile.json = pydash.set_(profile.json, key, value)
+    # Create top level actor
+    dialogue_manager = system.createActor(DialogueManager)
+    system.ask(dialogue_manager, ConfigureEvent(profile))
 
-    core.dialogue_manager = system.createActor(DialogueManager)
-    wake = core.get_wake_listener(core.default_profile_name)
-    listener = core.get_command_listener(core.default_profile_name)
-    system.tell(core.dialogue_manager,
-                ConfigureEvent(core.default_profile,
-                               wake=wake,
-                               listener=listener))
-
-    # Pre-load default profile
-    # if core.get_default('rhasspy.preload_profile', False):
-    #     logger.info('Preloading default profile (%s)' % core.default_profile_name)
-        # core.preload_profile(core.default_profile_name)
-
-#     if core.get_default('mqtt.enabled', False):
-#         core.get_mqtt_client().start_client()
-#         for i in range(20):
-#             time.sleep(0.1)
-#             if core.get_mqtt_client().connected:
-#                 break
-
-    # Listen for wake word
-    # if core.get_default('rhasspy.listen_on_start', False):
-    #     logger.info('Automatically listening for wake word')
-    #     wake = core.get_wake_listener(core.default_profile_name)
-    #     system.tell(wake, StartListening(core.default_profile_name))
-        # core.get_mqtt_client().rhasspy_asleep(core.default_profile_name)
+# -----------------------------------------------------------------------------
 
 start_rhasspy()
 
 # -----------------------------------------------------------------------------
 
-def request_to_profile(request):
-    '''Gets profile from HTTP request'''
-    profile_name = request.args.get('profile', core.default_profile_name)
-    return core.profiles[profile_name]
+# def request_to_profile(request):
+#     '''Gets profile from HTTP request'''
+#     profile_name = request.args.get('profile', core.default_profile_name)
+#     return core.profiles[profile_name]
 
 # -----------------------------------------------------------------------------
 # HTTP API
@@ -173,8 +140,8 @@ def request_to_profile(request):
 def api_profiles():
     '''Get list of available profiles'''
     return jsonify({
-        'default_profile': core.default_profile_name,
-        'profiles': sorted(core.profiles.keys())
+        'default_profile': profile.name,
+        'profiles': [profile.name]
     })
 
 # -----------------------------------------------------------------------------
@@ -182,8 +149,7 @@ def api_profiles():
 @app.route('/api/microphones', methods=['GET'])
 def api_microphones():
     '''Get a dictionary of available recording devices'''
-    profile = request_to_profile(request)
-    mics = core.get_microphones(profile.name)
+    mics = system.ask(dialogue_manager, GetMicrophones())
     return jsonify(mics)
 
 # -----------------------------------------------------------------------------
@@ -191,19 +157,15 @@ def api_microphones():
 @app.route('/api/test-microphones', methods=['GET'])
 def api_test_microphones():
     '''Get a dictionary of available, functioning recording devices'''
-    profile = request_to_profile(request)
-    mics = core.test_microphones(profile.name)
+    mics = system.ask(dialogue_manager, TestMicrophones())
     return jsonify(mics)
 
 # -----------------------------------------------------------------------------
 
 @app.route('/api/listen-for-wake', methods=['POST'])
 def api_listen_for_wake():
-    profile = request_to_profile(request)
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
-
-    wake = core.get_wake_listener(profile.name)
-    wake.start_listening(no_hass=no_hass)
+    system.tell(dialogue_manager, ListenForWakeWord())
 
     return profile.name
 
@@ -211,10 +173,8 @@ def api_listen_for_wake():
 
 @app.route('/api/listen-for-command', methods=['POST'])
 def api_listen_for_command():
-    profile = request_to_profile(request)
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
-
-    intent = core._handle_wake(profile.name, 'api', no_hass=no_hass)
+    intent = system.ask(dialogue_manager, ListenForCommand())
 
     return jsonify(intent)
 
@@ -241,7 +201,6 @@ def api_profile():
                     pass
         else:
             # Write local profile settings
-            profile = request_to_profile(request)
             profile_path = profile.write_path('profile.json')
             with open(profile_path, 'wb') as profile_file:
                 profile_file.write(request.data)
@@ -250,18 +209,19 @@ def api_profile():
         logger.debug(msg)
         return msg
 
-    if layers == 'defaults':
-        # Read default settings
-        return jsonify(core.defaults_json)
-    elif layers == 'profile':
-        # Local settings only
-        profile = request_to_profile(request)
-        profile_path = profile.read_path('profile.json')
-        return send_file(open(profile_path, 'rb'),
-                         mimetype='application/json')
-    else:
-        profile = request_to_profile(request)
-        return jsonify(profile.json)
+    return jsonify(profile.json)
+    # if layers == 'defaults':
+    #     # Read default settings
+    #     return jsonify(core.defaults_json)
+    # elif layers == 'profile':
+    #     # Local settings only
+    #     profile = request_to_profile(request)
+    #     profile_path = profile.read_path('profile.json')
+    #     return send_file(open(profile_path, 'rb'),
+    #                      mimetype='application/json')
+    # else:
+    #     profile = request_to_profile(request)
+    #     return jsonify(profile.json)
 
 # -----------------------------------------------------------------------------
 
@@ -323,7 +283,7 @@ def api_pronounce():
 @app.route('/api/phonemes')
 def api_phonemes():
     '''Get phonemes and example words for a profile'''
-    profile = request_to_profile(request)
+    # profile = request_to_profile(request)
     examples_path = profile.read_path(
         profile.get('text_to_speech.phoneme_examples'))
 
@@ -338,7 +298,7 @@ def api_phonemes():
 @app.route('/api/sentences', methods=['GET', 'POST'])
 def api_sentences():
     '''Read or write sentences for a profile'''
-    profile = request_to_profile(request)
+    # profile = request_to_profile(request)
 
     if request.method == 'POST':
         # Update sentences
@@ -365,7 +325,7 @@ def api_sentences():
 @app.route('/api/custom-words', methods=['GET', 'POST'])
 def api_custom_words():
     '''Read or write custom word dictionary for a profile'''
-    profile = request_to_profile(request)
+    # profile = request_to_profile(request)
     custom_words_path = profile.write_path(
         profile.get('speech_to_text.pocketsphinx.custom_words'))
 
@@ -400,27 +360,16 @@ def api_train():
 
 # -----------------------------------------------------------------------------
 
-@app.route('/api/reload', methods=['POST'])
-def api_reload():
-    profile = request_to_profile(request)
-    core.reload_profile(profile.name)
-
-    return 'Reloaded profile "%s"' % profile.name
-
-# -----------------------------------------------------------------------------
-
 @app.route('/api/restart', methods=['POST'])
 def api_restart():
     logger.debug('Restarting Rhasspy')
 
-    global core
-    core.get_audio_recorder().stop_all()
+    # Stop
+    global system
+    system.shutdown()
 
-    for wake_listener in core.wake_listeners.values():
-        wake_listener.stop_listening()
-
-    del core
-
+    # Start
+    system = ActorSystem('multiprocQueueBase')
     start_rhasspy()
     logger.info('Restarted Rhasspy')
 
@@ -526,7 +475,7 @@ def api_stop_recording():
 
 @app.route('/api/unknown_words', methods=['GET'])
 def api_unknown_words():
-    profile = request_to_profile(request)
+    # profile = request_to_profile(request)
 
     unknown_words = {}
     unknown_path = profile.read_path(
