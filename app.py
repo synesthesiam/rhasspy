@@ -7,7 +7,6 @@ logger = logging.getLogger(__name__)
 import os
 import sys
 import subprocess
-import uuid
 import json
 import re
 import gzip
@@ -30,10 +29,13 @@ import requests
 import pydash
 from thespian.actors import ActorSystem
 
+from rhasspy.actor import ConfigureEvent
 from rhasspy.core import RhasspyCore
 from rhasspy.stt import TranscribeWav
 from rhasspy.intent import RecognizeIntent
 from rhasspy.intent_handler import HandleIntent
+from rhasspy.wake import StartListening
+from rhasspy.dialogue import DialogueManager
 # from rhasspy.pronounce import WordPronounce
 from rhasspy.utils import recursive_update, buffer_to_wav, load_phoneme_examples
 
@@ -57,7 +59,7 @@ from rhasspy.audio_recorder import PyAudioRecorder, StartRecordingToBuffer, Stop
 # -----------------------------------------------------------------------------
 
 app = Flask('rhasspy')
-app.secret_key = str(uuid.uuid4())
+app.secret_key = str(uuid4())
 CORS(app)
 
 # -----------------------------------------------------------------------------
@@ -127,9 +129,17 @@ def start_rhasspy():
         for key, value in extra_settings.items():
             profile.json = pydash.set_(profile.json, key, value)
 
+    core.dialogue_manager = system.createActor(DialogueManager)
+    wake = core.get_wake_listener(core.default_profile_name)
+    listener = core.get_command_listener(core.default_profile_name)
+    system.tell(core.dialogue_manager,
+                ConfigureEvent(core.default_profile,
+                               wake=wake,
+                               listener=listener))
+
     # Pre-load default profile
-    if core.get_default('rhasspy.preload_profile', False):
-        logger.info('Preloading default profile (%s)' % core.default_profile_name)
+    # if core.get_default('rhasspy.preload_profile', False):
+    #     logger.info('Preloading default profile (%s)' % core.default_profile_name)
         # core.preload_profile(core.default_profile_name)
 
 #     if core.get_default('mqtt.enabled', False):
@@ -139,12 +149,12 @@ def start_rhasspy():
 #             if core.get_mqtt_client().connected:
 #                 break
 
-#     # Listen for wake word
-#     if core.get_default('rhasspy.listen_on_start', False):
-#         logger.info('Automatically listening for wake word')
-#         wake = core.get_wake_listener(core.default_profile_name)
-#         wake.start_listening()
-#         core.get_mqtt_client().rhasspy_asleep(core.default_profile_name)
+    # Listen for wake word
+    # if core.get_default('rhasspy.listen_on_start', False):
+    #     logger.info('Automatically listening for wake word')
+    #     wake = core.get_wake_listener(core.default_profile_name)
+    #     system.tell(wake, StartListening(core.default_profile_name))
+        # core.get_mqtt_client().rhasspy_asleep(core.default_profile_name)
 
 start_rhasspy()
 

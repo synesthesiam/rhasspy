@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from thespian.actors import Actor
+from thespian.actors import Actor, ActorExitRequest
 
 from .profiles import Profile
 
@@ -26,7 +26,9 @@ class RhasspyActor(Actor):
 
     def receiveMessage(self, message, sender):
         try:
-            if isinstance(message, ConfigureEvent):
+            if isinstance(message, ActorExitRequest):
+                self.transition('stopped')
+            elif isinstance(message, ConfigureEvent):
                 self.profile = message.profile
                 self.config = message.config
                 self.parent = sender

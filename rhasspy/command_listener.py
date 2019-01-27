@@ -5,145 +5,121 @@ import threading
 import wave
 import queue
 
+from .actor import RhasspyActor
+from .audio_recorder import StartStreaming, StopStreaming, AudioData
+
 # -----------------------------------------------------------------------------
 
-logger = logging.getLogger(__name__)
+class ListenForCommand:
+    def __init__(self, receiver=None):
+        self.receiver = receiver
 
-class CommandListener(object):
+class VoiceCommand:
+    def __init__(self, data: bytes):
+        self.data = data
+
+# -----------------------------------------------------------------------------
+
+class CommandListener(RhasspyActor):
     '''Listens to microphone for voice commands bracketed by silence.'''
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.recorder = None
+        self.receiver = None
+        self.buffer = None
+        self.chunk = None
 
-    def __init__(self,
-                 core,
-                 sample_rate,
-                 chunk_size=480,     # 30 ms
-                 vad_mode=0,         # 0-3 (aggressiveness)
-                 min_sec=2.0,        # min seconds that command must last
-                 silence_sec=0.5,    # min seconds of silence after command
-                 timeout_sec=30.0):  # max seconds that command can last
+    def to_started(self, from_state):
+        import webrtcvad
+        self.recorder = self.config['recorder']
 
-        self.core = core
-        self.sample_rate = sample_rate
-        self.chunk_size = chunk_size
-
-        self.vad_mode = vad_mode
-        self.min_sec = min_sec
-        self.silence_sec = silence_sec
-        self.timeout_sec = timeout_sec
+        commands = self.profile.get('commands')
+        self.sample_rate = commands['sample_rate']  # 16Khz
+        self.chunk_size = commands['chunk_size']  # 10,20,30 ms
+        self.vad_mode = commands['vad_mode'] # 0-3 (aggressiveness)
+        self.min_sec = commands['min_sec']  # min seconds that command must last
+        self.silence_sec = commands['silence_sec']  # min seconds of silence after command
+        self.timeout_sec = commands['timeout_sec']  # max seconds that command can last
 
         self.seconds_per_buffer = self.chunk_size / self.sample_rate
         self.max_buffers = int(math.ceil(self.timeout_sec / self.seconds_per_buffer))
 
         self.vad = None
+        self.vad = webrtcvad.Vad()
+        self.vad.set_mode(self.vad_mode)
+
+        self.transition('loaded')
 
     # -------------------------------------------------------------------------
 
-    def listen_for_command(self) -> bytes:
-        '''Listens for a command and returns WAV data once command is finished.'''
+    def to_loaded(self, from_state):
+        # Recording state
+        self.chunk = bytes()
+        self.max_buffers = int(math.ceil(self.timeout_sec / self.seconds_per_buffer))
+        self.silence_buffers = int(math.ceil(self.silence_sec / self.seconds_per_buffer))
+        self.min_phrase_buffers = int(math.ceil(self.min_sec / self.seconds_per_buffer))
+        self.in_phrase = False
+        self.after_phrase = False
 
-        if self.vad is None:
-            import webrtcvad
-            self.vad = webrtcvad.Vad()
-            self.vad.set_mode(self.vad_mode)
+    def in_loaded(self, message, sender):
+        if isinstance(message, ListenForCommand):
+            self.receiver = message.receiver or sender
+            self.transition('listening')
+            self.send(self.recorder, StartStreaming(self.myAddress))
 
-        recorded_data = bytes()
-
-        # Process audio data in a separate thread
-        def process_data():
-            nonlocal recorded_data
-
-            # Recording state
-            max_buffers = int(math.ceil(self.timeout_sec / self.seconds_per_buffer))
-            silence_buffers = int(math.ceil(self.silence_sec / self.seconds_per_buffer))
-            min_phrase_buffers = int(math.ceil(self.min_sec / self.seconds_per_buffer))
-            in_phrase = False
-            after_phrase = False
-            finished = False
-
-            while True:
-                # Block until audio data comes in
-                try:
-                    audio_queue = self.core.get_audio_recorder().get_queue()
-                    data = audio_queue.get(True, self.seconds_per_buffer)
-                    if len(data) == 0:
-                        break
-                except queue.Empty:
-                    # No data available
-                    data = None
-
-                # Check maximum number of seconds to record
-                max_buffers -= 1
-                if max_buffers <= 0:
-                    # Timeout
-                    finished = True
-                    logger.warn('Timeout')
-
-                    # Reset
-                    in_phrase = False
-                    after_phrase = False
-
-                # Detect speech in chunk
-                if data is not None:
-                    is_speech = self.vad.is_speech(data, self.sample_rate)
-                    if is_speech and not in_phrase:
-                        # Start of phrase
-                        in_phrase = True
-                        after_phrase = False
-                        recorded_data = data
-                        min_phrase_buffers = int(math.ceil(self.min_sec / self.seconds_per_buffer))
-                    elif in_phrase and (min_phrase_buffers > 0):
-                        # In phrase, before minimum seconds
-                        recorded_data += data
-                        min_phrase_buffers -= 1
-                    elif in_phrase and is_speech:
-                        # In phrase, after minimum seconds
-                        recorded_data += data
-                    elif not is_speech:
-                        # Outside of speech
-                        if after_phrase and (silence_buffers > 0):
-                            # After phrase, before stop
-                            recorded_data += data
-                            silence_buffers -= 1
-                        elif after_phrase and (silence_buffers <= 0):
-                            # Phrase complete
-                            recorded_data += data
-                            finished = True
-
-                            # Reset
-                            in_phrase = False
-                            after_phrase = False
-                        elif in_phrase and (min_phrase_buffers <= 0):
-                            # Transition to after phrase
-                            after_phrase = True
-                            silence_buffers = int(math.ceil(self.silence_sec / self.seconds_per_buffer))
-
+    def in_listening(self, message, sender):
+        if isinstance(message, AudioData):
+            self.chunk += message.data
+            if len(self.chunk) >= self.chunk_size:
+                data = self.chunk[:self.chunk_size]
+                self.chunk = self.chunk[self.chunk_size:]
+                finished = self.process_data(data)
                 if finished:
-                    break
+                    self.send(self.recorder, StopStreaming(self.myAddress))
+                    self.send(self.receiver, VoiceCommand(self.buffer))
+                    self.buffer = None
+                    self.transition('loaded')
 
-        # -----------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
-        # Stream data into queue
-        self.core.get_audio_recorder().start_recording(False, True)
+    def process_data(self, data):
+        finished = False
 
-        # Start listening
-        logger.debug('Listening')
-        thread = threading.Thread(target=process_data, daemon=True)
-        thread.start()
+        # Check maximum number of seconds to record
+        self.max_buffers -= 1
+        if self.max_buffers <= 0:
+            # Timeout
+            finished = True
+            self._logger.warn('Timeout')
 
-        # Block until command is finished
-        thread.join()
+        # Detect speech in chunk
+        is_speech = self.vad.is_speech(data, self.sample_rate)
+        if is_speech and not self.in_phrase:
+            # Start of phrase
+            self.in_phrase = True
+            self.after_phrase = False
+            self.min_phrase_buffers = int(math.ceil(self.min_sec / self.seconds_per_buffer))
+            self.buffer = data
+        elif self.in_phrase and (self.min_phrase_buffers > 0):
+            # In phrase, before minimum seconds
+            self.buffer += data
+            self.min_phrase_buffers -= 1
+        elif self.in_phrase and is_speech:
+            # In phrase, after minimum seconds
+            self.buffer += data
+        elif not is_speech:
+            # Outside of speech
+            if self.after_phrase and (self.silence_buffers > 0):
+                # After phrase, before stop
+                self.silence_buffers -= 1
+                self.buffer += data
+            elif self.after_phrase and (self.silence_buffers <= 0):
+                # Phrase complete
+                finished = True
+                self.buffer += data
+            elif self.in_phrase and (self.min_phrase_buffers <= 0):
+                # Transition to after phrase
+                self.after_phrase = True
+                self.silence_buffers = int(math.ceil(self.silence_sec / self.seconds_per_buffer))
 
-        # Stop listening and clean up
-        self.core.get_audio_recorder().stop_recording(False, True)
-
-        logger.debug('Stopped listening')
-        logger.info('Recorded %s byte(s) of audio data' % len(recorded_data))
-
-        # Return WAV data
-        with io.BytesIO() as wav_buffer:
-            with wave.open(wav_buffer, mode='wb') as wav_file:
-                wav_file.setframerate(self.sample_rate)
-                wav_file.setsampwidth(2)
-                wav_file.setnchannels(1)
-                wav_file.writeframesraw(recorded_data)
-
-            return wav_buffer.getvalue()
+        return finished
