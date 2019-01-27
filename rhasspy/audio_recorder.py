@@ -13,7 +13,6 @@ from typing import Dict, Any, Callable, Optional
 from collections import defaultdict
 
 from .actor import RhasspyActor
-# from stt import SpeechDecoder
 
 # -----------------------------------------------------------------------------
 
@@ -101,7 +100,7 @@ class PyAudioRecorder(RhasspyActor):
         RhasspyActor.__init__(self)
         self.mic = None
         self.audio = None
-        self.receivers = set()
+        self.receivers = []
         self.buffers = defaultdict(bytes)
 
     def to_started(self, from_state):
@@ -119,7 +118,7 @@ class PyAudioRecorder(RhasspyActor):
 
     def in_started(self, message, sender):
         if isinstance(message, StartStreaming):
-            self.receivers.add(message.receiver)
+            self.receivers.append(message.receiver)
             self.transition('recording')
         elif isinstance(message, StartRecordingToBuffer):
             self.buffers[message.buffer_name] = bytes()
@@ -159,7 +158,7 @@ class PyAudioRecorder(RhasspyActor):
             for receiver in self.buffers:
                 self.buffers[receiver] += message.data
         elif isinstance(message, StartStreaming):
-            self.receivers.add(message.receiver)
+            self.receivers.append(message.receiver)
         elif isinstance(message, StartRecordingToBuffer):
             self.buffers[message.buffer_name] = bytes()
         elif isinstance(message, StopStreaming):
@@ -167,7 +166,7 @@ class PyAudioRecorder(RhasspyActor):
                 # Clear all receivers
                 self.receivers.clear()
             else:
-                self.receivers.discard(message.receiver)
+                self.receivers.remove(message.receiver)
         elif isinstance(message, StopRecordingToBuffer):
             if message.buffer_name is None:
                 # Clear all buffers
@@ -184,6 +183,16 @@ class PyAudioRecorder(RhasspyActor):
             self.audio.terminate()
             self.transition('started')
             logger.debug('Stopped recording from microphone (PyAudio)')
+
+    def to_stopped(self, from_state):
+        if self.mic is not None:
+            self.mic.stop_stream()
+            self.mic = None
+            logger.debug('Stopped recording from microphone (PyAudio)')
+
+        if self.audio is not None:
+            self.audio.terminate()
+            self.audio = None
 
     # -------------------------------------------------------------------------
 

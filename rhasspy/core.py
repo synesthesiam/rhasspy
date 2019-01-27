@@ -12,9 +12,9 @@ from thespian.actors import ActorSystem, ActorAddress
 # Internal imports
 from .actor import ConfigureEvent
 from .profiles import Profile
-# from audio_player import AudioPlayer
+from .audio_player import PlayWavFile
 # from audio_recorder import AudioRecorder
-# from command_listener import CommandListener
+from .command_listener import CommandListener
 from .stt import TranscribeWav
 from .intent import RecognizeIntent
 # from pronounce import WordPronounce
@@ -44,14 +44,15 @@ class RhasspyCore:
         self.profiles_dirs = profiles_dirs
         self.default_profile_name = default_profile_name
 
+        self.dialogue_manager = None
         self.audio_recorders: Dict[Tuple[str, Any], ActorAddress] = {}
-        # self.audio_player: Optional[AudioPlayer] = None
-        # self.command_listener: Optional[CommandListener] = None
+        self.audio_players: Dict[Tuple[str, Any], AudioPlayer] = {}
+        self.command_listener: Optional[CommandListener] = None
 
         self.speech_decoders: Dict[str, ActorAddress] = {}
         self.intent_recognizers: Dict[str, ActorAddress] = {}
         # self.word_pronouncers: Dict[str, WordPronounce] = {}
-        # self.wake_listeners: Dict[str, WakeListener] = {}
+        self.wake_listeners: Dict[str, WakeListener] = {}
         self.intent_handlers: Dict[str, ActorAddress] = {}
         # self.sentence_generators: Dict[str, SentenceGenerator] = {}
         # self.speech_tuners: Dict[str, SpeechTuner] = {}
@@ -97,23 +98,32 @@ class RhasspyCore:
 
     # -------------------------------------------------------------------------
 
-    def get_audio_player(self) -> ActorAddress:
+    def get_audio_player(self, profile_name: str, device=None) -> ActorAddress:
         '''Gets the shared audio player'''
-        if self.audio_player is None:
-            system = self.get_default('sounds.system', 'dummy')
-            assert system in ['aplay', 'hermes', 'dummy'], 'Unknown sound system: %s' % system
-            if system == 'aplay':
-                from audio_player import APlayAudioPlayer
-                device = self.get_default('sounds.aplay.device')
-                self.audio_player = APlayAudioPlayer(self, device)
-            elif system == 'heremes':
-                from audio_player import HeremesAudioPlayer
-                self.audio_player = HeremesAudioPlayer(self)
-            elif system == 'dummy':
-                self.audio_player = AudioPlayer(self)
+        profile = self.profiles[profile_name]
+        system = profile.get('sounds.system', 'dummy')
+        player = self.audio_players.get((profile_name, system))
 
-        assert self.audio_player is not None
-        return self.audio_player
+        if player is None:
+            player_class = self._get_sound_class(system)
+            player = self.actor_system.createActor(player_class)
+            self.actor_system.tell(player, ConfigureEvent(profile, device=device))
+            self.audio_players[(profile_name, device)] = player
+
+        return player
+
+    def _get_sound_class(self, system):
+        assert system in ['aplay', 'hermes', 'dummy'], \
+            'Unknown sound system: %s' % system
+
+        if system == 'aplay':
+            from .audio_player import APlayAudioPlayer
+            return APlayAudioPlayer
+        # elif system == 'heremes':
+        #     from audio_player import HeremesAudioPlayer
+        #     self.audio_player = HeremesAudioPlayer(self)
+        # elif system == 'dummy':
+        #     self.audio_player = AudioPlayer(self)
 
     # -------------------------------------------------------------------------
 
@@ -266,95 +276,105 @@ class RhasspyCore:
 
     # -------------------------------------------------------------------------
 
-    def get_command_listener(self):
+    def get_command_listener(self, profile_name: str) -> ActorAddress:
         '''Gets the shared voice command listener (VAD + silence bracketing).'''
         if self.command_listener is None:
-            self.command_listener = CommandListener(self, 16000)
+            profile = self.profiles[profile_name]
+            recorder = self.get_audio_recorder(profile_name)
+
+            self.command_listener = self.actor_system.createActor(CommandListener)
+            self.actor_system.tell(self.command_listener,
+                                   ConfigureEvent(profile, recorder=recorder))
 
         return self.command_listener
 
     # -------------------------------------------------------------------------
 
-    def get_wake_listener(self, profile_name: str,
-                          callback: Callable[[str, str], None] = None) -> ActorAddress:
+    def get_wake_listener(self, profile_name: str) -> ActorAddress:
         '''Gets the wake/hot word listener for a profile.'''
         wake = self.wake_listeners.get(profile_name)
         if wake is None:
-            callback = callback or self._handle_wake
             profile = self.profiles[profile_name]
-            system = profile.get('wake.system')
-            assert system in ['dummy', 'pocketsphinx', 'nanomsg', 'hermes', 'snowboy', 'precise'], 'Invalid wake system: %s' % system
-            if system == 'pocketsphinx':
-                # Use pocketsphinx locally
-                from wake import PocketsphinxWakeListener
-                wake = PocketsphinxWakeListener(
-                    self, self.get_audio_recorder(), profile, callback)
-            elif system == 'nanomsg':
-                # Use remote system via nanomsg
-                from wake import NanomsgWakeListener
-                wake = NanomsgWakeListener(
-                    self, self.get_audio_recorder(), profile, callback)
-            elif system == 'hermes':
-                # Use remote system via MQTT
-                from wake import HermesWakeListener
-                wake = HermesWakeListener(
-                    self, self.get_audio_recorder(), profile)
-            elif system == 'snowboy':
-                # Use snowboy locally
-                from wake import SnowboyWakeListener
-                wake = SnowboyWakeListener(
-                    self, self.get_audio_recorder(), profile, callback)
-            elif system == 'precise':
-                # Use Mycroft Precise locally
-                from wake import PreciseWakeListener
-                wake = PreciseWakeListener(
-                    self, self.get_audio_recorder(), profile, callback)
-            elif system == 'dummy':
-                # Does nothing
-                wake = WakeListener(self, self.get_audio_recorder(), profile)
+            recorder = self.get_audio_recorder(profile_name)
 
-            assert wake is not None
+            system = profile.get('wake.system')
+            wake_class = self._get_wake_class(system)
+
+            wake = self.actor_system.createActor(wake_class)
+            self.actor_system.tell(wake, ConfigureEvent(profile, recorder=recorder))
             self.wake_listeners[profile_name] = wake
 
         return wake
+
+    def _get_wake_class(self, system):
+        assert system in ['dummy', 'pocketsphinx', 'nanomsg',
+                          'hermes', 'snowboy', 'precise'], \
+                          'Invalid wake system: %s' % system
+
+        if system == 'pocketsphinx':
+            # Use pocketsphinx locally
+            from .wake import PocketsphinxWakeListener
+            return PocketsphinxWakeListener
+        elif system == 'nanomsg':
+            # Use remote system via nanomsg
+            from .wake import NanomsgWakeListener
+            return NanomsgWakeListener
+        elif system == 'hermes':
+            # Use remote system via MQTT
+            from .wake import HermesWakeListener
+            return HermesWakeListener
+        elif system == 'snowboy':
+            # Use snowboy locally
+            from .wake import SnowboyWakeListener
+            return SnowboyWakeListener
+        elif system == 'precise':
+            # Use Mycroft Precise locally
+            from .wake import PreciseWakeListener
+            return PreciseWakeListener
+        elif system == 'dummy':
+            # Does nothing
+            return WakeListener
 
     def _handle_wake(self, profile_name: str, keyphrase: str, **kwargs):
         '''Listens for a voice command after wake word is detected, and forwards it to Home Assistant.'''
         logger.debug('%s %s' % (profile_name, keyphrase))
         profile = self.profiles[profile_name]
 
-        audio_player = self.get_audio_player()
-        audio_player.play_file(profile.get('sounds.wake', ''))
+        # Wake up beep
+        audio_player = self.get_audio_player(profile_name)
+        self.actor_system.tell(audio_player,
+                               PlayWavFile(profile.get('sounds.wake', '')))
 
-        self.mqtt_client.rhasspy_awake(profile_name)
+        # self.mqtt_client.rhasspy_awake(profile_name)
 
         # Listen for a command
         wav_data = self.get_command_listener().listen_for_command()
 
-        # Beep
-        audio_player.play_file(profile.get('sounds.recorded', ''))
+        # Recorded beep
+        self.actor_system.tell(audio_player,
+                               PlayWavFile(profile.get('sounds.recorded', '')))
 
-        self.mqtt_client.rhasspy_decoding(profile_name)
+        # self.mqtt_client.rhasspy_decoding(profile_name)
 
         # speech -> intent
         intent = self.wav_to_intent(wav_data, profile_name)
-
         logger.debug(intent)
 
-        self.mqtt_client.rhasspy_recognizing(profile_name, intent['text'])
+        # self.mqtt_client.rhasspy_recognizing(profile_name, intent['text'])
 
         # Handle intent
         no_hass = kwargs.get('no_hass', False)
         if not no_hass:
-            self.get_intent_handler(profile_name).handle_intent(intent)
+            handler = self.get_intent_handler(profile_name)
+            intent = system.ask(handler, HandleIntent(intent)).intent
 
-        self.mqtt_client.rhasspy_handled(intent)
+        # self.mqtt_client.rhasspy_handled(intent)
 
         # Listen for wake word again
-        wake = self.get_wake_listener(profile_name)
-        wake.start_listening()
+        # wake = self.get_wake_listener(profile_name)
+        # wake.start_listening()
 
-        self.mqtt_client.rhasspy_asleep(profile_name)
+        # self.mqtt_client.rhasspy_asleep(profile_name)
 
         return intent
 
