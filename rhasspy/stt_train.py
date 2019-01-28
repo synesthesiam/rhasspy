@@ -9,25 +9,12 @@ from typing import Dict, List, Any, Tuple, Set
 
 from .actor import RhasspyActor
 from .profiles import Profile
+from .pronounce import GetWordPronunciations, WordPronunciation
 from .utils import read_dict, lcm, extract_entities
 
 # -----------------------------------------------------------------------------
 
-logger = logging.getLogger(__name__)
-
-class SpeechTrainer:
-    '''Base class for all speech to text system trainers.'''
-
-    # Type for sentences by intent
-    SBI_TYPE = Dict[str, List[Tuple[str, List[Tuple[str, str]], List[str]]]]
-
-    def __init__(self, profile: Profile) -> None:
-        self.profile = profile
-
-    def train(self, tagged_sentences: Dict[str, List[str]]) -> SBI_TYPE:
-        '''Train a speech recognition system from a set of sentences grouped by intent.
-        Sentences are tagged with Markdown-style entities.'''
-        pass
+SBI_TYPE = Dict[str, List[Tuple[str, List[Tuple[str, str]], List[str]]]]
 
 # -----------------------------------------------------------------------------
 
@@ -43,34 +30,77 @@ class SpeechTrainingComplete:
         self.tagged_sentences = tagged_sentences
         self.sentences_by_intent = sentences_by_intent
 
+class SpeechTrainingFailed:
+    pass
+
+# -----------------------------------------------------------------------------
+
 class PocketsphinxSpeechTrainer(RhasspyActor):
     '''Trains an ARPA language model using opengrm.'''
+    def to_started(self, from_state):
+        self.word_pronouncer = self.config['word_pronouncer']
+        self.tagged_sentences = None
+        self.unknown_words = None
+        self.waiting_words = None
+        self.receiver = None
 
     def in_started(self, message, sender):
         if isinstance(message, TrainSpeech):
-            sentences_by_intent = self.train(message.tagged_sentences)
-            self.send(message.receiver or sender,
-                      SpeechTrainingComplete(message.tagged_sentences,
-                                             sentences_by_intent))
+            self.receiver = message.receiver or sender
+            self.tagged_sentences = message.tagged_sentences
+            self.transition('writing_dictionary')
 
-    # -------------------------------------------------------------------------
+    def to_writing_dictionary(self, from_state):
+        self.sentences_by_intent: SBI_TYPE = defaultdict(list)
+        self.unknown_words = {
+            word: None
+            for word in self.write_dictionary(self.tagged_sentences,
+                                              self.sentences_by_intent)
+        }
 
-    def train(self, tagged_sentences: Dict[str, List[str]]):
-        '''Creates raw sentences and ARPA language model for pocketsphinx'''
-        sentences_by_intent: SpeechTrainer.SBI_TYPE = defaultdict(list)
+        if len(self.unknown_words) > 0:
+            self.transition('unknown_words')
+        else:
+            self.transition('writing_sentences')
 
-        self.write_dictionary(tagged_sentences, sentences_by_intent)
+            # Remove unknown dictionary
+            unknown_path = self.profile.read_path(
+                self.profile.get('speech_to_text.pocketsphinx.unknown_words'))
 
-        self.write_sentences(sentences_by_intent)
+            if os.path.exists(unknown_path):
+                os.unlink(unknown_path)
 
+    def to_unknown_words(self, from_state):
+        self.waiting_words = []
+        for word in self.unknown_words:
+            self.waiting_words.append(word)
+            self.send(self.word_pronouncer,
+                      GetWordPronunciations(word, n=1))
+
+    def in_unknown_words(self, message, sender):
+        if isinstance(message, WordPronunciation):
+            self.waiting_words.remove(message.word)
+            self.unknown_words[message.word] = message
+            if len(self.waiting_words) == 0:
+                self.write_unknown_words(self.unknown_words)
+                self.send(self.receiver, SpeechTrainingFailed())
+                self.transition('started')
+
+    def to_writing_sentences(self, from_state):
+        self.write_sentences(self.sentences_by_intent)
+        self.transition('writing_language_model')
+
+    def to_writing_language_model(self, from_state):
         self.write_language_model()
-
-        return sentences_by_intent
+        self.send(self.receiver,
+                  SpeechTrainingComplete(self.tagged_sentences,
+                                         self.sentences_by_intent))
+        self.transition('started')
 
     # -------------------------------------------------------------------------
 
     def write_dictionary(self, tagged_sentences: Dict[str, List[str]],
-                         sentences_by_intent: SpeechTrainer.SBI_TYPE):
+                         sentences_by_intent: SBI_TYPE):
         '''Writes all required words to a CMU dictionary.
         Unknown words have their pronunciations guessed and written to a separate dictionary.
         Fails if any unknown words are found.'''
@@ -109,49 +139,50 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
             _, wake_tokens = self._sanitize_sentence(wake_keyphrase)
             words_needed.update(wake_tokens)
 
-        # Check for unknown words
-        unknown_words = words_needed - word_dict.keys()
-        unknown_path = self.profile.read_path(
-            self.profile.get('speech_to_text.pocketsphinx.unknown_words'))
-
-        if len(unknown_words) > 0:
-            dictionary_upper = self.profile.get('speech_to_text.dictionary_upper', False)
-            with open(unknown_path, 'w') as unknown_file:
-                for word in unknown_words:
-                    _, pronounces, _ = self.word_pron.pronounce(word, n=1)
-                    phonemes = ' '.join(pronounces[0])
-
-                    # Dictionary uses upper-case letters
-                    if dictionary_upper:
-                        word = word.upper()
-                    else:
-                        word = word.lower()
-
-                    print(word.lower(), phonemes, file=unknown_file)
-
-            raise RuntimeError('Training failed due to %s unknown word(s)' % len(unknown_words))
-
-        elif os.path.exists(unknown_path):
-            # Remove unknown dictionary
-            os.unlink(unknown_path)
-
         # Write out dictionary with only the necessary words (speeds up loading)
         dictionary_path = self.profile.write_path(
             self.profile.get('speech_to_text.pocketsphinx.dictionary'))
 
         with open(dictionary_path, 'w') as dictionary_file:
             for word in sorted(words_needed):
+                if not word in word_dict:
+                    continue
+
                 for i, pronounce in enumerate(word_dict[word]):
                     if i < 1:
                         print(word, pronounce, file=dictionary_file)
                     else:
                         print('%s(%s)' % (word, i+1), pronounce, file=dictionary_file)
 
-        logger.debug('Wrote %s word(s) to %s' % (len(words_needed), dictionary_path))
+        self._logger.debug('Wrote %s word(s) to %s' % (len(words_needed), dictionary_path))
+
+        # Check for unknown words
+        return words_needed - word_dict.keys()
 
     # -------------------------------------------------------------------------
 
-    def write_sentences(self, sentences_by_intent: SpeechTrainer.SBI_TYPE):
+    def write_unknown_words(self, unknown_words):
+        unknown_path = self.profile.read_path(
+            self.profile.get('speech_to_text.pocketsphinx.unknown_words'))
+
+        dictionary_upper = self.profile.get('speech_to_text.dictionary_upper', False)
+
+        with open(unknown_path, 'w') as unknown_file:
+            for word, word_pron in unknown_words.items():
+                pronunciations = word_pron.pronunciations
+                phonemes = pronunciations[0]
+
+                # Dictionary uses upper-case letters
+                if dictionary_upper:
+                    word = word.upper()
+                else:
+                    word = word.lower()
+
+                print(word.lower(), phonemes, file=unknown_file)
+
+    # -------------------------------------------------------------------------
+
+    def write_sentences(self, sentences_by_intent: SBI_TYPE):
         '''Writes all raw sentences to a text file.
         Optionally balances (repeats) sentences so all intents have the same number.'''
 
@@ -177,7 +208,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
                         print(sentence, file=sentences_text_file)
                         num_sentences = num_sentences + 1
 
-        logger.debug('Wrote %s sentence(s) to %s' % (num_sentences, sentences_text_path))
+        self._logger.debug('Wrote %s sentence(s) to %s' % (num_sentences, sentences_text_path))
 
 
     # -------------------------------------------------------------------------
@@ -234,7 +265,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         if lm_source_path != lm_dest_path:
             shutil.copy(lm_source_path, lm_dest_path)
 
-        logger.debug('Wrote language model to %s' % lm_dest_path)
+        self._logger.debug('Wrote language model to %s' % lm_dest_path)
 
     # -------------------------------------------------------------------------
 

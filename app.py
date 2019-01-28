@@ -35,7 +35,7 @@ from rhasspy.intent import RecognizeIntent
 from rhasspy.intent_handler import HandleIntent
 from rhasspy.dialogue import (DialogueManager, GetMicrophones, TestMicrophones,
                               ListenForCommand, ListenForWakeWord,
-                              TrainProfile,
+                              TrainProfile, ProfileTrainingFailed,
                               GetWordPhonemes, SpeakWord, GetWordPronunciations,
                               PlayWavData)
 
@@ -356,7 +356,9 @@ def api_train():
     logger.info('Starting training')
 
     with system.private() as sys:
-        sys.ask(dialogue_manager, TrainProfile())
+        result = sys.ask(dialogue_manager, TrainProfile())
+        if isinstance(result, ProfileTrainingFailed):
+            raise Exception('Training failed due to unknown words')
 
     end_time = time.time()
 

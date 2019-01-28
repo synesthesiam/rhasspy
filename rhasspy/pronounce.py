@@ -19,7 +19,8 @@ class SpeakWord:
         self.receiver = receiver
 
 class WordSpoken:
-    def __init__(self, wav_data: bytes, phonemes: str):
+    def __init__(self, word: str, wav_data: bytes, phonemes: str):
+        self.word = word
         self.wav_data = wav_data
         self.phonemes = phonemes
 
@@ -29,7 +30,8 @@ class GetWordPhonemes:
         self.receiver = receiver
 
 class WordPhonemes:
-    def __init__(self, phonemes: str):
+    def __init__(self, word: str, phonemes: str):
+        self.word = word
         self.phonemes = phonemes
 
 class GetWordPronunciations:
@@ -39,9 +41,11 @@ class GetWordPronunciations:
         self.receiver = receiver
 
 class WordPronunciation:
-    def __init__(self, pronunciations: List[str],
+    def __init__(self, word: str,
+                 pronunciations: List[str],
                  in_dictionary: bool,
                  phonemes: str):
+        self.word = word
         self.pronunciations = pronunciations
         self.in_dictionary = in_dictionary
         self.phonemes = phonemes
@@ -68,18 +72,19 @@ class PhonetisaurusPronounce(RhasspyActor):
         if isinstance(message, SpeakWord):
             espeak_phonemes, wav_data = self.speak(message.word)
             self.send(message.receiver or sender,
-                      WordSpoken(wav_data, espeak_phonemes))
+                      WordSpoken(message.word, wav_data, espeak_phonemes))
         elif isinstance(message, GetWordPronunciations):
             in_dictionary, pronunciations, espeak_str = \
                 self.pronounce(message.word, message.n)
             self.send(message.receiver or sender,
-                      WordPronunciation(pronunciations,
+                      WordPronunciation(message.word,
+                                        pronunciations,
                                         in_dictionary,
                                         espeak_str))
         elif isinstance(message, GetWordPhonemes):
             phonemes = self.translate_phonemes(message.word)
             self.send(message.receiver or sender,
-                      WordPhonemes(phonemes))
+                      WordPhonemes(message.word, phonemes))
 
     # -------------------------------------------------------------------------
 

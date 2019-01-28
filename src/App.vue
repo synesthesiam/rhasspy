@@ -153,12 +153,12 @@
              this.training = true
              LanguageModelService.train(this.profile)
                                  .then(request => this.alert(request.data, 'success'))
+                                 .catch(err => this.error(err))
                                  .then(() => {
                                      this.training = false
                                      this.getUnknownWords()
                                      this.endAsync()
                                  })
-                                 .catch(err => this.error(err))
          },
 
          restart: function() {
