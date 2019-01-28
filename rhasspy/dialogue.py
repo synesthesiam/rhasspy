@@ -7,7 +7,7 @@ from .wake import ListenForWakeWord, StopListeningForWakeWord, WakeWordDetected
 from .command_listener import ListenForCommand, VoiceCommand
 from .audio_player import PlayWavFile, PlayWavData
 from .stt import TranscribeWav, WavTranscription
-from .stt_train import TrainSpeech, SpeechTrainingComplete
+from .stt_train import TrainSpeech, SpeechTrainingComplete, SpeechTrainingFailed
 from .intent import RecognizeIntent, IntentRecognized
 from .intent_train import TrainIntent, IntentTrainingComplete
 from .intent_handler import HandleIntent, IntentHandled
@@ -26,6 +26,9 @@ class TestMicrophones:
 class TrainProfile:
     def __init__(self, receiver=None):
         self.receiver = receiver
+
+class ProfileTrainingFailed:
+    pass
 
 class ProfileTrainingComplete:
     pass
@@ -161,6 +164,9 @@ class DialogueManager(RhasspyActor):
             self.send(self.intent_trainer,
                       TrainIntent(message.tagged_sentences,
                                   message.sentences_by_intent))
+        elif isinstance(message, SpeechTrainingFailed):
+            self.transition('ready')
+            self.send(self.training_receiver, ProfileTrainingFailed())
 
     def in_training_intent(self, message, sender):
         if isinstance(message, IntentTrainingComplete):

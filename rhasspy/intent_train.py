@@ -8,7 +8,7 @@ from collections import defaultdict, Counter
 from typing import Dict, List, Set, Any
 
 from .actor import RhasspyActor
-from .stt_train import SpeechTrainer
+from .stt_train import SBI_TYPE
 
 # -----------------------------------------------------------------------------
 
@@ -20,7 +20,7 @@ class IntentTrainer:
 
     def train(self,
               tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SpeechTrainer.SBI_TYPE):
+              sentences_by_intent: SBI_TYPE):
         '''Trains an intent recognizer uses tagged sentences with
         Markdown-style entites (grouped by intent).
 
@@ -57,7 +57,7 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
 
     def train(self,
               tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SpeechTrainer.SBI_TYPE):
+              sentences_by_intent: SBI_TYPE):
 
         examples_path = self.profile.write_path(
             self.profile.get('intent.fuzzywuzzy.examples_json'))
@@ -70,7 +70,7 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def _make_examples(self, sentences_by_intent: SpeechTrainer.SBI_TYPE) -> Dict[str, Any]:
+    def _make_examples(self, sentences_by_intent: SBI_TYPE) -> Dict[str, Any]:
         '''Write intent examples to a JSON file.'''
         from fuzzywuzzy import process
 
@@ -99,7 +99,7 @@ class RasaIntentTrainer(IntentTrainer):
 
     def train(self,
               tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SpeechTrainer.SBI_TYPE):
+              sentences_by_intent: SBI_TYPE):
 
         import requests
 
@@ -167,7 +167,7 @@ class AdaptIntentTrainer(IntentTrainer):
 
     def train(self,
               tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SpeechTrainer.SBI_TYPE):
+              sentences_by_intent: SBI_TYPE):
 
         # Load "stop" words (common words that are excluded from training)
         stop_words: Set[str] = set()
