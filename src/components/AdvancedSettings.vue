@@ -54,7 +54,7 @@
             <textarea id="default-settings" class="form-control" type="text" rows="15" v-model="defaultSettings"></textarea>
 
             <div class="form-group">
-                <div class="form-row">
+                <div class="form-row pt-3">
                     <button type="submit" class="btn btn-primary"
                             v-bind:class="{ 'btn-danger': defaultSettingsDirty }">Save Defaults</button>
                 </div>

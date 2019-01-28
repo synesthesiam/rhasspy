@@ -112,11 +112,3 @@ class Profile:
         os.makedirs(dir_path, exist_ok=True)
 
         return dir_path
-
-# -----------------------------------------------------------------------------
-
-def request_to_profile(request, profiles_dirs: List[str], layers='all'):
-    profile_name = request.args.get(
-        'profile', os.environ.get('RHASSPY_PROFILE', 'en'))
-
-    return Profile(profile_name, profiles_dirs, layers=layers)
