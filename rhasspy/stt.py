@@ -9,6 +9,7 @@ from urllib.parse import urljoin
 
 from .actor import RhasspyActor
 from .profiles import Profile
+from .utils import convert_wav
 
 # -----------------------------------------------------------------------------
 
@@ -89,7 +90,7 @@ class PocketsphinxDecoder(RhasspyActor):
                 if (rate != 16000) or (width != 2) or (channels != 1):
                     self._logger.info('Need to convert to 16-bit 16Khz mono.')
                     # Use converted data
-                    audio_data = SpeechDecoder.convert_wav(wav_data)
+                    audio_data = convert_wav(wav_data)
                 else:
                     # Use original data
                     audio_data = wav_file.readframes(wav_file.getnframes())

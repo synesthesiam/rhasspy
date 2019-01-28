@@ -221,6 +221,15 @@ class DialogueManager(RhasspyActor):
             # Force voice command
             self.intent_receiver = message.receiver or sender
             self.transition('awake')
+        elif isinstance(message, TranscribeWav):
+            # speech -> text
+            self.send(self.decoder, TranscribeWav(message.wav_data, sender))
+        elif isinstance(message, RecognizeIntent):
+            # text -> intent
+            self.send(self.recognizer, RecognizeIntent(message.text, sender))
+        elif isinstance(message, HandleIntent):
+            # intent -> action
+            self.send(self.handler, HandleIntent(message.intent, sender))
         elif isinstance(message, GetWordPhonemes):
             # eSpeak -> CMU
             self.send(self.word_pronouncer,
@@ -345,8 +354,8 @@ class DialogueManager(RhasspyActor):
             return DummyAudioPlayer
 
     def _get_wake_class(self, system):
-        assert system in ['dummy', 'pocketsphinx', 'nanomsg',
-                          'hermes', 'snowboy', 'precise'], \
+        assert system in ['dummy', 'pocketsphinx', 'hermes',
+                          'snowboy', 'precise'], \
                           'Invalid wake system: %s' % system
 
         if system == 'pocketsphinx':
@@ -371,7 +380,8 @@ class DialogueManager(RhasspyActor):
             return PreciseWakeListener
         elif system == 'dummy':
             # Does nothing
-            return WakeListener
+            from .wake import DummyWakeListener
+            return DummyWakeListener
 
     def _get_microphone_class(self, system: str):
         assert system in ['arecord', 'pyaudio', 'hermes', 'dummy'], \

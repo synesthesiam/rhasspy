@@ -30,14 +30,12 @@ import pydash
 from thespian.actors import ActorSystem
 
 from rhasspy.actor import ConfigureEvent
-from rhasspy.stt import TranscribeWav
-from rhasspy.intent import RecognizeIntent
-from rhasspy.intent_handler import HandleIntent
 from rhasspy.dialogue import (DialogueManager, GetMicrophones, TestMicrophones,
                               ListenForCommand, ListenForWakeWord,
                               TrainProfile, ProfileTrainingFailed,
                               GetWordPhonemes, SpeakWord, GetWordPronunciations,
-                              PlayWavData)
+                              TranscribeWav, PlayWavData, RecognizeIntent,
+                              HandleIntent)
 
 from rhasspy.profiles import Profile
 from rhasspy.utils import recursive_update, buffer_to_wav, load_phoneme_examples
@@ -90,15 +88,16 @@ logger.debug(args)
 dialogue_manager = None
 profile = None
 
+# Like PATH, searched in reverse order
+profiles_dirs = [path for path in
+                os.environ.get('RHASSPY_PROFILES', 'profiles')\
+                .split(':') if len(path.strip()) > 0]
+
+profiles_dirs.reverse()
+
+
 def start_rhasspy():
     global dialogue_manager, profile
-
-    # Like PATH, searched in reverse order
-    profiles_dirs = [path for path in
-                    os.environ.get('RHASSPY_PROFILES', 'profiles')\
-                    .split(':') if len(path.strip()) > 0]
-
-    profiles_dirs.reverse()
 
     # Get name of profile
     profile_name = args.profile \
@@ -137,9 +136,19 @@ start_rhasspy()
 @app.route('/api/profiles')
 def api_profiles():
     '''Get list of available profiles'''
+    profile_names = []
+    for profiles_dir in profiles_dirs:
+        if not os.path.exists(profiles_dir):
+            continue
+
+        for name in os.listdir(profiles_dir):
+            profile_dir = os.path.join(profiles_dir, name)
+            if os.path.isdir(profile_dir):
+                profile_names.append(name)
+
     return jsonify({
         'default_profile': profile.name,
-        'profiles': [profile.name]
+        'profiles': sorted(profile_names)
     })
 
 # -----------------------------------------------------------------------------
@@ -195,7 +204,7 @@ def api_profile():
 
         if layers == 'defaults':
             # Write default settings
-            for profiles_dir in core.profiles_dirs:
+            for profiles_dir in profiles_dirs:
                 profile_path = os.path.join(profiles_dir, 'defaults.json')
                 try:
                     with open(profile_path, 'wb') as profile_file:
@@ -213,19 +222,16 @@ def api_profile():
         logger.debug(msg)
         return msg
 
-    return jsonify(profile.json)
-    # if layers == 'defaults':
-    #     # Read default settings
-    #     return jsonify(core.defaults_json)
-    # elif layers == 'profile':
-    #     # Local settings only
-    #     profile = request_to_profile(request)
-    #     profile_path = profile.read_path('profile.json')
-    #     return send_file(open(profile_path, 'rb'),
-    #                      mimetype='application/json')
-    # else:
-    #     profile = request_to_profile(request)
-    #     return jsonify(profile.json)
+    if layers == 'defaults':
+        # Read default settings
+        return jsonify(Profile.load_defaults(profiles_dirs))
+    elif layers == 'profile':
+        # Local settings only
+        profile_path = profile.read_path('profile.json')
+        return send_file(open(profile_path, 'rb'),
+                         mimetype='application/json')
+    else:
+        return jsonify(profile.json)
 
 # -----------------------------------------------------------------------------
 
@@ -386,14 +392,11 @@ def api_restart():
 # Get text from a WAV file
 @app.route('/api/speech-to-text', methods=['POST'])
 def api_speech_to_text():
-    profile = request_to_profile(request)
-
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
     wav_data = request.data
-    decoder = core.get_speech_decoder(profile.name)
 
     with system.private() as sys:
-        result = sys.ask(decoder, TranscribeWav(wav_data))
+        result = sys.ask(dialogue_manager, TranscribeWav(wav_data))
 
     return result.text
 
@@ -402,17 +405,14 @@ def api_speech_to_text():
 # Get intent from text
 @app.route('/api/text-to-intent', methods=['POST'])
 def api_text_to_intent():
-    profile = request_to_profile(request)
     text = request.data.decode()
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
-
-    recognizer = core.get_intent_recognizer(profile.name)
 
     # Convert text to intent
     start_time = time.time()
 
     with system.private() as sys:
-        result = sys.ask(recognizer, RecognizeIntent(text))
+        result = sys.ask(dialogue_manager, RecognizeIntent(text))
 
     intent = result.intent
 
@@ -433,19 +433,26 @@ def api_text_to_intent():
 # Get intent from a WAV file
 @app.route('/api/speech-to-intent', methods=['POST'])
 def api_speech_to_intent():
-    profile = request_to_profile(request)
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
 
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
     wav_data = request.data
-    intent = core.wav_to_intent(wav_data, profile.name)
 
-    if not no_hass:
-        # Send intent to Home Assistant
-        handler = core.get_intent_handler(profile.name)
+    with system.private() as sys:
+        # speech -> text
+        result = sys.ask(dialogue_manager, TranscribeWav(wav_data))
+        text = result.text
+        logger.debug(text)
 
-        with system.private() as sys:
-            intent = sys.ask(handler, HandleIntent(intent)).intent
+        # text -> intent
+        result = sys.ask(dialogue_manager, RecognizeIntent(text))
+        intent = result.intent
+        logger.debug(intent)
+
+        if not no_hass:
+            # Send intent to Home Assistant
+            result = sys.ask(dialogue_manager, HandleIntent(intent))
+            intent = result.intent
 
     return jsonify(intent)
 

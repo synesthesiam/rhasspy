@@ -113,7 +113,7 @@ def buffer_to_wav(buffer: bytes) -> bytes:
 
         return wav_buffer.getvalue()
 
-def convert_wav(cls, wav_data: bytes) -> bytes:
+def convert_wav(wav_data: bytes) -> bytes:
     '''Converts WAV data to 16-bit, 16Khz mono with sox.'''
     with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb+') as out_wav_file:
         with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb') as in_wav_file:
