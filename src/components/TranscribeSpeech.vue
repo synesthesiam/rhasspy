@@ -10,16 +10,17 @@
                 <div class="form-row">
                     <div class="col-auto">
                         <button type="button" class="btn"
-                                v-bind:class="{ 'btn-danger': recording, 'btn-primary': !recording }"
+                                v-bind:class="{ 'btn-danger': holdRecording, 'btn-primary': !holdRecording }"
                                 @mousedown="startRecording" @mouseup="stopRecording"
                                 title="Record a voice command while held, interpret when released"
-                                :disabled="interpreting">{{ recording ? 'Release to Stop' : 'Hold to Record' }}</button>
+                                :disabled="interpreting || tapRecording">{{ holdRecording ? 'Release to Stop' : 'Hold to Record' }}</button>
                     </div>
                     <div class="col-auto">
-                        <button type="button" class="btn btn-success"
-                                @click="testMicrophones"
-                                title="Test microphones and update the list"
-                                :disabled="testing">Test Microphones</button>
+                        <button type="button" class="btn"
+                                v-bind:class="{ 'btn-danger': tapRecording, 'btn-success': !tapRecording }"
+                                @click="toggleRecording"
+                                title="Record a voice command while held, interpret when released"
+                                :disabled="interpreting || holdRecording">{{ tapRecording ? 'Tap to Stop' : 'Tap to Record' }}</button>
                     </div>
                     <div class="col-auto">
                         <button type="button" class="btn btn-warning"
@@ -28,24 +29,6 @@
                     </div>
                 </div>
             </div>
-            <div class="form-group">
-                <div class="form-row">
-                    <div class="col-auto">
-                        <label for="device" class="col-form-label col">Audio Device</label>
-                    </div>
-                    <div class="col-auto">
-                        <select id="device" v-model="device">
-                            <option v-for="(desc, id) in microphones" :value="id" v-bind:key="id">{{ id }}: {{ desc }}</option>
-                        </select>
-                    </div>
-                    <div class="col-auto">
-                        <button type="button" class="btn btn-primary"
-                                @click="setDefaultMicrophone"
-                                title="Make this audio device the default for Rhasspy">Set Default</button>
-                    </div>
-                </div>
-            </div>
-
             <div class="form-group">
                 <div class="form-row">
                     <div class="col-auto">
@@ -106,22 +89,17 @@
 
 <script>
  import TranscribeService from '@/services/TranscribeService'
- import ProfileService from '@/services/ProfileService'
 
  export default {
      name: 'TranscribeSpeech',
-     props: { profile : String },
      data: function() {
          return {
              jsonSource: null,
              sentence: '',
 
-             recording: false,
-             testing: false,
+             holdRecording: false,
+             tapRecording: false,
              interpreting: false,
-             device: '',
-
-             microphones: {},
 
              sendHass: true
          }
@@ -135,14 +113,14 @@
              var that = this
              reader.onload = function() {
                  that.$parent.beginAsync()
-                 TranscribeService.transcribeWav(that.profile, this.result, that.sendHass)
+                 TranscribeService.transcribeWav(this.result, that.sendHass)
                      .then(request => {
                          that.$parent.alert('Got intent: ' + request.data.intent.name + ' in ' + request.data.time_sec.toFixed(2) + ' second(s)', 'success')
                          that.sentence = request.data.text
                          that.jsonSource = request.data
                      })
                      .then(() => that.$parent.endAsync())
-                     .catch(err => this.$parent.error(err))
+                     .catch(err => that.$parent.error(err))
              }
 
              var files = this.$refs.wavFile.files;
@@ -155,7 +133,7 @@
 
          getIntent: function() {
              this.$parent.beginAsync()
-             TranscribeService.getIntent(this.profile, this.sentence, this.sendHass)
+             TranscribeService.getIntent(this.sentence, this.sendHass)
                  .then(request => {
                      if (request.data.error) {
                          this.$parent.alert(request.data.error, 'danger')
@@ -170,9 +148,9 @@
          },
 
          startRecording: function() {
-             TranscribeService.startRecording(this.profile, this.device)
+             TranscribeService.startRecording()
                               .then(() => {
-                                  this.recording = true
+                                  this.holdRecording = true
                               })
                               .catch(err => this.$parent.error(err))
          },
@@ -180,90 +158,38 @@
          stopRecording: function() {
              this.interpreting = true
              this.$parent.beginAsync()
-             TranscribeService.stopRecording(this.profile, this.device, this.sendHass)
+             TranscribeService.stopRecording(this.sendHass)
                  .then(request => {
-                     this.recording = false
+                     this.holdRecording = false
+                     this.tapRecording = false
                      this.jsonSource = request.data
                      this.sentence = request.data.text
                  })
+                 .catch(err => this.$parent.error(err))
                  .then(() => {
-                     this.recording = false
+                     this.holdRecording = false
+                     this.tapRecording = false
                      this.interpreting = false
                      this.$parent.endAsync()
                  })
-                 .catch(err => this.$parent.error(err))
          },
 
-         testMicrophones: function() {
-             this.testing = true
-             this.$parent.beginAsync()
-             TranscribeService.testMicrophones()
-                 .then(request => {
-                     this.microphones = request.data
-
-                     // Select default
-                     for (var key in this.microphones) {
-                         var value = this.microphones[key]
-                         if (value.indexOf('*') >= 0) {
-                             this.device = key
-                         }
-                     }
-
-                     this.$parent.alert('Successfully tested microphones', 'success')
-                 })
-                 .then(() => {
-                     this.testing = false
-                     this.$parent.endAsync()
-                 })
-                 .catch(err => this.$parent.error(err))
+         toggleRecording: function() {
+             if (this.tapRecording) {
+                 this.stopRecording();
+             } else {
+                 TranscribeService.startRecording()
+                                  .then(() => {
+                                      this.tapRecording = true
+                                  })
+                                  .catch(err => this.$parent.error(err))
+             }
          },
 
          wakeup: function() {
              TranscribeService.wakeup()
-         },
-
-         setDefaultMicrophone: function() {
-             this.$parent.beginAsync()
-             ProfileService.getProfileSettings(this.profile, 'profile')
-                           .then(request => {
-                               var profileSettings = request.data
-                               ProfileService.getProfileSettings(this.profile, 'defaults')
-                                             .then(request => {
-                                                 var defaultSettings = request.data
-                                                 var micSystem = this._.get(profileSettings,
-                                                                            'microphone.system',
-                                                                            defaultSettings.microphone.system)
-
-                                                 this._.set(profileSettings,
-                                                            'microphone.' + micSystem + '.device',
-                                                            this.device)
-
-                                                 ProfileService.updateProfileSettings(this.profile, profileSettings)
-                                             })
-                                             .catch(err => this.$parent.error(err))
-                           })
-                           .catch(err => this.$parent.error(err))
-                           .then(() => {
-                               this.$parent.endAsync()
-                               this.$parent.alert('Set microphone to ' + this.microphones[this.device], 'success')
-                           })
          }
-     },
 
-     mounted: function() {
-         TranscribeService.getMicrophones()
-                          .then(request => {
-                              this.microphones = request.data
-
-                              // Select default
-                              for (var key in this.microphones) {
-                                  var value = this.microphones[key]
-                                  if (value.indexOf('*') >= 0) {
-                                      this.device = key
-                                  }
-                              }
-                          })
-                          .catch(err => this.$parent.error(err))
      }
  }
 </script>

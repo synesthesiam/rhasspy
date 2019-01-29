@@ -1,8 +1,8 @@
 import Api from '@/services/Api'
 
 export default {
-    transcribeWav(profile, wavData, sendHass) {
-        var params = { 'profile': profile }
+    transcribeWav(wavData, sendHass) {
+        var params = {}
         if (!sendHass) {
             params['nohass'] = true
         }
@@ -12,8 +12,8 @@ export default {
                             headers: { 'Content-Type': 'audio/wav' } })
     },
 
-    getIntent(profile, sentence, sendHass) {
-        var params = { 'profile': profile }
+    getIntent(sentence, sendHass) {
+        var params = {}
         if (!sendHass) {
             params['nohass'] = true
         }
@@ -23,30 +23,18 @@ export default {
                             headers: { 'Content-Type': 'text/plain' } })
     },
 
-    startRecording(profile, device) {
-        return Api().post('/api/start-recording', '',
-                          { params: { 'profile': profile,
-                                      'device': device } })
+    startRecording() {
+        return Api().post('/api/start-recording', '')
     },
 
-    stopRecording(profile, device, sendHass) {
-        var params = { 'profile': profile, 'device': device }
+    stopRecording(sendHass) {
+        var params = {}
         if (!sendHass) {
             params['nohass'] = true
         }
 
         return Api().post('/api/stop-recording', '',
                           { params: params })
-    },
-
-    getMicrophones(profile) {
-        return Api().get('/api/microphones',
-                         { params: { 'profile': profile }})
-    },
-
-    testMicrophones(profile) {
-        return Api().get('/api/test-microphones',
-                         { params: { 'profile': profile }})
     },
 
     wakeup() {

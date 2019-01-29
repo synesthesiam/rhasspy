@@ -11,13 +11,15 @@ from .audio_recorder import StartStreaming, StopStreaming, AudioData
 # -----------------------------------------------------------------------------
 
 class ListenForCommand:
-    def __init__(self, receiver=None):
+    def __init__(self, receiver=None, handle=True):
         self.receiver = receiver
+        self.handle = handle
 
 class VoiceCommand:
-    def __init__(self, data: bytes, timeout=False):
+    def __init__(self, data: bytes, timeout=False, handle=True):
         self.data = data
         self.timeout = timeout
+        self.handle = handle
 
 # -----------------------------------------------------------------------------
 
@@ -61,6 +63,8 @@ class WebrtcvadCommandListener(RhasspyActor):
         self.vad = webrtcvad.Vad()
         self.vad.set_mode(self.vad_mode)
 
+        self.handle = True
+
         self.transition('loaded')
 
     # -------------------------------------------------------------------------
@@ -78,6 +82,7 @@ class WebrtcvadCommandListener(RhasspyActor):
         if isinstance(message, ListenForCommand):
             self.receiver = message.receiver or sender
             self.transition('listening')
+            self.handle = message.handle
             self.send(self.recorder, StartStreaming(self.myAddress))
 
     def in_listening(self, message, sender):
@@ -96,7 +101,9 @@ class WebrtcvadCommandListener(RhasspyActor):
                     self.send(self.recorder, StopStreaming(self.myAddress))
 
                     # Response
-                    self.send(self.receiver, VoiceCommand(self.buffer, timeout))
+                    self.send(self.receiver,
+                              VoiceCommand(self.buffer, timeout, self.handle))
+
                     self.buffer = None
                     self.transition('loaded')
 

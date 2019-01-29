@@ -5,6 +5,7 @@ from thespian.actors import ActorAddress, ActorExitRequest
 from .actor import RhasspyActor, ConfigureEvent, Configured
 from .wake import ListenForWakeWord, StopListeningForWakeWord, WakeWordDetected
 from .command_listener import ListenForCommand, VoiceCommand
+from .audio_recorder import StartRecordingToBuffer, StopRecordingToBuffer
 from .audio_player import PlayWavFile, PlayWavData
 from .stt import TranscribeWav, WavTranscription
 from .stt_train import TrainSpeech, SpeechTrainingComplete, SpeechTrainingFailed
@@ -33,14 +34,20 @@ class ProfileTrainingFailed:
 class ProfileTrainingComplete:
     pass
 
+class Ready:
+    pass
+
 # -----------------------------------------------------------------------------
 
 class DialogueManager(RhasspyActor):
     '''Manages the overall state of Rhasspy.'''
 
     def to_started(self, from_state):
+        self.preload = self.config.get('preload', False)
+        self.send_ready = self.config.get('ready', False)
         self.intent_receiver = None
         self.training_receiver = None
+        self.handle = True
 
         self.load_actors()
         self.transition('loading')
@@ -51,6 +58,10 @@ class DialogueManager(RhasspyActor):
             if len(self.wait_actors) == 0:
                 self._logger.info('Actors loaded')
                 self.transition('ready')
+
+                # Inform parent actor that we're ready
+                if self.send_ready:
+                    self.send(self._parent, Ready())
 
     # -------------------------------------------------------------------------
     # Wake
@@ -85,7 +96,7 @@ class DialogueManager(RhasspyActor):
             self.send(self.player, PlayWavFile(wav_path))
 
         # Listen for a voice command
-        self.send(self.command, ListenForCommand(self.myAddress))
+        self.send(self.command, ListenForCommand(self.myAddress, handle=self.handle))
 
     def in_awake(self, message, sender):
         if isinstance(message, VoiceCommand):
@@ -96,7 +107,7 @@ class DialogueManager(RhasspyActor):
 
             # speech -> text
             wav_data = buffer_to_wav(message.data)
-            self.send(self.decoder, TranscribeWav(wav_data))
+            self.send(self.decoder, TranscribeWav(wav_data, handle=message.handle))
             self.transition('decoding')
         else:
             self.handle_any(message, sender)
@@ -109,7 +120,7 @@ class DialogueManager(RhasspyActor):
         if isinstance(message, WavTranscription):
             # text -> intent
             self._logger.debug(message.text)
-            self.send(self.recognizer, RecognizeIntent(message.text))
+            self.send(self.recognizer, RecognizeIntent(message.text, handle=message.handle))
             self.transition('recognizing')
         else:
             self.handle_any(message, sender)
@@ -118,8 +129,14 @@ class DialogueManager(RhasspyActor):
         if isinstance(message, IntentRecognized):
             # Handle intent
             self._logger.debug(message.intent)
-            self.send(self.handler, HandleIntent(message.intent))
-            self.transition('handling')
+            if message.handle:
+                self.send(self.handler, HandleIntent(message.intent))
+                self.transition('handling')
+            else:
+                self._logger.debug('Not actually handling intent')
+                if self.intent_receiver is not None:
+                    self.send(self.intent_receiver, message.intent)
+                self.transition('ready')
         else:
             self.handle_any(message, sender)
 
@@ -190,7 +207,9 @@ class DialogueManager(RhasspyActor):
             # Configure actors
             self.wait_actors = []
             for actor in [self.wake, self.decoder, self.recognizer]:
-                self.send(actor, ConfigureEvent(self.profile, **self.actors))
+                self.send(actor, ConfigureEvent(self.profile,
+                                                preload=self.preload,
+                                                **self.actors))
                 self.wait_actors.append(actor)
 
             self._logger.info('Training complete')
@@ -223,10 +242,11 @@ class DialogueManager(RhasspyActor):
             self.transition('awake')
         elif isinstance(message, TranscribeWav):
             # speech -> text
-            self.send(self.decoder, TranscribeWav(message.wav_data, sender))
+            self.send(self.decoder,
+                      TranscribeWav(message.wav_data, sender, handle=message.handle))
         elif isinstance(message, RecognizeIntent):
             # text -> intent
-            self.send(self.recognizer, RecognizeIntent(message.text, sender))
+            self.send(self.recognizer, RecognizeIntent(message.text, sender, message.handle))
         elif isinstance(message, HandleIntent):
             # intent -> action
             self.send(self.handler, HandleIntent(message.intent, sender))
@@ -253,6 +273,14 @@ class DialogueManager(RhasspyActor):
             self.training_receiver = message.receiver or sender
             self.transition('training_sentences')
             self.send(self.sentence_generator, GenerateSentences())
+        elif isinstance(message, StartRecordingToBuffer):
+            # Record WAV
+            self.send(self.recorder, message)
+        elif isinstance(message, StopRecordingToBuffer):
+            # Stop recording WAV
+            self.send(self.recorder,
+                      StopRecordingToBuffer(message.buffer_name,
+                                            message.receiver or sender))
         else:
             self._logger.warn('Unhandled message: %s' % message)
 
@@ -331,7 +359,9 @@ class DialogueManager(RhasspyActor):
         # Configure actors
         self.wait_actors = []
         for name, actor in self.actors.items():
-            self.send(actor, ConfigureEvent(self.profile, **self.actors))
+            self.send(actor, ConfigureEvent(self.profile,
+                                            preload=self.preload,
+                                            **self.actors))
             self.wait_actors.append(actor)
 
         self._logger.debug('Actors created')

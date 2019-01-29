@@ -390,6 +390,27 @@
                             </div>
                         </div>
                     </div>
+                    <hr>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="col-auto">
+                                <label for="device" class="col-form-label col">Audio Device</label>
+                            </div>
+                            <div class="col-auto">
+                                <select id="device" v-model="device">
+                                    <option value="">Default Device</option>
+                                    <option v-for="(desc, id) in microphones" :value="id" v-bind:key="id">{{ id }}: {{ desc }}</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-success"
+                                        @click="testMicrophones"
+                                        title="Test microphones and update the list"
+                                        :disabled="testing">Test Microphones</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- <div class="form-group"> -->
                     <!-- <div class="form-row"> -->
                     <!-- <div class="form-check"> -->
@@ -469,6 +490,9 @@
              preciseModel: '',
 
              audioSystem: '',
+             microphones: {},
+             device: '',
+             testing: false,
 
              wakeOnStart: false,
              wakeKeyphrase: '',
@@ -484,7 +508,7 @@
 
      methods: {
          loadSettings: function() {
-             ProfileService.getProfileSettings(this.profile, 'profile')
+             ProfileService.getProfileSettings('profile')
                            .then(request => {
                                this.profileSettings = request.data
                                this.defaultProfile = this._.get(this.profileSettings,
@@ -550,6 +574,10 @@
                                                              'microphone.system',
                                                              this.defaultSettings.microphone.system)
 
+                               var devicePath = 'microphone.' + this.audioSystem + '.device'
+                               this.device = this._.get(this.profileSettings, devicePath,
+                                                        this._.get(this.defaultSettings, devicePath, ''))
+
                                // MQTT
                                this.mqttEnabled = this._.get(this.defaultSettings,
                                                              'mqtt.enabled',
@@ -579,7 +607,7 @@
          },
 
          refreshSettings: function() {
-             ProfileService.getProfileSettings(this.profile, 'defaults')
+             ProfileService.getProfileSettings('defaults')
                            .then(request => {
                                this.defaultSettings = request.data
                                this.loadSettings()
@@ -653,6 +681,10 @@
                         'microphone.system',
                         this.audioSystem)
 
+             this._.set(this.profileSettings,
+                        'microphone.' + this.audioSystem + '.device',
+                        this.device)
+
              // MQTT
              this._.set(this.defaultSettings,
                         'mqtt.enabled',
@@ -682,19 +714,87 @@
              this.$parent.beginAsync()
              ProfileService.updateDefaultSettings(this.defaultSettings)
                  .then(() => {
-                     ProfileService.updateProfileSettings(this.profile, this.profileSettings)
+                     ProfileService.updateProfileSettings(this.profileSettings)
                                    .then(request => this.$parent.alert(request.data, 'success'))
-                                   .catch(err => this.$parent.alert(err.response.data, 'danger'))
                                    .then(() => {
                                        this.$parent.endAsync()
                                    })
+                                   .catch(err => this.$parent.error(err))
                  })
                  .catch(err => this.$parent.error(err))
+         },
+
+         testMicrophones: function() {
+             this.testing = true
+             this.$parent.beginAsync()
+             ProfileService.testMicrophones()
+                 .then(request => {
+                     this.microphones = request.data
+
+                     // Select default
+                     for (var key in this.microphones) {
+                         var value = this.microphones[key]
+                         if (value.indexOf('*') >= 0) {
+                             this.device = key
+                         }
+                     }
+
+                     this.$parent.alert('Successfully tested microphones', 'success')
+                 })
+                 .then(() => {
+                     this.testing = false
+                     this.$parent.endAsync()
+                 })
+                 .catch(err => this.$parent.error(err))
+         },
+
+         setDefaultMicrophone: function() {
+             this.$parent.beginAsync()
+             ProfileService.getProfileSettings('profile')
+                           .then(request => {
+                               var profileSettings = request.data
+                               ProfileService.getProfileSettings('defaults')
+                                             .then(request => {
+                                                 var defaultSettings = request.data
+                                                 var micSystem = this._.get(profileSettings,
+                                                                            'microphone.system',
+                                                                            defaultSettings.microphone.system)
+
+                                                 this._.set(profileSettings,
+                                                            'microphone.' + micSystem + '.device',
+                                                            this.device)
+
+                                                 ProfileService.updateProfileSettings(profileSettings)
+                                             })
+                                             .catch(err => this.$parent.error(err))
+                           })
+                           .catch(err => this.$parent.error(err))
+                           .then(() => {
+                               this.$parent.endAsync()
+                               this.$parent.alert('Set microphone to ' + this.microphones[this.device], 'success')
+                           })
+         },
+
+         getMicrophones: function() {
+             ProfileService.getMicrophones()
+                           .then(request => {
+                               this.microphones = request.data
+
+                               // Select default
+                               for (var key in this.microphones) {
+                                   var value = this.microphones[key]
+                                   if (value.indexOf('*') >= 0) {
+                                       this.device = key
+                                   }
+                               }
+                           })
+                           .catch(err => this.$parent.error(err))
          }
      },
 
      mounted: function() {
          this.refreshSettings()
+         this.getMicrophones()
      },
 
      watch: {

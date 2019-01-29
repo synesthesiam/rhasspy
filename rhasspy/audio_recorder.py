@@ -66,8 +66,12 @@ class PyAudioRecorder(RhasspyActor):
             or self.profile.get('microphone.pyaudio.device')
 
         if self.device_index is not None:
-            self.device_index = int(self.device_index)
-            if self.device_index < -1:
+            try:
+                self.device_index = int(self.device_index)
+            except:
+                self.device_index = -1
+
+            if self.device_index < 0:
                 # Default device
                 self.device_index = None
 
@@ -88,7 +92,9 @@ class PyAudioRecorder(RhasspyActor):
         # Start audio system
         def stream_callback(data, frame_count, time_info, status):
             # Send to this actor to avoid threading issues
-            self.send(self.myAddress, AudioData(data))
+            if len(data) > 0:
+                self.send(self.myAddress, AudioData(data))
+
             return (data, pyaudio.paContinue)
 
         self.audio = pyaudio.PyAudio()
@@ -102,7 +108,7 @@ class PyAudioRecorder(RhasspyActor):
                                     frames_per_buffer=self.frames_per_buffer)
 
         self.mic.start_stream()
-        self._logger.debug('Recording from microphone (PyAudio)')
+        self._logger.debug('Recording from microphone (PyAudio, device=%s)' % self.device_index)
 
     # -------------------------------------------------------------------------
 
@@ -274,7 +280,8 @@ class PyAudioRecorder(RhasspyActor):
 #             if device_name is not None:
 #                 # Use specific ALSA device
 #                 device_name = str(device_name)
-#                 arecord_cmd.extend(['-D', device_name])
+#                 if len(device_name) > 0:
+#                     arecord_cmd.extend(['-D', device_name])
 
 #             self._logger.debug(arecord_cmd)
 

@@ -5,9 +5,9 @@ export default {
         return Api().get('/api/profiles')
     },
 
-    getProfileSettings(profile, layers) {
+    getProfileSettings(layers) {
         return Api().get('/api/profile', {
-            params: { 'profile': profile, 'layers': layers }
+            params: { 'layers': layers }
         })
     },
 
@@ -22,14 +22,21 @@ export default {
         })
     },
 
-    updateProfileSettings(profile, settings) {
+    updateProfileSettings(settings) {
         if (typeof(settings) == 'object') {
             settings = JSON.stringify(settings, null, 4)
         }
 
         return Api().post('/api/profile', settings, {
-            params: { 'profile': profile },
             headers: { 'Content-Type': 'application/json' }
         })
+    },
+
+    getMicrophones() {
+        return Api().get('/api/microphones')
+    },
+
+    testMicrophones() {
+        return Api().get('/api/test-microphones')
     }
 }
