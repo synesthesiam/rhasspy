@@ -93,6 +93,7 @@ def start_rhasspy():
 
     # Load core
     core = RhasspyCore(profile_name, profiles_dirs)
+    core.start()
 
     # Add profile settings from the command line
     extra_settings = {}

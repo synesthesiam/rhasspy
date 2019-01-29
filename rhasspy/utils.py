@@ -13,10 +13,6 @@ from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple
 
 # -----------------------------------------------------------------------------
 
-logger = logging.getLogger(__name__)
-
-# -----------------------------------------------------------------------------
-
 def read_dict(dict_file: Iterable[str],
               word_dict: Optional[Dict[str, List[str]]] = None):
     '''
