@@ -34,9 +34,6 @@
         }
     },
     "microphone": {
-        "system": "pyaudio",
-        "pyaudio": {
-            "device": "14"
-        }
+        "system": "pyaudio"
     }
 }
