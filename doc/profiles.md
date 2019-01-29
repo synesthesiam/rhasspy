@@ -64,17 +64,20 @@ Available profile sections and settings are:
     * `replace` - list of dictionaries with patterns/replacements used on each example sentence
     * `split` - pattern used to break sentences into words
 * `wake` - waking Rhasspy up for speech input
-  * `system` - wake word recognition system (`pocketsphinx`, `hermes`, `nanomsg`)
+  * `system` - wake word recognition system (`pocketsphinx`, `snowboy`, or `precise`)
     * `pocketsphinx` - configuration for Pocketsphinx wake word recognizer
       * `keyphrase` - phrase to wake up on (3-4 syllables recommended)
       * `threshold` - sensitivity of detection (recommended range 1e-50 to 1e-5)
-    * `hermes` - configuration for MQTT-based wake word detection (see [snowboy and mycroft-precise add-ons](https://github.com/synesthesiam/hassio-addons))
-      * `wakeword_id` - id of wakeword for [Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)
-    * `nanomsg` - configuration for [nanomsg](https://nanomsg.org/) based wake word system
-      * `pub_address` - address of PUB socket for audio data (e.g., `tcp://localhost:5000`)
-      * `pull_address` - address of PULL socket for feedback (e.g., `tcp://localhost:5001`)
+    * `snowboy` - configuration for [snowboy](https://snowboy.kitt.ai)
+      * `model` - path to model file (in profile directory)
+      * `sensitivity` - model sensitivity (0-1, default 0.5)
+      * `audio_gain` - audio gain (default 1)
+    * `precise` - configuration for [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise)
+      * `model` - path to model file (in profile directory)
+      * `sensitivity` - model sensitivity (0-1, default 0.5)
+      * `trigger_level`  - number of events to trigger activation (default 3)
 * `microphone` - configuration for audio recording
-  * `system` - audio recording system (`pyaudio`, `arecord`, or `hermes`)
+  * `system` - audio recording system (`pyaudio`, `arecord`)
 * `sounds` - configuration for feedback sounds from Rhasspy
   * `system` - which sound output system to use (`aplay` or `hermes`)
   * `wake` - path to WAV file to play when Rhasspy wakes up

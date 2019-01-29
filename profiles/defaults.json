@@ -112,10 +112,6 @@
         "hermes": {
             "wakeword_id": "default"
         },
-        "nanomsg": {
-            "pub_address": "tcp://0.0.0.0:5000",
-            "pull_address": "tcp://0.0.0.0:5001"
-        },
         "pocketsphinx": {
             "keyphrase": "okay rhasspy",
             "mllr_matrix": "wake_mllr",

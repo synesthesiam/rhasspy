@@ -52,13 +52,13 @@ class RhasspyCore:
 
     # -------------------------------------------------------------------------
 
-    def get_microphones(self) -> Dict[Any, Any]:
+    def get_microphones(self, system=None) -> Dict[Any, Any]:
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, GetMicrophones())
+            return sys.ask(self.dialogue_manager, GetMicrophones(system))
 
-    def test_microphones(self) -> Dict[Any, Any]:
+    def test_microphones(self, system=None) -> Dict[Any, Any]:
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, TestMicrophones())
+            return sys.ask(self.dialogue_manager, TestMicrophones(system))
 
     # -------------------------------------------------------------------------
 

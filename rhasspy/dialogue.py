@@ -19,10 +19,12 @@ from .utils import buffer_to_wav
 # -----------------------------------------------------------------------------
 
 class GetMicrophones:
-    pass
+    def __init__(self, system=None):
+        self.system = system
 
 class TestMicrophones:
-    pass
+    def __init__(self, system=None):
+        self.system = system
 
 class TrainProfile:
     def __init__(self, receiver=None):
@@ -229,12 +231,23 @@ class DialogueManager(RhasspyActor):
     def handle_any(self, message, sender):
         if isinstance(message, GetMicrophones):
             # Get all microphones
-            mics = self.recorder_class.get_microphones()
+            recorder_class = self.recorder_class
+            if message.system is not None:
+                recorder_class = self._get_microphone_class(message.system)
+
+            mics = recorder_class.get_microphones()
             self.send(sender, mics)
         elif isinstance(message, TestMicrophones):
             # Get working microphones
-            chunk_size = int(self.profile.get('microphone.%s.test_chunk_size', 1024))
-            test_mics = self.recorder_class.test_microphones(chunk_size)
+            recorder_system = self.profile.get('microphone.system', 'pyaudio')
+            if message.system is not None:
+                recorder_system = message.system
+
+            recorder_class = self._get_microphone_class(recorder_system)
+            test_path = 'microphone.%s.test_chunk_size' % recorder_system
+            chunk_size = int(self.profile.get(test_path, 1024))
+
+            test_mics = recorder_class.test_microphones(chunk_size)
             self.send(sender, test_mics)
         elif isinstance(message, ListenForCommand):
             # Force voice command
@@ -413,7 +426,7 @@ class DialogueManager(RhasspyActor):
             return DummyWakeListener
 
     def _get_microphone_class(self, system: str):
-        assert system in ['arecord', 'pyaudio', 'hermes', 'dummy'], \
+        assert system in ['arecord', 'pyaudio', 'dummy'], \
             'Unknown microphone system: %s' % system
 
         if system == 'arecord':
@@ -422,9 +435,6 @@ class DialogueManager(RhasspyActor):
         elif system == 'pyaudio':
             from .audio_recorder import PyAudioRecorder
             return PyAudioRecorder
-        elif system == 'hermes':
-            from .audio_recorder import HermesAudioRecorder
-            return HermesAudioRecorder
         else:
             from .audio_recorder import DummyAudioRecorder
             return DummyAudioRecorder
