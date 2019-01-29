@@ -14,18 +14,13 @@
                     <a href="/api/" class="badge badge-info ml-2">API</a>
                 </div>
                 <div class="navbar-container ml-auto">
-                    <span class="badge badge-primary ml-2" style="font-size: 1em">{{ this.profile }}</span>
+                    <span title="Profile name" class="badge badge-primary ml-2" style="font-size: 1em">{{ this.profile }}</span>
                     <button class="btn btn-success ml-3" @click="train" :disabled="this.training" title="Re-train current profile">Train</button>
                     <button class="btn btn-danger ml-3" @click="restart" :disabled="this.restarting" title="Restart Rhasspy server">Restart</button>
                 </div>
             </div>
         </nav>
-
         <div class="main-container">
-            <div class="alert" v-bind:class="alertClass" role="alert" v-if="hasAlert">
-                {{ alertText }}
-            </div>
-
             <ul class="nav nav-tabs" id="myTab" role="tablist">
                 <li class="nav-item">
                     <a class="nav-link active" id="speech-tab" data-toggle="tab" href="#speech" role="tab" aria-controls="speech" aria-selected="false">Speech</a>
@@ -45,13 +40,13 @@
             </ul>
             <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade show active" id="speech" role="tabpanel" aria-labelledby="speech-tab">
-                    <TranscribeSpeech :profile="profile" />
+                    <TranscribeSpeech />
                 </div>
                 <div class="tab-pane fade" id="language" role="tabpanel" aria-labelledby="language-tab">
-                    <TrainLanguageModel :profile="profile" />
+                    <TrainLanguageModel />
                 </div>
                 <div class="tab-pane fade" id="pronounce" role="tabpanel" aria-labelledby="pronounce-tab">
-                    <LookupPronounce :profile="profile" :unknownWords="unknownWords" />
+                    <LookupPronounce :unknownWords="unknownWords" />
                 </div>
                 <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
                     <ProfileSettings :profile="profile" :profiles="profiles" />
@@ -62,6 +57,14 @@
             </div>
 
         </div> <!-- main container -->
+
+        <div class="alert main-alert alert-dismissable" v-bind:class="alertClass" role="alert" v-if="hasAlert">
+            <button type="button" class="close" aria-label="Close" @click="clearAlert">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            {{ this.alertText }}
+        </div>
+
     </div>
 </template>
 
@@ -156,8 +159,8 @@
                                  .catch(err => this.error(err))
                                  .then(() => {
                                      this.training = false
-                                     this.getUnknownWords()
                                      this.endAsync()
+                                     this.getUnknownWords()
                                  })
          },
 
@@ -166,13 +169,13 @@
              this.restarting = true
              RhasspyService.restart()
                            .then(request => this.alert(request.data, 'success'))
+                           .catch(err => this.error(err))
                            .then(() => {
                                this.restarting = false
                                this.training = false
                                this.endAsync()
                                window.location.reload()
                            })
-                           .catch(err => this.error(err))
          },
 
          getUnknownWords: function() {

@@ -304,22 +304,6 @@ paths:
             text/plain:
               schema:
                 type: string
-  /api/reload:
-    post:
-      summary: 'Force Rhasspy to reload speech/intent recognizers for a profile'
-      parameters:
-      - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                type: string
   /api/restart:
     post:
       summary: 'Restart the Rhasspy server'

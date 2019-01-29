@@ -29,30 +29,10 @@ import requests
 import pydash
 from thespian.actors import ActorSystem
 
-from rhasspy.actor import ConfigureEvent
-from rhasspy.dialogue import (DialogueManager, GetMicrophones, TestMicrophones,
-                              ListenForCommand, ListenForWakeWord,
-                              TrainProfile, ProfileTrainingFailed,
-                              GetWordPhonemes, SpeakWord, GetWordPronunciations,
-                              TranscribeWav, PlayWavData, RecognizeIntent,
-                              HandleIntent)
-
 from rhasspy.profiles import Profile
-from rhasspy.actor import ConfigureEvent
+from rhasspy.core import RhasspyCore
+from rhasspy.dialogue import ProfileTrainingFailed
 from rhasspy.utils import recursive_update, buffer_to_wav, load_phoneme_examples
-from rhasspy.audio_recorder import PyAudioRecorder, StartRecordingToBuffer, StopRecordingToBuffer
-
-# -----------------------------------------------------------------------------
-
-system = ActorSystem('multiprocQueueBase')
-
-# We really, *really* want shutdown to be called
-@atexit.register
-def shutdown(*args, **kwargs):
-    global system
-    if system is not None:
-        system.shutdown()
-        system = None
 
 # -----------------------------------------------------------------------------
 # Flask Web App Setup
@@ -84,8 +64,15 @@ logger.debug(args)
 # Dialogue Manager Setup
 # -----------------------------------------------------------------------------
 
-dialogue_manager = None
-profile = None
+core = None
+
+# We really, *really* want shutdown to be called
+@atexit.register
+def shutdown(*args, **kwargs):
+    global core
+    if core is not None:
+        core.shutdown()
+        core = None
 
 # Like PATH, searched in reverse order
 profiles_dirs = [path for path in
@@ -95,7 +82,7 @@ profiles_dirs = [path for path in
 profiles_dirs.reverse()
 
 def start_rhasspy():
-    global dialogue_manager, profile
+    global core
 
     default_settings = Profile.load_defaults(profiles_dirs)
 
@@ -104,8 +91,8 @@ def start_rhasspy():
         or os.environ.get('RHASSPY_PROFILE', None) \
         or pydash.get(default_settings, 'rhasspy.default_profile', 'en')
 
-    # Load profile
-    profile = Profile(profile_name, profiles_dirs)
+    # Load core
+    core = RhasspyCore(profile_name, profiles_dirs)
 
     # Add profile settings from the command line
     extra_settings = {}
@@ -117,13 +104,7 @@ def start_rhasspy():
 
         logger.debug('Profile: {0}={1}'.format(key, value))
         extra_settings[key] = value
-        profile.set(key, value)
-
-    # Create top level actor
-    dialogue_manager = system.createActor(DialogueManager)
-
-    with system.private() as sys:
-        sys.ask(dialogue_manager, ConfigureEvent(profile))
+        core.profile.set(key, value)
 
 # -----------------------------------------------------------------------------
 
@@ -136,7 +117,7 @@ start_rhasspy()
 @app.route('/api/profiles')
 def api_profiles():
     '''Get list of available profiles'''
-    profile_names = []
+    profile_names = set()
     for profiles_dir in profiles_dirs:
         if not os.path.exists(profiles_dir):
             continue
@@ -144,11 +125,11 @@ def api_profiles():
         for name in os.listdir(profiles_dir):
             profile_dir = os.path.join(profiles_dir, name)
             if os.path.isdir(profile_dir):
-                profile_names.append(name)
+                profile_names.add(name)
 
     return jsonify({
-        'default_profile': profile.name,
-        'profiles': sorted(profile_names)
+        'default_profile': core.profile.name,
+        'profiles': sorted(list(profile_names))
     })
 
 # -----------------------------------------------------------------------------
@@ -156,40 +137,29 @@ def api_profiles():
 @app.route('/api/microphones', methods=['GET'])
 def api_microphones():
     '''Get a dictionary of available recording devices'''
-    with system.private() as sys:
-        mics = sys.ask(dialogue_manager, GetMicrophones())
-
-    return jsonify(mics)
+    return jsonify(core.get_microphones())
 
 # -----------------------------------------------------------------------------
 
 @app.route('/api/test-microphones', methods=['GET'])
 def api_test_microphones():
     '''Get a dictionary of available, functioning recording devices'''
-    with system.private() as sys:
-        mics = sys.ask(dialogue_manager, TestMicrophones())
-
-    return jsonify(mics)
+    return jsonify(core.test_microphones())
 
 # -----------------------------------------------------------------------------
 
 @app.route('/api/listen-for-wake', methods=['POST'])
 def api_listen_for_wake():
-    no_hass = request.args.get('nohass', 'false').lower() == 'true'
-    system.tell(dialogue_manager, ListenForWakeWord())
-
-    return profile.name
+    # no_hass = request.args.get('nohass', 'false').lower() == 'true'
+    core.listen_for_wake()
+    return 'OK'
 
 # -----------------------------------------------------------------------------
 
 @app.route('/api/listen-for-command', methods=['POST'])
 def api_listen_for_command():
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
-
-    with system.private() as sys:
-        intent = sys.ask(dialogue_manager, ListenForCommand())
-
-    return jsonify(intent)
+    return jsonify(core.listen_for_command(handle=not no_hass))
 
 # -----------------------------------------------------------------------------
 
@@ -214,7 +184,7 @@ def api_profile():
                     pass
         else:
             # Write local profile settings
-            profile_path = profile.write_path('profile.json')
+            profile_path = core.profile.write_path('profile.json')
             with open(profile_path, 'wb') as profile_file:
                 profile_file.write(request.data)
 
@@ -224,14 +194,14 @@ def api_profile():
 
     if layers == 'defaults':
         # Read default settings
-        return jsonify(Profile.load_defaults(profiles_dirs))
+        return jsonify(core.defaults)
     elif layers == 'profile':
         # Local settings only
-        profile_path = profile.read_path('profile.json')
+        profile_path = core.profile.read_path('profile.json')
         return send_file(open(profile_path, 'rb'),
                          mimetype='application/json')
     else:
-        return jsonify(profile.json)
+        return jsonify(core.profile.json)
 
 # -----------------------------------------------------------------------------
 
@@ -244,11 +214,10 @@ def api_lookup():
     word = request.data.decode('utf-8').strip().lower()
     assert len(word) > 0, 'No word to look up'
 
-    with system.private() as sys:
-        result = sys.ask(dialogue_manager, GetWordPronunciations(word, n))
-        pronunciations = result.pronunciations
-        in_dictionary = result.in_dictionary
-        espeak_str = result.phonemes
+    result = core.get_word_pronunciations(word, n)
+    pronunciations = result.pronunciations
+    in_dictionary = result.in_dictionary
+    espeak_str = result.phonemes
 
     return jsonify({
         'in_dictionary': in_dictionary,
@@ -271,22 +240,22 @@ def api_pronounce():
 
     if pronounce_type == 'phonemes':
         # Convert from Sphinx to espeak phonemes
-        with system.private() as sys:
-            result = sys.ask(dialogue_manager, GetWordPhonemes(pronounce_str))
-            espeak_str = result.phonemes
+        result = core.get_word_phonemes(pronounce_str)
+        espeak_str = result.phonemes
     else:
         # Speak word directly
         espeak_str = pronounce_str
 
-    with system.private() as sys:
-        result = sys.ask(dialogue_manager, SpeakWord(espeak_str))
-        wav_data = result.wav_data
-        espeak_phonemes = result.phonemes
+    result = core.speak_word(espeak_str)
+    wav_data = result.wav_data
+    espeak_phonemes = result.phonemes
 
     if download:
+        # Return WAV
         return Response(wav_data, mimetype='audio/wav')
     else:
-        system.tell(dialogue_manager, PlayWavData(wav_data))
+        # Play through speakers
+        core.play_wav_data(wav_data)
         return espeak_phonemes
 
 # -----------------------------------------------------------------------------
@@ -294,9 +263,8 @@ def api_pronounce():
 @app.route('/api/phonemes')
 def api_phonemes():
     '''Get phonemes and example words for a profile'''
-    # profile = request_to_profile(request)
-    examples_path = profile.read_path(
-        profile.get('text_to_speech.phoneme_examples'))
+    examples_path = core.profile.read_path(
+        core.profile.get('text_to_speech.phoneme_examples'))
 
     # phoneme -> { word, phonemes }
     logger.debug('Loading phoneme examples from %s' % examples_path)
@@ -309,50 +277,55 @@ def api_phonemes():
 @app.route('/api/sentences', methods=['GET', 'POST'])
 def api_sentences():
     '''Read or write sentences for a profile'''
-    # profile = request_to_profile(request)
 
     if request.method == 'POST':
         # Update sentences
-        sentences_path = profile.write_path(
-            profile.get('speech_to_text.sentences_ini'))
+        sentences_path = core.profile.write_path(
+            core.profile.get('speech_to_text.sentences_ini'))
 
         with open(sentences_path, 'wb') as sentences_file:
             sentences_file.write(request.data)
             return 'Wrote %s byte(s) to %s' % (len(request.data), sentences_path)
 
     # Return sentences
-    sentences_path = profile.read_path(
-        profile.get('speech_to_text.sentences_ini'))
+    sentences_path = core.profile.read_path(
+        core.profile.get('speech_to_text.sentences_ini'))
 
     if not os.path.exists(sentences_path):
         return ''  # no sentences yet
 
     # Return file contents
-    return send_file(open(sentences_path, 'rb'),
-                     mimetype='text/plain')
+    return send_file(open(sentences_path, 'rb'), mimetype='text/plain')
 
 # -----------------------------------------------------------------------------
 
 @app.route('/api/custom-words', methods=['GET', 'POST'])
 def api_custom_words():
     '''Read or write custom word dictionary for a profile'''
-    # profile = request_to_profile(request)
-    custom_words_path = profile.write_path(
-        profile.get('speech_to_text.pocketsphinx.custom_words'))
+    custom_words_path = core.profile.write_path(
+        core.profile.get('speech_to_text.pocketsphinx.custom_words'))
 
     if request.method == 'POST':
         # Update custom words
-        with open(custom_words_path, 'wb') as custom_words_file:
-            custom_words_file.write(request.data)
-            return 'Wrote %s byte(s) to %s' % (len(request.data), custom_words_path)
+        lines_written = 0
+        with open(custom_words_path, 'w') as custom_words_file:
+            lines = request.data.decode().splitlines()
+            for line in lines:
+                line = line.strip()
+                if len(line) == 0:
+                    continue
+
+                print(line, file=custom_words_file)
+                lines_written += 1
+
+            return 'Wrote %s line(s) to %s' % (lines_written, custom_words_path)
 
     # Return custom_words
     if not os.path.exists(custom_words_path):
         return ''  # no custom_words yet
 
     # Return file contents
-    return send_file(open(custom_words_path, 'rb'),
-                     mimetype='text/plain')
+    return send_file(open(custom_words_path, 'rb'), mimetype='text/plain')
 
 # -----------------------------------------------------------------------------
 
@@ -361,10 +334,9 @@ def api_train():
     start_time = time.time()
     logger.info('Starting training')
 
-    with system.private() as sys:
-        result = sys.ask(dialogue_manager, TrainProfile())
-        if isinstance(result, ProfileTrainingFailed):
-            raise Exception('Training failed due to unknown words')
+    result = core.train()
+    if isinstance(result, ProfileTrainingFailed):
+        raise Exception('Training failed due to unknown words')
 
     end_time = time.time()
 
@@ -377,11 +349,9 @@ def api_restart():
     logger.debug('Restarting Rhasspy')
 
     # Stop
-    global system
-    system.shutdown()
+    core.shutdown()
 
     # Start
-    system = ActorSystem('multiprocQueueBase')
     start_rhasspy()
     logger.info('Restarted Rhasspy')
 
@@ -394,11 +364,7 @@ def api_restart():
 def api_speech_to_text():
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
     wav_data = request.data
-
-    with system.private() as sys:
-        result = sys.ask(dialogue_manager, TranscribeWav(wav_data))
-
-    return result.text
+    return core.transcribe_wav(wav_data).text
 
 # -----------------------------------------------------------------------------
 
@@ -410,21 +376,14 @@ def api_text_to_intent():
 
     # Convert text to intent
     start_time = time.time()
-
-    with system.private() as sys:
-        result = sys.ask(dialogue_manager, RecognizeIntent(text))
-
-    intent = result.intent
+    intent = core.recognize_intent(text).intent
 
     intent_sec = time.time() - start_time
     intent['time_sec'] = intent_sec
 
     if not no_hass:
         # Send intent to Home Assistant
-        handler = core.get_intent_handler(profile.name)
-
-        with system.private() as sys:
-            intent = sys.ask(handler, HandleIntent(intent)).intent
+        intent = core.handle_intent(intent).intent
 
     return jsonify(intent)
 
@@ -438,21 +397,22 @@ def api_speech_to_intent():
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
     wav_data = request.data
 
-    with system.private() as sys:
-        # speech -> text
-        result = sys.ask(dialogue_manager, TranscribeWav(wav_data))
-        text = result.text
-        logger.debug(text)
+    # speech -> text
+    start_time = time.time()
+    text = core.transcribe_wav(wav_data).text
+    logger.debug(text)
 
-        # text -> intent
-        result = sys.ask(dialogue_manager, RecognizeIntent(text))
-        intent = result.intent
-        logger.debug(intent)
+    # text -> intent
+    intent = core.recognize_intent(text).intent
 
-        if not no_hass:
-            # Send intent to Home Assistant
-            result = sys.ask(dialogue_manager, HandleIntent(intent))
-            intent = result.intent
+    intent_sec = time.time() - start_time
+    intent['time_sec'] = intent_sec
+
+    logger.debug(intent)
+
+    if not no_hass:
+        # Send intent to Home Assistant
+        intent = core.handle_intent(intent).intent
 
     return jsonify(intent)
 
@@ -461,39 +421,31 @@ def api_speech_to_intent():
 # Start recording a WAV file to a temporary buffer
 @app.route('/api/start-recording', methods=['POST'])
 def api_start_recording():
-    device = request.args.get('device', None)
-    profile = request_to_profile(request)
-
     buffer_name = request.args.get('name', '')
-    system.tell(core.get_audio_recorder(profile.name, device),
-                StartRecordingToBuffer(buffer_name))
+    core.start_recording_wav(buffer_name)
 
     return 'OK'
 
 # Stop recording WAV file, transcribe, and get intent
 @app.route('/api/stop-recording', methods=['POST'])
 def api_stop_recording():
-    device = request.args.get('device', None)
-    profile = request_to_profile(request)
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
 
     buffer_name = request.args.get('name', '')
-    recorder = core.get_audio_recorder(profile.name, device)
+    audio_data = core.stop_recording_wav(buffer_name).data
 
-    with system.private() as sys:
-        result = sys.ask(recorder, StopRecordingToBuffer(buffer_name))
-
-    wav_data = buffer_to_wav(result.data)
+    wav_data = buffer_to_wav(audio_data)
     logger.debug('Recorded %s byte(s) of audio data' % len(wav_data))
 
-    intent = core.wav_to_intent(wav_data, profile.name)
+    text = core.transcribe_wav(wav_data).text
+    logger.debug(text)
+
+    intent = core.recognize_intent(text).intent
+    logger.debug(intent)
 
     if not no_hass:
         # Send intent to Home Assistant
-        handler = core.get_intent_handler(profile.name)
-
-        with system.private() as sys:
-            intent = sys.ask(handler, HandleIntent(intent)).intent
+        intent = core.handle_intent(intent).intent
 
     return jsonify(intent)
 
@@ -501,11 +453,9 @@ def api_stop_recording():
 
 @app.route('/api/unknown_words', methods=['GET'])
 def api_unknown_words():
-    # profile = request_to_profile(request)
-
     unknown_words = {}
-    unknown_path = profile.read_path(
-        profile.get('speech_to_text.pocketsphinx.unknown_words'))
+    unknown_path = core.profile.read_path(
+        core.profile.get('speech_to_text.pocketsphinx.unknown_words'))
 
     if os.path.exists(unknown_path):
         for line in open(unknown_path, 'r'):

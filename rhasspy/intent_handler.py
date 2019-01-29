@@ -32,7 +32,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
 
     def handle_intent(self, intent: Dict[str, Any]) -> Dict[str, Any]:
         if len(intent['intent']['name']) == 0:
-            logger.warn('Empty intent. Not sending to Home Assistant')
+            self._logger.warn('Empty intent. Not sending to Home Assistant')
             return intent
 
         import requests

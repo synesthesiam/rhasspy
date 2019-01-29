@@ -83,7 +83,7 @@
 
      methods: {
          refreshSettings: function() {
-             ProfileService.getProfileSettings(this.profile, 'profile')
+             ProfileService.getProfileSettings('profile')
                            .then(request => {
                                this.profileSettings = JSON.stringify(request.data, null, 4)
                            })
@@ -91,7 +91,7 @@
          },
 
          refreshDefaults: function() {
-             ProfileService.getProfileSettings(this.profile, 'defaults')
+             ProfileService.getProfileSettings('defaults')
                            .then(request => {
                                this.defaultSettings = JSON.stringify(request.data, null, 4)
                            })
@@ -100,24 +100,24 @@
 
          saveProfile: function() {
              this.$parent.beginAsync()
-             ProfileService.updateProfileSettings(this.profile, this.profileSettings)
+             ProfileService.updateProfileSettings(this.profileSettings)
                  .then(request => this.$parent.alert(request.data, 'success'))
+                 .catch(err => this.$parent.error(err))
                  .then(() => {
                      this.$parent.endAsync()
                      this.profileSettingsDirty = false
                  })
-                 .catch(err => this.$parent.error(err))
          },
 
          saveDefaults: function() {
              this.$parent.beginAsync()
              ProfileService.updateDefaultSettings(this.defaultSettings)
                  .then(request => this.$parent.alert(request.data, 'success'))
+                 .catch(err => this.$parent.error(err))
                  .then(() => {
                      this.$parent.endAsync()
                      this.defaultSettingsDirty = false
                  })
-                 .catch(err => this.$parent.error(err))
          }
      },
 

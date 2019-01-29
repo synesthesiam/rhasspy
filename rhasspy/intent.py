@@ -15,13 +15,15 @@ from .utils import empty_intent
 # -----------------------------------------------------------------------------
 
 class RecognizeIntent:
-    def __init__(self, text: str, receiver = None):
+    def __init__(self, text: str, receiver=None, handle=True):
         self.text = text
         self.receiver = receiver
+        self.handle = handle
 
 class IntentRecognized:
-    def __init__(self, intent: Dict[str, Any]):
+    def __init__(self, intent: Dict[str, Any], handle=True):
         self.intent = intent
+        self.handle = handle
 
 # -----------------------------------------------------------------------------
 
@@ -50,7 +52,7 @@ class RemoteRecognizer(RhasspyActor):
                 intent = empty_intent()
 
             self.send(message.receiver or sender,
-                      IntentRecognized(intent))
+                      IntentRecognized(intent, handle=message.handle))
 
     # -------------------------------------------------------------------------
 
@@ -89,7 +91,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                 intent = empty_intent()
 
             self.send(message.receiver or sender,
-                      IntentRecognized(intent))
+                      IntentRecognized(intent, handle=message.handle))
 
     # -------------------------------------------------------------------------
 
@@ -165,7 +167,7 @@ class RasaIntentRecognizer(RhasspyActor):
                 intent = empty_intent()
 
             self.send(message.receiver or sender,
-                      IntentRecognized(intent))
+                      IntentRecognized(intent, handle=message.handle))
 
     # -------------------------------------------------------------------------
 
@@ -206,7 +208,7 @@ class AdaptIntentRecognizer(RhasspyActor):
                 intent = empty_intent()
 
             self.send(message.receiver or sender,
-                      IntentRecognized(intent))
+                      IntentRecognized(intent, handle=message.handle))
 
     # -------------------------------------------------------------------------
 

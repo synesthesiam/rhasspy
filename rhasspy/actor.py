@@ -23,6 +23,7 @@ class RhasspyActor(Actor):
         self._logger = logging.getLogger(self._name)
         self._state = ''
         self._state_method = None
+        self._parent = None
 
     # -------------------------------------------------------------------------
 
@@ -31,6 +32,7 @@ class RhasspyActor(Actor):
             if isinstance(message, ActorExitRequest):
                 self.transition('stopped')
             elif isinstance(message, ConfigureEvent):
+                self._parent = sender
                 self.profile = message.profile
                 self.config = message.config
                 self.transition('started')

@@ -1,10 +1,6 @@
 import os
 import sys
-# sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-import logging
-import time
-from typing import List, Dict, Optional, Any, Callable, Tuple
+from typing import List, Dict, Optional, Any, Callable, Tuple, Union
 
 import pydash
 from thespian.actors import ActorSystem, ActorAddress
@@ -12,509 +8,124 @@ from thespian.actors import ActorSystem, ActorAddress
 # Internal imports
 from .actor import ConfigureEvent
 from .profiles import Profile
-from .audio_player import PlayWavFile
-# from audio_recorder import AudioRecorder
-from .command_listener import CommandListener
-from .stt import TranscribeWav
-from .intent import RecognizeIntent
-# from pronounce import WordPronounce
-# from wake import WakeListener
-from .intent_handler import HandleIntent
-# from train import SentenceGenerator
-# from tune import SpeechTuner
-# from mqtt import HermesMqtt
-# from intent_train import IntentTrainer
+from .audio_recorder import AudioData, StartRecordingToBuffer, StopRecordingToBuffer
+from .stt import WavTranscription
+from .intent import IntentRecognized
+from .intent_handler import IntentHandled
+from .pronounce import WordPronunciation, WordPhonemes, WordSpoken
+from .dialogue import (DialogueManager, GetMicrophones, TestMicrophones,
+                       ListenForCommand, ListenForWakeWord,
+                       TrainProfile, ProfileTrainingFailed,
+                       GetWordPhonemes, SpeakWord, GetWordPronunciations,
+                       TranscribeWav, PlayWavData, PlayWavFile,
+                       RecognizeIntent, HandleIntent,
+                       ProfileTrainingComplete, ProfileTrainingFailed)
 
 # -----------------------------------------------------------------------------
 
-logger = logging.getLogger(__name__)
-
 class RhasspyCore:
-    '''Core class for Rhasspy functionality. Loads profiles and caches stuff.'''
+    '''Core class for Rhasspy functionality.'''
 
     def __init__(self,
-                 actor_system: ActorSystem,
+                 profile_name: str,
                  profiles_dirs: List[str],
-                 default_profile_name: Optional[str] = None) -> None:
+                 actor_system: Optional[ActorSystem] = None) -> None:
 
-        '''profiles_dirs: List of directories to search for profiles.
-        default_profile_name: name of default profile.'''
-
-        self.actor_system = actor_system
         self.profiles_dirs = profiles_dirs
-        self.default_profile_name = default_profile_name
+        self.profile_name = profile_name
+        self.actor_system = actor_system or ActorSystem('multiprocQueueBase')
 
-        self.dialogue_manager = None
-        self.audio_recorders: Dict[Tuple[str, Any], ActorAddress] = {}
-        self.audio_players: Dict[Tuple[str, Any], AudioPlayer] = {}
-        self.command_listener: Optional[CommandListener] = None
-
-        self.speech_decoders: Dict[str, ActorAddress] = {}
-        self.intent_recognizers: Dict[str, ActorAddress] = {}
-        # self.word_pronouncers: Dict[str, WordPronounce] = {}
-        self.wake_listeners: Dict[str, WakeListener] = {}
-        self.intent_handlers: Dict[str, ActorAddress] = {}
-        # self.sentence_generators: Dict[str, SentenceGenerator] = {}
-        # self.speech_tuners: Dict[str, SpeechTuner] = {}
+        self.profile = Profile(profile_name, profiles_dirs)
+        self.defaults = Profile.load_defaults(profiles_dirs)
 
         # ---------------------------------------------------------------------
 
-        logger.debug('Profiles dirs: %s' % self.profiles_dirs)
+        preload = self.profile.get('rhasspy.preload_profile', False)
+        self.dialogue_manager = self.actor_system.createActor(DialogueManager)
+        with self.actor_system.private() as sys:
+            print(dir(sys))
+            sys.ask(self.dialogue_manager,
+                    ConfigureEvent(self.profile, preload=preload, ready=True))
 
-        # Load default settings
-        self.defaults_json = Profile.load_defaults(self.profiles_dirs)
-
-        # Load profiles
-        self.profiles: Dict[str, Profile] = {}
-        for profiles_dir in self.profiles_dirs:
-            if not os.path.exists(profiles_dir):
-                continue
-
-            # Check each directory
-            for name in os.listdir(profiles_dir):
-                profile_dir = os.path.join(profiles_dir, name)
-                if os.path.isdir(profile_dir):
-                    logger.debug('Loading profile from %s' % profile_dir)
-                    profile = Profile(name, self.profiles_dirs)
-                    self.profiles[name] = profile
-                    logger.info('Loaded profile %s' % name)
-
-        # Get default profile
-        if self.default_profile_name is None:
-            self.default_profile_name = \
-                self.get_default('rhasspy.default_profile', 'en')
-
-        assert self.default_profile_name is not None
-        self.default_profile = self.profiles[self.default_profile_name]
-
-        # Load MQTT client
-        # self.mqtt_client: HermesMqtt = HermesMqtt(self)
+            # Block until ready
+            sys.listen()
 
     # -------------------------------------------------------------------------
 
-    def get_default(self, path: str, default=None):
-        '''Gets a default setting or default value'''
-        return pydash.get(self.defaults_json, path, default)
+    def get_microphones(self) -> Dict[Any, Any]:
+        with self.actor_system.private() as sys:
+            return sys.ask(self.dialogue_manager, GetMicrophones())
+
+    def test_microphones(self) -> Dict[Any, Any]:
+        with self.actor_system.private() as sys:
+            return sys.ask(self.dialogue_manager, TestMicrophones())
 
     # -------------------------------------------------------------------------
 
-    def get_audio_player(self, profile_name: str, device=None) -> ActorAddress:
-        '''Gets the shared audio player'''
-        profile = self.profiles[profile_name]
-        system = profile.get('sounds.system', 'dummy')
-        player = self.audio_players.get((profile_name, system))
+    def listen_for_wake(self) -> None:
+        self.actor_system.tell(self.dialogue_manager, ListenForWakeWord())
 
-        if player is None:
-            player_class = self._get_sound_class(system)
-            player = self.actor_system.createActor(player_class)
-            self.actor_system.tell(player, ConfigureEvent(profile, device=device))
-            self.audio_players[(profile_name, device)] = player
 
-        return player
-
+    def listen_for_command(self, handle=True) -> None:
+        with self.actor_system.private() as sys:
+            return sys.ask(self.dialogue_manager, ListenForCommand(handle=handle))
 
     # -------------------------------------------------------------------------
 
-    def get_audio_recorder(self, profile_name: str, device=None) -> ActorAddress:
-        '''Gets the shared audio recorder for a device'''
-        profile = self.profiles[profile_name]
-        system = profile.get('microphone.system')
-        recorder = self.audio_recorders.get((system, device))
+    def transcribe_wav(self, wav_data: bytes) -> WavTranscription:
+        with self.actor_system.private() as sys:
+            return sys.ask(self.dialogue_manager, TranscribeWav(wav_data, handle=False))
 
-        if recorder is None:
-            # Determine which microphone system to use
-            recorder_class = self._get_microphone_class(system)
-            recorder = self.actor_system.createActor(recorder_class)
-            self.actor_system.tell(recorder, ConfigureEvent(profile, device=device))
-            self.audio_recorders[(system, device)] = recorder
+    def recognize_intent(self, text: str) -> IntentRecognized:
+        with self.actor_system.private() as sys:
+            return sys.ask(self.dialogue_manager, RecognizeIntent(text, handle=False))
 
-        return recorder
-
-    def _get_microphone_class(self, system: str):
-        assert system in ['arecord', 'pyaudio', 'hermes', 'dummy'], \
-            'Unknown microphone system: %s' % system
-
-        if system == 'arecord':
-            from audio_recorder import ARecordAudioRecorder
-            return ARecordAudioRecorder
-        elif system == 'pyaudio':
-            from .audio_recorder import PyAudioRecorder
-            return PyAudioRecorder
-        elif system == 'hermes':
-            from audio_recorder import HermesAudioRecorder
-            return HermesAudioRecorder
-        else:
-            from audio_recorder import AudioRecorder
-            return AudioRecorder
-
-    def get_microphones(self, profile_name: str) -> Dict[Any, Any]:
-        profile = self.profiles[profile_name]
-        system = profile.get('microphone.system')
-        recorder_class = self._get_microphone_class(system)
-
-        return recorder_class.get_microphones()
-
-    def test_microphones(self, profile_name: str) -> Dict[Any, Any]:
-        profile = self.profiles[profile_name]
-        system = profile.get('microphone.system')
-        recorder_class = self._get_microphone_class(system)
-        chunk_size = int(profile.get('microphone.%s.test_chunk_size', 1024))
-
-        return recorder_class.test_microphones(chunk_size)
+    def handle_intent(self, intent: Dict[str, Any]) -> IntentHandled:
+        with self.actor_system.private() as sys:
+            return sys.ask(self.dialogue_manager, HandleIntent(intent))
 
     # -------------------------------------------------------------------------
 
-    def get_speech_decoder(self, profile_name: str) -> ActorAddress:
-        '''Gets the speech transcriber for a profile (WAV to text)'''
-        decoder = self.speech_decoders.get(profile_name)
-        if decoder is None:
-            profile = self.profiles[profile_name]
-            system = profile.get('speech_to_text.system')
-            assert system in ['dummy', 'pocketsphinx', 'remote'], 'Invalid speech to text system: %s' % system
-            if system == 'pocketsphinx':
-                from .stt import PocketsphinxDecoder
-                decoder = self.actor_system.createActor(PocketsphinxDecoder)
-            elif system == 'remote':
-                from stt import RemoteDecoder
-                decoder = RemoteDecoder(profile)
-            elif system == 'dummy':
-                # Does nothing
-                decoder = SpeechDecoder(profile)
+    def start_recording_wav(self, buffer_name:str = ''):
+        self.actor_system.tell(self.dialogue_manager,
+                               StartRecordingToBuffer(buffer_name))
 
-            # Cache decoder
-            assert decoder is not None
-            self.actor_system.tell(decoder, ConfigureEvent(self.default_profile))
-            self.speech_decoders[profile_name] = decoder
-
-        return decoder
+    def stop_recording_wav(self, buffer_name:str = '') -> AudioData:
+        with self.actor_system.private() as sys:
+            return self.actor_system.ask(self.dialogue_manager,
+                                         StopRecordingToBuffer(buffer_name))
 
     # -------------------------------------------------------------------------
 
-    def get_speech_tuner(self, profile_name: str) -> ActorAddress:
-        '''Gets the speech tuner for a profile (acoustic model)'''
-        tuner = self.speech_tuners.get(profile_name)
-        if tuner is None:
-            profile = self.profiles[profile_name]
-            system = profile.get('tuning.system')
-            assert system in ['dummy', 'sphinxtrain'], 'Invalid speech tuning system: %s' % system
-            if system == 'sphinxtrain':
-                from tune import SphinxTrainSpeechTuner
-                tuner = SphinxTrainSpeechTuner(profile)
-            elif system == 'dummy':
-                # Does nothing
-                tuner = SpeechTuner(profile)
+    def play_wav_data(self, wav_data: bytes) -> None:
+        self.actor_system.tell(self.dialogue_manager, PlayWavData(wav_data))
 
-            # Cache tuner
-            assert tuner is not None
-            self.speech_tuners[profile_name] = tuner
-
-        return tuner
+    def play_wav_file(self, wav_path: str) -> None:
+        self.actor_system.tell(self.dialogue_manager, PlayWavFile(wav_data))
 
     # -------------------------------------------------------------------------
 
-    def get_intent_recognizer(self, profile_name: str) -> ActorAddress:
-        '''Gets the intent recognizer for a profile (text to intent dict)'''
-        recognizer = self.intent_recognizers.get(profile_name)
-        if recognizer is None:
-            profile = self.profiles[profile_name]
-            system = profile.get('intent.system')
-            assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa', 'remote'], 'Invalid intent system: %s' % system
-            if system == 'fuzzywuzzy':
-                # Use fuzzy string matching locally
-                from .intent import FuzzyWuzzyRecognizer
-                recognizer = self.actor_system.createActor(FuzzyWuzzyRecognizer)
-            elif system == 'adapt':
-                # Use Mycroft Adapt locally
-                from intent import AdaptIntentRecognizer
-                recognizer = AdaptIntentRecognizer(profile)
-                pass
-            elif system == 'rasa':
-                # Use rasaNLU remotely
-                from intent import RasaIntentRecognizer
-                recognizer = RasaIntentRecognizer(profile)
-                pass
-            elif system == 'remote':
-                # Use remote rhasspy server
-                from intent import RemoteRecognizer
-                recognizer = RemoteRecognizer(profile)
-            elif system == 'dummy':
-                # Does nothing
-                recognizer = IntentRecognizer(profile)
+    def get_word_pronunciations(self, word: str, n: int = 5) -> WordPronunciation:
+        with self.actor_system.private() as sys:
+            return sys.ask(self.dialogue_manager, GetWordPronunciations(word, n))
 
-            # Cache recognizer
-            assert recognizer is not None
-            self.actor_system.tell(recognizer, ConfigureEvent(self.default_profile))
-            self.intent_recognizers[profile_name] = recognizer
+    def get_word_phonemes(self, word: str) -> WordPhonemes:
+        with self.actor_system.private() as sys:
+            return sys.ask(self.dialogue_manager, GetWordPhonemes(word))
 
-        return recognizer
+    def speak_word(self, word: str) -> WordSpoken:
+        with self.actor_system.private() as sys:
+            return sys.ask(self.dialogue_manager, SpeakWord(word))
 
     # -------------------------------------------------------------------------
 
-    def get_word_pronouncer(self, profile_name: str) -> ActorAddress:
-        '''Gets a word lookup/pronounce-er for a profile'''
-        word_pron = self.word_pronouncers.get(profile_name)
-        if word_pron is None:
-            from pronounce import PhonetisaurusPronounce
-            profile = self.profiles[profile_name]
-            word_pron = PhonetisaurusPronounce(profile)
-            self.word_pronouncers[profile_name] = word_pron
-
-        assert word_pron is not None
-        return word_pron
+    def train(self) -> Union[ProfileTrainingComplete, ProfileTrainingFailed]:
+        with self.actor_system.private() as sys:
+            return sys.ask(self.dialogue_manager, TrainProfile())
 
     # -------------------------------------------------------------------------
 
-    def get_command_listener(self, profile_name: str) -> ActorAddress:
-        '''Gets the shared voice command listener (VAD + silence bracketing).'''
-        if self.command_listener is None:
-            profile = self.profiles[profile_name]
-            recorder = self.get_audio_recorder(profile_name)
-
-            self.command_listener = self.actor_system.createActor(CommandListener)
-            self.actor_system.tell(self.command_listener,
-                                   ConfigureEvent(profile, recorder=recorder))
-
-        return self.command_listener
-
-    # -------------------------------------------------------------------------
-
-    def get_wake_listener(self, profile_name: str) -> ActorAddress:
-        '''Gets the wake/hot word listener for a profile.'''
-        wake = self.wake_listeners.get(profile_name)
-        if wake is None:
-            profile = self.profiles[profile_name]
-            recorder = self.get_audio_recorder(profile_name)
-
-            system = profile.get('wake.system')
-            wake_class = self._get_wake_class(system)
-
-            wake = self.actor_system.createActor(wake_class)
-            self.actor_system.tell(wake, ConfigureEvent(profile, recorder=recorder))
-            self.wake_listeners[profile_name] = wake
-
-        return wake
-
-    def _get_wake_class(self, system):
-        assert system in ['dummy', 'pocketsphinx', 'nanomsg',
-                          'hermes', 'snowboy', 'precise'], \
-                          'Invalid wake system: %s' % system
-
-        if system == 'pocketsphinx':
-            # Use pocketsphinx locally
-            from .wake import PocketsphinxWakeListener
-            return PocketsphinxWakeListener
-        elif system == 'nanomsg':
-            # Use remote system via nanomsg
-            from .wake import NanomsgWakeListener
-            return NanomsgWakeListener
-        elif system == 'hermes':
-            # Use remote system via MQTT
-            from .wake import HermesWakeListener
-            return HermesWakeListener
-        elif system == 'snowboy':
-            # Use snowboy locally
-            from .wake import SnowboyWakeListener
-            return SnowboyWakeListener
-        elif system == 'precise':
-            # Use Mycroft Precise locally
-            from .wake import PreciseWakeListener
-            return PreciseWakeListener
-        elif system == 'dummy':
-            # Does nothing
-            return WakeListener
-
-    def _handle_wake(self, profile_name: str, keyphrase: str, **kwargs):
-        '''Listens for a voice command after wake word is detected, and forwards it to Home Assistant.'''
-        logger.debug('%s %s' % (profile_name, keyphrase))
-        profile = self.profiles[profile_name]
-
-        # Wake up beep
-        audio_player = self.get_audio_player(profile_name)
-        self.actor_system.tell(audio_player,
-                               PlayWavFile(profile.get('sounds.wake', '')))
-
-        # self.mqtt_client.rhasspy_awake(profile_name)
-
-        # Listen for a command
-        wav_data = self.get_command_listener().listen_for_command()
-
-        # Recorded beep
-        self.actor_system.tell(audio_player,
-                               PlayWavFile(profile.get('sounds.recorded', '')))
-
-        # self.mqtt_client.rhasspy_decoding(profile_name)
-
-        # speech -> intent
-        intent = self.wav_to_intent(wav_data, profile_name)
-        logger.debug(intent)
-
-        # self.mqtt_client.rhasspy_recognizing(profile_name, intent['text'])
-
-        # Handle intent
-        no_hass = kwargs.get('no_hass', False)
-        if not no_hass:
-            handler = self.get_intent_handler(profile_name)
-            intent = system.ask(handler, HandleIntent(intent)).intent
-
-        # self.mqtt_client.rhasspy_handled(intent)
-
-        # Listen for wake word again
-        # wake = self.get_wake_listener(profile_name)
-        # wake.start_listening()
-
-        # self.mqtt_client.rhasspy_asleep(profile_name)
-
-        return intent
-
-    # -------------------------------------------------------------------------
-
-    def get_intent_handler(self, profile_name: str) -> ActorAddress:
-        '''Gets intent handler for a profile (e.g., send to Home Assistant).'''
-        intent_handler = self.intent_handlers.get(profile_name)
-        if intent_handler is None:
-            from .intent_handler import HomeAssistantIntentHandler
-            profile = self.profiles[profile_name]
-            intent_handler = self.actor_system.createActor(HomeAssistantIntentHandler)
-
-            self.actor_system.tell(intent_handler, ConfigureEvent(self.default_profile))
-            self.intent_handlers[profile_name] = intent_handler
-
-        return intent_handler
-
-    # -------------------------------------------------------------------------
-
-    def get_sentence_generator(self, profile_name: str) -> ActorAddress:
-        '''Gets sentence generator for training.'''
-        sent_gen = self.sentence_generators.get(profile_name)
-        if sent_gen is None:
-            from train import JsgfSentenceGenerator
-            profile = self.profiles[profile_name]
-            sent_gen = JsgfSentenceGenerator(profile)
-
-            self.sentence_generators[profile_name] = sent_gen
-
-        return sent_gen
-
-    # -------------------------------------------------------------------------
-
-    def preload_profile(self, profile_name: str):
-        '''Preloads all of a profile's stuff, like speech/intent recognizers'''
-        self.get_speech_decoder(profile_name).preload()
-        self.get_intent_recognizer(profile_name).preload()
-        self.get_wake_listener(profile_name).preload()
-        self.get_intent_handler(profile_name).preload()
-        self.get_sentence_generator(profile_name).preload()
-        self.get_speech_tuner(profile_name).preload()
-
-    def reload_profile(self, profile_name: str):
-        '''Clears caches for a profile and reloads its JSON from disk.
-        Does preloading if this is the default profile.'''
-        self.speech_decoders.pop(profile_name, None)
-        self.intent_recognizers.pop(profile_name, None)
-        self.wake_listeners.pop(profile_name, None)
-        self.intent_handlers.pop(profile_name, None)
-        self.sentence_generators.pop(profile_name, None)
-        self.speech_tuners.pop(profile_name, None)
-        self.profiles.pop(profile_name, None)
-
-        for profiles_dir in self.profiles_dirs:
-            if not os.path.exists(profiles_dir):
-                continue
-
-            for name in os.listdir(profiles_dir):
-                profile_dir = os.path.join(profiles_dir, name)
-                if (name == profile_name) and os.path.isdir(profile_dir):
-                    logger.debug('Loading profile from %s' % profile_dir)
-                    profile = Profile(name, self.profiles_dirs)
-                    self.profiles[name] = profile
-                    logger.info('Loaded profile %s' % name)
-
-                    # Pre-load if default profile
-                    if (profile_name == self.default_profile_name) \
-                       and self.get_default('rhasspy.preload_profile'):
-                        self.preload_profile(profile_name)
-
-                    return
-
-    # -------------------------------------------------------------------------
-
-    def train_profile(self, profile_name: str):
-        '''Re-trains speech/intent recognizers for a profile.'''
-        profile = self.profiles[profile_name]
-
-        # Generate sentences
-        logger.info('Generating sentences')
-        sent_gen = self.get_sentence_generator(profile_name)
-        tagged_sentences = sent_gen.generate_sentences()
-
-        # Write tagged sentences to Markdown file
-        tagged_path = profile.write_path(
-            profile.get('training.tagged_sentences'))
-
-        with open(tagged_path, 'w') as tagged_file:
-            for intent, intent_sents in tagged_sentences.items():
-                print('# intent:%s' % intent, file=tagged_file)
-                for sentence in intent_sents:
-                    print('- %s' % sentence, file=tagged_file)
-                print('', file=tagged_file)
-
-        logger.debug('Wrote tagged sentences to %s' % tagged_path)
-
-        # Train speech system
-        logger.info('Training speech to text system')
-        stt_system = profile.get('speech_to_text.system')
-        assert stt_system in ['pocketsphinx'], 'Invalid speech to text system: %s' % stt_system
-        word_pron = self.get_word_pronouncer(profile_name)
-
-        if stt_system == 'pocketsphinx':
-            from stt_train import PocketsphinxSpeechTrainer
-            stt_trainer = PocketsphinxSpeechTrainer(profile, word_pron)
-
-        sentences_by_intent = stt_trainer.train(tagged_sentences)
-
-        # Train intent recognizer
-        logger.info('Training intent recognizer')
-        intent_system = profile.get('intent.system')
-        assert intent_system in ['fuzzywuzzy', 'rasa', 'adapt'], 'Invalid intent system: %s' % intent_system
-
-        intent_trainer = IntentTrainer(profile)
-        if intent_system == 'fuzzywuzzy':
-            from intent_train import FuzzyWuzzyIntentTrainer
-            intent_trainer = FuzzyWuzzyIntentTrainer(profile)
-        elif intent_system == 'rasa':
-            from intent_train import RasaIntentTrainer
-            intent_trainer = RasaIntentTrainer(profile)
-        elif intent_system == 'adapt':
-            from intent_train import AdaptIntentTrainer
-            intent_trainer = AdaptIntentTrainer(profile)
-
-        intent_trainer.train(tagged_sentences, sentences_by_intent)
-
-    # -------------------------------------------------------------------------
-
-    def wav_to_intent(self, wav_data: bytes, profile_name: str) -> Dict[str, Any]:
-        '''Transcribes WAV data and does intent recognition for profile'''
-        decoder = self.get_speech_decoder(profile_name)
-        recognizer = self.get_intent_recognizer(profile_name)
-
-        # WAV -> text
-        start_time = time.time()
-        text = self.actor_system.ask(decoder, TranscribeWav(wav_data)).text
-
-        decode_time = time.time() - start_time
-        # self.get_mqtt_client().text_captured(text, seconds=decode_time)
-
-        # text -> intent (JSON)
-        intent = self.actor_system.ask(recognizer, RecognizeIntent(text)).intent
-
-        intent_sec = time.time() - start_time
-        intent['time_sec'] = intent_sec
-
-        logger.debug(text)
-
-        return intent
-
-    # -------------------------------------------------------------------------
-
-    def get_mqtt_client(self):
-        return self.mqtt_client
+    def shutdown(self) -> None:
+        if self.actor_system is not None:
+            self.actor_system.shutdown()
+            self.actor_system = None
