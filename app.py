@@ -137,14 +137,16 @@ def api_profiles():
 @app.route('/api/microphones', methods=['GET'])
 def api_microphones():
     '''Get a dictionary of available recording devices'''
-    return jsonify(core.get_microphones())
+    system = request.args.get('system', None)
+    return jsonify(core.get_microphones(system))
 
 # -----------------------------------------------------------------------------
 
 @app.route('/api/test-microphones', methods=['GET'])
 def api_test_microphones():
     '''Get a dictionary of available, functioning recording devices'''
-    return jsonify(core.test_microphones())
+    system = request.args.get('system', None)
+    return jsonify(core.test_microphones(system))
 
 # -----------------------------------------------------------------------------
 

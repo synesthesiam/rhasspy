@@ -368,7 +368,7 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-pyaudio" value="pyaudio" v-model="audioSystem">
+                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-pyaudio" value="pyaudio" v-model="audioSystem" @click="getMicrophones('pyaudio')">
                                 <label class="form-check-label" for="audio-pyaudio">
                                     Use PyAudio (default)
                                 </label>
@@ -378,7 +378,7 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-arecord" value="arecord" v-model="audioSystem">
+                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-arecord" value="arecord" v-model="audioSystem" @click="getMicrophones('arecord')">
                                 <label class="form-check-label" for="audio-arecord">
                                     Use <tt>arecord</tt> directly (ALSA)
                                 </label>
@@ -406,7 +406,7 @@
                                 <button type="button" class="btn btn-success"
                                         @click="testMicrophones"
                                         title="Test microphones and update the list"
-                                        :disabled="testing">Test Microphones</button>
+                                        :disabled="testing">Test</button>
                             </div>
                         </div>
                     </div>
@@ -727,7 +727,7 @@
          testMicrophones: function() {
              this.testing = true
              this.$parent.beginAsync()
-             ProfileService.testMicrophones()
+             ProfileService.testMicrophones(this.audioSystem)
                  .then(request => {
                      this.microphones = request.data
 
@@ -748,45 +748,14 @@
                  .catch(err => this.$parent.error(err))
          },
 
-         setDefaultMicrophone: function() {
-             this.$parent.beginAsync()
-             ProfileService.getProfileSettings('profile')
-                           .then(request => {
-                               var profileSettings = request.data
-                               ProfileService.getProfileSettings('defaults')
-                                             .then(request => {
-                                                 var defaultSettings = request.data
-                                                 var micSystem = this._.get(profileSettings,
-                                                                            'microphone.system',
-                                                                            defaultSettings.microphone.system)
-
-                                                 this._.set(profileSettings,
-                                                            'microphone.' + micSystem + '.device',
-                                                            this.device)
-
-                                                 ProfileService.updateProfileSettings(profileSettings)
-                                             })
-                                             .catch(err => this.$parent.error(err))
-                           })
-                           .catch(err => this.$parent.error(err))
-                           .then(() => {
-                               this.$parent.endAsync()
-                               this.$parent.alert('Set microphone to ' + this.microphones[this.device], 'success')
-                           })
-         },
-
-         getMicrophones: function() {
-             ProfileService.getMicrophones()
+         getMicrophones: function(system) {
+             ProfileService.getMicrophones(system)
                            .then(request => {
                                this.microphones = request.data
 
-                               // Select default
-                               for (var key in this.microphones) {
-                                   var value = this.microphones[key]
-                                   if (value.indexOf('*') >= 0) {
-                                       this.device = key
-                                   }
-                               }
+                               var devicePath = 'microphone.' + this.audioSystem + '.device'
+                               this.device = this._.get(this.profileSettings, devicePath,
+                                                        this._.get(this.defaultSettings, devicePath, ''))
                            })
                            .catch(err => this.$parent.error(err))
          }

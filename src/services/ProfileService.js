@@ -32,11 +32,23 @@ export default {
         })
     },
 
-    getMicrophones() {
-        return Api().get('/api/microphones')
+    getMicrophones(system) {
+        var params = {}
+        if (system) {
+            params['system'] = system
+        }
+
+        return Api().get('/api/microphones',
+                         { 'params': params })
     },
 
-    testMicrophones() {
-        return Api().get('/api/test-microphones')
+    testMicrophones(system) {
+        var params = {}
+        if (system) {
+            params['system'] = system
+        }
+
+        return Api().get('/api/test-microphones',
+                         { 'params': params })
     }
 }

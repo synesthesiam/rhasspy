@@ -91,8 +91,8 @@ class PyAudioRecorder(RhasspyActor):
 
         # Start audio system
         def stream_callback(data, frame_count, time_info, status):
-            # Send to this actor to avoid threading issues
             if len(data) > 0:
+                # Send to this actor to avoid threading issues
                 self.send(self.myAddress, AudioData(data))
 
             return (data, pyaudio.paContinue)
@@ -234,194 +234,177 @@ class PyAudioRecorder(RhasspyActor):
 # ARecord based audio recorder
 # -----------------------------------------------------------------------------
 
-# class ARecordAudioRecorder(AudioRecorder):
-#     '''Records from microphone using arecord'''
+class ARecordAudioRecorder(RhasspyActor):
+    '''Records from microphone using arecord'''
+    def __init__(self):
+        # Chunk size is set to 30 ms for webrtcvad
+        RhasspyActor.__init__(self)
+        self.record_proc = None
+        self.receivers = []
+        self.buffers = {}
+        self.recording_thread = None
+        self.is_recording = True
 
-#     def __init__(self, core, device=None, chunk_size=480*2):
-#         # Chunk size is set to 30 ms for webrtcvad
-#         AudioRecorder.__init__(self, core, device)
+    def to_started(self, from_state):
+        self.device_name = self.config.get('device') \
+            or self.profile.get('microphone.arecord.device')
 
-#         self.record_proc = None
-#         self.chunk_size = chunk_size
+        if self.device_name is not None:
+            self.device_name = str(self.device_name)
+            if len(self.device_name) == 0:
+                self.device_name = None
 
-#         self.buffer = bytes()
-#         self.buffer_users = 0
+        self.chunk_size = int(self.profile.get(
+            'microphone.arecord.chunk_size', 480*2))
 
-#         self.queue = Queue()
-#         self.queue_users = 0
+    def in_started(self, message, sender):
+        if isinstance(message, StartStreaming):
+            self.receivers.append(message.receiver)
+            self.transition('recording')
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+            self.transition('recording')
 
-#     # -------------------------------------------------------------------------
+    def to_recording(self, from_state):
+        # 16-bit 16Khz mono WAV
+        arecord_cmd = ['arecord',
+                      '-q',
+                      '-r', '16000',
+                      '-f', 'S16_LE',
+                      '-c', '1',
+                      '-t', 'raw']
 
-#     def start_recording(self, start_buffer: bool, start_queue: bool, device: Any=None):
-#         # Allow multiple "users" to listen for audio data
-#         if start_buffer:
-#             self.buffer_users += 1
+        if self.device_name is not None:
+            # Use specific ALSA device
+            arecord_cmd.extend(['-D', self.device_name])
 
-#         if start_queue:
-#             self.queue_users += 1
+        self._logger.debug(arecord_cmd)
 
-#         if not self.is_recording:
-#             # Reset
-#             self.buffer = bytes()
+        def process_data():
+            self.record_proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
+            while self.is_recording:
+                # Pull from process STDOUT
+                data = self.record_proc.stdout.read(self.chunk_size)
+                if len(data) > 0:
+                    # Send to this actor to avoid threading issues
+                    self.send(self.myAddress, AudioData(data))
 
-#             # Clear queue
-#             while not self.queue.empty():
-#                 self.queue.get_nowait()
+        # Start recording
+        self.is_recording = True
+        self.recording_thread = threading.Thread(target=process_data, daemon=True)
+        self.recording_thread.start()
 
-#             # 16-bit 16Khz mono WAV
-#             arecord_cmd = ['arecord',
-#                           '-q',
-#                           '-r', '16000',
-#                           '-f', 'S16_LE',
-#                           '-c', '1',
-#                           '-t', 'raw']
+        self._logger.debug('Recording from microphone (arecord)')
 
-#             device_name = device or self.device
-#             if device_name is not None:
-#                 # Use specific ALSA device
-#                 device_name = str(device_name)
-#                 if len(device_name) > 0:
-#                     arecord_cmd.extend(['-D', device_name])
+    def in_recording(self, message, sender):
+        if isinstance(message, AudioData):
+            # Forward to subscribers
+            for receiver in self.receivers:
+                self.send(receiver, message)
 
-#             self._logger.debug(arecord_cmd)
+            # Append to buffers
+            for receiver in self.buffers:
+                self.buffers[receiver] += message.data
+        elif isinstance(message, StartStreaming):
+            self.receivers.append(message.receiver)
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+        elif isinstance(message, StopStreaming):
+            if message.receiver is None:
+                # Clear all receivers
+                self.receivers.clear()
+            else:
+                self.receivers.remove(message.receiver)
+        elif isinstance(message, StopRecordingToBuffer):
+            if message.buffer_name is None:
+                # Clear all buffers
+                self.buffers.clear()
+            else:
+                # Respond with buffer
+                buffer = self.buffers.pop(message.buffer_name, bytes())
+                self.send(message.receiver or sender, AudioData(buffer))
 
-#             def process_data():
-#                 proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
-#                 while self.is_recording:
-#                     # Pull from process STDOUT
-#                     data = proc.stdout.read(self.chunk_size)
+        # Check to see if anyone is still listening
+        if (len(self.receivers) == 0) and (len(self.buffers) == 0):
+            # Terminate audio recording
+            self.is_recording = False
+            self.record_proc.terminate()
+            self.record_proc = None
+            self.transition('started')
+            self._logger.debug('Stopped recording from microphone (arecord)')
 
-#                     if self.buffer_users > 0:
-#                         self.buffer += data
+    def to_stopped(self, from_state):
+        if self.is_recording:
+            self.is_recording = False
+            if self.record_proc is not None:
+                self.record_proc.terminate()
+            self._logger.debug('Stopped recording from microphone (arecord)')
 
-#                     if self.queue_users > 0:
-#                         self.queue.put(data)
+    # -------------------------------------------------------------------------
 
-#                 proc.terminate()
+    @classmethod
+    def get_microphones(cls) -> Dict[Any, Any]:
+        output = subprocess.check_output(['arecord', '-L'])\
+                           .decode().splitlines()
 
-#             # Start recording
-#             self._is_recording = True
-#             self.record_thread = threading.Thread(target=process_data, daemon=True)
-#             self.record_thread.start()
+        mics: Dict[Any, Any] = {}
+        name, description = None, None
 
-#             self._logger.debug('Recording from microphone (arecord)')
+        # Parse output of arecord -L
+        first_mic = True
+        for line in output:
+            line = line.rstrip()
+            if re.match(r'^\s', line):
+                description = line.strip()
+                if first_mic:
+                    description = description + '*'
+                    first_mic = False
+            else:
+                if name is not None:
+                    mics[name] = description
 
-#     # -------------------------------------------------------------------------
+                name = line.strip()
 
-#     def stop_recording(self, stop_buffer: bool, stop_queue: bool) -> bytes:
-#         if stop_buffer:
-#             self.buffer_users = max(0, self.buffer_users - 1)
+        return mics
 
-#         if stop_queue:
-#             self.queue_users = max(0, self.queue_users - 1)
+    # -------------------------------------------------------------------------
 
-#         # Only stop if all "users" have disconnected
-#         if self.is_recording and (self.buffer_users <= 0) and (self.queue_users <= 0):
-#             # Shut down audio system
-#             self._is_recording = False
-#             self.record_thread.join()
+    @classmethod
+    def test_microphones(cls, chunk_size:int) -> Dict[Any, Any]:
+        # Thanks to the speech_recognition library!
+        # https://github.com/Uberi/speech_recognition/blob/master/speech_recognition/__init__.py
+        mics = ARecordAudioRecorder.get_microphones()
+        result = {}
+        for device_id, device_name in mics.items():
+            try:
+                # read audio
+                arecord_cmd = ['arecord',
+                              '-q',
+                              '-D', device_id,
+                              '-r', '16000',
+                              '-f', 'S16_LE',
+                              '-c', '1',
+                              '-t', 'raw']
 
-#             self._logger.debug('Stopped recording from microphone')
+                proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
+                buffer = proc.stdout.read(chunk_size * 2)
+                proc.terminate()
+            except:
+                result[device_id] = '%s (error)' % device_name
+                continue
 
-#             # Write final empty buffer
-#             self.queue.put(bytes())
+            # compute RMS of debiased audio
+            energy = -audioop.rms(buffer, 2)
+            energy_bytes = bytes([energy & 0xFF, (energy >> 8) & 0xFF])
+            debiased_energy = audioop.rms(
+                audioop.add(buffer, energy_bytes * (len(buffer) // 2), 2), 2)
 
-#         if stop_buffer:
-#             # Return WAV data
-#             with io.BytesIO() as wav_buffer:
-#                 with wave.open(wav_buffer, mode='wb') as wav_file:
-#                     wav_file.setframerate(16000)
-#                     wav_file.setsampwidth(2)
-#                     wav_file.setnchannels(1)
-#                     wav_file.writeframesraw(self.buffer)
+            if debiased_energy > 30:  # probably actually audio
+                result[device_id] = '%s (working!)' % device_name
+            else:
+                result[device_id] = '%s (no sound)' % device_name
 
-#                 return wav_buffer.getvalue()
-
-#         # Empty buffer
-#         return bytes()
-
-#     # -------------------------------------------------------------------------
-
-#     def stop_all(self) -> None:
-#         if self.is_recording:
-#             self._is_recording = False
-#             self.record_thread.join()
-
-#             if self.queue_users > 0:
-#                 # Write final empty buffer
-#                 self.queue.put(bytes())
-
-#             self.buffer_users = 0
-#             self.queue_users = 0
-
-#     # -------------------------------------------------------------------------
-
-#     def get_queue(self) -> Queue:
-#         return self.queue
-
-#     # -------------------------------------------------------------------------
-
-#     def get_microphones(self) -> Dict[Any, Any]:
-#         output = subprocess.check_output(['arecord', '-L'])\
-#                            .decode().splitlines()
-
-#         mics: Dict[Any, Any] = {}
-#         name, description = None, None
-
-#         # Parse output of arecord -L
-#         first_mic = True
-#         for line in output:
-#             line = line.rstrip()
-#             if re.match(r'^\s', line):
-#                 description = line.strip()
-#                 if first_mic:
-#                     description = description + '*'
-#                     first_mic = False
-#             else:
-#                 if name is not None:
-#                     mics[name] = description
-
-#                 name = line.strip()
-
-#         return mics
-
-#     # -------------------------------------------------------------------------
-
-#     def test_microphones(self, chunk_size:int) -> Dict[Any, Any]:
-#         # Thanks to the speech_recognition library!
-#         # https://github.com/Uberi/speech_recognition/blob/master/speech_recognition/__init__.py
-#         mics = self.get_microphones()
-#         result = {}
-#         for device_id, device_name in mics.items():
-#             try:
-#                 # read audio
-#                 arecord_cmd = ['arecord',
-#                               '-q',
-#                               '-D', device_id,
-#                               '-r', '16000',
-#                               '-f', 'S16_LE',
-#                               '-c', '1',
-#                               '-t', 'raw']
-
-#                 proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
-#                 buffer = proc.stdout.read(chunk_size * 2)
-#                 proc.terminate()
-#             except:
-#                 result[device_id] = '%s (error)' % device_name
-#                 continue
-
-#             # compute RMS of debiased audio
-#             energy = -audioop.rms(buffer, 2)
-#             energy_bytes = bytes([energy & 0xFF, (energy >> 8) & 0xFF])
-#             debiased_energy = audioop.rms(
-#                 audioop.add(buffer, energy_bytes * (len(buffer) // 2), 2), 2)
-
-#             if debiased_energy > 30:  # probably actually audio
-#                 result[device_id] = '%s (working!)' % device_name
-#             else:
-#                 result[device_id] = '%s (no sound)' % device_name
-
-#         return result
+        return result
 
 # -----------------------------------------------------------------------------
 # WAV based audio "recorder"
