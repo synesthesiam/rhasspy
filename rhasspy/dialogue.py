@@ -318,8 +318,7 @@ class DialogueManager(RhasspyActor):
         self.actors['speech_trainer'] = self.speech_trainer
 
         # Intent trainer
-        from .intent_train import FuzzyWuzzyIntentTrainer
-        self.intent_trainer_class = FuzzyWuzzyIntentTrainer
+        self.intent_trainer_class = self._get_intent_trainer_class(recognizer_system)
         self.intent_trainer = self.createActor(self.intent_trainer_class)
         self.actors['intent_trainer'] = self.intent_trainer
 
@@ -449,3 +448,24 @@ class DialogueManager(RhasspyActor):
             # Does nothing
             from .intent import DummyIntentRecognizer
             return DummyIntentRecognizer
+
+    def _get_intent_trainer_class(self, system: str):
+        assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa'], \
+            'Invalid intent system: %s' % system
+
+        if system == 'fuzzywuzzy':
+            # Use fuzzy string matching locally
+            from .intent_train import FuzzyWuzzyIntentTrainer
+            return FuzzyWuzzyIntentTrainer
+        elif system == 'adapt':
+            # Use Mycroft Adapt locally
+            from .intent_train import AdaptIntentTrainer
+            return AdaptIntentTrainer
+        elif system == 'rasa':
+            # Use rasaNLU remotely
+            from .intent_train import RasaIntentTrainer
+            return RasaIntentRecognizer
+        else:
+            # Does nothing
+            from .intent_train import DummyIntentTrainer
+            return DummyIntentTrainer

@@ -14,7 +14,7 @@
                     <a href="/api/" class="badge badge-info ml-2">API</a>
                 </div>
                 <div class="navbar-container ml-auto">
-                    <span class="text-white">{{ this.profile }}</span>
+                    <span class="badge badge-primary ml-2" style="font-size: 1em">{{ this.profile }}</span>
                     <button class="btn btn-success ml-3" @click="train" :disabled="this.training" title="Re-train current profile">Train</button>
                     <button class="btn btn-danger ml-3" @click="restart" :disabled="this.restarting" title="Restart Rhasspy server">Restart</button>
                 </div>

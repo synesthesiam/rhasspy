@@ -38,58 +38,58 @@
                             <span class="col-form-label text-muted">(default profile)</span>
                         </div>
                     </div>
-                    <hr>
-                    <div class="form-group">
-                        <div class="form-row">
-                            <input type="checkbox" id="mqtt-enabled" v-model="mqttEnabled">
-                            <label for="mqtt-enabled" class="col-form-label">Enable MQTT</label>
-                            <span class="col-form-label text-muted">(<a href="https://docs.snips.ai/ressources/hermes-protocol">Snips.ai compatibility</a>)</span>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-row">
-                            <label for="mqtt-host" class="col-form-label">Host</label>
-                            <div class="col-sm-auto">
-                                <input id="mqtt-host" type="text" class="form-control" v-model="mqttHost" :disabled="!mqttEnabled">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-row">
-                            <label for="mqtt-port" class="col-form-label">Port</label>
-                            <div class="col-sm-auto">
-                                <input id="mqtt-port" type="text" class="form-control" v-model="mqttPort" :disabled="!mqttEnabled">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-row">
-                            <label for="mqtt-username" class="col-form-label">Username</label>
-                            <div class="col-sm-auto">
-                                <input id="mqtt-username" type="text" class="form-control" v-model="mqttUsername" :disabled="!mqttEnabled">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-row">
-                            <label for="mqtt-password" class="col-form-label">Password</label>
-                            <div class="col-sm-auto">
-                                <input id="mqtt-password" type="text" class="form-control" v-model="mqttPassword" :disabled="!mqttEnabled">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-row">
-                            <label for="mqtt-siteid" class="col-form-label">Site ID</label>
-                            <div class="col-sm-auto">
-                                <input id="mqtt-siteid" type="text" class="form-control" v-model="mqttSiteId" :disabled="!mqttEnabled">
-                            </div>
-                            <div class="col text-muted">
-                                Snips site name
-                            </div>
-                        </div>
-                    </div>
-
+                    <!-- <hr>
+                         <div class="form-group">
+                         <div class="form-row">
+                         <input type="checkbox" id="mqtt-enabled" v-model="mqttEnabled">
+                         <label for="mqtt-enabled" class="col-form-label">Enable MQTT</label>
+                         <span class="col-form-label text-muted">(<a href="https://docs.snips.ai/ressources/hermes-protocol">Snips.ai compatibility</a>)</span>
+                         </div>
+                         </div>
+                         <div class="form-group">
+                         <div class="form-row">
+                         <label for="mqtt-host" class="col-form-label">Host</label>
+                         <div class="col-sm-auto">
+                         <input id="mqtt-host" type="text" class="form-control" v-model="mqttHost" :disabled="!mqttEnabled">
+                         </div>
+                         </div>
+                         </div>
+                         <div class="form-group">
+                         <div class="form-row">
+                         <label for="mqtt-port" class="col-form-label">Port</label>
+                         <div class="col-sm-auto">
+                         <input id="mqtt-port" type="text" class="form-control" v-model="mqttPort" :disabled="!mqttEnabled">
+                         </div>
+                         </div>
+                         </div>
+                         <div class="form-group">
+                         <div class="form-row">
+                         <label for="mqtt-username" class="col-form-label">Username</label>
+                         <div class="col-sm-auto">
+                         <input id="mqtt-username" type="text" class="form-control" v-model="mqttUsername" :disabled="!mqttEnabled">
+                         </div>
+                         </div>
+                         </div>
+                         <div class="form-group">
+                         <div class="form-row">
+                         <label for="mqtt-password" class="col-form-label">Password</label>
+                         <div class="col-sm-auto">
+                         <input id="mqtt-password" type="text" class="form-control" v-model="mqttPassword" :disabled="!mqttEnabled">
+                         </div>
+                         </div>
+                         </div>
+                         <div class="form-group">
+                         <div class="form-row">
+                         <label for="mqtt-siteid" class="col-form-label">Site ID</label>
+                         <div class="col-sm-auto">
+                         <input id="mqtt-siteid" type="text" class="form-control" v-model="mqttSiteId" :disabled="!mqttEnabled">
+                         </div>
+                         <div class="col text-muted">
+                         Snips site name
+                         </div>
+                         </div>
+                         </div>
+                    -->
                 </div>
             </div>
 
@@ -290,18 +290,55 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="intent-system" id="remote-intent" value="remote" v-model="rhasspyIntent">
-                                <label class="form-check-label" for="remote-intent">
-                                    Use remote Rhasspy server for intent recognition
+                                <input class="form-check-input" type="radio" name="intent-system" id="adapt-intent" value="adapt" v-model="rhasspyIntent">
+                                <label class="form-check-label" for="adapt-intent">
+                                    Do intent recognition with <a href="https://github.com/MycroftAI/adapt/">Mycroft Adapt</a> on this device
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="intent-system" id="rasa-intent" value="rasa" v-model="rhasspyIntent">
+                                <label class="form-check-label" for="rasa-intent">
+                                    Use remote <a href="https://rasa.com/docs/nlu/">RasaNLU</a> server
                                 </label>
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <div class="form-row">
-                            <label for="intent-url" class="col-form-label">Rhasspy Text-to-Intent URL</label>
+                            <label for="rasa-intent-url" class="col-form-label">RasaNLU URL</label>
                             <div class="col">
-                                <input id="intent-url" type="text" class="form-control" v-model="intentURL" :disabled="rhasspyIntent != 'remote'">
+                                <input id="rasa-intent-url" type="text" class="form-control" v-model="rasaIntentURL" :disabled="rhasspyIntent != 'rasa'">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="col text-muted">
+                                Example: http://localhost:5000/
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="intent-system" id="remote-intent" value="remote" v-model="rhasspyIntent">
+                                <label class="form-check-label" for="remote-intent">
+                                    Use remote Rhasspy server
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="remote-intent-url" class="col-form-label">Rhasspy Text-to-Intent URL</label>
+                            <div class="col">
+                                <input id="remote-intent-url" type="text" class="form-control" v-model="remoteIntentURL" :disabled="rhasspyIntent != 'remote'">
                             </div>
                         </div>
                     </div>
@@ -353,21 +390,21 @@
                             </div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <div class="form-row">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-mqtt" value="hermes" v-model="audioSystem">
-                                <label class="form-check-label" for="audio-mqtt">
-                                    Get microphone input remotely with MQTT (Hermes protocol)
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="col text-muted">
-                                Rhasspy will listen for Audio data on <tt>hermes/audioServer/{{ this.mqttSiteId }}/audioFrame</tt>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- <div class="form-group"> -->
+                    <!-- <div class="form-row"> -->
+                    <!-- <div class="form-check"> -->
+                    <!-- <input class="form-check-input" type="radio" name="audioSystem" id="audio-mqtt" value="hermes" v-model="audioSystem"> -->
+                    <!-- <label class="form-check-label" for="audio-mqtt"> -->
+                    <!-- Get microphone input remotely with MQTT (Hermes protocol) -->
+                    <!-- </label> -->
+                    <!-- </div> -->
+                    <!-- </div> -->
+                    <!-- <div class="form-row"> -->
+                    <!-- <div class="col text-muted"> -->
+                    <!-- Rhasspy will listen for Audio data on <tt>hermes/audioServer/{{ this.mqttSiteId }}/audioFrame</tt> -->
+                    <!-- </div> -->
+                    <!-- </div> -->
+                    <!-- </div> -->
                 </div>
             </div>
 
@@ -424,7 +461,8 @@
              sttURL: '',
 
              rhasspyIntent: '',
-             intentURL: '',
+             rasaIntentURL: '',
+             remoteIntentURL: '',
 
              rhasspyWake: '',
              snowboyModel: '',
@@ -499,9 +537,13 @@
                                                                'intent.system',
                                                                this.defaultSettings.intent.system)
 
-                               this.intentURL = this._.get(this.profileSettings,
-                                                        'intent.remote.url',
-                                                        this.defaultSettings.intent.remote.url)
+                               this.rasaIntentURL = this._.get(this.profileSettings,
+                                                               'intent.rasa.url',
+                                                               this.defaultSettings.intent.rasa.url)
+
+                               this.remoteIntentURL = this._.get(this.profileSettings,
+                                                                 'intent.remote.url',
+                                                                 this.defaultSettings.intent.remote.url)
 
                                // Microphone
                                this.audioSystem = this._.get(this.profileSettings,
@@ -578,8 +620,12 @@
                         this.rhasspyIntent)
 
              this._.set(this.profileSettings,
+                        'intent.rasa.url',
+                        this.rasaIntentURL)
+
+             this._.set(this.profileSettings,
                         'intent.remote.url',
-                        this.intentURL)
+                        this.remoteIntentURL)
 
              // Wake
              this._.set(this.defaultSettings,
