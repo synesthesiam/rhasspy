@@ -29,26 +29,36 @@ class RhasspyCore:
     def __init__(self,
                  profile_name: str,
                  profiles_dirs: List[str],
-                 actor_system: Optional[ActorSystem] = None) -> None:
+                 actor_system: Optional[ActorSystem] = None,
+                 do_logging=True) -> None:
 
         self.profiles_dirs = profiles_dirs
         self.profile_name = profile_name
-        self.actor_system = actor_system or ActorSystem('multiprocQueueBase')
+        self.actor_system = actor_system
 
         self.profile = Profile(profile_name, profiles_dirs)
         self.defaults = Profile.load_defaults(profiles_dirs)
+        self.do_logging = do_logging
 
-        # ---------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
-        preload = self.profile.get('rhasspy.preload_profile', False)
+    def start(self, preload=None, block=True):
+        if self.actor_system is None:
+            kwargs = {}
+            if not self.do_logging:
+                kwargs['logDefs'] = { 'version': 1, 'loggers': { '': {}} }
+
+            self.actor_system = ActorSystem('multiprocQueueBase', **kwargs)
+
+        preload = preload or self.profile.get('rhasspy.preload_profile', False)
         self.dialogue_manager = self.actor_system.createActor(DialogueManager)
         with self.actor_system.private() as sys:
-            print(dir(sys))
             sys.ask(self.dialogue_manager,
-                    ConfigureEvent(self.profile, preload=preload, ready=True))
+                    ConfigureEvent(self.profile, preload=preload, ready=block))
 
             # Block until ready
-            sys.listen()
+            if block:
+                sys.listen()
 
     # -------------------------------------------------------------------------
 

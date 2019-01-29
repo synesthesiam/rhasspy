@@ -13,6 +13,7 @@ from typing import Dict, Any, Callable, Optional
 from collections import defaultdict
 
 from .actor import RhasspyActor
+from .utils import convert_wav
 
 # -----------------------------------------------------------------------------
 # Events
@@ -410,127 +411,86 @@ class ARecordAudioRecorder(RhasspyActor):
 # WAV based audio "recorder"
 # -----------------------------------------------------------------------------
 
-# class WavAudioRecorder(AudioRecorder):
-#     '''Pushes WAV data out instead of data from a microphone.'''
+class WavAudioRecorder(RhasspyActor):
+    '''Pushes WAV data out instead of data from a microphone.'''
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.receivers = []
+        self.buffers = {}
+        self.wav_path = wav_path
+        self.chunk_size = chunk_size
+        self.is_recording = False
 
-#     def __init__(self,
-#                  core,
-#                  wav_path: str,
-#                  end_of_file_callback: Optional[Callable[[str], None]]=None,
-#                  chunk_size:int=480) -> None:
+    def to_started(self, from_state):
+        self.wav_path = self.profile.get('microphone.wav.path')
+        self.chunk_size = self.config.get('microphone.wav.chunk_size', 480*2)
 
-#         # Chunk size set to 30 ms for webrtcvad
-#         AudioRecorder.__init__(self, core, device=None)
-#         self.wav_path = wav_path
-#         self.chunk_size = chunk_size
-#         self.end_of_file_callback = end_of_file_callback
+    def in_started(self, message, sender):
+        if isinstance(message, StartStreaming):
+            self.receivers.append(message.receiver)
+            self.transition('recording')
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+            self.transition('recording')
 
-#         self.buffer = bytes()
-#         self.buffer_users = 0
+    def to_recording(self, from_state):
+        def process_data():
+            with wave.open(self.wav_path, 'rb') as wav_file:
+                rate, width, channels = wav_file.getframerate(), wav_file.getsampwidth(), wav_file.getnchannels()
+                if (rate != 16000) or (width != 2) or (channels != 1):
+                    audio_data = convert_wav(wav_file.read())
+                else:
+                    # Use original data
+                    audio_data = wav_file.readframes(wav_file.getnframes())
 
-#         self.queue:Queue = Queue()
-#         self.queue_users = 0
+            i = 0
+            while (self.is_recording) and ((i+self.chunk_size) < len(audio_data)):
+                data = audio_data[i:i+self.chunk_size]
+                i += self.chunk_size
 
-#     # -------------------------------------------------------------------------
+                # Send to this actor to avoid threading issues
+                self.send(self.myAddress, AudioData(data))
 
-#     def start_recording(self, start_buffer: bool, start_queue: bool, device: Any=None):
-#         # Allow multiple "users" to listen for audio data
-#         if start_buffer:
-#             self.buffer_users += 1
+        self.is_recording = True
+        threading.Thread(target=process_data, daemon=True).start()
+        self.transition('recording')
 
-#         if start_queue:
-#             self.queue_users += 1
+    def in_recording(self, message, sender):
+        if isinstance(message, AudioData):
+            # Forward to subscribers
+            for receiver in self.receivers:
+                self.send(receiver, message)
 
-#         if not self.is_recording:
-#             # Reset
-#             self.buffer = bytes()
+            # Append to buffers
+            for receiver in self.buffers:
+                self.buffers[receiver] += message.data
+        elif isinstance(message, StartStreaming):
+            self.receivers.append(message.receiver)
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+        elif isinstance(message, StopStreaming):
+            if message.receiver is None:
+                # Clear all receivers
+                self.receivers.clear()
+            else:
+                self.receivers.remove(message.receiver)
+        elif isinstance(message, StopRecordingToBuffer):
+            if message.buffer_name is None:
+                # Clear all buffers
+                self.buffers.clear()
+            else:
+                # Respond with buffer
+                buffer = self.buffers.pop(message.buffer_name, bytes())
+                self.send(message.receiver or sender, AudioData(buffer))
 
-#             # Clear queue
-#             while not self.queue.empty():
-#                 self.queue.get_nowait()
+        # Check to see if anyone is still listening
+        if (len(self.receivers) == 0) and (len(self.buffers) == 0):
+            # Terminate audio recording
+            self.is_recording = False
+            self.transition('started')
 
-#             def process_data():
-#                 with wave.open(self.wav_path, 'rb') as wav_file:
-#                     rate, width, channels = wav_file.getframerate(), wav_file.getsampwidth(), wav_file.getnchannels()
-#                     if (rate != 16000) or (width != 2) or (channels != 1):
-#                         audio_data = SpeechDecoder.convert_wav(wav_file.read())
-#                     else:
-#                         # Use original data
-#                         audio_data = wav_file.readframes(wav_file.getnframes())
-
-#                 i = 0
-#                 while (i+self.chunk_size) < len(audio_data):
-#                     data = audio_data[i:i+self.chunk_size]
-#                     i += self.chunk_size
-
-#                     if self.buffer_users > 0:
-#                         self.buffer += data
-
-#                     if self.queue_users > 0:
-#                         self.queue.put(data)
-
-#                 if self.end_of_file_callback is not None:
-#                     self.end_of_file_callback(self.wav_path)
-
-#             # Start recording
-#             self._is_recording = True
-#             self.record_thread = threading.Thread(target=process_data, daemon=True)
-#             self.record_thread.start()
-
-#             self._logger.debug('Reading from WAV file')
-
-#     # -------------------------------------------------------------------------
-
-#     def stop_recording(self, stop_buffer: bool, stop_queue: bool) -> bytes:
-#         if stop_buffer:
-#             self.buffer_users = max(0, self.buffer_users - 1)
-
-#         if stop_queue:
-#             self.queue_users = max(0, self.queue_users - 1)
-
-#         # Only stop if all "users" have disconnected
-#         if self.is_recording and (self.buffer_users <= 0) and (self.queue_users <= 0):
-#             # Shut down audio system
-#             self._is_recording = False
-#             self.record_thread.join()
-
-#             self._logger.debug('Stopped reading from WAV file')
-
-#             # Write final empty buffer
-#             self.queue.put(bytes())
-
-#         if stop_buffer:
-#             # Return WAV data
-#             with io.BytesIO() as wav_buffer:
-#                 with wave.open(wav_buffer, mode='wb') as wav_file:
-#                     wav_file.setframerate(16000)
-#                     wav_file.setsampwidth(2)
-#                     wav_file.setnchannels(1)
-#                     wav_file.writeframesraw(self.buffer)
-
-#                 return wav_buffer.getvalue()
-
-#         # Empty buffer
-#         return bytes()
-
-#     # -------------------------------------------------------------------------
-
-#     def stop_all(self) -> None:
-#         if self.is_recording:
-#             self._is_recording = False
-#             self.record_thread.join()
-
-#             if self.queue_users > 0:
-#                 # Write final empty buffer
-#                 self.queue.put(bytes())
-
-#             self.buffer_users = 0
-#             self.queue_users = 0
-
-#     # -------------------------------------------------------------------------
-
-#     def get_queue(self) -> Queue:
-#         return self.queue
+    def to_stopped(self, from_state):
+        self.is_recording = False
 
 # -----------------------------------------------------------------------------
 # MQTT based audio "recorder" for Snips.AI Hermes Protocol
