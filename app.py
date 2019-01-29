@@ -38,7 +38,9 @@ from rhasspy.dialogue import (DialogueManager, GetMicrophones, TestMicrophones,
                               HandleIntent)
 
 from rhasspy.profiles import Profile
+from rhasspy.actor import ConfigureEvent
 from rhasspy.utils import recursive_update, buffer_to_wav, load_phoneme_examples
+from rhasspy.audio_recorder import PyAudioRecorder, StartRecordingToBuffer, StopRecordingToBuffer
 
 # -----------------------------------------------------------------------------
 
@@ -51,9 +53,6 @@ def shutdown(*args, **kwargs):
     if system is not None:
         system.shutdown()
         system = None
-
-from rhasspy.actor import ConfigureEvent
-from rhasspy.audio_recorder import PyAudioRecorder, StartRecordingToBuffer, StopRecordingToBuffer
 
 # -----------------------------------------------------------------------------
 # Flask Web App Setup
@@ -82,7 +81,7 @@ args = parser.parse_args(shlex.split(arg_str))
 logger.debug(args)
 
 # -----------------------------------------------------------------------------
-# Core Setup
+# Dialogue Manager Setup
 # -----------------------------------------------------------------------------
 
 dialogue_manager = None
@@ -95,14 +94,15 @@ profiles_dirs = [path for path in
 
 profiles_dirs.reverse()
 
-
 def start_rhasspy():
     global dialogue_manager, profile
+
+    default_settings = Profile.load_defaults(profiles_dirs)
 
     # Get name of profile
     profile_name = args.profile \
         or os.environ.get('RHASSPY_PROFILE', None) \
-        or 'en'
+        or pydash.get(default_settings, 'rhasspy.default_profile', 'en')
 
     # Load profile
     profile = Profile(profile_name, profiles_dirs)

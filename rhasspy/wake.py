@@ -28,106 +28,96 @@ class WakeWordDetected:
 # https://github.com/cmusphinx/pocketsphinx
 # -----------------------------------------------------------------------------
 
-# class PocketsphinxWakeListener(WakeListener):
-#     def __init__(self, core, audio_recorder: AudioRecorder, profile: Profile,
-#                  detected_callback: Callable[[str, str], None]) -> None:
-#         '''Listens for a keyphrase using pocketsphinx.
-#         Calls detected_callback when keyphrase is detected and stops.'''
+class PocketsphinxWakeListener(RhasspyActor):
+    '''Listens for a wake word with pocketsphinx.'''
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.receivers = []
+        self.decoder = None
+        self.decoder_started = False
 
-#         WakeListener.__init__(self, core, audio_recorder, profile)
-#         self.callback = detected_callback
-#         self.decoder = None
-#         self.keyphrase = ''
-#         self.threshold = 0.0
-#         self.listen_thread = None
+    def to_started(self, from_state):
+        self.recorder = self.config['recorder']
+        self.load_decoder()
+        self.transition('loaded')
 
-#     def preload(self):
-#         self._maybe_load_decoder()
+    def in_loaded(self, message, sender):
+        if isinstance(message, ListenForWakeWord):
+            self.receivers.append(message.receiver or sender)
+            self.transition('listening')
 
-#     # -------------------------------------------------------------------------
+            if not self.decoder_started:
+                self.decoder.start_utt()
+                self.decoder_started = True
 
-#     def start_listening(self, **kwargs):
-#         if self.is_listening:
-#             logger.warn('Already listening')
-#             return
+            self.send(self.recorder, StartStreaming(self.myAddress))
 
-#         self._maybe_load_decoder()
+    def in_listening(self, message, sender):
+        if isinstance(message, AudioData):
+            result = self.process_data(message.data)
+            if result is not None:
+                self._logger.debug('Hotword detected (%s)' % self.keyphrase)
+                result = WakeWordDetected(self.keyphrase)
+                for receiver in self.receivers:
+                    self.send(receiver, result)
+        elif isinstance(message, StopListeningForWakeWord):
+            self.receivers.remove(message.receiver or sender)
+            if len(self.receivers) == 0:
+                if self.decoder_started:
+                    self.decoder.end_utt()
+                    self.decoder_started = False
 
-#         def process_data():
-#             do_callback = False
-#             self.decoder.start_utt()
+                self.send(self.recorder, StopStreaming(self.myAddress))
+                self.transition('loaded')
 
-#             try:
-#                 while True:
-#                     # Block until audio data comes in
-#                     data = self.audio_recorder.get_queue().get()
-#                     if len(data) == 0:
-#                         self.decoder.end_utt()
-#                         logger.debug('Listening cancelled')
-#                         break
+    # -------------------------------------------------------------------------
 
-#                     self.decoder.process_raw(data, False, False)
-#                     hyp = self.decoder.hyp()
-#                     if hyp:
-#                         self.decoder.end_utt()
-#                         logger.debug('Keyphrase detected (%s)!' % self.keyphrase)
-#                         do_callback = True
-#                         break
-#             except Exception as e:
-#                 logger.exception('process_data')
+    def process_data(self):
+        self.decoder.process_raw(data, False, False)
+        hyp = self.decoder.hyp()
+        if hyp:
+            self.decoder.end_utt()
+            self.decoder_started = False
+            return hyp.hypstr()
 
-#             self._is_listening = False
+        return None
 
-#             if do_callback:
-#                 self.callback(self.profile.name, self.keyphrase, **kwargs)
+    # -------------------------------------------------------------------------
 
-#         # Start audio recording
-#         self.audio_recorder.start_recording(False, True)
+    def load_decoder(self):
+        '''Loads speech decoder if not cached.'''
+        import pocketsphinx
 
-#         # Decoder runs in a separate thread
-#         listen_thread = threading.Thread(target=process_data, daemon=True)
-#         listen_thread.start()
-#         self._is_listening = True
+        # Load decoder settings (use speech-to-text configuration as a fallback)
+        hmm_path = self.profile.read_path(
+            self.profile.get('wake.pocketsphinx.acoustic_model', None) \
+            or self.profile.get('speech_to_text.pocketsphinx.acoustic_model'))
 
-#         logging.debug('Listening for wake word with pocketsphinx (keyphrase=%s, threshold=%s)' % (self.keyphrase, self.threshold))
+        dict_path = self.profile.read_path(
+            self.profile.get('wake.pocketsphinx.dictionary', None) \
+            or self.profile.get('speech_to_text.pocketsphinx.dictionary'))
 
-#     # -------------------------------------------------------------------------
+        self.threshold = float(self.profile.get('wake.pocketsphinx.threshold', 1e-40))
+        self.keyphrase = self.profile.get('wake.pocketsphinx.keyphrase', '')
+        assert len(self.keyphrase) > 0, 'No wake keyphrase'
 
-#     def _maybe_load_decoder(self):
-#         '''Loads speech decoder if not cached.'''
-#         if self.decoder is None:
-#             import pocketsphinx
+        self._logger.debug('Loading wake decoder with hmm=%s, dict=%s' % (hmm_path, dict_path))
 
-#             # Load decoder settings (use speech-to-text configuration as a fallback)
-#             hmm_path = self.profile.read_path(
-#                 self.profile.get('wake.pocketsphinx.acoustic_model', None) \
-#                 or self.profile.get('speech_to_text.pocketsphinx.acoustic_model'))
+        decoder_config = pocketsphinx.Decoder.default_config()
+        decoder_config.set_string('-hmm', hmm_path)
+        decoder_config.set_string('-dict', dict_path)
+        decoder_config.set_string('-keyphrase', self.keyphrase)
+        decoder_config.set_string('-logfn', '/dev/null')
+        decoder_config.set_float('-kws_threshold', self.threshold)
 
-#             dict_path = self.profile.read_path(
-#                 self.profile.get('wake.pocketsphinx.dictionary', None) \
-#                 or self.profile.get('speech_to_text.pocketsphinx.dictionary'))
+        mllr_path = self.profile.read_path(
+            self.profile.get('wake.pocketsphinx.mllr_matrix'))
 
-#             self.threshold = float(self.profile.get('wake.pocketsphinx.threshold', 1e-40))
-#             self.keyphrase = self.profile.get('wake.pocketsphinx.keyphrase', '')
-#             assert len(self.keyphrase) > 0, 'No wake keyphrase'
+        if os.path.exists(mllr_path):
+            self._logger.debug('Using tuned MLLR matrix for acoustic model: %s' % mllr_path)
+            decoder_config.set_string('-mllr', mllr_path)
 
-#             logger.debug('Loading wake decoder with hmm=%s, dict=%s' % (hmm_path, dict_path))
-
-#             decoder_config = pocketsphinx.Decoder.default_config()
-#             decoder_config.set_string('-hmm', hmm_path)
-#             decoder_config.set_string('-dict', dict_path)
-#             decoder_config.set_string('-keyphrase', self.keyphrase)
-#             decoder_config.set_string('-logfn', '/dev/null')
-#             decoder_config.set_float('-kws_threshold', self.threshold)
-
-#             mllr_path = self.profile.read_path(
-#                 self.profile.get('wake.pocketsphinx.mllr_matrix'))
-
-#             if os.path.exists(mllr_path):
-#                 logger.debug('Using tuned MLLR matrix for acoustic model: %s' % mllr_path)
-#                 decoder_config.set_string('-mllr', mllr_path)
-
-#             self.decoder = pocketsphinx.Decoder(decoder_config)
+        self.decoder = pocketsphinx.Decoder(decoder_config)
 
 # -----------------------------------------------------------------------------
 # Snowboy wake listener

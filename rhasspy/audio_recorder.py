@@ -416,9 +416,9 @@ class PyAudioRecorder(RhasspyActor):
 
 #         return result
 
-# # -----------------------------------------------------------------------------
-# # WAV based audio "recorder"
-# # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# WAV based audio "recorder"
+# -----------------------------------------------------------------------------
 
 # class WavAudioRecorder(AudioRecorder):
 #     '''Pushes WAV data out instead of data from a microphone.'''
@@ -542,10 +542,10 @@ class PyAudioRecorder(RhasspyActor):
 #     def get_queue(self) -> Queue:
 #         return self.queue
 
-# # -----------------------------------------------------------------------------
-# # MQTT based audio "recorder" for Snips.AI Hermes Protocol
-# # https://docs.snips.ai/ressources/hermes-protocol
-# # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# MQTT based audio "recorder" for Snips.AI Hermes Protocol
+# https://docs.snips.ai/ressources/hermes-protocol
+# -----------------------------------------------------------------------------
 
 # class HermesAudioRecorder(AudioRecorder):
 #     '''Receives audio data from MQTT via Hermes protocol.'''

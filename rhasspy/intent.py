@@ -193,7 +193,7 @@ class AdaptIntentRecognizer(RhasspyActor):
         RhasspyActor.__init__(self)
         self.engine = None
 
-    def to_started(self):
+    def to_started(self, from_state):
         self.load_engine()
         self.transition('loaded')
 
