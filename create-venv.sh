@@ -8,7 +8,7 @@ echo "Installing system dependencies"
 sudo apt-get update
 sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
      sox espeak swig portaudio19-dev \
-     libnanomsg-dev \
+     libatlas-base-dev \
      sphinxbase-utils sphinxtrain pocketsphinx
 
 if [[ -z "$(which java)" ]]; then
@@ -28,8 +28,8 @@ python3 -m venv "$VENV_PATH"
 source "$VENV_PATH"/bin/activate
 python3 -m pip install wheel
 python3 -m pip install -r requirements.txt
-python3 -m pip install https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz
-python3 -m pip install etc/nanomsg-python-master.zip
+python3 -m pip install etc/pocketsphinx-python.tar.gz
+python3 -m pip install etc/snowboy-1.3.0.tar.gz
 
 if [[ -z "$RHASSPY_DOCKER" ]]; then
     echo "Installing pre-compiled binaries"

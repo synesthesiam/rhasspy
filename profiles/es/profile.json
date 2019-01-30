@@ -1,0 +1,7 @@
+{
+    "language": "es",
+    "speech_to_text": {
+        "g2p_upper": true,
+        "dictionary_upper": true
+    }
+}

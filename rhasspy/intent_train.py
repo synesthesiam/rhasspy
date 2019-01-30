@@ -7,37 +7,51 @@ from urllib.parse import urljoin
 from collections import defaultdict, Counter
 from typing import Dict, List, Set, Any
 
-from stt_train import SpeechTrainer
+from .actor import RhasspyActor
+from .stt_train import SBI_TYPE
+
+# -----------------------------------------------------------------------------
+# Events
+# -----------------------------------------------------------------------------
+
+class TrainIntent:
+    def __init__(self, tagged_sentences: Dict[str, List[str]],
+                 sentences_by_intent,
+                 receiver=None):
+        self.tagged_sentences = tagged_sentences
+        self.sentences_by_intent = sentences_by_intent
+        self.receiver = receiver
+
+class IntentTrainingComplete:
+    pass
 
 # -----------------------------------------------------------------------------
 
-logger = logging.getLogger(__name__)
-
-class IntentTrainer:
-    def __init__(self, profile) -> None:
-        self.profile = profile
-
-    def train(self,
-              tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SpeechTrainer.SBI_TYPE):
-        '''Trains an intent recognizer uses tagged sentences with
-        Markdown-style entites (grouped by intent).
-
-        Also provided are the same sentences, grouped by intent,
-        sanitized and tokenized (see stt_train).'''
-        pass
+class DummyIntentTrainer(RhasspyActor):
+    '''Does nothing.'''
+    def in_started(self, message, sender):
+        if isinstance(message, TrainIntent):
+            self.send(message.receiver or sender,
+                      IntentTrainingComplete())
 
 # -----------------------------------------------------------------------------
 # Fuzzywuzzy-based Intent Trainer
 # https://github.com/seatgeek/fuzzywuzzy
 # -----------------------------------------------------------------------------
 
-class FuzzyWuzzyIntentTrainer(IntentTrainer):
+class FuzzyWuzzyIntentTrainer(RhasspyActor):
     '''Save examples to JSON for fuzzy string matching later.'''
+    def in_started(self, message, sender):
+        if isinstance(message, TrainIntent):
+            self.train(message.tagged_sentences,
+                       message.sentences_by_intent)
+
+            self.send(message.receiver or sender,
+                      IntentTrainingComplete())
 
     def train(self,
               tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SpeechTrainer.SBI_TYPE):
+              sentences_by_intent: SBI_TYPE):
 
         examples_path = self.profile.write_path(
             self.profile.get('intent.fuzzywuzzy.examples_json'))
@@ -46,11 +60,11 @@ class FuzzyWuzzyIntentTrainer(IntentTrainer):
         with open(examples_path, 'w') as examples_file:
             json.dump(examples, examples_file, indent=4)
 
-        logger.debug('Wrote intent examples to %s' % examples_path)
+        self._logger.debug('Wrote intent examples to %s' % examples_path)
 
     # -------------------------------------------------------------------------
 
-    def _make_examples(self, sentences_by_intent: SpeechTrainer.SBI_TYPE) -> Dict[str, Any]:
+    def _make_examples(self, sentences_by_intent: SBI_TYPE) -> Dict[str, Any]:
         '''Write intent examples to a JSON file.'''
         from fuzzywuzzy import process
 
@@ -74,12 +88,21 @@ class FuzzyWuzzyIntentTrainer(IntentTrainer):
 # https://rasa.com/
 # -----------------------------------------------------------------------------
 
-class RasaIntentTrainer(IntentTrainer):
+class RasaIntentTrainer(RhasspyActor):
     '''Uses rasaNLU HTTP API to train a recognizer.'''
+    def in_started(self, message, sender):
+        if isinstance(message, TrainIntent):
+            self.train(message.tagged_sentences,
+                       message.sentences_by_intent)
+
+            self.send(message.receiver or sender,
+                      IntentTrainingComplete())
+
+    # -------------------------------------------------------------------------
 
     def train(self,
               tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SpeechTrainer.SBI_TYPE):
+              sentences_by_intent: SBI_TYPE):
 
         import requests
 
@@ -133,7 +156,7 @@ class RasaIntentTrainer(IntentTrainer):
                                      params={ 'project': project_name },
                                      headers={ 'Content-Type': 'application/x-yml' })
 
-            logger.debug('POSTed %s byte(s) to %s' % (len(training_data), training_url))
+            self._logger.debug('POSTed %s byte(s) to %s' % (len(training_data), training_url))
             response.raise_for_status()
 
 
@@ -142,12 +165,20 @@ class RasaIntentTrainer(IntentTrainer):
 # http://github.com/MycroftAI/adapt
 # -----------------------------------------------------------------------------
 
-class AdaptIntentTrainer(IntentTrainer):
+class AdaptIntentTrainer(RhasspyActor):
     '''Configure a Mycroft Adapt engine.'''
+    def in_started(self, message, sender):
+        if isinstance(message, TrainIntent):
+            self.train(message.tagged_sentences,
+                       message.sentences_by_intent)
 
-    def train(self,
-              tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SpeechTrainer.SBI_TYPE):
+            self.send(message.receiver or sender,
+                      IntentTrainingComplete())
+
+    # -------------------------------------------------------------------------
+
+    def train(self, tagged_sentences: Dict[str, List[str]],
+              sentences_by_intent: SBI_TYPE):
 
         # Load "stop" words (common words that are excluded from training)
         stop_words: Set[str] = set()
@@ -255,4 +286,4 @@ class AdaptIntentTrainer(IntentTrainer):
         with open(config_path, 'w') as config_file:
             json.dump(config, config_file, indent=4)
 
-        logger.debug('Wrote adapt configuration to %s' % config_path)
+        self._logger.debug('Wrote adapt configuration to %s' % config_path)

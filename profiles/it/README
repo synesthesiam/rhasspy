@@ -1,0 +1,24 @@
+https://sourceforge.net/projects/cmusphinx/files/G2P%20Models/fst/
+
+This archive contains grapheme-to-phoneme model (it.fst) which can be 
+used in phonetisaurus in conjunction with Italian acoustic model.
+
+Files
+- it.dic: The dictionary used to train the model.
+- it.fst: Phonetisaurus g2p model
+
+Results of the training are
+
+######################################################################
+                          EVALUATION RESULTS                          
+----------------------------------------------------------------------
+(T)otal tokens in reference: 2528
+(M)atches: 2404  (S)ubstitutions: 122  (I)nsertions: 0  (D)eletions: 2
+% Correct (M/T)           -- %95.09
+% Token ER ((S+I+D)/T)    -- %4.91
+% Accuracy 1.0-ER         -- %95.09
+       --------------------------------------------------------       
+(S)equences: 357  (C)orrect sequences: 257  (E)rror sequences: 100
+% Sequence ER (E/S)       -- %28.01
+% Sequence Acc (1.0-E/S)  -- %71.99
+######################################################################

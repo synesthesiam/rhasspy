@@ -1,0 +1,11 @@
+https://sourceforge.net/projects/cmusphinx/files/G2P%20Models/
+
+This archive contains grapheme-to-phoneme model (model.fst.ser) which can be 
+used in cmu sphinx4 in conjunction with the Russian Voxforge acoustic model.
+
+Files
+- msu_ru_nsh.dic: The dictionary used to train the model.
+- model.fst.ser: Model in java fst format.
+- model.fst: Model in binary openFST format.
+- model.fst.txt, model.input.syms, model.output.syms: Model in text openFST format.
+- evaluation.txt: Evaluation results.

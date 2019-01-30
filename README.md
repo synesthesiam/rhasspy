@@ -15,7 +15,7 @@ To run Rhasspy using Docker:
           -e RHASSPY_PROFILES=/profiles \
           -v "$HOME/.rhasspy:/profiles" \
           --device /dev/snd:/dev/snd \
-          synesthesiam/rhasspy-hassio-addon:latest
+          synesthesiam/rhasspy-server:latest
           
 Then visit the web interface at http://localhost:12101
 
@@ -32,15 +32,25 @@ A typical voice assistant (Alexa, Google Home, etc.) solves a number of importan
 
 Rhasspy provides offline, private solutions to problems 1-4 using off-the-shelf tools. These tools are:
 
-1. [Pocketsphinx Keyphrase](https://cmusphinx.github.io/wiki/tutoriallm/#using-keyword-lists-with-pocketsphinx) (wake word)
-2. [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) (wait for silence)
-3. [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx) (speech to text)
-4. [RasaNLU](https://rasa.com/) (intent recognition)
+1. Wake word
+  * [Pocketsphinx Keyphrase](https://cmusphinx.github.io/wiki/tutoriallm/#using-keyword-lists-with-pocketsphinx)
+  * [snowboy](https://snowboy.kitt.ai)
+  * [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise)
+2. Command listener
+  * [webrtcvad](https://github.com/wiseman/py-webrtcvad)
+3. Speech to text
+  * [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx)
+  * Remote HTTP server (WAV -> text)
+4. Intent recognition
+  * [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy)
+  * [RasaNLU](https://rasa.com/)
+  * [Mycroft Adapt](https://github.com/MycroftAI/adapt)
+  * Remote HTTP server (text -> JSON)
 
 For problem 5 (fulfilling the speaker's intent), Rhasspy works with Home Assistant's built-in [automation capability](https://www.home-assistant.io/docs/automation/). For each intent you define, Rhasspy sends an event to Home Assistant that can be used to do anything Home Assistant can do (toggle switches, call REST services, etc.). This means that Rhasspy will do very little out of the box compared to other voice assistants, but there will also be no limits to what can be done.
 
 How it Works
----------------
+------------
 
 Rhasspy transforms speech commands into [Home Assistant events](https://www.home-assistant.io/docs/configuration/events/) that [trigger automations](https://www.home-assistant.io/docs/automation/trigger/#event-trigger). You define these commands in a Rhasspy [profile](doc/profiles.md) using a specialized template syntax that lets you control how Rhasspy creates the events it sends to Home Assistant.
 
@@ -125,6 +135,15 @@ Rhasspy allows you to customize every stage of intent recognition, including:
 3. Specifying how you pronounce specific words, including words that Rhasspy doesn't know yet
 4. Splitting speech recording, transcription, and intent recognition across multiple machines
 
+Audio Input
+-------------
+
+Rhasspy can listen to audio input from one of several sources:
+
+* [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) (local)
+* ALSA (via direct use of `arecord`)
+* MQTT ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
+
 Profiles
 ----------
 
@@ -156,14 +175,14 @@ Next, start the Rhasspy Docker image in the background:
           -e RHASSPY_PROFILES=/profiles \
           -v "$HOME/.rhasspy:/profiles" \
           --device /dev/snd:/dev/snd \
-          synesthesiam/rhasspy-hassio-addon:latest
+          synesthesiam/rhasspy-server:latest
           
 The web interface should now be accessible at http://localhost:12101
 
 If you're using [docker compose](https://docs.docker.com/compose/), try this:
 
     rhasspy:
-        image: "synesthesiam/rhasspy-hassio-addon:latest"
+        image: "synesthesiam/rhasspy-server:latest"
         restart: unless-stopped
         environment:
             RHASSPY_PROFILES: "/profiles"
@@ -205,13 +224,17 @@ Supporting Tools
 The following tools/libraries help to support Rhasspy:
 
 * [Flask](http://flask.pocoo.org) (web server)
-* [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx) (speech to text)
-* [Opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary) (language modeling)
-* [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) (word pronunciations)
 * [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy) (fuzzy string matching)
-* [RasaNLU](https://rasa.com/) (intent recognition)
+* [Mycroft Adapt](https://github.com/MycroftAI/adapt) (intent recognition)
+* [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise) (wake word)
+* [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) (word pronunciations)
+* [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx) (speech to text, wake word)
+* [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) (microphone)
 * [Python 3](https://www.python.org)
+* [Opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary) (language modeling)
+* [RasaNLU](https://rasa.com/) (intent recognition)
+* [sphinxtrain](https://github.com/cmusphinx/sphinxtrain) (acoustic model tuning)
+* [snowboy](https://snowboy.kitt.ai) (wake word)
 * [Sox](http://sox.sourceforge.net) (WAV conversion)
 * [Vue.js](https://vuejs.org/) (web UI)
-* [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) (microphone recording)
 * [webrtcvad](https://github.com/wiseman/py-webrtcvad) (voice activity detection)

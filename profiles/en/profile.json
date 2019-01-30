@@ -12,5 +12,28 @@
             ]
         },
         "sentence_casing": "lower"
+    },
+    "home_assistant": {
+        "url": "http://hassio/homeassistant/",
+        "api_password": "",
+        "access_token": ""
+    },
+    "speech_to_text": {
+        "system": "pocketsphinx"
+    },
+    "intent": {
+        "system": "fuzzywuzzy"
+    },
+    "wake": {
+        "system": "snowboy",
+        "snowboy": {
+            "model": "okay_rhasspy.pmdl"
+        },
+        "pocketsphinx": {
+            "keyphrase": "okay rhasspy"
+        }
+    },
+    "microphone": {
+        "system": "pyaudio"
     }
 }

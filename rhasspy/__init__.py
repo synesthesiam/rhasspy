@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import os
 import sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 import io
 import json
 import argparse
@@ -15,10 +13,10 @@ import itertools
 import wave
 import math
 
-from utils import extract_entities
-from audio_recorder import WavAudioRecorder
-from wake import PocketsphinxWakeListener
-from tune import SphinxTrainSpeechTuner
+import pydash
+
+from .profiles import Profile
+from .utils import extract_entities, buffer_to_wav
 
 # -----------------------------------------------------------------------------
 
@@ -51,38 +49,44 @@ def main():
     train_parser = sub_parsers.add_parser('train', help='Re-train profile')
 
     # record
-    record_parser = sub_parsers.add_parser('record', help='Record test phrases for profile')
-    record_parser.add_argument('--directory', help='Directory to write WAV files and intent JSON files')
+    # record_parser = sub_parsers.add_parser('record', help='Record test phrases for profile')
+    # record_parser.add_argument('--directory', help='Directory to write WAV files and intent JSON files')
 
     # record-wake
-    record_wake_parser = sub_parsers.add_parser('record-wake', help='Record wake word examples for profile')
-    record_wake_parser.add_argument('--directory', help='Directory to write WAV files')
-    record_wake_parser.add_argument('--negative', action='store_true', help='Record negative examples (not the wake word)')
+    # record_wake_parser = sub_parsers.add_parser('record-wake', help='Record wake word examples for profile')
+    # record_wake_parser.add_argument('--directory', help='Directory to write WAV files')
+    # record_wake_parser.add_argument('--negative', action='store_true', help='Record negative examples (not the wake word)')
 
     # tune
-    tune_parser = sub_parsers.add_parser('tune', help='Tune speech acoustic model for profile')
-    tune_parser.add_argument('--directory', help='Directory with WAV files and intent JSON files')
+    # tune_parser = sub_parsers.add_parser('tune', help='Tune speech acoustic model for profile')
+    # tune_parser.add_argument('--directory', help='Directory with WAV files and intent JSON files')
 
     # tune-wake
-    tune_wake_parser = sub_parsers.add_parser('tune-wake', help='Tune wake acoustic model for profile')
-    tune_wake_parser.add_argument('--directory', help='Directory with WAV files')
+    # tune_wake_parser = sub_parsers.add_parser('tune-wake', help='Tune wake acoustic model for profile')
+    # tune_wake_parser.add_argument('--directory', help='Directory with WAV files')
 
     # test
-    test_parser = sub_parsers.add_parser('test', help='Test speech/intent recognizers for profile')
-    test_parser.add_argument('directory', help='Directory with WAV files and intent JSON files')
+    # test_parser = sub_parsers.add_parser('test', help='Test speech/intent recognizers for profile')
+    # test_parser.add_argument('directory', help='Directory with WAV files and intent JSON files')
 
     # test-wake
-    test_wake_parser = sub_parsers.add_parser('test-wake', help='Test wake word examples for profile')
-    test_wake_parser.add_argument('--directory', help='Directory with WAV files')
+    # test_wake_parser = sub_parsers.add_parser('test-wake', help='Test wake word examples for profile')
+    # test_wake_parser.add_argument('--directory', help='Directory with WAV files')
 
     # mic2wav
     mic2wav_parser = sub_parsers.add_parser('mic2wav', help='Voice command to WAV data')
+    mic2wav_parser.add_argument('--timeout', type=float, default=None,
+                                help='Maximum number of seconds to record (default=profile)')
 
     # mic2text
     mic2text_parser = sub_parsers.add_parser('mic2text', help='Voice command to text transcription')
+    mic2text_parser.add_argument('--timeout', type=float, default=None,
+                                 help='Maximum number of seconds to record (default=profile)')
 
     # mic2intent
     mic2intent_parser = sub_parsers.add_parser('mic2intent', help='Voice command to parsed intent')
+    mic2intent_parser.add_argument('--timeout', type=float, default=None,
+                                   help='Maximum number of seconds to record (default=profile)')
 
     # word2phonemes
     word2phonemes_parser = sub_parsers.add_parser('word2phonemes', help='Get pronunciation(s) for word(s)')
@@ -104,6 +108,8 @@ def main():
                                  default=0, help='Seconds of silence to add before each WAV')
     wav2mqtt_parser.add_argument('--silence-after', type=float,
                                  default=0, help='Seconds of silence to add after each WAV')
+    wav2mqtt_parser.add_argument('--pause', type=float, default=0.01,
+                                 help='Seconds to wait before sending next chunk (default=0.01)')
 
     # sleep
     sleep_parser = sub_parsers.add_parser('sleep', help='Wait for wake word')
@@ -112,6 +118,12 @@ def main():
 
     args = parser.parse_args()
 
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+        do_logging = True
+    else:
+        do_logging = False
+
     # Like PATH, searched in reverse order
     profiles_dirs = [path for path in
                      os.environ.get('RHASSPY_PROFILES', 'profiles')\
@@ -119,75 +131,79 @@ def main():
 
     profiles_dirs.reverse()
 
+    default_settings = Profile.load_defaults(profiles_dirs)
+
+    # Get name of profile
+    profile_name = args.profile \
+        or os.environ.get('RHASSPY_PROFILE', None) \
+        or pydash.get(default_settings, 'rhasspy.default_profile', 'en')
+
     # Create rhasspy core
-    from .core import Rhasspy
-    core = Rhasspy(profiles_dirs)
+    from .core import RhasspyCore
+    core = RhasspyCore(profile_name, profiles_dirs,
+                       do_logging=do_logging)
 
-    # Load profile
-    if args.profile is not None:
-        profile = core.profiles[args.profile]
+    if args.command == 'info':
+        if args.defaults:
+            # Print default settings
+            json.dump(core.defaults.json, sys.stdout, indent=4)
+        else:
+            # Print profile settings
+            json.dump(core.profile.json, sys.stdout, indent=4)
     else:
-        profile = core.default_profile
+        # Patch profile
+        profile = core.profile
+        profile.set('rhasspy.listen_on_start', False)
+        profile.set('rhasspy.preload_profile', False)
 
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
+        if args.command == 'wav2mqtt':
+            profile.set('mqtt.enabled', True)
 
-    # Execute command
-    command_funcs = {
-        'info': info,
-        'wav2text': wav2text,
-        'text2intent': text2intent,
-        'wav2intent': wav2intent,
-        'train': train,
-        'record': record,
-        'record-wake': record_wake,
-        'tune': tune,
-        'tune-wake': tune_wake,
-        'test': test,
-        'test-wake': test_wake,
-        'mic2text': mic2text,
-        'mic2intent': mic2intent,
-        'mic2wav': mic2wav,
-        'word2phonemes': word2phonemes,
-        'word2wav': word2wav,
-        'wav2mqtt': wav2mqtt,
-        'sleep': sleep
-    }
+        # Execute command
+        command_funcs = {
+            'wav2text': wav2text,
+            'text2intent': text2intent,
+            'wav2intent': wav2intent,
+            'train': train_profile,
+            'record': record,
+            'record-wake': record_wake,
+            'tune': tune,
+            'tune-wake': tune_wake,
+            'test': test,
+            'test-wake': test_wake,
+            'mic2text': mic2text,
+            'mic2intent': mic2intent,
+            'mic2wav': mic2wav,
+            'word2phonemes': word2phonemes,
+            'word2wav': word2wav,
+            'wav2mqtt': wav2mqtt,
+            'sleep': sleep
+        }
 
-    command_funcs[args.command](core, profile, args)
-
-# -----------------------------------------------------------------------------
-# info: print profile JSON
-# -----------------------------------------------------------------------------
-
-def info(core, profile, args):
-    if args.defaults:
-        # Print default settings
-        json.dump(core.defaults_json, sys.stdout, indent=4)
-    else:
-        # Print profile settings
-        json.dump(profile.json, sys.stdout, indent=4)
+        core.start()
+        try:
+            command_funcs[args.command](core, profile, args)
+        finally:
+            core.shutdown()
 
 # -----------------------------------------------------------------------------
 # wav2text: transcribe WAV file(s) to text
 # -----------------------------------------------------------------------------
 
 def wav2text(core, profile, args):
-    decoder = core.get_speech_decoder(profile.name)
-
     if len(args.wav_files) > 0:
         # Read WAV paths from argument list
         transcriptions = {}
         for wav_path in args.wav_files:
             with open(wav_path, 'rb') as wav_file:
-                text = decoder.transcribe_wav(wav_file.read())
+                text = core.transcribe_wav(wav_file.read()).text
                 transcriptions[wav_path] = text
 
         # Output JSON
         json.dump(transcriptions, sys.stdout, indent=4)
     else:
         # Read WAV data from stdin
-        text = decoder.transcribe_wav(sys.stdin.buffer.read())
+        text = core.transcribe_wav(sys.stdin.buffer.read()).text
 
         # Output text
         print(text)
@@ -197,14 +213,12 @@ def wav2text(core, profile, args):
 # -----------------------------------------------------------------------------
 
 def text2intent(core, profile, args):
-    recognizer = core.get_intent_recognizer(profile.name)
-
     # Parse sentences from command line or stdin
     intents = {}
     sentences = args.sentences if len(args.sentences) > 0 else sys.stdin
     for sentence in sentences:
         sentence = sentence.strip()
-        intent = recognizer.recognize(sentence)
+        intent = core.recognize_intent(sentence).intent
         intents[sentence] = intent
 
     # Output JSON
@@ -215,29 +229,26 @@ def text2intent(core, profile, args):
 # -----------------------------------------------------------------------------
 
 def wav2intent(core, profile, args):
-    decoder = core.get_speech_decoder(profile.name)
-    recognizer = core.get_intent_recognizer(profile.name)
-
     if len(args.wav_files) > 0:
         # Read WAV paths from argument list
         transcriptions = {}
         for wav_path in args.wav_files:
             with open(wav_path, 'rb') as wav_file:
-                text = decoder.transcribe_wav(wav_file.read())
+                text = core.transcribe_wav(wav_file.read()).text
                 transcriptions[wav_path] = text
 
         # Parse intents
         intents = {}
         for wav_path, sentence in transcriptions.items():
-            intent = recognizer.recognize(sentence)
+            intent = core.recognize_intent(sentence).intent
             intents[wav_path] = intent
 
         # Output JSON
         json.dump(intents, sys.stdout, indent=4)
     else:
         # Read WAV data from stdin
-        sentence = decoder.transcribe_wav(sys.stdin.buffer.read())
-        intent = recognizer.recognize(sentence)
+        sentence = core.transcribe_wav(sys.stdin.buffer.read()).text
+        intent = core.recognize_intent(sentence).intent
 
         # Output JSON
         json.dump(intent, sys.stdout, indent=4)
@@ -246,8 +257,9 @@ def wav2intent(core, profile, args):
 # train: re-train profile speech/intent recognizers
 # -----------------------------------------------------------------------------
 
-def train(core, profile, args):
-    core.train_profile(profile.name)
+def train_profile(core, profile, args):
+    core.train()
+    print('OK')
 
 # -----------------------------------------------------------------------------
 # record: record phrases for testing/tuning
@@ -613,8 +625,7 @@ def test_wake(core, profile, args):
 
 def mic2wav(core, profile, args):
     # Listen until silence
-    command_listener = core.get_command_listener()
-    wav_data = command_listener.listen_for_command()
+    wav_data = buffer_to_wav(core.record_command(args.timeout).data)
 
     # Output WAV data
     sys.stdout.buffer.write(wav_data)
@@ -625,12 +636,10 @@ def mic2wav(core, profile, args):
 
 def mic2text(core, profile, args):
     # Listen until silence
-    command_listener = core.get_command_listener()
-    wav_data = command_listener.listen_for_command()
+    wav_data = buffer_to_wav(core.record_command(args.timeout).data)
 
     # Transcribe
-    decoder = core.get_speech_decoder(profile.name)
-    text = decoder.transcribe_wav(wav_data)
+    text = core.transcribe_wav(wav_data).text
 
     # Output text
     print(text)
@@ -641,16 +650,13 @@ def mic2text(core, profile, args):
 
 def mic2intent(core, profile, args):
     # Listen until silence
-    command_listener = core.get_command_listener()
-    wav_data = command_listener.listen_for_command()
+    wav_data = buffer_to_wav(core.record_command(args.timeout).data)
 
     # Transcribe
-    decoder = core.get_speech_decoder(profile.name)
-    sentence = decoder.transcribe_wav(wav_data)
+    sentence = core.transcribe_wav(wav_data).text
 
     # Parse
-    recognizer = core.get_intent_recognizer(profile.name)
-    intent = recognizer.recognize(sentence)
+    intent = core.recognize_intent(sentence).intent
 
     # Output JSON
     json.dump(intent, sys.stdout, indent=4)
@@ -660,16 +666,13 @@ def mic2intent(core, profile, args):
 # -----------------------------------------------------------------------------
 
 def word2phonemes(core, profile, args):
-    word_pron = core.get_word_pronouncer(profile.name)
-
     words = args.words if len(args.words) > 0 else sys.stdin
     all_pronunciations = {}
 
     # Get pronunciations for all words
     for word in words:
         word = word.strip()
-        _, word_pronunciations, _ = word_pron.pronounce(word, n=args.n)
-        all_pronunciations[word] = word_pronunciations
+        all_pronunciations[word] = core.get_word_pronunciations(word, n=args.n).pronunciations
 
     # Output JSON
     json.dump(all_pronunciations, sys.stdout, indent=4)
@@ -679,16 +682,14 @@ def word2phonemes(core, profile, args):
 # -----------------------------------------------------------------------------
 
 def word2wav(core, profile, args):
-    word_pron = core.get_word_pronouncer(profile.name)
-
     # Get pronunciation for word
-    _, word_pronunciations, _ = word_pron.pronounce(args.word, n=1)
+    word_pronunciations = core.get_word_pronunciations(args.word, n=1).pronunciations
 
     # Convert from CMU phonemes to eSpeak phonemes
-    espeak_str = word_pron.translate_phonemes(word_pronunciations[0])
+    espeak_str = core.get_word_phonemes(word_pronunciations[0]).phonemes
 
     # Pronounce as WAV
-    _, wav_data = word_pron.speak(espeak_str)
+    wav_data = core.speak_word(espeak_str).wav_data
 
     # Output WAV data
     sys.stdout.buffer.write(wav_data)
@@ -697,7 +698,7 @@ def word2wav(core, profile, args):
 # wav2mqtt: output WAV data to MQTT via Hermes protocol
 # -----------------------------------------------------------------------------
 
-def _send_frame(core, topic: str, audio_data: bytes, hermes, rate: int, width: int, channels: int):
+def _send_frame(core, topic: str, audio_data: bytes, rate: int, width: int, channels: int):
     with io.BytesIO() as mqtt_buffer:
         with wave.open(mqtt_buffer, mode='wb') as mqtt_file:
             mqtt_file.setframerate(rate)
@@ -707,19 +708,11 @@ def _send_frame(core, topic: str, audio_data: bytes, hermes, rate: int, width: i
 
         # Send audio frame WAV
         mqtt_payload = mqtt_buffer.getvalue()
-        hermes.client.publish(topic, mqtt_payload)
+        core.mqtt_publish(topic, mqtt_payload)
 
 def wav2mqtt(core, profile, args):
-    from mqtt import HermesMqtt
-
     # hermes/audioServer/<SITE_ID>/audioFrame
     topic = 'hermes/audioServer/%s/audioFrame' % args.site_id
-    hermes = HermesMqtt(core, subscribe=False)
-    hermes.start_client()
-
-    # Wait for a connection
-    while not hermes.connected:
-        time.sleep(0.1)
 
     if len(args.wav_files) > 0:
         # Read WAV paths from argument list
@@ -734,13 +727,15 @@ def wav2mqtt(core, profile, args):
                     # Silence
                     num_chunks = int((args.silence_before * rate * width * channels) / chunk_size)
                     for i in range(num_chunks):
-                        _send_frame(core, topic, bytes(chunk_size), hermes, rate, width, channels)
+                        _send_frame(core, topic, bytes(chunk_size), rate, width, channels)
+                        time.sleep(args.pause)
 
                 # Read actual audio data
                 audio_data = wav_file.readframes(args.frames)
 
                 while len(audio_data) > 0:
-                    _send_frame(core, topic, audio_data, hermes, rate, width, channels)
+                    _send_frame(core, topic, audio_data, rate, width, channels)
+                    time.sleep(args.pause)
 
                     # Read next chunk
                     audio_data = wav_file.readframes(args.frames)
@@ -749,11 +744,10 @@ def wav2mqtt(core, profile, args):
                     # Silence
                     num_chunks = int((args.silence_after * rate * width * channels) / chunk_size)
                     for i in range(num_chunks):
-                        _send_frame(core, topic, bytes(chunk_size), hermes, rate, width, channels)
+                        _send_frame(core, topic, bytes(chunk_size), rate, width, channels)
+                        time.sleep(args.pause)
 
             print(wav_path)
-
-    hermes.stop_client()
 
 # -----------------------------------------------------------------------------
 
@@ -761,19 +755,7 @@ def wav2mqtt(core, profile, args):
 # -----------------------------------------------------------------------------
 
 def sleep(core, profile, args):
-    wake_event = threading.Event()
-
-    def handle_wake(profile_name: str, keyphrase: str):
-        print(keyphrase)
-        wake_event.set()
-
-    wake = core.get_wake_listener(profile.name, handle_wake)
-    wake.start_listening()
-
-    try:
-        wake_event.wait()
-    except KeyboardInterrupt:
-        pass
+    print(core.wakeup_and_wait().name)
 
 # -----------------------------------------------------------------------------
 

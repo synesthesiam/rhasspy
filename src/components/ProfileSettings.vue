@@ -89,7 +89,6 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
 
@@ -134,15 +133,27 @@
                 </div>
             </div>
 
+            <button class="btn btn-primary mt-3">Save Settings</button>
+
             <div class="card mt-3">
                 <div class="card-header">Wake Word</div>
                 <div class="card-body">
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="wake-system" id="local-wake" value="local" v-model="rhasspyWake">
-                                <label class="form-check-label" for="local-wake">
-                                    Use Pocketsphinx locally
+                                <input class="form-check-input" type="radio" name="wake-system" id="dummy-wake" value="dummy" v-model="rhasspyWake">
+                                <label class="form-check-label" for="dummy-wake">
+                                    No wake word on this device
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="wake-system" id="pocketsphinx-wake" value="pocketsphinx" v-model="rhasspyWake">
+                                <label class="form-check-label" for="pocketsphinx-wake">
+                                    Use <a href="https://github.com/cmusphinx/pocketsphinx">Pocketsphinx</a> on this device
                                 </label>
                             </div>
                         </div>
@@ -151,7 +162,7 @@
                         <div class="form-row">
                             <label for="wake-keyphrase" class="col-form-label">Wake Keyphrase</label>
                             <div class="col-sm-auto">
-                                <input id="wake-keyphrase" type="text" class="form-control" v-model="wakeKeyphrase" :disabled="rhasspyWake != 'local'">
+                                <input id="wake-keyphrase" type="text" class="form-control" v-model="wakeKeyphrase" :disabled="rhasspyWake != 'pocketsphinx'">
                             </div>
                             <div class="col text-muted">
                                 3-4 syllables recommended
@@ -161,37 +172,49 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="wake-system" id="remote-wake" value="remote" v-model="rhasspyWake">
-                                <label class="form-check-label" for="remote-wake">
-                                    Use external MQTT system (Hermes protocol)
+                                <input class="form-check-input" type="radio" name="wake-system" id="snowboy-wake" value="snowboy" v-model="rhasspyWake">
+                                <label class="form-check-label" for="snowboy-wake">
+                                    Use <a href="https://snowboy.kitt.ai">snowboy</a> on this device
                                 </label>
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <div class="form-row">
-                            <div class="col text-muted">
-                                Audio data will be published to <tt>hermes/audioServer/{{ this.mqttSiteId }}/audioFrame</tt>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-row">
-                            <label for="wake-pub" class="col-form-label">Wakeword Id</label>
+                            <label for="snowboy-model" class="col-form-label">Model Name</label>
                             <div class="col-sm-auto">
-                                <input id="wake-id" type="text" class="form-control" v-model="wakeId" :disabled="rhasspyWake != 'remote'">
+                                <input id="snowboy-model" type="text" class="form-control" v-model="snowboyModel" :disabled="rhasspyWake != 'snowboy'">
+                            </div>
+                            <div class="col text-muted">
+                                Put models in your profile directory
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="wake-system" id="precise-wake" value="precise" v-model="rhasspyWake">
+                                <label class="form-check-label" for="precise-wake">
+                                    Use <a href="https://github.com/MycroftAI/mycroft-precise">Mycroft Precise</a> on this device
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="precise-model" class="col-form-label">Model Name</label>
+                            <div class="col-sm-auto">
+                                <input id="precise-model" type="text" class="form-control" v-model="preciseModel" :disabled="rhasspyWake != 'precise'">
+                            </div>
                             <div class="col text-muted">
-                                Rhasspy will listen for <tt>hermes/hotword/{{ wakeId }}/detected</tt>
+                                Put models in your profile directory
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <button class="btn btn-primary mt-3">Save Settings</button>
 
             <div class="card mt-3">
                 <div class="card-header">Speech Recognition</div>
@@ -199,9 +222,19 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="stt-system" id="local-stt" value="local" v-model="rhasspySTT">
+                                <input class="form-check-input" type="radio" name="stt-system" id="dummy-stt" value="dummy" v-model="rhasspySTT">
                                 <label class="form-check-label" for="local-stt">
-                                    Do speech recognition on this device
+                                    No speech recognition on this device
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="stt-system" id="pocketsphinx-stt" value="pocketsphinx" v-model="rhasspySTT">
+                                <label class="form-check-label" for="pocketsphinx-stt">
+                                    Do speech recognition with <a href="https://github.com/cmusphinx/pocketsphinx">pocketsphinx</a> on this device
                                 </label>
                             </div>
                         </div>
@@ -220,7 +253,7 @@
                         <div class="form-row">
                             <label for="stt-url" class="col-form-label">Rhasspy Speech-to-Text URL</label>
                             <div class="col">
-                                <input id="stt-url" type="text" class="form-control" v-model="sttURL" :disabled="rhasspySTT == 'local'">
+                                <input id="stt-url" type="text" class="form-control" v-model="sttURL" :disabled="rhasspySTT != 'remote'">
                             </div>
                         </div>
                     </div>
@@ -234,15 +267,17 @@
                 </div>
             </div>
 
+            <button class="btn btn-primary mt-3">Save Settings</button>
+
             <div class="card mt-3">
                 <div class="card-header">Intent Recognition</div>
                 <div class="card-body">
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="localIntent" id="local-intent" value="local" v-model="rhasspyIntent">
-                                <label class="form-check-label" for="local-intent">
-                                    Do intent recognition on this device
+                                <input class="form-check-input" type="radio" name="intent-system" id="dummy-intent" value="dummy" v-model="rhasspyIntent">
+                                <label class="form-check-label" for="dummy-intent">
+                                    No intent recognition on this device
                                 </label>
                             </div>
                         </div>
@@ -250,18 +285,65 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="remoteIntent" id="remote-intent" value="remote" v-model="rhasspyIntent">
-                                <label class="form-check-label" for="remote-intent">
-                                    Use remote Rhasspy server for intent recognition
+                                <input class="form-check-input" type="radio" name="intent-system" id="fuzzywuzzy-intent" value="fuzzywuzzy" v-model="rhasspyIntent">
+                                <label class="form-check-label" for="fuzzywuzzy-intent">
+                                    Do intent recognition with <a href="https://github.com/seatgeek/fuzzywuzzy">fuzzywuzzy</a> on this device
                                 </label>
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <div class="form-row">
-                            <label for="intent-url" class="col-form-label">Rhasspy Text-to-Intent URL</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="intent-system" id="adapt-intent" value="adapt" v-model="rhasspyIntent">
+                                <label class="form-check-label" for="adapt-intent">
+                                    Do intent recognition with <a href="https://github.com/MycroftAI/adapt/">Mycroft Adapt</a> on this device
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="intent-system" id="rasa-intent" value="rasa" v-model="rhasspyIntent">
+                                <label class="form-check-label" for="rasa-intent">
+                                    Use remote <a href="https://rasa.com/docs/nlu/">RasaNLU</a> server
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="rasa-intent-url" class="col-form-label">RasaNLU URL</label>
                             <div class="col">
-                                <input id="intent-url" type="text" class="form-control" v-model="intentURL" :disabled="rhasspyIntent == 'local'">
+                                <input id="rasa-intent-url" type="text" class="form-control" v-model="rasaIntentURL" :disabled="rhasspyIntent != 'rasa'">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="col text-muted">
+                                Example: http://localhost:5000/
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="intent-system" id="remote-intent" value="remote" v-model="rhasspyIntent">
+                                <label class="form-check-label" for="remote-intent">
+                                    Use remote Rhasspy server
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="remote-intent-url" class="col-form-label">Rhasspy Text-to-Intent URL</label>
+                            <div class="col">
+                                <input id="remote-intent-url" type="text" class="form-control" v-model="remoteIntentURL" :disabled="rhasspyIntent != 'remote'">
                             </div>
                         </div>
                     </div>
@@ -275,13 +357,26 @@
                 </div>
             </div>
 
+            <button class="btn btn-primary mt-3">Save Settings</button>
+
             <div class="card mt-3">
                 <div class="card-header">Audio Recording</div>
                 <div class="card-body">
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-pyaudio" value="pyaudio" v-model="audioSystem">
+                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-dummy" value="dummy" v-model="audioSystem">
+                                <label class="form-check-label" for="audio-dummy">
+                                    No recording on this device
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-pyaudio" value="pyaudio" v-model="audioSystem" @click="getMicrophones('pyaudio')">
                                 <label class="form-check-label" for="audio-pyaudio">
                                     Use PyAudio (default)
                                 </label>
@@ -291,7 +386,7 @@
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-arecord" value="arecord" v-model="audioSystem">
+                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-arecord" value="arecord" v-model="audioSystem" @click="getMicrophones('arecord')">
                                 <label class="form-check-label" for="audio-arecord">
                                     Use <tt>arecord</tt> directly (ALSA)
                                 </label>
@@ -305,16 +400,40 @@
                     </div>
                     <div class="form-group">
                         <div class="form-row">
+                            <div class="col-auto">
+                                <label for="device" class="col-form-label col">Audio Device</label>
+                            </div>
+                            <div class="col-auto">
+                                <select id="device" v-model="device"
+                                        :disabled="testing || !(audioSystem == 'pyaudio' || audioSystem == 'arecord')">
+                                    <option value="">Default Device</option>
+                                    <option v-for="(desc, id) in microphones" :value="id" v-bind:key="id">{{ id }}: {{ desc }}</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-success"
+                                        @click="testMicrophones"
+                                        title="Test microphones and update the list"
+                                        :disabled="testing || !(audioSystem == 'pyaudio' || audioSystem == 'arecord')">Test</button>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="form-group">
+                        <div class="form-row">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="audioSystem" id="audio-mqtt" value="hermes" v-model="audioSystem">
                                 <label class="form-check-label" for="audio-mqtt">
-                                    Get microphone input remotely with MQTT (Hermes protocol)
+                                    Get microphone input remotely with MQTT (<a href="https://docs.snips.ai/ressources/hermes-protocol">Hermes protocol</a>)
                                 </label>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="col text-muted">
-                                Rhasspy will listen for Audio data on <tt>hermes/audioServer/{{ this.mqttSiteId }}/audioFrame</tt>
+                                Rhasspy will listen for WAV data on: <tt>hermes/audioServer/{{ this.mqttSiteId }}/audioFrame</tt>
+                                <div class="alert alert-danger" v-if="audioSystem == 'hermes' && !mqttEnabled">
+                                    MQTT is not enabled
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -370,16 +489,21 @@
              hassToken: '',
              hassPassword: '',
 
-             rhasspySTT: 'local',
+             rhasspySTT: '',
              sttURL: '',
 
-             rhasspyIntent: 'local',
-             intentURL: '',
+             rhasspyIntent: '',
+             rasaIntentURL: '',
+             remoteIntentURL: '',
 
-             rhasspyWake: 'local',
-             wakeId: '',
+             rhasspyWake: '',
+             snowboyModel: '',
+             preciseModel: '',
 
-             audioSystem: 'pyaudio',
+             audioSystem: '',
+             microphones: {},
+             device: '',
+             testing: false,
 
              wakeOnStart: false,
              wakeKeyphrase: '',
@@ -394,8 +518,8 @@
      },
 
      methods: {
-         refreshSettings: function() {
-             ProfileService.getProfileSettings(this.profile, 'profile')
+         loadSettings: function() {
+             ProfileService.getProfileSettings('profile')
                            .then(request => {
                                this.profileSettings = request.data
                                this.defaultProfile = this._.get(this.profileSettings,
@@ -414,85 +538,92 @@
                                                            this.defaultSettings.home_assistant.access_token)
 
                                // Wake
-                               this.wakeOnStart = this._.get(this.defaultSettings,
+                               this.wakeOnStart = this._.get(this.profileSettings,
                                                              'rhasspy.listen_on_start',
-                                                             false)
+                                                             this.defaultSettings.rhasspy.listen_on_start)
 
                                this.wakeKeyphrase = this._.get(this.profileSettings,
                                                                'wake.pocketsphinx.keyphrase',
                                                                this.defaultSettings.wake.pocketsphinx.keyphrase)
 
-                               this.wakeId = this._.get(this.profileSettings,
-                                                        'wake.hermes.wakeword_id',
-                                                        this.defaultSettings.wake.hermes.wakeword_id)
+                               this.snowboyModel = this._.get(this.profileSettings,
+                                                              'wake.snowboy.model',
+                                                              this.defaultSettings.wake.snowboy.model)
 
-                               var wakeSystem = this._.get(this.profileSettings,
-                                                           'wake.system',
-                                                           this.defaultSettings.wake.system)
+                               this.preciseModel = this._.get(this.profileSettings,
+                                                              'wake.precise.model',
+                                                              this.defaultSettings.wake.precise.model)
 
-                               this.rhasspyWake = (wakeSystem == 'hermes') ? 'remote' : 'local'
-
+                               this.rhasspyWake = this._.get(this.profileSettings,
+                                                             'wake.system',
+                                                             this.defaultSettings.wake.system)
 
                                // Speech
-                               var sttSystem = this._.get(this.profileSettings,
-                                                          'speech_to_text.system',
-                                                          this.defaultSettings.speech_to_text.system)
-
-                               this.sttRemote = (sttSystem == 'remote') ? 'remote' : 'local'
+                               this.rhasspySTT = this._.get(this.profileSettings,
+                                                            'speech_to_text.system',
+                                                            this.defaultSettings.speech_to_text.system)
 
                                this.sttURL = this._.get(this.profileSettings,
                                                         'speech_to_text.remote.url',
                                                         this.defaultSettings.speech_to_text.remote.url)
 
                                // Intent
-                               var intentSystem = this._.get(this.profileSettings,
-                                                          'intent.system',
-                                                          this.defaultSettings.intent.system)
+                               this.rhasspyIntent = this._.get(this.profileSettings,
+                                                               'intent.system',
+                                                               this.defaultSettings.intent.system)
 
-                               this.intentRemote = (intentSystem == 'remote') ? 'remote' : 'local'
-                               this.intentURL = this._.get(this.profileSettings,
-                                                        'intent.remote.url',
-                                                        this.defaultSettings.intent.remote.url)
+                               this.rasaIntentURL = this._.get(this.profileSettings,
+                                                               'intent.rasa.url',
+                                                               this.defaultSettings.intent.rasa.url)
+
+                               this.remoteIntentURL = this._.get(this.profileSettings,
+                                                                 'intent.remote.url',
+                                                                 this.defaultSettings.intent.remote.url)
 
                                // Microphone
                                this.audioSystem = this._.get(this.profileSettings,
                                                              'microphone.system',
                                                              this.defaultSettings.microphone.system)
 
+                               var devicePath = 'microphone.' + this.audioSystem + '.device'
+                               this.device = this._.get(this.profileSettings, devicePath,
+                                                        this._.get(this.defaultSettings, devicePath, ''))
+
                                // MQTT
-                               this.mqttEnabled = this._.get(this.defaultSettings,
+                               this.mqttEnabled = this._.get(this.profileSettings,
                                                              'mqtt.enabled',
-                                                             false)
+                                                             this.defaultSettings.mqtt.enabled)
 
-                               this.mqttHost = this._.get(this.defaultSettings,
+                               this.mqttHost = this._.get(this.profileSettings,
                                                           'mqtt.host',
-                                                          'localhost')
+                                                          this.defaultSettings.mqtt.host)
 
-                               this.mqttPort = this._.get(this.defaultSettings,
+                               this.mqttPort = this._.get(this.profileSettings,
                                                           'mqtt.port',
-                                                          1883)
+                                                          this.defaultSettings.mqtt.port)
 
-                               this.mqttUsername = this._.get(this.defaultSettings,
+                               this.mqttUsername = this._.get(this.profileSettings,
                                                               'mqtt.username',
-                                                              '')
+                                                              this.defaultSettings.mqtt.username)
 
-                               this.mqttPassword = this._.get(this.defaultSettings,
+                               this.mqttPassword = this._.get(this.profileSettings,
                                                               'mqtt.password',
-                                                              '')
+                                                              this.defaultSettings.mqtt.password)
 
-                               this.mqttSiteId = this._.get(this.defaultSettings,
+                               this.mqttSiteId = this._.get(this.profileSettings,
                                                             'mqtt.site_id',
-                                                            'default')
+                                                            this.defaultSettings.mqtt.site_id)
                            })
-                           .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                           .catch(err => this.$parent.error(err))
          },
 
-         refreshDefaults: function() {
-             ProfileService.getProfileSettings(this.profile, 'defaults')
+         refreshSettings: function() {
+             ProfileService.getProfileSettings('defaults')
                            .then(request => {
                                this.defaultSettings = request.data
+                               this.loadSettings()
                            })
-                           .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                           .catch(err => this.$parent.error(err))
          },
 
          saveSettings: function() {
@@ -513,121 +644,141 @@
                         'home_assistant.access_token',
                         this.hassToken)
 
-             if (this.rhasspySTT == 'remote') {
-                 // Remote speech to text
-                 this._.set(this.profileSettings,
-                            'speech_to_text.system',
-                            'remote')
+             // Speech recognition
+             this._.set(this.profileSettings,
+                        'speech_to_text.system',
+                        this.rhasspySTT)
 
-                 this._.set(this.profileSettings,
-                            'speech_to_text.remote.url',
-                            this.sttURL)
-             } else {
-                 // Local speech to text
-                 this._.set(this.profileSettings,
-                            'speech_to_text.system',
-                            this._.get(this.defaultSettings,
-                                       'speech_to_text.system',
-                                       'pocketsphinx'))
-             }
+             this._.set(this.profileSettings,
+                        'speech_to_text.remote.url',
+                        this.sttURL)
 
-             if (this.rhasspyIntent == 'remote') {
-                 // Remote intent recognition
-                 this._.set(this.profileSettings,
-                            'intent.system',
-                            'remote')
+             // Intent recognition
+             this._.set(this.profileSettings,
+                        'intent.system',
+                        this.rhasspyIntent)
 
-                 this._.set(this.profileSettings,
-                            'intent.remote.url',
-                            this.intentURL)
-             } else {
-                 // Local intent recognition
-                 this._.set(this.profileSettings,
-                            'intent.system',
-                            this._.get(this.defaultSettings,
-                                       'intent.system',
-                                       'fuzzywuzzy'))
-             }
+             this._.set(this.profileSettings,
+                        'intent.rasa.url',
+                        this.rasaIntentURL)
+
+             this._.set(this.profileSettings,
+                        'intent.remote.url',
+                        this.remoteIntentURL)
 
              // Wake
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'rhasspy.listen_on_start',
                         this.wakeOnStart)
 
-             if (this.rhasspyWake == 'remote') {
-                 // Remote wake word
-                 this._.set(this.profileSettings,
-                            'wake.system',
-                            'hermes')
+             this._.set(this.profileSettings,
+                        'wake.system',
+                        this.rhasspyWake)
 
-                 this._.set(this.profileSettings,
-                            'wake.hermes.wakeword_id',
-                            this.wakeId)
-             } else {
-                 // Local wake word
-                 this._.set(this.profileSettings,
-                            'wake.system',
-                            'pocketsphinx')
+             this._.set(this.profileSettings,
+                        'wake.snowboy.model',
+                        this.snowboyModel)
 
-                 this._.set(this.profileSettings,
-                            'wake.pocketsphinx.keyphrase',
-                            this.wakeKeyphrase)
-             }
+             this._.set(this.profileSettings,
+                        'wake.precise.model',
+                        this.preciseModel)
 
+             this._.set(this.profileSettings,
+                        'wake.pocketsphinx.keyphrase',
+                        this.wakeKeyphrase)
 
              // Microphone
              this._.set(this.profileSettings,
                         'microphone.system',
                         this.audioSystem)
 
+             this._.set(this.profileSettings,
+                        'microphone.' + this.audioSystem + '.device',
+                        this.device)
+
              // MQTT
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'mqtt.enabled',
                         this.mqttEnabled)
 
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'mqtt.host',
                         this.mqttHost)
 
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'mqtt.password',
                         this.mqttPassword)
 
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'mqtt.username',
                         this.mqttUsername)
 
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'mqtt.password',
                         this.mqttPassword)
 
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'mqtt.site_id',
                         this.mqttSiteId)
 
              // POST to server
              this.$parent.beginAsync()
              ProfileService.updateDefaultSettings(this.defaultSettings)
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => {
-                     ProfileService.updateProfileSettings(this.profile, this.profileSettings)
+                     ProfileService.updateProfileSettings(this.profileSettings)
                                    .then(request => this.$parent.alert(request.data, 'success'))
-                                   .catch(err => this.$parent.alert(err.response.data, 'danger'))
                                    .then(() => {
                                        this.$parent.endAsync()
                                    })
+                                   .catch(err => this.$parent.error(err))
                  })
+                 .catch(err => this.$parent.error(err))
+         },
+
+         testMicrophones: function() {
+             this.testing = true
+             this.$parent.beginAsync()
+             ProfileService.testMicrophones(this.audioSystem)
+                 .then(request => {
+                     this.microphones = request.data
+
+                     // Select default
+                     for (var key in this.microphones) {
+                         var value = this.microphones[key]
+                         if (value.indexOf('*') >= 0) {
+                             this.device = key
+                         }
+                     }
+
+                     this.$parent.alert('Successfully tested microphones', 'success')
+                 })
+                 .then(() => {
+                     this.testing = false
+                     this.$parent.endAsync()
+                 })
+                 .catch(err => this.$parent.error(err))
+         },
+
+         getMicrophones: function(system) {
+             ProfileService.getMicrophones(system)
+                           .then(request => {
+                               this.microphones = request.data
+
+                               var devicePath = 'microphone.' + this.audioSystem + '.device'
+                               this.device = this._.get(this.profileSettings, devicePath,
+                                                        this._.get(this.defaultSettings, devicePath, ''))
+                           })
+                           .catch(err => this.$parent.error(err))
          }
      },
 
      mounted: function() {
-         this.refreshDefaults()
          this.refreshSettings()
+         this.getMicrophones()
      },
 
      watch: {
          profile() {
-             this.refreshDefaults()
              this.refreshSettings()
          }
      }
