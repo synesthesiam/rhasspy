@@ -10,19 +10,19 @@ RELEASE_FILES := Dockerfile \
                  docker/run.sh \
                  docker/rhasspy \
                  profiles/defaults.json \
-                 etc/wav/ \
-                 etc/nanomsg-1.1.5.tar.gz \
-                 etc/nanomsg-python-master.zip
+                 etc/wav/
 
 ADDON_DIR := ../hassio-addons/rhasspy
 
-docker:
+docker-amd64:
 	docker build . \
     --build-arg BUILD_ARCH=amd64 \
     -t synesthesiam/rhasspy-server:amd64
-	# docker build . \
-  #   --build-arg BUILD_ARCH=armhf \
-  #   -t synesthesiam/rhasspy-server:armhf
+
+docker-armhf:
+	docker build . \
+     --build-arg BUILD_ARCH=armhf \
+     -t synesthesiam/rhasspy-server:armhf
 
 web-dist:
 	yarn build
@@ -37,8 +37,6 @@ update-addon:
 	cp -R rhasspy/ ${ADDON_DIR}/
 	cp -R dist/ ${ADDON_DIR}/
 	cp -R etc/wav/ ${ADDON_DIR}/etc/
-	cp etc/nanomsg-1.1.5.tar.gz ${ADDON_DIR}/etc/
-	cp etc/nanomsg-python-master.zip ${ADDON_DIR}/etc/
 	cp docker/run.sh docker/rhasspy ${ADDON_DIR}/docker/
 	cp profiles/defaults.json ${ADDON_DIR}/profiles/
 

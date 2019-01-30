@@ -204,7 +204,7 @@ class AdaptIntentRecognizer(RhasspyActor):
             try:
                 intent = self.recognize(message.text)
             except Exception as e:
-                self._logger.exception()
+                self._logger.exception('in_loaded')
                 intent = empty_intent()
 
             self.send(message.receiver or sender,
