@@ -4,6 +4,9 @@ import logging
 import threading
 import wave
 import queue
+from datetime import timedelta
+
+from thespian.actors import WakeupMessage
 
 from .actor import RhasspyActor
 from .audio_recorder import StartStreaming, StopStreaming, AudioData
@@ -85,8 +88,20 @@ class WebrtcvadCommandListener(RhasspyActor):
             self.handle = message.handle
             self.send(self.recorder, StartStreaming(self.myAddress))
 
+    def to_listening(self, from_state):
+        self.wakeupAfter(timedelta(seconds=self.timeout_sec))
+
     def in_listening(self, message, sender):
-        if isinstance(message, AudioData):
+        if isinstance(message, WakeupMessage):
+            # Timeout
+            self._logger.warn('Timeout')
+            self.send(self.recorder, StopStreaming(self.myAddress))
+            self.send(self.receiver,
+                      VoiceCommand(self.buffer, timeout=True, handle=self.handle))
+
+            self.buffer = None
+            self.transition('loaded')
+        elif isinstance(message, AudioData):
             self.chunk += message.data
             if len(self.chunk) >= self.chunk_size:
                 # Ensure audio data is properly chunked (for webrtcvad)
@@ -106,6 +121,10 @@ class WebrtcvadCommandListener(RhasspyActor):
 
                     self.buffer = None
                     self.transition('loaded')
+
+    def to_stopped(self, from_state):
+        # Stop recording
+        self.send(self.recorder, StopStreaming(self.myAddress))
 
     # -------------------------------------------------------------------------
 
