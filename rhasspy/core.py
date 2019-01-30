@@ -21,7 +21,7 @@ from .dialogue import (DialogueManager, GetMicrophones, TestMicrophones,
                        TranscribeWav, PlayWavData, PlayWavFile,
                        RecognizeIntent, HandleIntent,
                        ProfileTrainingComplete, ProfileTrainingFailed,
-                       MqttPublish)
+                       MqttPublish, GetVoiceCommand)
 
 # -----------------------------------------------------------------------------
 
@@ -84,6 +84,10 @@ class RhasspyCore:
     def listen_for_command(self, handle=True) -> None:
         with self.actor_system.private() as sys:
             return sys.ask(self.dialogue_manager, ListenForCommand(handle=handle))
+
+    def record_command(self, timeout=None) -> None:
+        with self.actor_system.private() as sys:
+            return sys.ask(self.dialogue_manager, GetVoiceCommand(timeout=timeout))
 
     # -------------------------------------------------------------------------
 

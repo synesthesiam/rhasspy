@@ -41,6 +41,11 @@ class ProfileTrainingComplete:
 class Ready:
     pass
 
+class GetVoiceCommand:
+    def __init__(self, receiver=None, timeout=None):
+        self.receiver = receiver
+        self.timeout = timeout
+
 # -----------------------------------------------------------------------------
 
 class DialogueManager(RhasspyActor):
@@ -277,6 +282,11 @@ class DialogueManager(RhasspyActor):
             # Force voice command
             self.intent_receiver = message.receiver or sender
             self.transition('awake')
+        elif isinstance(message, GetVoiceCommand):
+            # Record voice command, but don't do anything with it
+            self.send(self.command,
+                      ListenForCommand(message.receiver or sender,
+                                       timeout=message.timeout))
         elif isinstance(message, TranscribeWav):
             # speech -> text
             self.send(self.decoder,
