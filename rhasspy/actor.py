@@ -58,11 +58,11 @@ class RhasspyActor(Actor):
         if (from_state != to_state) and hasattr(self, transition_method):
             getattr(self, transition_method)(from_state)
 
+        self._logger.debug('%s -> %s', from_state, to_state)
+
         # Set state method
         state_method_name = 'in_' + self._state
         if hasattr(self, state_method_name):
             self._state_method = getattr(self, state_method_name)
         else:
             self._state_method = None
-
-        self._logger.debug('%s -> %s', from_state, to_state)

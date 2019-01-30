@@ -15,7 +15,7 @@ from .intent_train import TrainIntent, IntentTrainingComplete
 from .intent_handler import HandleIntent, IntentHandled
 from .train import GenerateSentences, SentencesGenerated
 from .pronounce import GetWordPhonemes, SpeakWord, GetWordPronunciations
-from .mqtt import Publish
+from .mqtt import MqttPublish
 from .utils import buffer_to_wav
 
 # -----------------------------------------------------------------------------
@@ -50,6 +50,7 @@ class DialogueManager(RhasspyActor):
         self.site_id = self.profile.get('mqtt.site_id')
         self.preload = self.config.get('preload', False)
         self.send_ready = self.config.get('ready', False)
+        self.wake_receiver = None
         self.intent_receiver = None
         self.training_receiver = None
         self.handle = True
@@ -85,6 +86,8 @@ class DialogueManager(RhasspyActor):
     def in_ready(self, message, sender):
         if isinstance(message, ListenForWakeWord):
             self._logger.info('Listening for wake word')
+            self.wake_receiver = message.receiver or sender
+            self.send(self.wake, ListenForWakeWord())
             self.transition('asleep')
         else:
             self.handle_any(message, sender)
@@ -93,6 +96,8 @@ class DialogueManager(RhasspyActor):
         if isinstance(message, WakeWordDetected):
             self._logger.debug('Awake!')
             self.transition('awake')
+            if self.wake_receiver is not None:
+                self.send(self.wake_receiver, message)
         else:
             self.handle_any(message, sender)
 
@@ -138,7 +143,7 @@ class DialogueManager(RhasspyActor):
                 'seconds': 0
             }).encode()
 
-            self.send(self.mqtt, Publish('hermes/asr/textCaptured', payload))
+            self.send(self.mqtt, MqttPublish('hermes/asr/textCaptured', payload))
 
             # Pass to intent recognizer
             self.send(self.recognizer, RecognizeIntent(message.text, handle=message.handle))
@@ -313,6 +318,9 @@ class DialogueManager(RhasspyActor):
             self.send(self.recorder,
                       StopRecordingToBuffer(message.buffer_name,
                                             message.receiver or sender))
+        elif isinstance(message, MqttPublish):
+            # Forward directly
+            self.send(self.mqtt, message)
         else:
             self._logger.warn('Unhandled message: %s' % message)
 
@@ -447,7 +455,7 @@ class DialogueManager(RhasspyActor):
             return DummyWakeListener
 
     def _get_microphone_class(self, system: str):
-        assert system in ['arecord', 'pyaudio', 'dummy'], \
+        assert system in ['arecord', 'pyaudio', 'dummy', 'hermes'], \
             'Unknown microphone system: %s' % system
 
         if system == 'arecord':
@@ -456,6 +464,9 @@ class DialogueManager(RhasspyActor):
         elif system == 'pyaudio':
             from .audio_recorder import PyAudioRecorder
             return PyAudioRecorder
+        elif system == 'hermes':
+            from .audio_recorder import HermesAudioRecorder
+            return HermesAudioRecorder
         else:
             from .audio_recorder import DummyAudioRecorder
             return DummyAudioRecorder

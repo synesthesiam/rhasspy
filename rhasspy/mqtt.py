@@ -16,23 +16,23 @@ from .actor import RhasspyActor
 # Events
 # -----------------------------------------------------------------------------
 
-class Publish:
+class MqttPublish:
     def __init__(self, topic: str, payload: bytes):
         self.topic = topic
         self.payload = payload
 
-class Subscribe:
+class MqttSubscribe:
     def __init__(self, topic: str, receiver=None):
         self.topic = topic
         self.receiver = receiver
 
-class Connected:
+class MqttConnected:
     pass
 
-class Disconnected:
+class MqttDisconnected:
     pass
 
-class Message:
+class MqttMessage:
     def __init__(self, topic: str, payload: bytes):
         self.topic = topic
         self.payload = payload
@@ -82,7 +82,7 @@ class HermesMqtt(RhasspyActor):
         self.client.loop_start()
 
     def in_connecting(self, message, sender):
-        if isinstance(message, Connected):
+        if isinstance(message, MqttConnected):
             self.connected = True
             self.transition('connected')
         else:
@@ -92,6 +92,7 @@ class HermesMqtt(RhasspyActor):
         # Subscribe to topics
         for topic in self.subscriptions:
             self.client.subscribe(topic)
+            self._logger.debug('Subscribed to %s' % topic)
 
         # Publish outstanding messages
         for topic, payload in self.publications.items():
@@ -100,23 +101,26 @@ class HermesMqtt(RhasspyActor):
         self.publications.clear()
 
     def in_connected(self, message, sender):
-        if isinstance(message, Disconnected):
+        if isinstance(message, MqttDisconnected):
             if self.reconnect_sec > 0:
                 self._logger.debug('Reconnecting in %s second(s)' % self.reconnect_sec)
                 time.sleep(self.reconnect_sec)
                 self.transition('started')
             else:
                 self.transition('connecting')
+        elif isinstance(message, MqttMessage):
+            for receiver in self.subscriptions[message.topic]:
+                self.send(receiver, message)
         elif self.connected:
-            if isinstance(message, Subscribe):
+            if isinstance(message, MqttSubscribe):
                 receiver = message.receiver or sender
-                self.subscribe[message.topic].append(receiver)
+                self.subscriptions[message.topic].append(receiver)
                 self.client.subscribe(message.topic)
-            elif isinstance(message, Publish):
+                self._logger.debug('Subscribed to %s' % message.topic)
+            elif isinstance(message, MqttPublish):
                 self.client.publish(message.topic, message.payload)
         else:
             self.save_for_later(message, sender)
-
 
     def to_stopped(self, from_state):
         if self.client is not None:
@@ -128,37 +132,26 @@ class HermesMqtt(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def save_for_later(self, message, sender):
-        if isinstance(message, Subscribe):
+        if isinstance(message, MqttSubscribe):
             receiver = message.receiver or sender
             self.subscriptions[message.topic].append(receiver)
-        elif isinstance(message, Publish):
+        elif isinstance(message, MqttPublish):
             receiver = message.receiver or sender
             self.publications[message.topic].append(message.payload)
 
     # -------------------------------------------------------------------------
 
-    # def start_client(self):
-    #     if self.client is None:
-
-    #         self.topic_hotword_detected = 'hermes/hotword/%s/detected' % self.wakeword_id
-    #         self.topic_audio_frame = 'hermes/audioServer/%s/audioFrame' % self.site_id
-    #         self.topic_hotword_on = 'hermes/hotword/toggleOn'
-    #         self.topic_hotword_off = 'hermes/hotword/toggleOff'
-    #         self.topic_nlu_query = 'hermes/nlu/query'
-
-    # -------------------------------------------------------------------------
-
     def on_connect(self, client, userdata, flags, rc):
         self._logger.info('Connected to %s:%s' % (self.host, self.port))
-        self.send(self.myAddress, Connected())
+        self.send(self.myAddress, MqttConnected())
 
     def on_disconnect(self, client, userdata, flags, rc):
         self._logger.warn('Disconnected')
         self.connected = False
-        self.send(self.myAddress, Disconnected())
+        self.send(self.myAddress, MqttDisconnected())
 
     def on_message(self, client, userdata, msg):
-        self.send(self.myAddress, Message(message.topic, message.payload))
+        self.send(self.myAddress, MqttMessage(msg.topic, msg.payload))
 
 
         # try:

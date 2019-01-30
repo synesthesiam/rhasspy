@@ -14,6 +14,7 @@ from collections import defaultdict
 
 from .actor import RhasspyActor
 from .utils import convert_wav
+from .mqtt import MqttSubscribe, MqttMessage
 
 # -----------------------------------------------------------------------------
 # Events
@@ -492,127 +493,93 @@ class WavAudioRecorder(RhasspyActor):
     def to_stopped(self, from_state):
         self.is_recording = False
 
+    # -----------------------------------------------------------------------------
+
+    @classmethod
+    def get_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+        return {}
+
+    @classmethod
+    def test_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+        return {}
+
 # -----------------------------------------------------------------------------
 # MQTT based audio "recorder" for Snips.AI Hermes Protocol
 # https://docs.snips.ai/ressources/hermes-protocol
 # -----------------------------------------------------------------------------
 
-# class HermesAudioRecorder(AudioRecorder):
-#     '''Receives audio data from MQTT via Hermes protocol.'''
+class HermesAudioRecorder(RhasspyActor):
+    '''Receives audio data from MQTT via Hermes protocol.'''
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.receivers = []
+        self.buffers = {}
 
-#     def __init__(self, core, chunk_size=480*2):
+    def to_started(self, from_state):
+        self.mqtt = self.config['mqtt']
+        self.site_id = self.profile.get('mqtt.site_id')
+        self.chunk_size = self.config.get('microphone.hermes.chunk_size', 480*2)
+        self.topic_audio_frame = 'hermes/audioServer/%s/audioFrame' % self.site_id
+        self.send(self.mqtt, MqttSubscribe(self.topic_audio_frame))
 
-#         # Chunk size set to 30 ms for webrtcvad
-#         AudioRecorder.__init__(self, core, device=None)
-#         self.chunk_size = chunk_size
+    def in_started(self, message, sender):
+        if isinstance(message, StartStreaming):
+            self.receivers.append(message.receiver)
+            self.transition('recording')
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+            self.transition('recording')
 
-#         self.chunk = bytes()
+    def to_recording(self, from_state):
+        self._logger.debug('Recording from microphone (hermes)')
 
-#         self.buffer = bytes()
-#         self.buffer_users = 0
+    def in_recording(self, message, sender):
+        if isinstance(message, MqttMessage):
+            if message.topic == self.topic_audio_frame:
+                # Extract audio data
+                with io.BytesIO(message.payload) as wav_buffer:
+                    with wave.open(wav_buffer, mode='rb') as wav_file:
+                        rate, width, channels = wav_file.getframerate(), wav_file.getsampwidth(), wav_file.getnchannels()
+                        if (rate != 16000) or (width != 2) or (channels != 1):
+                            audio_data = convert_wav(message.payload)
+                        else:
+                            # Use original data
+                            audio_data = wav_file.readframes(wav_file.getnframes())
 
-#         self.queue = Queue()
-#         self.queue_users = 0
+                        data_message = AudioData(audio_data)
 
-#     # -------------------------------------------------------------------------
+                # Forward to subscribers
+                for receiver in self.receivers:
+                    self.send(receiver, data_message)
 
-#     def on_audio_frame(self, audio_data):
-#         if not self.is_recording:
-#             return
+                # Append to buffers
+                for receiver in self.buffers:
+                    self.buffers[receiver] += audio_data.data
+        elif isinstance(message, StartStreaming):
+            self.receivers.append(message.receiver)
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+        elif isinstance(message, StopStreaming):
+            if message.receiver is None:
+                # Clear all receivers
+                self.receivers.clear()
+            else:
+                self.receivers.remove(message.receiver)
+        elif isinstance(message, StopRecordingToBuffer):
+            if message.buffer_name is None:
+                # Clear all buffers
+                self.buffers.clear()
+            else:
+                # Respond with buffer
+                buffer = self.buffers.pop(message.buffer_name, bytes())
+                self.send(message.receiver or sender, AudioData(buffer))
 
-#         # Accumulate in a chunk
-#         self.chunk += audio_data
+    # -----------------------------------------------------------------------------
 
-#         while len(self.chunk) >= self.chunk_size:
-#             # Pull out a chunk
-#             data = self.chunk[:self.chunk_size]
-#             self.chunk = self.chunk[self.chunk_size:]
+    @classmethod
+    def get_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+        return {}
 
-#             # Distribute
-#             if self.buffer_users > 0:
-#                 self.buffer += data
-
-#             if self.queue_users > 0:
-#                 self.queue.put(data)
-
-#     # -------------------------------------------------------------------------
-
-#     def start_recording(self, start_buffer: bool, start_queue: bool, device: Any=None):
-#         # Allow multiple "users" to listen for audio data
-#         if start_buffer:
-#             self.buffer_users += 1
-
-#         if start_queue:
-#             self.queue_users += 1
-
-#         if not self.is_recording:
-#             # Reset
-#             self.chunk = bytes()
-#             self.buffer = bytes()
-
-#             # Clear queue
-#             while not self.queue.empty():
-#                 self.queue.get_nowait()
-
-#             # Set callback
-#             self.core.get_mqtt_client().on_audio_frame = self.on_audio_frame
-
-#             # Start recording
-#             self._is_recording = True
-
-#             self._logger.debug('Listening for audio frames')
-
-#     # -------------------------------------------------------------------------
-
-#     def stop_recording(self, stop_buffer: bool, stop_queue: bool) -> bytes:
-#         if stop_buffer:
-#             self.buffer_users = max(0, self.buffer_users - 1)
-
-#         if stop_queue:
-#             self.queue_users = max(0, self.queue_users - 1)
-
-#         # Only stop if all "users" have disconnected
-#         if self.is_recording and (self.buffer_users <= 0) and (self.queue_users <= 0):
-#             # Shut down audio system
-#             self._is_recording = False
-
-#             # Remove callback
-#             self.core.get_mqtt_client().on_audio_frame = None
-
-#             self._logger.debug('Stopped listening for audio frames')
-
-#             # Write final empty buffer
-#             self.queue.put(bytes())
-
-#         if stop_buffer:
-#             # Return WAV data
-#             with io.BytesIO() as wav_buffer:
-#                 with wave.open(wav_buffer, mode='wb') as wav_file:
-#                     wav_file.setframerate(16000)
-#                     wav_file.setsampwidth(2)
-#                     wav_file.setnchannels(1)
-#                     wav_file.writeframesraw(self.buffer)
-
-#                 return wav_buffer.getvalue()
-
-#         # Empty buffer
-#         return bytes()
-
-#     # -------------------------------------------------------------------------
-
-#     def stop_all(self) -> None:
-#         if self.is_recording:
-#             self._is_recording = False
-#             self.core.get_mqtt_client().on_audio_frame = None
-
-#             if self.queue_users > 0:
-#                 # Write final empty buffer
-#                 self.queue.put(bytes())
-
-#             self.buffer_users = 0
-#             self.queue_users = 0
-
-#     # -------------------------------------------------------------------------
-
-#     def get_queue(self) -> Queue:
-#         return self.queue
+    @classmethod
+    def test_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+        return {}

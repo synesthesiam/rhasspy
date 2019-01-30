@@ -14,6 +14,8 @@ RELEASE_FILES := Dockerfile \
 
 ADDON_DIR := ../hassio-addons/rhasspy
 
+docker: docker-amd64 docker-armhf docker-aarch64
+
 docker-amd64:
 	docker build . \
     --build-arg BUILD_ARCH=amd64 \
@@ -23,6 +25,11 @@ docker-armhf:
 	docker build . \
      --build-arg BUILD_ARCH=armhf \
      -t synesthesiam/rhasspy-server:armhf
+
+docker-aarch64:
+	docker build . \
+     --build-arg BUILD_ARCH=aarch64 \
+     -t synesthesiam/rhasspy-server:aarch64
 
 web-dist:
 	yarn build
@@ -42,6 +49,10 @@ update-addon:
 
 manifest:
 	docker manifest push --purge synesthesiam/rhasspy-server:latest
-	docker manifest create --amend synesthesiam/rhasspy-server:latest synesthesiam/rhasspy-server:amd64 synesthesiam/rhasspy-server:armhf
+	docker manifest create --amend synesthesiam/rhasspy-server:latest \
+        synesthesiam/rhasspy-server:amd64 \
+        synesthesiam/rhasspy-server:armhf \
+        synesthesiam/rhasspy-server:aarch64
 	docker manifest annotate synesthesiam/rhasspy-server:latest synesthesiam/rhasspy-server:armhf --os linux --arch arm
+	docker manifest annotate synesthesiam/rhasspy-server:latest synesthesiam/rhasspy-server:aarch64 --os linux --arch arm64
 	docker manifest push synesthesiam/rhasspy-server:latest
