@@ -32,16 +32,16 @@ A typical voice assistant (Alexa, Google Home, etc.) solves a number of importan
 
 Rhasspy provides offline, private solutions to problems 1-4 using off-the-shelf tools. These tools are:
 
-1. Wake word
+* Wake word
   * [Pocketsphinx Keyphrase](https://cmusphinx.github.io/wiki/tutoriallm/#using-keyword-lists-with-pocketsphinx)
   * [snowboy](https://snowboy.kitt.ai)
   * [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise)
-2. Command listener
+* Command listener
   * [webrtcvad](https://github.com/wiseman/py-webrtcvad)
-3. Speech to text
+* Speech to text
   * [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx)
   * Remote HTTP server (WAV -> text)
-4. Intent recognition
+* Intent recognition
   * [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy)
   * [RasaNLU](https://rasa.com/)
   * [Mycroft Adapt](https://github.com/MycroftAI/adapt)
