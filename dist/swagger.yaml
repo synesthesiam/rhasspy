@@ -114,6 +114,16 @@ paths:
           description: Available microphone names, descriptions
           schema:
             type: object
+  /api/test-microphones:
+    get:
+      summary: 'Get list of available microphones and if they are working'
+      produces: 
+        - application/json
+      responses:
+        '200':
+          description: Available microphone names, descriptions
+          schema:
+            type: object
   /api/pronounce:
     post:
       summary: 'Pronounce a word or set of phonemes'
@@ -281,22 +291,6 @@ paths:
   /api/train:
     post:
       summary: 'Re-train speech/intent recognizers for profile'
-      parameters:
-      - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                type: string
-  /api/reload:
-    post:
-      summary: 'Force Rhasspy to reload speech/intent recognizers for a profile'
       parameters:
       - in: query
         name: profile

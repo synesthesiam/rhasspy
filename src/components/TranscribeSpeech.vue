@@ -9,24 +9,26 @@
             <div class="form-group">
                 <div class="form-row">
                     <div class="col-auto">
-                        <label for="device" class="col-form-label col">Audio Device</label>
-                    </div>
-                    <div class="col-auto">
-                        <select id="device" v-model="device">
-                            <option value="">Default Device</option>
-                            <option v-for="(desc, id) in microphones" :value="id" v-bind:key="id">{{ id }}: {{ desc }}</option>
-                        </select>
+                        <button type="button" class="btn"
+                                v-bind:class="{ 'btn-danger': holdRecording, 'btn-primary': !holdRecording }"
+                                @mousedown="startRecording" @mouseup="stopRecording"
+                                title="Record a voice command while held, interpret when released"
+                                :disabled="interpreting || tapRecording">{{ holdRecording ? 'Release to Stop' : 'Hold to Record' }}</button>
                     </div>
                     <div class="col-auto">
                         <button type="button" class="btn"
-                                v-bind:class="{ 'btn-danger': recording, 'btn-primary': !recording }"
-                                @mousedown="startRecording" @mouseup="stopRecording"
+                                v-bind:class="{ 'btn-danger': tapRecording, 'btn-success': !tapRecording }"
+                                @click="toggleRecording"
                                 title="Record a voice command while held, interpret when released"
-                                :disabled="interpreting">{{ recording ? 'Release to Stop' : 'Hold to Record' }}</button>
+                                :disabled="interpreting || holdRecording">{{ tapRecording ? 'Tap to Stop' : 'Tap to Record' }}</button>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-warning"
+                                @click="wakeup"
+                                title="Make Rhasspy listen for a voice command">Wake-up</button>
                     </div>
                 </div>
             </div>
-
             <div class="form-group">
                 <div class="form-row">
                     <div class="col-auto">
@@ -90,17 +92,14 @@
 
  export default {
      name: 'TranscribeSpeech',
-     props: { profile : String },
      data: function() {
          return {
              jsonSource: null,
              sentence: '',
 
-             recording: false,
+             holdRecording: false,
+             tapRecording: false,
              interpreting: false,
-             device: '',
-
-             microphones: {},
 
              sendHass: true
          }
@@ -114,14 +113,14 @@
              var that = this
              reader.onload = function() {
                  that.$parent.beginAsync()
-                 TranscribeService.transcribeWav(that.profile, this.result, that.sendHass)
+                 TranscribeService.transcribeWav(this.result, that.sendHass)
                      .then(request => {
                          that.$parent.alert('Got intent: ' + request.data.intent.name + ' in ' + request.data.time_sec.toFixed(2) + ' second(s)', 'success')
                          that.sentence = request.data.text
                          that.jsonSource = request.data
                      })
-                     .catch(err => that.$parent.alert(err.response.data, 'danger'))
                      .then(() => that.$parent.endAsync())
+                     .catch(err => that.$parent.error(err))
              }
 
              var files = this.$refs.wavFile.files;
@@ -134,7 +133,7 @@
 
          getIntent: function() {
              this.$parent.beginAsync()
-             TranscribeService.getIntent(this.profile, this.sentence, this.sendHass)
+             TranscribeService.getIntent(this.sentence, this.sendHass)
                  .then(request => {
                      if (request.data.error) {
                          this.$parent.alert(request.data.error, 'danger')
@@ -144,42 +143,53 @@
 
                      this.jsonSource = request.data
                  })
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
                  .then(() => this.$parent.endAsync())
+                 .catch(err => this.$parent.error(err))
          },
 
          startRecording: function() {
-             TranscribeService.startRecording(this.profile, this.device)
+             TranscribeService.startRecording()
                               .then(() => {
-                                  this.recording = true
+                                  this.holdRecording = true
                               })
-                              .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                              .catch(err => this.$parent.error(err))
          },
 
          stopRecording: function() {
              this.interpreting = true
              this.$parent.beginAsync()
-             TranscribeService.stopRecording(this.profile, this.sendHass)
+             TranscribeService.stopRecording(this.sendHass)
                  .then(request => {
-                     this.recording = false
+                     this.holdRecording = false
+                     this.tapRecording = false
                      this.jsonSource = request.data
                      this.sentence = request.data.text
                  })
-                 .catch(err => this.$parent.alert(err.response.data, 'danger'))
+                 .catch(err => this.$parent.error(err))
                  .then(() => {
-                     this.recording = false
+                     this.holdRecording = false
+                     this.tapRecording = false
                      this.interpreting = false
                      this.$parent.endAsync()
                  })
-         }
-     },
+         },
 
-     mounted: function() {
-         TranscribeService.getMicrophones(this.profile)
-                          .then(request => {
-                              this.microphones = request.data
-                          })
-                          .catch(err => this.$parent.alert(err.response.data, 'danger'))
+         toggleRecording: function() {
+             if (this.tapRecording) {
+                 this.stopRecording();
+             } else {
+                 TranscribeService.startRecording()
+                                  .then(() => {
+                                      this.tapRecording = true
+                                  })
+                                  .catch(err => this.$parent.error(err))
+             }
+         },
+
+         wakeup: function() {
+             TranscribeService.wakeup()
+         }
+
      }
  }
 </script>

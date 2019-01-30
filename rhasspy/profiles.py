@@ -8,7 +8,7 @@ import pydash
 # from thespian.actors import Actor
 
 # from audio_player import PlayWavFile
-import utils
+from .utils import recursive_update
 
 # -----------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ class Profile:
             defaults_path = os.path.join(profiles_dir, 'defaults.json')
             if os.path.exists(defaults_path):
                 with open(defaults_path, 'r') as defaults_file:
-                    utils.recursive_update(defaults, json.load(defaults_file))
+                    recursive_update(defaults, json.load(defaults_file))
 
         return defaults
 
@@ -42,6 +42,9 @@ class Profile:
 
     def get(self, path: str, default=None):
         return pydash.get(self.json, path, default)
+
+    def set(self, path: str, value: Any):
+        pydash.set_(self.json, path, value)
 
     # -------------------------------------------------------------------------
 
@@ -54,14 +57,14 @@ class Profile:
                 defaults_path = os.path.join(profiles_dir, 'defaults.json')
                 if os.path.exists(defaults_path):
                     with open(defaults_path, 'r') as defaults_file:
-                        utils.recursive_update(self.json, json.load(defaults_file))
+                        recursive_update(self.json, json.load(defaults_file))
 
         # Overlay with profile
         if self.layers in ['all', 'profile']:
             self.json_path = self.read_path('profile.json')
             if os.path.exists(self.json_path):
                 with open(self.json_path, 'r') as profile_file:
-                    utils.recursive_update(self.json, json.load(profile_file))
+                    recursive_update(self.json, json.load(profile_file))
 
     def read_path(self, *path_parts):
         for profiles_dir in self.profiles_dirs:
@@ -109,11 +112,3 @@ class Profile:
         os.makedirs(dir_path, exist_ok=True)
 
         return dir_path
-
-# -----------------------------------------------------------------------------
-
-def request_to_profile(request, profiles_dirs: List[str], layers='all'):
-    profile_name = request.args.get(
-        'profile', os.environ.get('RHASSPY_PROFILE', 'en'))
-
-    return Profile(profile_name, profiles_dirs, layers=layers)

@@ -1,89 +1,91 @@
-ARG BUILD_FROM
-FROM $BUILD_FROM
-
 ARG BUILD_ARCH
-ARG LANGUAGES="de en es fr it nl ru"
+FROM synesthesiam/addon-base:$BUILD_ARCH
 LABEL maintainer="Michael Hansen <hansen.mike@gmail.com>"
 
+ARG BUILD_ARCH
 ENV LANG C.UTF-8
+
+ARG MAKE_THREADS=4
 
 WORKDIR /
 
-RUN apk update && \
-    apk add --no-cache bash python3 python3-dev \
-        build-base portaudio-dev swig \
+RUN apt-get update && \
+    apt-get install -y bash \
+        build-essential portaudio19-dev swig \
+        libatlas-base-dev \
         sox espeak alsa-utils \
-        openjdk8-jre \
+        openjdk-8-jre-headless \
         cmake git \
-        autoconf libtool automake bison
+        autoconf libtool automake bison \
+        sphinxbase-utils sphinxtrain
 
-# Install nanomsg from source (no armhf alpine package currently available).
-# Also need to copy stuff in /usr to avoid a call to ldconfig, which fails
-# for some reason.
-COPY etc/nanomsg-1.1.5.tar.gz /
-RUN tar -xzf /nanomsg-1.1.5.tar.gz && \
-    cd /nanomsg-1.1.5 && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    cmake --build . && \
-    cmake --build . --target install && \
-    cp -R /usr/local/include/nanomsg /usr/include/ && \
-    find /usr/local -name 'libnanomsg.so*' -exec cp {} /usr/lib/ \; && \
-    rm -rf /nanomsg-1.1.5*
+# Install opengrm (with openfst 1.6.9)
+COPY etc/openfst-1.6.9.tar.gz /
+RUN cd / && tar -xf openfst-1.6.9.tar.gz && cd openfst-1.6.9/ && \
+    ./configure --enable-far && \
+    make -j $MAKE_THREADS && \
+    make install && \
+    rm -rf /openfst-1.6.9*
+
+COPY etc/opengrm-ngram-1.3.4.tar.gz /
+RUN cd / && tar -xf opengrm-ngram-1.3.4.tar.gz && cd opengrm-ngram-1.3.4/ && \
+    ./configure && \
+    make -j $MAKE_THREADS && \
+    make install && \
+    rm -rf /opengrm*
+
+# Install phonetisaurus (with openfst 1.3.4)
+COPY etc/openfst-1.3.4.tar.gz /
+RUN cd / && tar -xvf openfst-1.3.4.tar.gz && \
+    cd /openfst-1.3.4/ && \
+    ./configure --enable-compact-fsts --enable-const-fsts \
+                --enable-far --enable-lookahead-fsts \
+                --enable-pdt && \
+    make -j $MAKE_THREADS
+
+COPY etc/phonetisaurus-2013.tar.gz /
+RUN cd / && tar -xvf phonetisaurus-2013.tar.gz && \
+    cd /phonetisaurus-2013/src && \
+    mkdir -p bin && \
+    CPPFLAGS=-I/openfst-1.3.4/src/include LDFLAGS=-L/openfst-1.3.4/src/lib/.libs/ make -j $MAKE_THREADS bin/phonetisaurus-g2p && \
+    cp bin/phonetisaurus-g2p /usr/bin/ && \
+    cp /openfst-1.3.4/src/lib/.libs/libfst.* /usr/local/lib/ && \
+    rm -rf /openfst-1.3.4* && \
+    rm -rf /phonetisaurus-2013*
 
 # Install Python dependencies
 COPY requirements.txt /requirements.txt
-COPY etc/nanomsg-python-master.zip /
 RUN python3 -m pip install --no-cache-dir wheel
 RUN python3 -m pip install --no-cache-dir -r /requirements.txt
-RUN python3 -m pip install --no-cache-dir /nanomsg-python-master.zip
 
 # Install Pocketsphinx Python module with no sound
-RUN python3 -m pip install https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz
+COPY etc/pocketsphinx-python.tar.gz /
+RUN python3 -m pip install --no-cache-dir /pocketsphinx-python.tar.gz && \
+    rm -rf /pocketsphinx-python*
 
 # Install JSGF sentence generator
-RUN cd / && wget -qO - https://github.com/synesthesiam/jsgf-gen/releases/download/v1.0/jsgf-gen.tar.gz | tar xzf - && \
-    ln -s /jsgf-gen/bin/jsgf-gen /usr/bin/jsgf-gen
+COPY etc/jsgf-gen.tar.gz /
+RUN cd / && tar -xvf /jsgf-gen.tar.gz && \
+    mv /jsgf-gen/bin/* /usr/bin/ && \
+    mv /jsgf-gen/lib/* /usr/lib/ && \
+    rm -rf /jsgf-gen*
 
-# Install phoentisaurus
-RUN cd / && wget -qO - https://github.com/synesthesiam/phonetisaurus-2013/releases/download/v1.0-$BUILD_ARCH-alpine/phonetisaurus_2013-1_$BUILD_ARCH-alpine.tar.gz | tar xzf -
+# Install snowboy
+COPY etc/snowboy-1.3.0.tar.gz /
+RUN pip3 install --no-cache-dir /snowboy-1.3.0.tar.gz && \
+    rm -rf /snowboy*
 
-# Install opengrm
-RUN cd / && wget -qO - https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-$BUILD_ARCH-alpine/opengrm-1.3.4_$BUILD_ARCH-alpine.tar.gz | tar xzf -
+RUN ldconfig
 
-# Install sphinxbase
-RUN cd / && git clone https://github.com/cmusphinx/sphinxbase.git && \
-    cd sphinxbase && \
-    ./autogen.sh && \
-    make && \
-    make install && \
-    rm -rf /sphinxbase*
-
-RUN cd / && git clone https://github.com/cmusphinx/sphinxtrain.git && \
-    cd sphinxtrain && \
-    ./autogen.sh && \
-    make && \
-    make install && \
-    rm -rf /sphinxtrain*
+# Copy my code
+COPY *.py /usr/share/rhasspy/
+COPY rhasspy/*.py /usr/share/rhasspy/rhasspy/
+COPY profiles/ /usr/share/rhasspy/profiles/
+COPY dist/ /usr/share/rhasspy/dist/
 
 # Copy bw and mllr_solve to /usr/bin
 RUN find / -name bw -exec cp '{}' /usr/bin/ \;
 RUN find / -name mllr_solve -exec cp '{}' /usr/bin/ \;
-
-# Install Rhasspy profiles
-COPY bin/install-profiles.sh /
-RUN mkdir -p /usr/share/rhasspy/profiles && \
-    cd /usr/share/rhasspy/profiles && \
-    bash /install-profiles.sh $LANGUAGES
-
-# Copy my code
-COPY *.py /usr/share/rhasspy/
-COPY rhasspy/ /usr/share/rhasspy/
-COPY profiles/ /usr/share/rhasspy/profiles/
-COPY dist/ /usr/share/rhasspy/dist/
-COPY etc/wav/ /usr/share/rhasspy/etc/wav/
-COPY docker/rhasspy /usr/share/rhasspy/bin/
 
 # Copy script to run
 COPY docker/run.sh /run.sh
@@ -91,4 +93,4 @@ RUN chmod a+x /run.sh
 
 ENV CONFIG_PATH /data/options.json
 
-ENTRYPOINT ["/run.sh"]
+CMD ["/run.sh"]

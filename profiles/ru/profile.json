@@ -1,0 +1,12 @@
+{
+    "language": "ru",
+
+    "training": {
+        "sentence_casing": "lower",
+        "regex": {
+            "replace": [
+                { "[^\\w ]+": " " }
+            ]
+        }
+    }
+}

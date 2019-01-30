@@ -16,7 +16,7 @@ Available profile sections and settings are:
 
 * `rhasspy` - configuration for Rhasspy assistant
   * `default_profile` - name of the default profile
-  * `preload_profile` - true if speech/intent recognizers for default profile
+  * `preload_profile` - true if speech/intent recognizers should be loaded immediately for default profile
   * `listen_on_start` - true if Rhasspy should listen for wake word at startup
 * `home_assistant` - how to communicate with Home Assistant/Hass.io
   * `url` - Base URL of Home Assistant server (no `/api`)
@@ -24,7 +24,7 @@ Available profile sections and settings are:
   * `api_password` - Password, if you have that enabled (deprecated)
   * `event_type_format` - Python format string used to create event type from intent type (`{0}`)
 * `speech_to_text` - transcribing speech to text commands
-  * `system` - name of speech to text system (`pocketsphinx` or `remote`)
+  * `system` - name of speech to text system (`pocketsphinx`, `remote`, or `remote`)
   * `pocketsphinx` - configuration for Pocketsphinx
     * `acoustic_model` - directory with CMU 16Khz acoustic model
     * `base_dictionary` - large text file with word pronunciations (read only)
@@ -40,7 +40,7 @@ Available profile sections and settings are:
   * `g2p_model` - finite-state transducer for phonetisaurus to guess word pronunciations
   * `grammars_dir` - directory to write generated JSGF grammars from sentences ini file
 * `intent` - transforming text commands to intents
-  * `system` - intent recognition system (`fuzzywuzzy`, `rasa`, `remote`, or `adapt`)
+  * `system` - intent recognition system (`fuzzywuzzy`, `rasa`, `remote`, `adapt`, or `dummy`)
   * `fuzzywuzzy` - configuration for simplistic [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) based intent recognizer
     * `examples_json` - JSON file with intents/example sentences
   * `remote` - configuration for remote Rhasspy server
@@ -64,21 +64,36 @@ Available profile sections and settings are:
     * `replace` - list of dictionaries with patterns/replacements used on each example sentence
     * `split` - pattern used to break sentences into words
 * `wake` - waking Rhasspy up for speech input
-  * `system` - wake word recognition system (`pocketsphinx`, `hermes`, `nanomsg`)
+  * `system` - wake word recognition system (`pocketsphinx`, `snowboy`, `precise`, or `dummy`)
     * `pocketsphinx` - configuration for Pocketsphinx wake word recognizer
       * `keyphrase` - phrase to wake up on (3-4 syllables recommended)
       * `threshold` - sensitivity of detection (recommended range 1e-50 to 1e-5)
-    * `hermes` - configuration for MQTT-based wake word detection (see [snowboy and mycroft-precise add-ons](https://github.com/synesthesiam/hassio-addons))
-      * `wakeword_id` - id of wakeword for [Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)
-    * `nanomsg` - configuration for [nanomsg](https://nanomsg.org/) based wake word system
-      * `pub_address` - address of PUB socket for audio data (e.g., `tcp://localhost:5000`)
-      * `pull_address` - address of PULL socket for feedback (e.g., `tcp://localhost:5001`)
+    * `snowboy` - configuration for [snowboy](https://snowboy.kitt.ai)
+      * `model` - path to model file (in profile directory)
+      * `sensitivity` - model sensitivity (0-1, default 0.5)
+      * `audio_gain` - audio gain (default 1)
+    * `precise` - configuration for [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise)
+      * `model` - path to model file (in profile directory)
+      * `sensitivity` - model sensitivity (0-1, default 0.5)
+      * `trigger_level`  - number of events to trigger activation (default 3)
 * `microphone` - configuration for audio recording
-  * `system` - audio recording system (`pyaudio`, `arecord`, or `hermes`)
+  * `system` - audio recording system (`pyaudio`, `arecord`, `hermes`, or `dummy`)
+  * `pyaudio` - configuration for [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) microphone
+    * `device` - index of device to use or empty for default device
+  * `arecord` - configuration for ALSA microphone
+    * `device` - name of ALSA device (see `arecord -L`) to use or empty for default device
+  * `hermes` - configuration for MQTT "microphone" ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
+    * Subscribes to WAV data from `hermes/audioServer/<SITE_ID>/audioFrame`
+    * Requires MQTT to be enabled
 * `sounds` - configuration for feedback sounds from Rhasspy
-  * `system` - which sound output system to use (`aplay` or `hermes`)
+  * `system` - which sound output system to use (`aplay`, `hermes`, or `dummy`)
   * `wake` - path to WAV file to play when Rhasspy wakes up
   * `recorded` - path to WAV file to play when a command finishes recording
+  * `aplay` - configuration for ALSA speakers
+    * `device` - name of ALSA device (see `aplay -L`) to use or empty for default device
+  * `hermes` - configuration for MQTT "speakers" ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
+    * WAV data published to `hermes/audioServer/<SITE_ID>/playBytes/<REQUEST_ID>`
+    * Requires MQTT to be enabled
 * `tuning` - configuration for acoustic model tuning
   * `system` - system for tuning (currently only `sphinxtrain`)
   * `sphinxtrain` - configuration for [sphinxtrain](https://github.com/cmusphinx/sphinxtrain) based acoustic model tuning

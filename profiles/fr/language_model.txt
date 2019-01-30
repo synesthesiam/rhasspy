@@ -1,0 +1,142 @@
+
+\data\
+ngram 1=28
+ngram 2=49
+ngram 3=52
+
+\1-grams:
+-99	<s>	-2.796938
+-0.8398967	</s>
+-1.140927	quelle	-2.926009
+-1.441957	heure	-2.866241
+-0.919078	est	-2.851765
+-1.441957	il	-2.866241
+-0.9648355	la	-2.950149
+-1.441957	température	-2.93218
+-1.919078	ce	-2.994736
+-1.919078	que	-2.950154
+-1.441957	porte	-2.973017
+-1.220108	de	-2.973005
+-1.317018	garage	-2.866241
+-1.441957	ouverte	-2.984012
+-1.441957	ou	-2.984012
+-1.441957	fermée	-2.873304
+-1.618048	elle	-2.984012
+-1.742987	allumé	-2.944235
+-1.919078	lampe	-2.973017
+-1.919078	salon	-2.93218
+-1.919078	lumière	-2.994736
+-1.919078	dans	-2.950154
+-1.919078	chambre	-2.994736
+-1.919078	à	-2.994736
+-1.919078	coucher	-2.93218
+-1.919078	l	-2.994736
+-1.919078	éclairage	-2.973017
+-1.742987	éteindre	-2.944235
+
+\2-grams:
+-0.4264032	<s> quelle	-1.39203e-06
+-0.7785858	<s> est	-2.845273
+-0.9035245	<s> il	-2.699404
+-1.079616	<s> la	-2.824126
+-0.9035245	<s> allumé	1.92427
+-0.9035245	<s> éteindre	1.92427
+-0.3014645	quelle heure	-0
+-0.3014645	quelle est	-2.845284
+-0.3014645	heure </s>
+-0.3014645	heure est	-2.929496
+-0.8243433	est quelle	-2.699404
+-0.8243433	est il	-2.699404
+-0.5233133	est la	-2.824126
+-1.000434	est ce	-0
+-1.000434	est ouverte	-0
+-0.6994045	est elle	-0
+-0.3014645	il </s>
+-0.3014645	il est	-2.929496
+-0.4775558	la température	-0
+-0.4775558	la porte	-0
+-0.954677	la lampe	-0
+-0.954677	la lumière	-0
+-0.954677	la chambre	-0
+-0.0004345118	température </s>
+-0.0004345118	ce que	-0
+-0.0004345118	que la	-2.824126
+-0.0004345118	porte de	-2.302764
+-0.09734453	de garage	-0
+-0.6994045	de salon	-0
+-0.3014645	garage </s>
+-0.3014645	garage est	-2.845273
+-0.0004345118	ouverte ou	-0
+-0.0004345118	ou fermée	-0
+-0.1765258	fermée </s>
+-0.4775558	fermée la	-2.824126
+-0.0004345118	elle ouverte	-0
+-0.1765258	allumé la	-0.4930396
+-0.4775558	allumé l	2.39794
+-0.0004345118	lampe de	-2.903199
+-0.0004345118	salon </s>
+-0.0004345118	lumière dans	-0
+-0.0004345118	dans la	-2.948902
+-0.0004345118	chambre à	-0
+-0.0004345118	à coucher	-0
+-0.0004345118	coucher </s>
+-0.0004345118	l éclairage	-0
+-0.0004345118	éclairage de	-2.302764
+-0.1765258	éteindre la	-0.4930396
+-0.4775558	éteindre l	2.39794
+
+\3-grams:
+-0.4775558	<s> quelle heure
+-0.1765258	<s> quelle est
+-0.3014645	<s> est ce
+-0.3014645	<s> est elle
+-0.0004345118	<s> il est
+-0.0004345118	<s> la porte
+-0.1765258	<s> allumé la
+-0.60206	<s> allumé l
+-0.1765258	<s> éteindre la
+-0.60206	<s> éteindre l
+-0.3014645	quelle heure </s>
+-0.3014645	quelle heure est
+-0.0004345118	quelle est la
+-0.0004345118	heure est il
+-0.0004345118	est quelle heure
+-0.0004345118	est il </s>
+-0.0004345118	est la température
+-0.0004345118	est ce que
+-0.0004345118	est ouverte ou
+-0.0004345118	est elle ouverte
+-0.0004345118	il est quelle
+-0.0004345118	la température </s>
+-0.0004345118	la porte de
+-0.0004345118	la lampe de
+-0.0004345118	la lumière dans
+-0.0004345118	la chambre à
+-0.0004345118	ce que la
+-0.0004345118	que la porte
+-0.0004345118	porte de garage
+-0.3014645	de garage </s>
+-0.3014645	de garage est
+-0.0004345118	de salon </s>
+-0.3014645	garage est ouverte
+-0.3014645	garage est elle
+-0.0004345118	ouverte ou fermée
+-0.1765258	ou fermée </s>
+-0.4775558	ou fermée la
+-0.0004345118	fermée la porte
+-0.0004345118	elle ouverte ou
+-0.4259687	allumé la lampe
+-0.4259687	allumé la lumière
+-0.1249387	allumé l éclairage
+-0.0004345118	lampe de salon
+-0.0004345118	lumière dans la
+-0.0004345118	dans la chambre
+-0.0004345118	chambre à coucher
+-0.0004345118	à coucher </s>
+-0.0004345118	l éclairage de
+-0.0004345118	éclairage de garage
+-0.4259687	éteindre la lampe
+-0.4259687	éteindre la lumière
+-0.1249387	éteindre l éclairage
+
+\end\

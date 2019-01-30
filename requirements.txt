@@ -9,3 +9,5 @@ webrtcvad
 adapt-parser
 pydash
 paho-mqtt
+mycroft-precise==0.2.0
+thespian

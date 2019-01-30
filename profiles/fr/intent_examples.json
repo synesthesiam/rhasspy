@@ -1,0 +1,100 @@
+{
+    "GetTime": [
+        {
+            "text": "quelle heure est il",
+            "slots": {}
+        },
+        {
+            "text": "il est quelle heure",
+            "slots": {}
+        }
+    ],
+    "GetTemperature": [
+        {
+            "text": "quelle est la temp\u00e9rature",
+            "slots": {}
+        }
+    ],
+    "GetGarageState": [
+        {
+            "text": "est ce que la porte de garage est ouverte ou ferm\u00e9e",
+            "slots": {}
+        },
+        {
+            "text": "la porte de garage est elle ouverte ou ferm\u00e9e",
+            "slots": {}
+        },
+        {
+            "text": "est elle ouverte ou ferm\u00e9e la porte de garage",
+            "slots": {}
+        }
+    ],
+    "ChangeLightState": [
+        {
+            "text": "allum\u00e9 la lampe de salon",
+            "slots": {
+                "state": [
+                    "on"
+                ],
+                "name": [
+                    "living room lamp"
+                ]
+            }
+        },
+        {
+            "text": "allum\u00e9 la lumi\u00e8re dans la chambre \u00e0 coucher",
+            "slots": {
+                "state": [
+                    "on"
+                ],
+                "name": [
+                    "bedroom light"
+                ]
+            }
+        },
+        {
+            "text": "allum\u00e9 l \u00e9clairage de garage",
+            "slots": {
+                "state": [
+                    "on"
+                ],
+                "name": [
+                    "garage light"
+                ]
+            }
+        },
+        {
+            "text": "\u00e9teindre la lampe de salon",
+            "slots": {
+                "state": [
+                    "off"
+                ],
+                "name": [
+                    "living room lamp"
+                ]
+            }
+        },
+        {
+            "text": "\u00e9teindre la lumi\u00e8re dans la chambre \u00e0 coucher",
+            "slots": {
+                "state": [
+                    "off"
+                ],
+                "name": [
+                    "bedroom light"
+                ]
+            }
+        },
+        {
+            "text": "\u00e9teindre l \u00e9clairage de garage",
+            "slots": {
+                "state": [
+                    "off"
+                ],
+                "name": [
+                    "garage light"
+                ]
+            }
+        }
+    ]
+}

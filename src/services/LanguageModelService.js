@@ -1,23 +1,20 @@
 import Api from '@/services/Api'
 
 export default {
-    update_sentences(profile, sentences) {
+    update_sentences(sentences) {
         return Api().post('/api/sentences', sentences,
-                          { params: { 'profile': profile },
-                            headers: { 'Content-Type': 'text/plain' } })
+                          { headers: { 'Content-Type': 'text/plain' } })
     },
 
-    getSentences(profile) {
-        return Api().get('/api/sentences', { params: { 'profile': profile } })
+    getSentences() {
+        return Api().get('/api/sentences')
     },
 
-    train(profile) {
-        return new Api().post('/api/train', '',
-                              { params: { 'profile': profile }})
+    train() {
+        return new Api().post('/api/train', '')
     },
 
-    reload(profile) {
-        return new Api().post('/api/reload', '',
-                              { params: { 'profile': profile }})
+    reload() {
+        return new Api().post('/api/reload', '')
     }
 }
