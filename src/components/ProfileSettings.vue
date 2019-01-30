@@ -133,6 +133,8 @@
                 </div>
             </div>
 
+            <button class="btn btn-primary mt-3">Save Settings</button>
+
             <div class="card mt-3">
                 <div class="card-header">Wake Word</div>
                 <div class="card-body">
@@ -212,6 +214,8 @@
                 </div>
             </div>
 
+            <button class="btn btn-primary mt-3">Save Settings</button>
+
             <div class="card mt-3">
                 <div class="card-header">Speech Recognition</div>
                 <div class="card-body">
@@ -262,6 +266,8 @@
                     </div>
                 </div>
             </div>
+
+            <button class="btn btn-primary mt-3">Save Settings</button>
 
             <div class="card mt-3">
                 <div class="card-header">Intent Recognition</div>
@@ -351,6 +357,8 @@
                 </div>
             </div>
 
+            <button class="btn btn-primary mt-3">Save Settings</button>
+
             <div class="card mt-3">
                 <div class="card-header">Audio Recording</div>
                 <div class="card-body">
@@ -364,6 +372,7 @@
                             </div>
                         </div>
                     </div>
+                    <hr>
                     <div class="form-group">
                         <div class="form-row">
                             <div class="form-check">
@@ -389,14 +398,14 @@
                             </div>
                         </div>
                     </div>
-                    <hr>
                     <div class="form-group">
                         <div class="form-row">
                             <div class="col-auto">
                                 <label for="device" class="col-form-label col">Audio Device</label>
                             </div>
                             <div class="col-auto">
-                                <select id="device" v-model="device">
+                                <select id="device" v-model="device"
+                                        :disabled="testing || !(audioSystem == 'pyaudio' || audioSystem == 'arecord')">
                                     <option value="">Default Device</option>
                                     <option v-for="(desc, id) in microphones" :value="id" v-bind:key="id">{{ id }}: {{ desc }}</option>
                                 </select>
@@ -405,26 +414,29 @@
                                 <button type="button" class="btn btn-success"
                                         @click="testMicrophones"
                                         title="Test microphones and update the list"
-                                        :disabled="testing">Test</button>
+                                        :disabled="testing || !(audioSystem == 'pyaudio' || audioSystem == 'arecord')">Test</button>
                             </div>
                         </div>
                     </div>
-
-                    <!-- <div class="form-group"> -->
-                    <!-- <div class="form-row"> -->
-                    <!-- <div class="form-check"> -->
-                    <!-- <input class="form-check-input" type="radio" name="audioSystem" id="audio-mqtt" value="hermes" v-model="audioSystem"> -->
-                    <!-- <label class="form-check-label" for="audio-mqtt"> -->
-                    <!-- Get microphone input remotely with MQTT (Hermes protocol) -->
-                    <!-- </label> -->
-                    <!-- </div> -->
-                    <!-- </div> -->
-                    <!-- <div class="form-row"> -->
-                    <!-- <div class="col text-muted"> -->
-                    <!-- Rhasspy will listen for Audio data on <tt>hermes/audioServer/{{ this.mqttSiteId }}/audioFrame</tt> -->
-                    <!-- </div> -->
-                    <!-- </div> -->
-                    <!-- </div> -->
+                    <hr>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="audioSystem" id="audio-mqtt" value="hermes" v-model="audioSystem">
+                                <label class="form-check-label" for="audio-mqtt">
+                                    Get microphone input remotely with MQTT (<a href="https://docs.snips.ai/ressources/hermes-protocol">Hermes protocol</a>)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col text-muted">
+                                Rhasspy will listen for WAV data on: <tt>hermes/audioServer/{{ this.mqttSiteId }}/audioFrame</tt>
+                                <div class="alert alert-danger" v-if="audioSystem == 'hermes' && !mqttEnabled">
+                                    MQTT is not enabled
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -526,9 +538,9 @@
                                                            this.defaultSettings.home_assistant.access_token)
 
                                // Wake
-                               this.wakeOnStart = this._.get(this.defaultSettings,
+                               this.wakeOnStart = this._.get(this.profileSettings,
                                                              'rhasspy.listen_on_start',
-                                                             false)
+                                                             this.defaultSettings.rhasspy.listen_on_start)
 
                                this.wakeKeyphrase = this._.get(this.profileSettings,
                                                                'wake.pocketsphinx.keyphrase',
@@ -578,29 +590,29 @@
                                                         this._.get(this.defaultSettings, devicePath, ''))
 
                                // MQTT
-                               this.mqttEnabled = this._.get(this.defaultSettings,
+                               this.mqttEnabled = this._.get(this.profileSettings,
                                                              'mqtt.enabled',
-                                                             false)
+                                                             this.defaultSettings.mqtt.enabled)
 
-                               this.mqttHost = this._.get(this.defaultSettings,
+                               this.mqttHost = this._.get(this.profileSettings,
                                                           'mqtt.host',
-                                                          'localhost')
+                                                          this.defaultSettings.mqtt.host)
 
-                               this.mqttPort = this._.get(this.defaultSettings,
+                               this.mqttPort = this._.get(this.profileSettings,
                                                           'mqtt.port',
-                                                          1883)
+                                                          this.defaultSettings.mqtt.port)
 
-                               this.mqttUsername = this._.get(this.defaultSettings,
+                               this.mqttUsername = this._.get(this.profileSettings,
                                                               'mqtt.username',
-                                                              '')
+                                                              this.defaultSettings.mqtt.username)
 
-                               this.mqttPassword = this._.get(this.defaultSettings,
+                               this.mqttPassword = this._.get(this.profileSettings,
                                                               'mqtt.password',
-                                                              '')
+                                                              this.defaultSettings.mqtt.password)
 
-                               this.mqttSiteId = this._.get(this.defaultSettings,
+                               this.mqttSiteId = this._.get(this.profileSettings,
                                                             'mqtt.site_id',
-                                                            'default')
+                                                            this.defaultSettings.mqtt.site_id)
                            })
                            .catch(err => this.$parent.error(err))
          },
@@ -655,7 +667,7 @@
                         this.remoteIntentURL)
 
              // Wake
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'rhasspy.listen_on_start',
                         this.wakeOnStart)
 
@@ -685,27 +697,27 @@
                         this.device)
 
              // MQTT
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'mqtt.enabled',
                         this.mqttEnabled)
 
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'mqtt.host',
                         this.mqttHost)
 
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'mqtt.password',
                         this.mqttPassword)
 
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'mqtt.username',
                         this.mqttUsername)
 
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'mqtt.password',
                         this.mqttPassword)
 
-             this._.set(this.defaultSettings,
+             this._.set(this.profileSettings,
                         'mqtt.site_id',
                         this.mqttSiteId)
 

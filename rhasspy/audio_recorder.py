@@ -496,7 +496,7 @@ class WavAudioRecorder(RhasspyActor):
     # -----------------------------------------------------------------------------
 
     @classmethod
-    def get_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+    def get_microphones(self) -> Dict[Any, Any]:
         return {}
 
     @classmethod
@@ -518,7 +518,6 @@ class HermesAudioRecorder(RhasspyActor):
     def to_started(self, from_state):
         self.mqtt = self.config['mqtt']
         self.site_id = self.profile.get('mqtt.site_id')
-        self.chunk_size = self.config.get('microphone.hermes.chunk_size', 480*2)
         self.topic_audio_frame = 'hermes/audioServer/%s/audioFrame' % self.site_id
         self.send(self.mqtt, MqttSubscribe(self.topic_audio_frame))
 
@@ -577,7 +576,7 @@ class HermesAudioRecorder(RhasspyActor):
     # -----------------------------------------------------------------------------
 
     @classmethod
-    def get_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+    def get_microphones(self) -> Dict[Any, Any]:
         return {}
 
     @classmethod
