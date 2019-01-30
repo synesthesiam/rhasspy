@@ -14,9 +14,10 @@ from .audio_recorder import StartStreaming, StopStreaming, AudioData
 # -----------------------------------------------------------------------------
 
 class ListenForCommand:
-    def __init__(self, receiver=None, handle=True):
+    def __init__(self, receiver=None, handle=True, timeout=None):
         self.receiver = receiver
         self.handle = handle
+        self.timeout = timeout
 
 class VoiceCommand:
     def __init__(self, data: bytes, timeout=False, handle=True):
@@ -51,13 +52,13 @@ class WebrtcvadCommandListener(RhasspyActor):
         import webrtcvad
         self.recorder = self.config['recorder']
 
-        settings = self.profile.get('command.webrtcvad')
-        self.sample_rate = settings['sample_rate']  # 16Khz
-        self.chunk_size = settings['chunk_size']  # 10,20,30 ms
-        self.vad_mode = settings['vad_mode'] # 0-3 (aggressiveness)
-        self.min_sec = settings['min_sec']  # min seconds that command must last
-        self.silence_sec = settings['silence_sec']  # min seconds of silence after command
-        self.timeout_sec = settings['timeout_sec']  # max seconds that command can last
+        self.settings = self.profile.get('command.webrtcvad')
+        self.sample_rate = self.settings['sample_rate']  # 16Khz
+        self.chunk_size = self.settings['chunk_size']  # 10,20,30 ms
+        self.vad_mode = self.settings['vad_mode'] # 0-3 (aggressiveness)
+        self.min_sec = self.settings['min_sec']  # min seconds that command must last
+        self.silence_sec = self.settings['silence_sec']  # min seconds of silence after command
+        self.timeout_sec = self.settings['timeout_sec']  # max seconds that command can last
 
         self.seconds_per_buffer = self.chunk_size / self.sample_rate
         self.max_buffers = int(math.ceil(self.timeout_sec / self.seconds_per_buffer))
@@ -75,7 +76,6 @@ class WebrtcvadCommandListener(RhasspyActor):
     def to_loaded(self, from_state):
         # Recording state
         self.chunk = bytes()
-        self.max_buffers = int(math.ceil(self.timeout_sec / self.seconds_per_buffer))
         self.silence_buffers = int(math.ceil(self.silence_sec / self.seconds_per_buffer))
         self.min_phrase_buffers = int(math.ceil(self.min_sec / self.seconds_per_buffer))
         self.in_phrase = False
@@ -83,6 +83,14 @@ class WebrtcvadCommandListener(RhasspyActor):
 
     def in_loaded(self, message, sender):
         if isinstance(message, ListenForCommand):
+            if message.timeout is not None:
+                # Use message timeout
+                self.timeout_sec = message.timeout
+            else:
+                # Use default timeout
+                self.timeout_sec = self.settings['timeout_sec']
+
+            self.max_buffers = int(math.ceil(self.timeout_sec / self.seconds_per_buffer))
             self.receiver = message.receiver or sender
             self.transition('listening')
             self.handle = message.handle

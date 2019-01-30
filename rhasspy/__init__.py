@@ -16,7 +16,7 @@ import math
 import pydash
 
 from .profiles import Profile
-from .utils import extract_entities
+from .utils import extract_entities, buffer_to_wav
 
 # -----------------------------------------------------------------------------
 
@@ -75,12 +75,18 @@ def main():
 
     # mic2wav
     mic2wav_parser = sub_parsers.add_parser('mic2wav', help='Voice command to WAV data')
+    mic2wav_parser.add_argument('--timeout', type=float, default=None,
+                                help='Maximum number of seconds to record (default=profile)')
 
     # mic2text
     mic2text_parser = sub_parsers.add_parser('mic2text', help='Voice command to text transcription')
+    mic2text_parser.add_argument('--timeout', type=float, default=None,
+                                 help='Maximum number of seconds to record (default=profile)')
 
     # mic2intent
     mic2intent_parser = sub_parsers.add_parser('mic2intent', help='Voice command to parsed intent')
+    mic2intent_parser.add_argument('--timeout', type=float, default=None,
+                                   help='Maximum number of seconds to record (default=profile)')
 
     # word2phonemes
     word2phonemes_parser = sub_parsers.add_parser('word2phonemes', help='Get pronunciation(s) for word(s)')
@@ -619,8 +625,7 @@ def test_wake(core, profile, args):
 
 def mic2wav(core, profile, args):
     # Listen until silence
-    command_listener = core.get_command_listener()
-    wav_data = command_listener.listen_for_command()
+    wav_data = buffer_to_wav(core.record_command(args.timeout).data)
 
     # Output WAV data
     sys.stdout.buffer.write(wav_data)
@@ -631,12 +636,10 @@ def mic2wav(core, profile, args):
 
 def mic2text(core, profile, args):
     # Listen until silence
-    command_listener = core.get_command_listener()
-    wav_data = command_listener.listen_for_command()
+    wav_data = buffer_to_wav(core.record_command(args.timeout).data)
 
     # Transcribe
-    decoder = core.get_speech_decoder(profile.name)
-    text = decoder.transcribe_wav(wav_data)
+    text = core.transcribe_wav(wav_data).text
 
     # Output text
     print(text)
@@ -647,16 +650,13 @@ def mic2text(core, profile, args):
 
 def mic2intent(core, profile, args):
     # Listen until silence
-    command_listener = core.get_command_listener()
-    wav_data = command_listener.listen_for_command()
+    wav_data = buffer_to_wav(core.record_command(args.timeout).data)
 
     # Transcribe
-    decoder = core.get_speech_decoder(profile.name)
-    sentence = decoder.transcribe_wav(wav_data)
+    sentence = core.transcribe_wav(wav_data).text
 
     # Parse
-    recognizer = core.get_intent_recognizer(profile.name)
-    intent = recognizer.recognize(sentence)
+    intent = core.recognize_intent(sentence).intent
 
     # Output JSON
     json.dump(intent, sys.stdout, indent=4)
