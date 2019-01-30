@@ -5,11 +5,12 @@ LABEL maintainer="Michael Hansen <hansen.mike@gmail.com>"
 ARG BUILD_ARCH
 ENV LANG C.UTF-8
 
+ARG MAKE_THREADS=4
+
 WORKDIR /
 
 RUN apt-get update && \
-    apt-get install -y bash python3 python3-dev \
-        python3-pip python3-setuptools \
+    apt-get install -y bash \
         build-essential portaudio19-dev swig \
         libatlas-base-dev \
         sox espeak alsa-utils \
@@ -17,23 +18,6 @@ RUN apt-get update && \
         cmake git \
         autoconf libtool automake bison \
         sphinxbase-utils sphinxtrain
-
-# Install Python dependencies
-COPY requirements.txt /requirements.txt
-RUN python3 -m pip install --no-cache-dir wheel
-RUN python3 -m pip install --no-cache-dir -r /requirements.txt
-
-# Install Pocketsphinx Python module with no sound
-COPY etc/pocketsphinx-python.tar.gz /
-RUN python3 -m pip install --no-cache-dir /pocketsphinx-python.tar.gz && \
-    rm -rf /pocketsphinx-python*
-
-# Install JSGF sentence generator
-COPY etc/jsgf-gen.tar.gz /
-RUN cd / && tar -xvf /jsgf-gen.tar.gz && \
-    mv /jsgf-gen/bin/* /usr/bin/ && \
-    mv /jsgf-gen/lib/* /usr/lib/ && \
-    rm -rf /jsgf-gen*
 
 # Install opengrm (with openfst 1.6.9)
 COPY etc/openfst-1.6.9.tar.gz /
@@ -68,6 +52,23 @@ RUN cd / && tar -xvf phonetisaurus-2013.tar.gz && \
     cp /openfst-1.3.4/src/lib/.libs/libfst.* /usr/local/lib/ && \
     rm -rf /openfst-1.3.4* && \
     rm -rf /phonetisaurus-2013*
+
+# Install Python dependencies
+COPY requirements.txt /requirements.txt
+RUN python3 -m pip install --no-cache-dir wheel
+RUN python3 -m pip install --no-cache-dir -r /requirements.txt
+
+# Install Pocketsphinx Python module with no sound
+COPY etc/pocketsphinx-python.tar.gz /
+RUN python3 -m pip install --no-cache-dir /pocketsphinx-python.tar.gz && \
+    rm -rf /pocketsphinx-python*
+
+# Install JSGF sentence generator
+COPY etc/jsgf-gen.tar.gz /
+RUN cd / && tar -xvf /jsgf-gen.tar.gz && \
+    mv /jsgf-gen/bin/* /usr/bin/ && \
+    mv /jsgf-gen/lib/* /usr/lib/ && \
+    rm -rf /jsgf-gen*
 
 # Install snowboy
 COPY etc/snowboy-1.3.0.tar.gz /
