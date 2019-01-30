@@ -17,9 +17,6 @@ import pydash
 
 from .profiles import Profile
 from .utils import extract_entities
-# from audio_recorder import WavAudioRecorder
-# from wake import PocketsphinxWakeListener
-# from tune import SphinxTrainSpeechTuner
 
 # -----------------------------------------------------------------------------
 

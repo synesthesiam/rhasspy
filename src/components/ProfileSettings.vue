@@ -38,58 +38,57 @@
                             <span class="col-form-label text-muted">(default profile)</span>
                         </div>
                     </div>
-                    <!-- <hr>
-                         <div class="form-group">
-                         <div class="form-row">
-                         <input type="checkbox" id="mqtt-enabled" v-model="mqttEnabled">
-                         <label for="mqtt-enabled" class="col-form-label">Enable MQTT</label>
-                         <span class="col-form-label text-muted">(<a href="https://docs.snips.ai/ressources/hermes-protocol">Snips.ai compatibility</a>)</span>
-                         </div>
-                         </div>
-                         <div class="form-group">
-                         <div class="form-row">
-                         <label for="mqtt-host" class="col-form-label">Host</label>
-                         <div class="col-sm-auto">
-                         <input id="mqtt-host" type="text" class="form-control" v-model="mqttHost" :disabled="!mqttEnabled">
-                         </div>
-                         </div>
-                         </div>
-                         <div class="form-group">
-                         <div class="form-row">
-                         <label for="mqtt-port" class="col-form-label">Port</label>
-                         <div class="col-sm-auto">
-                         <input id="mqtt-port" type="text" class="form-control" v-model="mqttPort" :disabled="!mqttEnabled">
-                         </div>
-                         </div>
-                         </div>
-                         <div class="form-group">
-                         <div class="form-row">
-                         <label for="mqtt-username" class="col-form-label">Username</label>
-                         <div class="col-sm-auto">
-                         <input id="mqtt-username" type="text" class="form-control" v-model="mqttUsername" :disabled="!mqttEnabled">
-                         </div>
-                         </div>
-                         </div>
-                         <div class="form-group">
-                         <div class="form-row">
-                         <label for="mqtt-password" class="col-form-label">Password</label>
-                         <div class="col-sm-auto">
-                         <input id="mqtt-password" type="text" class="form-control" v-model="mqttPassword" :disabled="!mqttEnabled">
-                         </div>
-                         </div>
-                         </div>
-                         <div class="form-group">
-                         <div class="form-row">
-                         <label for="mqtt-siteid" class="col-form-label">Site ID</label>
-                         <div class="col-sm-auto">
-                         <input id="mqtt-siteid" type="text" class="form-control" v-model="mqttSiteId" :disabled="!mqttEnabled">
-                         </div>
-                         <div class="col text-muted">
-                         Snips site name
-                         </div>
-                         </div>
-                         </div>
-                    -->
+                    <hr>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <input type="checkbox" id="mqtt-enabled" v-model="mqttEnabled">
+                            <label for="mqtt-enabled" class="col-form-label">Enable MQTT</label>
+                            <span class="col-form-label text-muted">(<a href="https://docs.snips.ai/ressources/hermes-protocol">Snips.ai compatibility</a>)</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="mqtt-host" class="col-form-label">Host</label>
+                            <div class="col-sm-auto">
+                                <input id="mqtt-host" type="text" class="form-control" v-model="mqttHost" :disabled="!mqttEnabled">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="mqtt-port" class="col-form-label">Port</label>
+                            <div class="col-sm-auto">
+                                <input id="mqtt-port" type="text" class="form-control" v-model="mqttPort" :disabled="!mqttEnabled">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="mqtt-username" class="col-form-label">Username</label>
+                            <div class="col-sm-auto">
+                                <input id="mqtt-username" type="text" class="form-control" v-model="mqttUsername" :disabled="!mqttEnabled">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="mqtt-password" class="col-form-label">Password</label>
+                            <div class="col-sm-auto">
+                                <input id="mqtt-password" type="text" class="form-control" v-model="mqttPassword" :disabled="!mqttEnabled">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <label for="mqtt-siteid" class="col-form-label">Site ID</label>
+                            <div class="col-sm-auto">
+                                <input id="mqtt-siteid" type="text" class="form-control" v-model="mqttSiteId" :disabled="!mqttEnabled">
+                            </div>
+                            <div class="col text-muted">
+                                Snips site name
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

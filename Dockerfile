@@ -17,37 +17,37 @@ RUN apt-get update && \
         autoconf libtool automake bison \
         sphinxbase-utils sphinxtrain
 
-# Install nanomsg from source (no armhf alpine package currently available).
-# Also need to copy stuff in /usr to avoid a call to ldconfig, which fails
-# for some reason.
-COPY etc/nanomsg-1.1.5.tar.gz /
-RUN tar -xzf /nanomsg-1.1.5.tar.gz && \
-    cd /nanomsg-1.1.5 && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    cmake --build . && \
-    cmake --build . --target install && \
-    cp -R /usr/local/include/nanomsg /usr/include/ && \
-    find /usr/local -name 'libnanomsg.so*' -exec cp {} /usr/lib/ \; && \
-    rm -rf /nanomsg-1.1.5*
-
 # Install Python dependencies
 COPY requirements.txt /requirements.txt
 COPY etc/nanomsg-python-master.zip /
 RUN python3 -m pip install --no-cache-dir wheel
 RUN python3 -m pip install --no-cache-dir -r /requirements.txt
-RUN python3 -m pip install --no-cache-dir /nanomsg-python-master.zip
 
 # Install Pocketsphinx Python module with no sound
 COPY etc/pocketsphinx-python.tar.gz /
 RUN python3 -m pip install --no-cache-dir /pocketsphinx-python.tar.gz
 
 # Install JSGF sentence generator
-RUN cd / && wget -q https://github.com/synesthesiam/jsgf-gen/releases/download/v1.0/jsgf-gen-1.0_all.deb
+COPY etc/jsgf-gen.tar.gz /
+RUN cd / && tar -xvf /jsgf-gen.tar.gz && mv /jsgf-gen/* /usr/
 
 # Install phoentisaurus
+COPY etc/phonetisaurus-2013.tar.gz /
 RUN cd / && wget -q https://github.com/synesthesiam/phonetisaurus-2013/releases/download/v1.0-${BUILD_ARCH}/phonetisaurus_2013-1_${BUILD_ARCH}.deb
+
+#RUN apk update && \
+#    apk add git build-base && \
+#    cd / && git clone https://github.com/synesthesiam/openfst-1.3.4.git && \
+#    cd /openfst-1.3.4/ && \
+#    ./configure --enable-compact-fsts --enable-const-fsts --enable-far --enable-lookahead-fsts --enable-pdt --enable-static --disable-shared && \
+#    make -j $MAKE_THREADS && \
+#    cd /phonetisaurus-2013/src && \
+#    mkdir -p bin && \
+#    CPPFLAGS=-I/openfst-1.3.4/src/include LDFLAGS=-L/openfst-1.3.4/src/lib/.libs make -j $MAKE_THREADS bin/phonetisaurus-g2p && \
+#    cp bin/phonetisaurus-g2p /usr/bin && \
+#    rm -rf /openfst* /phonetisaurus* && \
+#    apk del git build-base && \
+#    apk add libstdc++
 
 # Install opengrm
 RUN cd / && wget -q https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${BUILD_ARCH}/openfst_1.6.9-1_${BUILD_ARCH}.deb

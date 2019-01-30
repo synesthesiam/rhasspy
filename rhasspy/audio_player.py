@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 
 from .actor import RhasspyActor
-from .mqtt import PlayBytes
+from .mqtt import Publish
 
 # -----------------------------------------------------------------------------
 # Events
@@ -79,6 +79,9 @@ class APlayAudioPlayer(RhasspyActor):
 
 class HeremesAudioPlayer(RhasspyActor):
     '''Sends audio data over MQTT via Hermes protocol'''
+    def to_started(self, from_state):
+        self.site_id = self.profile.get('mqtt.site_id')
+
     def in_started(self, message, sender):
         if isinstance(message, PlayWavFile):
             self.play_file(message.wav_path)
@@ -96,4 +99,6 @@ class HeremesAudioPlayer(RhasspyActor):
             self.play_data(wav_file.read())
 
     def play_data(self, wav_data: bytes):
-        self.send(self.mqtt, PlayBytes(wav_data))
+        request_id = str(uuid.uuid4())
+        topic = 'hermes/audioServer/%s/playBytes/%s' % (self.site_id, request_id)
+        self.send(self.mqtt, Publish(topic, wav_data))

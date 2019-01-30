@@ -6,257 +6,316 @@ import wave
 import time
 import threading
 from typing import Dict, Any
+from collections import defaultdict
 
 import paho.mqtt.client as mqtt
+
+from .actor import RhasspyActor
 
 # -----------------------------------------------------------------------------
 # Events
 # -----------------------------------------------------------------------------
 
-class PlayBytes:
-    def __init__(self, wav_data: bytes):
-        self.wav_data = wav_data
+class Publish:
+    def __init__(self, topic: str, payload: bytes):
+        self.topic = topic
+        self.payload = payload
+
+class Subscribe:
+    def __init__(self, topic: str, receiver=None):
+        self.topic = topic
+        self.receiver = receiver
+
+class Connected:
+    pass
+
+class Disconnected:
+    pass
+
+class Message:
+    def __init__(self, topic: str, payload: bytes):
+        self.topic = topic
+        self.payload = payload
 
 # -----------------------------------------------------------------------------
 # Interoperability with Snips.AI Hermes protocol
 # https://docs.snips.ai/ressources/hermes-protocol
 # -----------------------------------------------------------------------------
 
-logger = logging.getLogger(__name__)
-
-class HermesMqtt:
-    def __init__(self, core, subscribe=True):
-        self.core = core
+class HermesMqtt(RhasspyActor):
+    def __init__(self):
+        RhasspyActor.__init__(self)
         self.client = None
-        self.subscribe = subscribe
-
-        self.on_audio_frame = None
         self.connected = False
+        self.subscriptions = defaultdict(list)
+        self.publications = defaultdict(list)
 
     # -------------------------------------------------------------------------
 
-    def start_client(self):
-        if self.client is None:
-            self.site_id = self.core.get_default('mqtt.site_id', 'default')
-            self.wakeword_id = self.core.get_default('wake.hermes.wakeword_id', 'default')
-            self.host = self.core.get_default('mqtt.host', 'localhost')
-            self.port = self.core.get_default('mqtt.port', 1883)
-            self.reconnect_sec = self.core.get_default('mqtt.reconnect_sec', 5)
+    def to_started(self, from_state):
+        # Load settings
+        self.site_id = self.profile.get('mqtt.site_id', 'default')
+        self.host = self.profile.get('mqtt.host', 'localhost')
+        self.port = self.profile.get('mqtt.port', 1883)
+        self.username = self.profile.get('mqtt.username', '')
+        self.password = self.profile.get('mqtt.password', None)
+        self.reconnect_sec = self.profile.get('mqtt.reconnect_sec', 5)
 
-            self.topic_hotword_detected = 'hermes/hotword/%s/detected' % self.wakeword_id
-            self.topic_audio_frame = 'hermes/audioServer/%s/audioFrame' % self.site_id
-            self.topic_hotword_on = 'hermes/hotword/toggleOn'
-            self.topic_hotword_off = 'hermes/hotword/toggleOff'
-            self.topic_nlu_query = 'hermes/nlu/query'
+        if self.profile.get('mqtt.enabled', False):
+            self.transition('connecting')
 
-            if self.subscribe:
-                self.sub_topics = [self.topic_hotword_detected,
-                                  self.topic_audio_frame,
-                                  self.topic_hotword_on,
-                                  self.topic_hotword_off,
-                                  self.topic_nlu_query]
+    def in_started(self, message, sender):
+        self.save_for_later(message, sender)
+
+    def to_connecting(self, from_state):
+        self.client = mqtt.Client()
+        self.client.on_connect = self.on_connect
+        self.client.on_message = self.on_message
+        self.client.on_disconnect = self.on_disconnect
+
+        if len(self.username) > 0:
+            self._logger.debug('Logging in as %s' % self.username)
+            self.client.username_pw_set(self.username, self.password)
+
+        self._logger.debug('Connecting to MQTT broker %s:%s' % (self.host, self.port))
+        self.client.connect_async(self.host, self.port)
+        self.client.loop_start()
+
+    def in_connecting(self, message, sender):
+        if isinstance(message, Connected):
+            self.connected = True
+            self.transition('connected')
+        else:
+            self.save_for_later(message, sender)
+
+    def to_connected(self, from_state):
+        # Subscribe to topics
+        for topic in self.subscriptions:
+            self.client.subscribe(topic)
+
+        # Publish outstanding messages
+        for topic, payload in self.publications.items():
+            self.client.publish(topic, payload)
+
+        self.publications.clear()
+
+    def in_connected(self, message, sender):
+        if isinstance(message, Disconnected):
+            if self.reconnect_sec > 0:
+                self._logger.debug('Reconnecting in %s second(s)' % self.reconnect_sec)
+                time.sleep(self.reconnect_sec)
+                self.transition('started')
             else:
-                self.sub_topics = []  # no subscriptions
+                self.transition('connecting')
+        elif self.connected:
+            if isinstance(message, Subscribe):
+                receiver = message.receiver or sender
+                self.subscribe[message.topic].append(receiver)
+                self.client.subscribe(message.topic)
+            elif isinstance(message, Publish):
+                self.client.publish(message.topic, message.payload)
+        else:
+            self.save_for_later(message, sender)
 
 
-            self.client = mqtt.Client()
-            self.client.on_connect = self.on_connect
-            self.client.on_message = self.on_message
-            self.client.on_disconnect = self.on_disconnect
-
-            username = self.core.get_default('mqtt.username', '')
-            password = self.core.get_default('mqtt.password', None)
-
-            if len(username) > 0:
-                logger.debug('Logging in as %s' % username)
-                self.client.username_pw_set(username, password)
-
-            logger.debug('Connecting to MQTT broker %s:%s' % (self.host, self.port))
-            self.client.connect_async(self.host, self.port)
-            self.client.loop_start()
-
-    def stop_client(self):
+    def to_stopped(self, from_state):
         if self.client is not None:
             self.connected = False
-            logger.debug('Stopping MQTT client')
+            self._logger.debug('Stopping MQTT client')
             self.client.loop_stop()
             self.client = None
 
     # -------------------------------------------------------------------------
 
+    def save_for_later(self, message, sender):
+        if isinstance(message, Subscribe):
+            receiver = message.receiver or sender
+            self.subscriptions[message.topic].append(receiver)
+        elif isinstance(message, Publish):
+            receiver = message.receiver or sender
+            self.publications[message.topic].append(message.payload)
+
+    # -------------------------------------------------------------------------
+
+    # def start_client(self):
+    #     if self.client is None:
+
+    #         self.topic_hotword_detected = 'hermes/hotword/%s/detected' % self.wakeword_id
+    #         self.topic_audio_frame = 'hermes/audioServer/%s/audioFrame' % self.site_id
+    #         self.topic_hotword_on = 'hermes/hotword/toggleOn'
+    #         self.topic_hotword_off = 'hermes/hotword/toggleOff'
+    #         self.topic_nlu_query = 'hermes/nlu/query'
+
+    # -------------------------------------------------------------------------
+
     def on_connect(self, client, userdata, flags, rc):
-        logger.info('Connected to %s:%s' % (self.host, self.port))
-
-        for topic in self.sub_topics:
-            self.client.subscribe(topic)
-            logger.debug('Subscribed to %s' % topic)
-
-        self.connected = True
+        self._logger.info('Connected to %s:%s' % (self.host, self.port))
+        self.send(self.myAddress, Connected())
 
     def on_disconnect(self, client, userdata, flags, rc):
+        self._logger.warn('Disconnected')
         self.connected = False
-        logger.warn('Disconnected')
-        if self.reconnect_sec > 0:
-            logger.debug('Reconnecting in %s second(s)' % self.reconnect_sec)
-            time.sleep(self.reconnect_sec)
-            self.client.connect_async(self.host, self.port)
+        self.send(self.myAddress, Disconnected())
 
     def on_message(self, client, userdata, msg):
-        try:
-            if msg.topic == self.topic_hotword_detected:
-                # hermes/hotword/<WAKEWORD_ID>/detected
-                payload = json.loads(msg.payload.decode())
-                if payload.get('siteId', '') != self.site_id:
-                    return
+        self.send(self.myAddress, Message(message.topic, message.payload))
 
-                logger.debug('Hotword detected!')
-                keyphrase = payload.get('modelId', '')
-                self.core.get_audio_recorder().stop_recording(False, True)
 
-                # Handle in separate thread to avoid blocking.
-                # I'll get around to using asyncio one of these days.
-                threading.Thread(target=self.core._handle_wake,
-                                 args=(self.core.default_profile_name, keyphrase),
-                                 daemon=True).start()
-            elif msg.topic == self.topic_hotword_on:
-                # hermes/hotword/toggleOn
-                payload = json.loads(msg.payload.decode())
-                if payload.get('siteId', '') != self.site_id:
-                    return
+        # try:
+        #     if msg.topic == self.topic_hotword_detected:
+        #         # hermes/hotword/<WAKEWORD_ID>/detected
+        #         payload = json.loads(msg.payload.decode())
+        #         if payload.get('siteId', '') != self.site_id:
+        #             return
 
-                logger.debug('Hotword on')
-                self.core.get_wake_listener(self.core.default_profile_name).start_listening()
-            elif msg.topic == self.topic_hotword_off:
-                # hermes/hotword/toggleOff
-                payload = json.loads(msg.payload.decode())
-                if payload.get('siteId', '') != self.site_id:
-                    return
+        #         logger.debug('Hotword detected!')
+        #         keyphrase = payload.get('modelId', '')
+        #         self.core.get_audio_recorder().stop_recording(False, True)
 
-                logger.debug('Hotword off')
-                self.core.get_wake_listener(self.core.default_profile_name).stop_listening()
-            elif msg.topic == self.topic_nlu_query:
-                # hermes/nlu/query
-                payload = json.loads(msg.payload.decode())
-                logger.debug('NLU query')
+        #         # Handle in separate thread to avoid blocking.
+        #         # I'll get around to using asyncio one of these days.
+        #         threading.Thread(target=self.core._handle_wake,
+        #                          args=(self.core.default_profile_name, keyphrase),
+        #                          daemon=True).start()
+        #     elif msg.topic == self.topic_hotword_on:
+        #         # hermes/hotword/toggleOn
+        #         payload = json.loads(msg.payload.decode())
+        #         if payload.get('siteId', '') != self.site_id:
+        #             return
 
-                # Recognize intent
-                text = payload['input']
-                intent = self.core.get_intent_recognizer(self.core.default_profile_name).recognize(text)
+        #         logger.debug('Hotword on')
+        #         self.core.get_wake_listener(self.core.default_profile_name).start_listening()
+        #     elif msg.topic == self.topic_hotword_off:
+        #         # hermes/hotword/toggleOff
+        #         payload = json.loads(msg.payload.decode())
+        #         if payload.get('siteId', '') != self.site_id:
+        #             return
 
-                logger.debug(intent)
+        #         logger.debug('Hotword off')
+        #         self.core.get_wake_listener(self.core.default_profile_name).stop_listening()
+        #     elif msg.topic == self.topic_nlu_query:
+        #         # hermes/nlu/query
+        #         payload = json.loads(msg.payload.decode())
+        #         logger.debug('NLU query')
 
-                # Publish intent
-                # hermes/intent/<intentName>
-                session_id = payload.get('sessionId', '')
-                intent_payload = {
-                    'sessionId': session_id,
-                    'siteId': self.site_id,
-                    'input': text,
-                    'intent': {
-                        'intentName': intent['intent']['name'],
-                        'probability': intent['intent']['confidence']
-                    },
-                    'slots': [
-                        { 'slotName': e['entity'],
-                          'entity': e['entity'],
-                          'value': e['value'],
-                          'confidence': 1.0,
-                          'raw_value': e['value'] }
-                        for e in intent['entities']
-                    ]
-                }
+        #         # Recognize intent
+        #         text = payload['input']
+        #         intent = self.core.get_intent_recognizer(self.core.default_profile_name).recognize(text)
 
-                topic = 'hermes/intent/%s' % intent['intent']['name']
-                self.client.publish(topic, json.dumps(intent_payload).encode())
+        #         logger.debug(intent)
 
-                # Handle intent
-                self.core.get_intent_handler(self.core.default_profile_name).handle_intent(intent)
-            elif msg.topic == self.topic_audio_frame:
-                # hermes/audioServer/<SITE_ID>/audioFrame
-                if self.on_audio_frame is not None:
-                    # Extract audio data
-                    with io.BytesIO(msg.payload) as wav_buffer:
-                        with wave.open(wav_buffer, mode='rb') as wav_file:
-                            audio_data = wav_file.readframes(wav_file.getnframes())
-                            self.on_audio_frame(audio_data)
+        #         # Publish intent
+        #         # hermes/intent/<intentName>
+        #         session_id = payload.get('sessionId', '')
+        #         intent_payload = {
+        #             'sessionId': session_id,
+        #             'siteId': self.site_id,
+        #             'input': text,
+        #             'intent': {
+        #                 'intentName': intent['intent']['name'],
+        #                 'probability': intent['intent']['confidence']
+        #             },
+        #             'slots': [
+        #                 { 'slotName': e['entity'],
+        #                   'entity': e['entity'],
+        #                   'value': e['value'],
+        #                   'confidence': 1.0,
+        #                   'raw_value': e['value'] }
+        #                 for e in intent['entities']
+        #             ]
+        #         }
 
-        except Exception as e:
-            logger.exception('on_message')
+        #         topic = 'hermes/intent/%s' % intent['intent']['name']
+        #         self.client.publish(topic, json.dumps(intent_payload).encode())
 
-    # -------------------------------------------------------------------------
+        #         # Handle intent
+        #         self.core.get_intent_handler(self.core.default_profile_name).handle_intent(intent)
+        #     elif msg.topic == self.topic_audio_frame:
+        #         # hermes/audioServer/<SITE_ID>/audioFrame
+        #         if self.on_audio_frame is not None:
+        #             # Extract audio data
+        #             with io.BytesIO(msg.payload) as wav_buffer:
+        #                 with wave.open(wav_buffer, mode='rb') as wav_file:
+        #                     audio_data = wav_file.readframes(wav_file.getnframes())
+        #                     self.on_audio_frame(audio_data)
 
-    def text_captured(self, text, likelihood=0, seconds=0):
-        if self.client is None:
-            return
-
-        payload = json.dumps({
-            'siteId': self.site_id,
-            'text': text,
-            'likelihood': likelihood,
-            'seconds': seconds
-        }).encode()
-
-        topic = 'hermes/asr/textCaptured'
-        self.client.publish(topic, payload)
+        # except Exception as e:
+        #     logger.exception('on_message')
 
     # -------------------------------------------------------------------------
 
-    def play_bytes(self, wav_data: bytes):
-        if self.client is None:
-            return
+    # def text_captured(self, text, likelihood=0, seconds=0):
+    #     if self.client is None:
+    #         return
 
-        request_id = str(uuid.uuid4())
-        topic = 'hermes/audioServer/%s/playBytes/%s' % (self.site_id, request_id)
-        self.client.publish(topic, wav_data)
+    #     payload = json.dumps({
+    #         'siteId': self.site_id,
+    #         'text': text,
+    #         'likelihood': likelihood,
+    #         'seconds': seconds
+    #     }).encode()
 
-    # -------------------------------------------------------------------------
+    #     topic = 'hermes/asr/textCaptured'
+    #     self.client.publish(topic, payload)
 
-    def audio_frame(self, audio_data: bytes):
-        if self.client is None:
-            return
+    # # -------------------------------------------------------------------------
 
-        # Wrap in WAV
-        with io.BytesIO() as wav_buffer:
-            with wave.open(wav_buffer, mode='wb') as wav_file:
-                wav_file.setframerate(16000)
-                wav_file.setsampwidth(2)
-                wav_file.setnchannels(1)
-                wav_file.writeframesraw(audio_data)
+    # def play_bytes(self, wav_data: bytes):
+    #     if self.client is None:
+    #         return
 
-            wav_data = wav_buffer.getvalue()
-            self.client.publish(self.topic_audio_frame, wav_data)
+    #     request_id = str(uuid.uuid4())
+    #     topic = 'hermes/audioServer/%s/playBytes/%s' % (self.site_id, request_id)
+    #     self.client.publish(topic, wav_data)
 
-    # -------------------------------------------------------------------------
+    # # -------------------------------------------------------------------------
 
-    def rhasspy_asleep(self, profile_name: str):
-        if self.client is None:
-            return
-        self.client.publish('rhasspy/events/asleep', profile_name.encode())
+    # def audio_frame(self, audio_data: bytes):
+    #     if self.client is None:
+    #         return
 
-    def rhasspy_awake(self, profile_name: str):
-        if self.client is None:
-            return
-        self.client.publish('rhasspy/events/awake', profile_name.encode())
+    #     # Wrap in WAV
+    #     with io.BytesIO() as wav_buffer:
+    #         with wave.open(wav_buffer, mode='wb') as wav_file:
+    #             wav_file.setframerate(16000)
+    #             wav_file.setsampwidth(2)
+    #             wav_file.setnchannels(1)
+    #             wav_file.writeframesraw(audio_data)
 
-    def rhasspy_decoding(self, profile_name: str):
-        if self.client is None:
-            return
-        self.client.publish('rhasspy/events/decoding', profile_name.encode())
+    #         wav_data = wav_buffer.getvalue()
+    #         self.client.publish(self.topic_audio_frame, wav_data)
 
-    def rhasspy_recognizing(self, profile_name: str, text: str):
-        if self.client is None:
-            return
+    # # -------------------------------------------------------------------------
 
-        payload = json.dumps({
-            'profile': profile_name,
-            'text': text
-        }).encode()
+    # def rhasspy_asleep(self, profile_name: str):
+    #     if self.client is None:
+    #         return
+    #     self.client.publish('rhasspy/events/asleep', profile_name.encode())
 
-        self.client.publish('rhasspy/events/recognizing', payload)
+    # def rhasspy_awake(self, profile_name: str):
+    #     if self.client is None:
+    #         return
+    #     self.client.publish('rhasspy/events/awake', profile_name.encode())
 
-    def rhasspy_handled(self, intent: Dict[Any, Any]):
-        if self.client is None:
-            return
+    # def rhasspy_decoding(self, profile_name: str):
+    #     if self.client is None:
+    #         return
+    #     self.client.publish('rhasspy/events/decoding', profile_name.encode())
 
-        payload = json.dumps(intent).encode()
-        self.client.publish('rhasspy/events/handled', payload)
+    # def rhasspy_recognizing(self, profile_name: str, text: str):
+    #     if self.client is None:
+    #         return
+
+    #     payload = json.dumps({
+    #         'profile': profile_name,
+    #         'text': text
+    #     }).encode()
+
+    #     self.client.publish('rhasspy/events/recognizing', payload)
+
+    # def rhasspy_handled(self, intent: Dict[Any, Any]):
+    #     if self.client is None:
+    #         return
+
+    #     payload = json.dumps(intent).encode()
+    #     self.client.publish('rhasspy/events/handled', payload)

@@ -1,3 +1,4 @@
+import json
 from typing import Dict, Any
 
 from thespian.actors import ActorAddress, ActorExitRequest
@@ -14,6 +15,7 @@ from .intent_train import TrainIntent, IntentTrainingComplete
 from .intent_handler import HandleIntent, IntentHandled
 from .train import GenerateSentences, SentencesGenerated
 from .pronounce import GetWordPhonemes, SpeakWord, GetWordPronunciations
+from .mqtt import Publish
 from .utils import buffer_to_wav
 
 # -----------------------------------------------------------------------------
@@ -45,6 +47,7 @@ class DialogueManager(RhasspyActor):
     '''Manages the overall state of Rhasspy.'''
 
     def to_started(self, from_state):
+        self.site_id = self.profile.get('mqtt.site_id')
         self.preload = self.config.get('preload', False)
         self.send_ready = self.config.get('ready', False)
         self.intent_receiver = None
@@ -60,6 +63,10 @@ class DialogueManager(RhasspyActor):
             if len(self.wait_actors) == 0:
                 self._logger.info('Actors loaded')
                 self.transition('ready')
+
+                # Inform all actors that we're ready
+                for actor in self.actors.values():
+                    self.send(actor, Ready())
 
                 # Inform parent actor that we're ready
                 if self.send_ready:
@@ -122,6 +129,18 @@ class DialogueManager(RhasspyActor):
         if isinstance(message, WavTranscription):
             # text -> intent
             self._logger.debug(message.text)
+
+            # Send to MQTT
+            payload = json.dumps({
+                'siteId': self.site_id,
+                'text': message.text,
+                'likelihood': 1,
+                'seconds': 0
+            }).encode()
+
+            self.send(self.mqtt, Publish('hermes/asr/textCaptured', payload))
+
+            # Pass to intent recognizer
             self.send(self.recognizer, RecognizeIntent(message.text, handle=message.handle))
             self.transition('recognizing')
         else:
@@ -369,6 +388,12 @@ class DialogueManager(RhasspyActor):
         self.word_pronouncer = self.createActor(self.word_pronouncer_class)
         self.actors['word_pronouncer'] = self.word_pronouncer
 
+        # MQTT client
+        from .mqtt import HermesMqtt
+        self.mqtt_class = HermesMqtt
+        self.mqtt = self.createActor(self.mqtt_class)
+        self.actors['mqtt'] = self.mqtt
+
         # Configure actors
         self.wait_actors = []
         for name, actor in self.actors.items():
@@ -404,10 +429,6 @@ class DialogueManager(RhasspyActor):
             # Use pocketsphinx locally
             from .wake import PocketsphinxWakeListener
             return PocketsphinxWakeListener
-        elif system == 'nanomsg':
-            # Use remote system via nanomsg
-            from .wake import NanomsgWakeListener
-            return NanomsgWakeListener
         elif system == 'hermes':
             # Use remote system via MQTT
             from .wake import HermesWakeListener

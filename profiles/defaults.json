@@ -47,6 +47,7 @@
         "port": 1883,
         "reconnect_sec": 5,
         "site_id": "default",
+        "wakeword_id": "default",
         "username": ""
     },
     "rhasspy": {
@@ -109,9 +110,6 @@
         "system": "sphinxtrain"
     },
     "wake": {
-        "hermes": {
-            "wakeword_id": "default"
-        },
         "pocketsphinx": {
             "keyphrase": "okay rhasspy",
             "mllr_matrix": "wake_mllr",
