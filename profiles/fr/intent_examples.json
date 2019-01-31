@@ -9,12 +9,6 @@
             "slots": {}
         }
     ],
-    "GetTemperature": [
-        {
-            "text": "quelle est la temp\u00e9rature",
-            "slots": {}
-        }
-    ],
     "GetGarageState": [
         {
             "text": "est ce que la porte de garage est ouverte ou ferm\u00e9e",
@@ -95,6 +89,12 @@
                     "garage light"
                 ]
             }
+        }
+    ],
+    "GetTemperature": [
+        {
+            "text": "quelle est la temp\u00e9rature",
+            "slots": {}
         }
     ]
 }

@@ -1,0 +1,23 @@
+AUS qq au s
+DAS d a s
+DIE d i:
+EIN qq ai n
+ES qq ee z
+GARAGENLICHT g aa: r a g ee n l ii cc t
+GARAGENTOR g aa: r a g ee n t o: r
+GESCHLOSSEN g @ ss l oo s @ n
+HEISS h e: qq i: s
+IST qq ii s t
+KALT k a l t
+MIR m i: r
+OFFEN qq oo f @ n
+OKAY qq o: k e:
+RHASSPY r h a s p y:
+SAG z aa: k
+SCHALTEN ss a l t @ n
+SIE z i:
+SPÄT ss p qq ee t e:
+TEMPERATUR t ee m p e: r a t u: r
+UHRZEIT qq u: r t s ai t
+WIE v i:
+WOHNZIMMERLAMPE v o: n t s ii m ei l a m p e:

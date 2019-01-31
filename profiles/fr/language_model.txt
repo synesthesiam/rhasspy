@@ -11,10 +11,9 @@ ngram 3=52
 -1.441957	heure	-2.866241
 -0.919078	est	-2.851765
 -1.441957	il	-2.866241
--0.9648355	la	-2.950149
--1.441957	température	-2.93218
 -1.919078	ce	-2.994736
 -1.919078	que	-2.950154
+-0.9648355	la	-2.950149
 -1.441957	porte	-2.973017
 -1.220108	de	-2.973005
 -1.317018	garage	-2.866241
@@ -33,6 +32,7 @@ ngram 3=52
 -1.919078	l	-2.994736
 -1.919078	éclairage	-2.973017
 -1.742987	éteindre	-2.944235
+-1.441957	température	-2.93218
 
 \2-grams:
 -0.4264032	<s> quelle	-1.39203e-06
@@ -47,20 +47,19 @@ ngram 3=52
 -0.3014645	heure est	-2.929496
 -0.8243433	est quelle	-2.699404
 -0.8243433	est il	-2.699404
--0.5233133	est la	-2.824126
 -1.000434	est ce	-0
+-0.5233133	est la	-2.824126
 -1.000434	est ouverte	-0
 -0.6994045	est elle	-0
 -0.3014645	il </s>
 -0.3014645	il est	-2.929496
--0.4775558	la température	-0
+-0.0004345118	ce que	-0
+-0.0004345118	que la	-2.824126
 -0.4775558	la porte	-0
 -0.954677	la lampe	-0
 -0.954677	la lumière	-0
 -0.954677	la chambre	-0
--0.0004345118	température </s>
--0.0004345118	ce que	-0
--0.0004345118	que la	-2.824126
+-0.4775558	la température	-0
 -0.0004345118	porte de	-2.302764
 -0.09734453	de garage	-0
 -0.6994045	de salon	-0
@@ -84,6 +83,7 @@ ngram 3=52
 -0.0004345118	éclairage de	-2.302764
 -0.1765258	éteindre la	-0.4930396
 -0.4775558	éteindre l	2.39794
+-0.0004345118	température </s>
 
 \3-grams:
 -0.4775558	<s> quelle heure
@@ -102,18 +102,18 @@ ngram 3=52
 -0.0004345118	heure est il
 -0.0004345118	est quelle heure
 -0.0004345118	est il </s>
--0.0004345118	est la température
 -0.0004345118	est ce que
+-0.0004345118	est la température
 -0.0004345118	est ouverte ou
 -0.0004345118	est elle ouverte
 -0.0004345118	il est quelle
--0.0004345118	la température </s>
+-0.0004345118	ce que la
+-0.0004345118	que la porte
 -0.0004345118	la porte de
 -0.0004345118	la lampe de
 -0.0004345118	la lumière dans
 -0.0004345118	la chambre à
--0.0004345118	ce que la
--0.0004345118	que la porte
+-0.0004345118	la température </s>
 -0.0004345118	porte de garage
 -0.3014645	de garage </s>
 -0.3014645	de garage est
