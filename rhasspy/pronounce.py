@@ -76,6 +76,7 @@ class PhonetisaurusPronounce(RhasspyActor):
         elif isinstance(message, GetWordPronunciations):
             in_dictionary, pronunciations, espeak_str = \
                 self.pronounce(message.word, message.n)
+
             self.send(message.receiver or sender,
                       WordPronunciation(message.word,
                                         pronunciations,
