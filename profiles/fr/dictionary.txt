@@ -28,6 +28,7 @@ lampe ll an pp
 lampe(2) ll an pp ee
 lumière ll uu mm yy ai rr
 lumière(2) ll uu mm yy ai rr ee
+okay oo kk ei
 ou ou
 ouverte ou vv ai rr tt
 ouverte(2) ou vv ai rr tt ee
@@ -37,6 +38,7 @@ que kk
 que(2) kk ee
 quelle kk ai ll
 quelle(2) kk ai ll ee
+rhasspy rr aa ss pp ii
 salon ss aa ll on
 température tt an pp ai rr aa tt uu rr
 température(2) tt an pp ai rr aa tt uu rr ee
