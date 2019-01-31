@@ -85,6 +85,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
     def in_loaded(self, message, sender):
         if isinstance(message, RecognizeIntent):
             try:
+                self.load_examples()
                 intent = self.recognize(message.text)
             except Exception as e:
                 self._logger.exception()
@@ -97,6 +98,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
 
     def recognize(self, text: str) -> Dict[str, Any]:
         if len(text) > 0:
+            assert self.examples is not None, 'No examples JSON'
             from fuzzywuzzy import process
 
             # sentence -> (sentence, intent, slots)
@@ -133,16 +135,16 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def load_examples(self):
-        '''Load JSON file with intent examples if not already cached'''
-        examples_path = self.profile.read_path(
-            self.profile.get('intent.fuzzywuzzy.examples_json'))
+        if self.examples is None:
+            '''Load JSON file with intent examples if not already cached'''
+            examples_path = self.profile.read_path(
+                self.profile.get('intent.fuzzywuzzy.examples_json'))
 
-        assert os.path.exists(examples_path), 'No examples JSON'
+            if os.path.exists(examples_path):
+                with open(examples_path, 'r') as examples_file:
+                    self.examples = json.load(examples_file)
 
-        with open(examples_path, 'r') as examples_file:
-            self.examples = json.load(examples_file)
-
-        self._logger.debug('Loaded examples from %s' % examples_path)
+                self._logger.debug('Loaded examples from %s' % examples_path)
 
 
 # -----------------------------------------------------------------------------
@@ -202,6 +204,7 @@ class AdaptIntentRecognizer(RhasspyActor):
     def in_loaded(self, message, sender):
         if isinstance(message, RecognizeIntent):
             try:
+                self.load_engine()
                 intent = self.recognize(message.text)
             except Exception as e:
                 self._logger.exception('in_loaded')
@@ -214,6 +217,7 @@ class AdaptIntentRecognizer(RhasspyActor):
 
     def recognize(self, text: str) -> Dict[str, Any]:
         # Get all intents
+        assert self.engine is not None, 'Adapt engine not loaded'
         intents =  [intent for intent in
                     self.engine.determine_intent(text)
                     if intent]
@@ -246,34 +250,35 @@ class AdaptIntentRecognizer(RhasspyActor):
 
     def load_engine(self):
         '''Configure Adapt engine if not already cached'''
-        from adapt.intent import IntentBuilder
-        from adapt.engine import IntentDeterminationEngine
+        if self.engine is None:
+            from adapt.intent import IntentBuilder
+            from adapt.engine import IntentDeterminationEngine
 
-        assert self.profile is not None, 'No profile'
-        config_path = self.profile.read_path('adapt_config.json')
-        assert os.path.exists(config_path), 'Configuration file missing. Need to train.'
+            config_path = self.profile.read_path('adapt_config.json')
+            if not os.path.exists(config_path):
+                return
 
-        # Create empty engine
-        self.engine = IntentDeterminationEngine()
+            # Create empty engine
+            self.engine = IntentDeterminationEngine()
 
-        # { intents: { ... }, entities: { ... } }
-        with open(config_path, 'r') as config_file:
-            config = json.load(config_file)
+            # { intents: { ... }, entities: { ... } }
+            with open(config_path, 'r') as config_file:
+                config = json.load(config_file)
 
-        # Register entities
-        for entity_name, entity_values in config['entities'].items():
-            for value in entity_values:
-                self.engine.register_entity(value, entity_name)
+            # Register entities
+            for entity_name, entity_values in config['entities'].items():
+                for value in entity_values:
+                    self.engine.register_entity(value, entity_name)
 
-        # Register intents
-        for intent_name, intent_config in config['intents'].items():
-            intent = IntentBuilder(intent_name)
-            for required_entity in intent_config['require']:
-                intent.require(required_entity)
+            # Register intents
+            for intent_name, intent_config in config['intents'].items():
+                intent = IntentBuilder(intent_name)
+                for required_entity in intent_config['require']:
+                    intent.require(required_entity)
 
-            for optional_entity in intent_config['optionally']:
-                intent.optionally(optional_entity)
+                for optional_entity in intent_config['optionally']:
+                    intent.optionally(optional_entity)
 
-            self.engine.register_intent_parser(intent.build())
+                self.engine.register_intent_parser(intent.build())
 
-        self._logger.debug('Loaded engine from config file %s' % config_path)
+            self._logger.debug('Loaded engine from config file %s' % config_path)

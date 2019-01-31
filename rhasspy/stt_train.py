@@ -43,6 +43,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         self.unknown_words = None
         self.waiting_words = None
         self.receiver = None
+        self.dictionary_upper = self.profile.get('speech_to_text.dictionary_upper', False)
 
     def in_started(self, message, sender):
         if isinstance(message, TrainSpeech):
@@ -59,6 +60,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         }
 
         if len(self.unknown_words) > 0:
+            self._logger.warn('There are %s unknown word(s)' % len(self.unknown_words))
             self.transition('unknown_words')
         else:
             self.transition('writing_sentences')
@@ -71,9 +73,8 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
                 os.unlink(unknown_path)
 
     def to_unknown_words(self, from_state):
-        self.waiting_words = []
+        self.waiting_words = list(self.unknown_words.keys())
         for word in self.unknown_words:
-            self.waiting_words.append(word)
             self.send(self.word_pronouncer,
                       GetWordPronunciations(word, n=1))
 
@@ -118,7 +119,14 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
                 sentences_by_intent[intent_name].append((sentence, entities, tokens))
 
                 # Collect all used words
-                words_needed.update(tokens)
+                for word in tokens:
+                    # Dictionary uses upper-case letters
+                    if self.dictionary_upper:
+                        word = word.upper()
+                    else:
+                        word = word.lower()
+
+                    words_needed.add(word)
 
         # Load base and custom dictionaries
         base_dictionary_path = self.profile.read_path(
@@ -137,12 +145,21 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         if self.profile.get('wake.system') == 'pocketsphinx':
             wake_keyphrase = self.profile.get('wake.pocketsphinx.keyphrase')
             _, wake_tokens = self._sanitize_sentence(wake_keyphrase)
-            words_needed.update(wake_tokens)
+
+            for word in wake_tokens:
+                # Dictionary uses upper-case letters
+                if self.dictionary_upper:
+                    word = word.upper()
+                else:
+                    word = word.lower()
+
+                words_needed.add(word)
 
         # Write out dictionary with only the necessary words (speeds up loading)
         dictionary_path = self.profile.write_path(
             self.profile.get('speech_to_text.pocketsphinx.dictionary'))
 
+        words_written = 0
         with open(dictionary_path, 'w') as dictionary_file:
             for word in sorted(words_needed):
                 if not word in word_dict:
@@ -154,7 +171,9 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
                     else:
                         print('%s(%s)' % (word, i+1), pronounce, file=dictionary_file)
 
-        self._logger.debug('Wrote %s word(s) to %s' % (len(words_needed), dictionary_path))
+                words_written += 1
+
+        self._logger.debug('Wrote %s word(s) to %s' % (words_written, dictionary_path))
 
         # Check for unknown words
         return words_needed - word_dict.keys()
@@ -165,20 +184,18 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         unknown_path = self.profile.read_path(
             self.profile.get('speech_to_text.pocketsphinx.unknown_words'))
 
-        dictionary_upper = self.profile.get('speech_to_text.dictionary_upper', False)
-
         with open(unknown_path, 'w') as unknown_file:
             for word, word_pron in unknown_words.items():
                 pronunciations = word_pron.pronunciations
                 phonemes = pronunciations[0]
 
                 # Dictionary uses upper-case letters
-                if dictionary_upper:
+                if self.dictionary_upper:
                     word = word.upper()
                 else:
                     word = word.lower()
 
-                print(word.lower(), phonemes, file=unknown_file)
+                print(word, phonemes, file=unknown_file)
 
     # -------------------------------------------------------------------------
 

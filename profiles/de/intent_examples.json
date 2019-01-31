@@ -1,0 +1,126 @@
+{
+    "GetTime": [
+        {
+            "text": "wie sp\u00e4t ist es",
+            "slots": {}
+        },
+        {
+            "text": "sag mir die uhrzeit",
+            "slots": {}
+        }
+    ],
+    "GetGarageState": [
+        {
+            "text": "ist das garagentor offen",
+            "slots": {}
+        },
+        {
+            "text": "ist das garagentor geschlossen",
+            "slots": {}
+        }
+    ],
+    "GetTemperature": [
+        {
+            "text": "wie ist die temperatur",
+            "slots": {}
+        },
+        {
+            "text": "wie hei\u00df ist es",
+            "slots": {}
+        },
+        {
+            "text": "wie kalt ist es",
+            "slots": {}
+        }
+    ],
+    "ChangeLightState": [
+        {
+            "text": "schalten sie die wohnzimmerlampe ein",
+            "slots": {
+                "name": [
+                    "wohnzimmerlampe"
+                ],
+                "state": [
+                    "ein"
+                ]
+            }
+        },
+        {
+            "text": "schalten sie die wohnzimmerlampe aus",
+            "slots": {
+                "name": [
+                    "wohnzimmerlampe"
+                ],
+                "state": [
+                    "aus"
+                ]
+            }
+        },
+        {
+            "text": "schalten sie die garagenlicht ein",
+            "slots": {
+                "name": [
+                    "Garagenlicht"
+                ],
+                "state": [
+                    "ein"
+                ]
+            }
+        },
+        {
+            "text": "schalten sie die garagenlicht aus",
+            "slots": {
+                "name": [
+                    "Garagenlicht"
+                ],
+                "state": [
+                    "aus"
+                ]
+            }
+        },
+        {
+            "text": "schalten sie das wohnzimmerlampe ein",
+            "slots": {
+                "name": [
+                    "wohnzimmerlampe"
+                ],
+                "state": [
+                    "ein"
+                ]
+            }
+        },
+        {
+            "text": "schalten sie das wohnzimmerlampe aus",
+            "slots": {
+                "name": [
+                    "wohnzimmerlampe"
+                ],
+                "state": [
+                    "aus"
+                ]
+            }
+        },
+        {
+            "text": "schalten sie das garagenlicht ein",
+            "slots": {
+                "name": [
+                    "Garagenlicht"
+                ],
+                "state": [
+                    "ein"
+                ]
+            }
+        },
+        {
+            "text": "schalten sie das garagenlicht aus",
+            "slots": {
+                "name": [
+                    "Garagenlicht"
+                ],
+                "state": [
+                    "aus"
+                ]
+            }
+        }
+    ]
+}
