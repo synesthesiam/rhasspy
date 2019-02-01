@@ -136,7 +136,6 @@ class HermesMqtt(RhasspyActor):
             receiver = message.receiver or sender
             self.subscriptions[message.topic].append(receiver)
         elif isinstance(message, MqttPublish):
-            receiver = message.receiver or sender
             self.publications[message.topic].append(message.payload)
 
     # -------------------------------------------------------------------------
