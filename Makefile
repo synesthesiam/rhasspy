@@ -19,19 +19,19 @@ docker: docker-amd64 docker-armhf docker-aarch64
 docker-amd64:
 	docker build . -f Dockerfile.prebuilt \
     --build-arg BUILD_ARCH=amd64 \
-    --build-arg BUILD_FROM=python:3.6 \
+    --build-arg BUILD_FROM=python:3.6-stretch \
     -t synesthesiam/rhasspy-server:amd64
 
 docker-armhf:
-	docker build . -f Dockerfile.prebuilt \
+	docker build . -f Dockerfile.prebuilt.arm \
      --build-arg BUILD_ARCH=armhf \
-     --build-arg BUILD_FROM=resin/rpi-raspbian \
+     --build-arg BUILD_FROM=arm32v7/openjdk:8-jre-stretch \
      -t synesthesiam/rhasspy-server:armhf
 
 docker-aarch64:
-	docker build . -f Dockerfile.prebuilt \
+	docker build . -f Dockerfile.prebuilt.arm \
      --build-arg BUILD_ARCH=aarch64 \
-     --build-arg BUILD_FROM=arm32v8/python:3.6 \
+     --build-arg BUILD_FROM=arm64v8/openjdk:8-jre-stretch \
      -t synesthesiam/rhasspy-server:aarch64
 
 web-dist:
