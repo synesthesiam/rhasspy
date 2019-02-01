@@ -17,18 +17,21 @@ ADDON_DIR := ../hassio-addons/rhasspy
 docker: docker-amd64 docker-armhf docker-aarch64
 
 docker-amd64:
-	docker build . \
+	docker build . -f Dockerfile.prebuilt \
     --build-arg BUILD_ARCH=amd64 \
+    --build-arg BUILD_FROM=python:3.6 \
     -t synesthesiam/rhasspy-server:amd64
 
 docker-armhf:
-	docker build . \
+	docker build . -f Dockerfile.prebuilt \
      --build-arg BUILD_ARCH=armhf \
+     --build-arg BUILD_FROM=resin/rpi-raspbian \
      -t synesthesiam/rhasspy-server:armhf
 
 docker-aarch64:
-	docker build . \
+	docker build . -f Dockerfile.prebuilt \
      --build-arg BUILD_ARCH=aarch64 \
+     --build-arg BUILD_FROM=arm32v8/python:3.6 \
      -t synesthesiam/rhasspy-server:aarch64
 
 web-dist:

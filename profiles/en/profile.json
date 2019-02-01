@@ -25,7 +25,6 @@
         "system": "fuzzywuzzy"
     },
     "wake": {
-        "system": "snowboy",
         "snowboy": {
             "model": "okay_rhasspy.pmdl"
         },
