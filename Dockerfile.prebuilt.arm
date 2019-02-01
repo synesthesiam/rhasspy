@@ -1,0 +1,88 @@
+ARG BUILD_FROM
+FROM $BUILD_FROM
+LABEL maintainer="Michael Hansen <hansen.mike@gmail.com>"
+
+ARG BUILD_ARCH
+ENV LANG C.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
+
+ARG MAKE_THREADS=4
+
+WORKDIR /
+
+# Install Python 3.6
+RUN apt-get update && \
+    apt-get install -y wget \
+        build-essential tk-dev libncurses5-dev \
+        libncursesw5-dev libreadline6-dev libdb5.3-dev \
+        libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev \
+        libexpat1-dev liblzma-dev zlib1g-dev
+
+RUN cd / && \
+    wget https://www.python.org/ftp/python/3.6.8/Python-3.6.8.tgz && \
+    tar -xvf /Python-3.6.8.tgz && \
+    cd /Python-3.6.8 && \
+    ./configure && \
+    make -j 4 && \
+    make install && \
+    rm -rf /Python*
+
+# Install other dependencies
+RUN apt-get install -y bash jq wget \
+        build-essential portaudio19-dev swig \
+        libatlas-base-dev \
+        sox espeak alsa-utils \
+        cmake git \
+        autoconf libtool automake bison \
+        sphinxbase-utils sphinxtrain
+
+# Install phoentisaurus (prebuilt)
+RUN cd / && wget -q https://github.com/synesthesiam/phonetisaurus-2013/releases/download/v1.0-${BUILD_ARCH}/phonetisaurus_2013-1_${BUILD_ARCH}.deb
+
+# Install opengrm (prebuilt)
+RUN cd / && wget -q https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${BUILD_ARCH}/openfst_1.6.9-1_${BUILD_ARCH}.deb
+RUN cd / && wget -q https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${BUILD_ARCH}/opengrm_1.3.4-1_${BUILD_ARCH}.deb
+
+RUN dpkg -i /*.deb && rm -f /*.deb
+
+# Install Python dependencies
+RUN python3 -m pip install wheel
+RUN if [ "$BUILD_ARCH" = "amd64" ]; then python3 -m pip install --no-cache-dir mycroft-precise==0.2.0; fi
+COPY requirements.txt /requirements.txt
+RUN python3 -m pip install -r /requirements.txt
+
+# Install Pocketsphinx Python module with no sound
+COPY etc/pocketsphinx-python.tar.gz /
+RUN python3 -m pip install /pocketsphinx-python.tar.gz && \
+    rm -rf /pocketsphinx-python*
+
+# Install JSGF sentence generator
+COPY etc/jsgf-gen.tar.gz /
+RUN cd / && tar -xvf /jsgf-gen.tar.gz && \
+    mv /jsgf-gen/bin/* /usr/bin/ && \
+    mv /jsgf-gen/lib/* /usr/lib/ && \
+    rm -rf /jsgf-gen*
+
+# Install snowboy
+COPY etc/snowboy-1.3.0.tar.gz /
+RUN if [ "$BUILD_ARCH" = "aarch64" ]; then pip3 install --no-cache-dir /snowboy-1.3.0.tar.gz; fi
+
+RUN ldconfig
+
+# Copy my code
+COPY *.py /usr/share/rhasspy/
+COPY rhasspy/*.py /usr/share/rhasspy/rhasspy/
+COPY profiles/ /usr/share/rhasspy/profiles/
+COPY dist/ /usr/share/rhasspy/dist/
+
+# Copy bw and mllr_solve to /usr/bin
+RUN find / -name bw -exec cp '{}' /usr/bin/ \;
+RUN find / -name mllr_solve -exec cp '{}' /usr/bin/ \;
+
+# Copy script to run
+COPY docker/run.sh /run.sh
+RUN chmod a+x /run.sh
+
+ENV CONFIG_PATH /data/options.json
+
+CMD ["/run.sh"]
