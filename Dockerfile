@@ -1,5 +1,5 @@
-ARG BUILD_ARCH
-FROM synesthesiam/addon-base:$BUILD_ARCH
+ARG BUILD_CPU
+FROM $BUILD_CPU/python:3.6-stretch
 LABEL maintainer="Michael Hansen <hansen.mike@gmail.com>"
 
 ARG BUILD_ARCH
@@ -10,7 +10,7 @@ ARG MAKE_THREADS=4
 WORKDIR /
 
 RUN apt-get update && \
-    apt-get install -y bash \
+    apt-get install -y bash jq \
         build-essential portaudio19-dev swig \
         libatlas-base-dev \
         sox espeak alsa-utils \
@@ -54,8 +54,9 @@ RUN cd / && tar -xvf phonetisaurus-2013.tar.gz && \
     rm -rf /phonetisaurus-2013*
 
 # Install Python dependencies
-COPY requirements.txt /requirements.txt
 RUN python3 -m pip install --no-cache-dir wheel
+RUN if [ "$BUILD_ARCH" = "amd64" ]; then python3 -m pip install --no-cache-dir mycroft-precise==0.2.0; fi
+COPY requirements.txt /requirements.txt
 RUN python3 -m pip install --no-cache-dir -r /requirements.txt
 
 # Install Pocketsphinx Python module with no sound
@@ -72,8 +73,7 @@ RUN cd / && tar -xvf /jsgf-gen.tar.gz && \
 
 # Install snowboy
 COPY etc/snowboy-1.3.0.tar.gz /
-RUN pip3 install --no-cache-dir /snowboy-1.3.0.tar.gz && \
-    rm -rf /snowboy*
+RUN if [ "$BUILD_ARCH" != "aarch64" ]; then pip3 install --no-cache-dir /snowboy-1.3.0.tar.gz; fi
 
 RUN ldconfig
 
