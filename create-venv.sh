@@ -9,7 +9,8 @@ sudo apt-get update
 sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
      sox espeak swig portaudio19-dev \
      libatlas-base-dev \
-     sphinxbase-utils sphinxtrain pocketsphinx
+     sphinxbase-utils sphinxtrain pocketsphinx \
+     jq
 
 if [[ -z "$(which java)" ]]; then
     echo "Installing Java"
@@ -30,6 +31,7 @@ python3 -m pip install wheel
 python3 -m pip install -r requirements.txt
 python3 -m pip install etc/pocketsphinx-python.tar.gz
 python3 -m pip install etc/snowboy-1.3.0.tar.gz
+python3 -m pip install mycroft-precise==0.2.0
 
 if [[ -z "$RHASSPY_DOCKER" ]]; then
     echo "Installing pre-compiled binaries"
