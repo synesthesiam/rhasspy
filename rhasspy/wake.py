@@ -3,7 +3,6 @@ import os
 import threading
 import logging
 from uuid import uuid4
-from typing import Callable
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -76,7 +75,7 @@ class PocketsphinxWakeListener(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def process_data(self):
+    def process_data(self, data):
         self.decoder.process_raw(data, False, False)
         hyp = self.decoder.hyp()
         if hyp:
