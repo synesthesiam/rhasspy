@@ -10,6 +10,8 @@ import requests
 # pronunciations in a CMU dictionary, then prints an example word +
 # pronunciation for each phoneme.
 
+# Languages: eng, deu, fra, spa, ita, nld, rus
+
 def main():
     # fra, deu, etc.
     language = sys.argv[1]
@@ -58,7 +60,7 @@ def main():
     for phoneme in sorted(examples.keys()):
         # Choose the shortest, unused example word for this phoneme
         for word, pron in sorted(examples[phoneme], key=lambda kv: len(kv[0])):
-            if not word in (used_words):
+            if len(word) > 2 and (not word in used_words):
                 # Output format is:
                 # phoneme word pronunciation
                 print(phoneme, word, ' '.join(pron))
