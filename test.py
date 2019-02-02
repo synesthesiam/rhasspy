@@ -38,13 +38,13 @@ class RhasspyTestCase(unittest.TestCase):
         profile_name = 'en'
         with tempfile.TemporaryDirectory(prefix='rhasspy_') as temp_dir:
             profiles_dirs = [temp_dir, 'profiles']
-            core = RhasspyCore(profile_name, profiles_dirs, do_logging=False)
+            core = RhasspyCore(profile_name, profiles_dirs, do_logging=True)
             core.profile.set('rhasspy.listen_on_start', False)
             core.profile.set('rhasspy.preload_profile', False)
             core.start()
 
-            sentences_path = self.core.profile.write_path(
-                self.core.profile.get('speech_to_text.sentences_ini'))
+            sentences_path = core.profile.write_path(
+                core.profile.get('speech_to_text.sentences_ini'))
 
             with open(sentences_path, 'w') as sentences_file:
                 print('[Foo]', file=sentences_file)
