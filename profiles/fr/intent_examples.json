@@ -1,14 +1,4 @@
 {
-    "GetTime": [
-        {
-            "text": "quelle heure est il",
-            "slots": {}
-        },
-        {
-            "text": "il est quelle heure",
-            "slots": {}
-        }
-    ],
     "GetGarageState": [
         {
             "text": "est ce que la porte de garage est ouverte ou ferm\u00e9e",
@@ -20,6 +10,12 @@
         },
         {
             "text": "est elle ouverte ou ferm\u00e9e la porte de garage",
+            "slots": {}
+        }
+    ],
+    "GetTemperature": [
+        {
+            "text": "quelle est la temp\u00e9rature",
             "slots": {}
         }
     ],
@@ -91,9 +87,13 @@
             }
         }
     ],
-    "GetTemperature": [
+    "GetTime": [
         {
-            "text": "quelle est la temp\u00e9rature",
+            "text": "quelle heure est il",
+            "slots": {}
+        },
+        {
+            "text": "il est quelle heure",
             "slots": {}
         }
     ]
