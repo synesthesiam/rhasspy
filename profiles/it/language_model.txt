@@ -1,0 +1,115 @@
+
+\data\
+ngram 1=23
+ngram 2=39
+ngram 3=40
+
+\1-grams:
+-99	<s>	-2.885365
+-0.7166988	</s>
+-1.055517	la	-2.948383
+-1.318759	porta	-2.956168
+-1.017729	del	-2.956173
+-1.142668	garage	-2.862122
+-1.09691	è	-2.963769
+-1.619789	aperta	-2.907411
+-1.619789	chiusa	-2.907411
+-1.79588	quale	-2.992995
+-1.79588	e	-2.959995
+-1.79588	temperatura	-2.907411
+-1.49485	quanto	-2.963788
+-1.79588	caldo	-2.907411
+-1.79588	freddo	-2.907411
+-1.318759	che	-2.978637
+-1.318759	ore	-2.978637
+-1.318759	sono	-2.907411
+-1.619789	accendi	-2.936502
+-1.619789	lampada	-2.956168
+-1.619789	soggiorno	-2.907411
+-1.619789	luce	-2.956168
+-1.619789	spegnere	-2.936502
+
+\2-grams:
+-0.6024945	<s> la	-2.658098
+-1.079616	<s> quale	-0
+-0.7785858	<s> quanto	-0
+-0.6024945	<s> che	-0
+-0.9035245	<s> accendi	-0
+-0.9035245	<s> spegnere	-0
+-0.263676	la porta	-0
+-0.7407972	la temperatura	-0
+-0.865736	la lampada	-0
+-0.865736	la luce	-0
+-0.0004345118	porta del	-2.399241
+-0.1253732	del garage	-0
+-0.6024945	del soggiorno	-0
+-0.4775558	garage </s>
+-0.1765258	garage è	-2.6027
+-0.5233133	è aperta	-0
+-0.5233133	è chiusa	-0
+-0.6994045	è caldo	-0
+-0.6994045	è freddo	-0
+-0.0004345118	aperta </s>
+-0.0004345118	chiusa </s>
+-0.0004345118	quale e	-0
+-0.0004345118	e la	-2.912946
+-0.0004345118	temperatura </s>
+-0.0004345118	quanto è	-2.77843
+-0.0004345118	caldo </s>
+-0.0004345118	freddo </s>
+-0.0004345118	che ore	-0
+-0.0004345118	ore sono	-0
+-0.0004345118	sono </s>
+-0.3014645	accendi la	-2.861849
+-0.6024945	accendi lampada	-0
+-0.6024945	accendi luce	-0
+-0.0004345118	lampada del	-2.875206
+-0.0004345118	soggiorno </s>
+-0.0004345118	luce del	-2.399241
+-0.3014645	spegnere la	-2.861849
+-0.6024945	spegnere lampada	-0
+-0.6024945	spegnere luce	-0
+
+\3-grams:
+-0.0004345118	<s> la porta
+-0.0004345118	<s> quale e
+-0.0004345118	<s> quanto è
+-0.0004345118	<s> che ore
+-0.3014645	<s> accendi la
+-0.6024945	<s> accendi lampada
+-0.6024945	<s> accendi luce
+-0.3014645	<s> spegnere la
+-0.6024945	<s> spegnere lampada
+-0.6024945	<s> spegnere luce
+-0.0004345118	la porta del
+-0.0004345118	la temperatura </s>
+-0.0004345118	la lampada del
+-0.0004345118	la luce del
+-0.0004345118	porta del garage
+-0.4775558	del garage </s>
+-0.1765258	del garage è
+-0.0004345118	del soggiorno </s>
+-0.3014645	garage è aperta
+-0.3014645	garage è chiusa
+-0.0004345118	è aperta </s>
+-0.0004345118	è chiusa </s>
+-0.0004345118	è caldo </s>
+-0.0004345118	è freddo </s>
+-0.0004345118	quale e la
+-0.0004345118	e la temperatura
+-0.3014645	quanto è caldo
+-0.3014645	quanto è freddo
+-0.0004345118	che ore sono
+-0.0004345118	ore sono </s>
+-0.3014645	accendi la lampada
+-0.3014645	accendi la luce
+-0.0004345118	accendi lampada del
+-0.0004345118	accendi luce del
+-0.0004345118	lampada del soggiorno
+-0.0004345118	luce del garage
+-0.3014645	spegnere la lampada
+-0.3014645	spegnere la luce
+-0.0004345118	spegnere lampada del
+-0.0004345118	spegnere luce del
+
+\end\

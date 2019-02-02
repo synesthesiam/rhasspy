@@ -1,3 +1,9 @@
 {
-    "language": "it"
+    "language": "it",
+
+    "wake": {
+        "pocketsphinx": {
+            "keyphrase": "ok rauco"
+        }
+    }
 }

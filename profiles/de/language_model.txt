@@ -15,19 +15,19 @@ ngram 3=43
 -1.623249	mir	-2.971511
 -1.19728	die	-2.960321
 -1.623249	uhrzeit	-2.90823
+-1.146128	das	-2.956524
+-1.322219	garagentor	-2.9788
+-1.623249	offen	-2.90823
+-1.623249	geschlossen	-2.90823
+-1.79934	temperatur	-2.90823
+-1.79934	heiß	-2.944952
+-1.79934	kalt	-2.944952
 -1.322219	schalten	-2.978811
 -1.322219	sie	-2.937045
 -1.623249	wohnzimmerlampe	-2.9788
 -1.623249	ein	-2.90823
 -1.623249	aus	-2.90823
 -1.623249	garagenlicht	-2.9788
--1.146128	das	-2.956524
--1.79934	temperatur	-2.90823
--1.79934	heiß	-2.944952
--1.79934	kalt	-2.944952
--1.322219	garagentor	-2.9788
--1.623249	offen	-2.90823
--1.623249	geschlossen	-2.90823
 
 \2-grams:
 -0.4264032	<s> wie	-0
@@ -46,10 +46,20 @@ ngram 3=43
 -0.0004345118	sag mir	-0
 -0.0004345118	mir die	-2.796141
 -0.4264032	die uhrzeit	-0
+-0.6024945	die temperatur	-0
 -0.7274332	die wohnzimmerlampe	-0
 -0.7274332	die garagenlicht	-0
--0.6024945	die temperatur	-0
 -0.0004345118	uhrzeit </s>
+-0.1765258	das garagentor	-0
+-0.7785858	das wohnzimmerlampe	-0
+-0.7785858	das garagenlicht	-0
+-0.3014645	garagentor offen	-0
+-0.3014645	garagentor geschlossen	-0
+-0.0004345118	offen </s>
+-0.0004345118	geschlossen </s>
+-0.0004345118	temperatur </s>
+-0.0004345118	heiß ist	-2.727379
+-0.0004345118	kalt ist	-2.727379
 -0.0004345118	schalten sie	-0
 -0.3014645	sie die	-2.79613
 -0.3014645	sie das	-2.824115
@@ -59,16 +69,6 @@ ngram 3=43
 -0.0004345118	aus </s>
 -0.3014645	garagenlicht ein	-0
 -0.3014645	garagenlicht aus	-0
--0.7785858	das wohnzimmerlampe	-0
--0.7785858	das garagenlicht	-0
--0.1765258	das garagentor	-0
--0.0004345118	temperatur </s>
--0.0004345118	heiß ist	-2.727379
--0.0004345118	kalt ist	-2.727379
--0.3014645	garagentor offen	-0
--0.3014645	garagentor geschlossen	-0
--0.0004345118	offen </s>
--0.0004345118	geschlossen </s>
 
 \3-grams:
 -0.4775558	<s> wie spät
@@ -89,11 +89,21 @@ ngram 3=43
 -0.0004345118	sag mir die
 -0.0004345118	mir die uhrzeit
 -0.0004345118	die uhrzeit </s>
+-0.0004345118	die temperatur </s>
 -0.3014645	die wohnzimmerlampe ein
 -0.3014645	die wohnzimmerlampe aus
 -0.3014645	die garagenlicht ein
 -0.3014645	die garagenlicht aus
--0.0004345118	die temperatur </s>
+-0.3014645	das garagentor offen
+-0.3014645	das garagentor geschlossen
+-0.3014645	das wohnzimmerlampe ein
+-0.3014645	das wohnzimmerlampe aus
+-0.3014645	das garagenlicht ein
+-0.3014645	das garagenlicht aus
+-0.0004345118	garagentor offen </s>
+-0.0004345118	garagentor geschlossen </s>
+-0.0004345118	heiß ist es
+-0.0004345118	kalt ist es
 -0.3014645	schalten sie die
 -0.3014645	schalten sie das
 -0.3014645	sie die wohnzimmerlampe
@@ -104,15 +114,5 @@ ngram 3=43
 -0.0004345118	wohnzimmerlampe aus </s>
 -0.0004345118	garagenlicht ein </s>
 -0.0004345118	garagenlicht aus </s>
--0.3014645	das wohnzimmerlampe ein
--0.3014645	das wohnzimmerlampe aus
--0.3014645	das garagenlicht ein
--0.3014645	das garagenlicht aus
--0.3014645	das garagentor offen
--0.3014645	das garagentor geschlossen
--0.0004345118	heiß ist es
--0.0004345118	kalt ist es
--0.0004345118	garagentor offen </s>
--0.0004345118	garagentor geschlossen </s>
 
 \end\

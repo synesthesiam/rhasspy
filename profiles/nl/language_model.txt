@@ -1,0 +1,125 @@
+
+\data\
+ngram 1=24
+ngram 2=42
+ngram 3=46
+
+\1-grams:
+-99	<s>	-2.854526
+-0.7452701	</s>
+-1.64836	wat	-2.937101
+-0.8702088	is	-2.806482
+-0.94939	de	-0.6669814
+-1.64836	temperatuur	-2.913933
+-1.171239	hoe	-0.4730379
+-1.94939	warm	0.03574703
+-1.171239	het	-2.897752
+-1.94939	koud	0.03574703
+-1.94939	huidige	-0.01728149
+-1.34733	zet	-2.948237
+-1.64836	woonkamerverlichting	-0.007181166
+-1.64836	aan	-2.913933
+-1.64836	garageverlichting	-0.007181166
+-1.64836	uit	-2.913933
+-1.34733	garagepoort	-2.973153
+-1.523421	open	-2.905916
+-1.523421	gesloten	-2.913933
+-1.824451	of	-2.986788
+-1.34733	laat	-2.901859
+-1.824451	vertel	-2.993444
+-1.824451	me	-2.969688
+-1.523421	nu	-2.835929
+
+\2-grams:
+-0.9035245	<s> wat	-0
+-0.6024945	<s> is	-2.699404
+-0.5355477	<s> hoe	-2.496615
+-0.6024945	<s> zet	-0
+-1.079616	<s> vertel	-0
+-0.0004345118	wat is	-2.699404
+-0.954677	is </s>
+-0.3014645	is de	-2.769574
+-0.410609	is het	7.560299e-07
+-2.217484	de temperatuur	-0
+-2.217484	de huidige	-2.972848
+-0.6994045	de woonkamerverlichting	-2.972837
+-0.6994045	de garageverlichting	-2.972837
+-0.3983745	de garagepoort	-0
+-0.0004345118	temperatuur </s>
+-1.995635	hoe warm	-2.972848
+-1.995635	hoe koud	-2.972848
+-0.1765258	hoe laat	-0
+-1.217484	warm is	-2.786396
+-0.255707	het </s>
+-0.3526171	het nu	-0
+-1.217484	koud is	-2.786396
+-1.217484	huidige temperatuur	-0
+-0.0004345118	zet de	-2.77843
+-1.518514	woonkamerverlichting aan	-0
+-1.518514	woonkamerverlichting uit	-0
+-0.0004345118	aan </s>
+-1.518514	garageverlichting aan	-0
+-1.518514	garageverlichting uit	-0
+-0.0004345118	uit </s>
+-0.1765258	garagepoort open	-0
+-0.4775558	garagepoort gesloten	-0
+-0.3014645	open </s>
+-0.3014645	open of	-0
+-0.0004345118	gesloten </s>
+-0.0004345118	of gesloten	-0
+-0.1765258	laat is	-2.786396
+-0.4775558	laat het	-2.745075
+-0.0004345118	vertel me	-0
+-0.0004345118	me hoe	-2.523746
+-0.3014645	nu </s>
+-0.3014645	nu is	-2.948902
+
+\3-grams:
+-0.0004345118	<s> wat is
+-0.0004345118	<s> is de
+-0.6694413	<s> hoe warm
+-0.6694413	<s> hoe koud
+-0.2434726	<s> hoe laat
+-0.0004345118	<s> zet de
+-0.0004345118	<s> vertel me
+-0.0004345118	wat is de
+-0.7785858	is de temperatuur
+-0.7785858	is de huidige
+-0.1765258	is de garagepoort
+-0.1465626	is het </s>
+-0.5445026	is het nu
+-0.0004345118	de temperatuur </s>
+-0.0004345118	de huidige temperatuur
+-0.3014645	de woonkamerverlichting aan
+-0.3014645	de woonkamerverlichting uit
+-0.3014645	de garageverlichting aan
+-0.3014645	de garageverlichting uit
+-0.1765258	de garagepoort open
+-0.4775558	de garagepoort gesloten
+-0.0004345118	hoe warm is
+-0.0004345118	hoe koud is
+-0.1765258	hoe laat is
+-0.4775558	hoe laat het
+-0.0004345118	warm is het
+-0.3014645	het nu </s>
+-0.3014645	het nu is
+-0.0004345118	koud is het
+-0.0004345118	huidige temperatuur </s>
+-0.3014645	zet de woonkamerverlichting
+-0.3014645	zet de garageverlichting
+-0.0004345118	woonkamerverlichting aan </s>
+-0.0004345118	woonkamerverlichting uit </s>
+-0.0004345118	garageverlichting aan </s>
+-0.0004345118	garageverlichting uit </s>
+-0.3014645	garagepoort open </s>
+-0.3014645	garagepoort open of
+-0.0004345118	garagepoort gesloten </s>
+-0.0004345118	open of gesloten
+-0.0004345118	of gesloten </s>
+-0.0004345118	laat is het
+-0.0004345118	laat het nu
+-0.0004345118	vertel me hoe
+-0.0004345118	me hoe laat
+-0.0004345118	nu is </s>
+
+\end\

@@ -12,7 +12,7 @@ KALT k a l t
 MIR m i: r
 OFFEN qq oo f @ n
 OKAY qq o: k e:
-RHASSPY r h a s p y:
+RASPELIG qq r a s p e: l ii cc
 SAG z aa: k
 SCHALTEN ss a l t @ n
 SIE z i:

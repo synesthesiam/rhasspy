@@ -1,3 +1,9 @@
 {
-    "language": "nl"
+    "language": "nl",
+
+    "wake": {
+        "pocketsphinx": {
+            "keyphrase": "ok raspy"
+        }
+    }
 }

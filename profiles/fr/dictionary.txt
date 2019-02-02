@@ -1,3 +1,4 @@
+accord aa kk oo rr
 allumé aa ll uu mm ei
 ce ss
 ce(2) ss ee
@@ -6,6 +7,8 @@ chambre ch an bb rr
 chambre(2) ch an bb rr ee
 coucher kk ou ch ei
 coucher(2) kk ou ch ei rr
+d dd ai
+d(2) dd ei
 dans dd an
 dans(2) dd an zz
 de dd
@@ -28,7 +31,6 @@ lampe ll an pp
 lampe(2) ll an pp ee
 lumière ll uu mm yy ai rr
 lumière(2) ll uu mm yy ai rr ee
-okay oo kk ei
 ou ou
 ouverte ou vv ai rr tt
 ouverte(2) ou vv ai rr tt ee
@@ -38,7 +40,7 @@ que kk
 que(2) kk ee
 quelle kk ai ll
 quelle(2) kk ai ll ee
-rhasspy rr aa ss pp ii
+râpe rr aa pp
 salon ss aa ll on
 température tt an pp ai rr aa tt uu rr
 température(2) tt an pp ai rr aa tt uu rr ee

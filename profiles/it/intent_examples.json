@@ -1,0 +1,122 @@
+{
+    "GetGarageState": [
+        {
+            "text": "la porta del garage \u00e8 aperta",
+            "slots": {}
+        },
+        {
+            "text": "la porta del garage \u00e8 chiusa",
+            "slots": {}
+        }
+    ],
+    "GetTemperature": [
+        {
+            "text": "quale e la temperatura",
+            "slots": {}
+        },
+        {
+            "text": "quanto \u00e8 caldo",
+            "slots": {}
+        },
+        {
+            "text": "quanto \u00e8 freddo",
+            "slots": {}
+        }
+    ],
+    "GetTime": [
+        {
+            "text": "che ore sono",
+            "slots": {}
+        }
+    ],
+    "ChangeLightState": [
+        {
+            "text": "accendi la lampada del soggiorno",
+            "slots": {
+                "state": [
+                    "accendi"
+                ],
+                "name": [
+                    "lampada del soggiorno"
+                ]
+            }
+        },
+        {
+            "text": "accendi la luce del garage",
+            "slots": {
+                "state": [
+                    "accendi"
+                ],
+                "name": [
+                    "luce del garage"
+                ]
+            }
+        },
+        {
+            "text": "accendi lampada del soggiorno",
+            "slots": {
+                "state": [
+                    "accendi"
+                ],
+                "name": [
+                    "lampada del soggiorno"
+                ]
+            }
+        },
+        {
+            "text": "accendi luce del garage",
+            "slots": {
+                "state": [
+                    "accendi"
+                ],
+                "name": [
+                    "luce del garage"
+                ]
+            }
+        },
+        {
+            "text": "spegnere la lampada del soggiorno",
+            "slots": {
+                "state": [
+                    "spegnere"
+                ],
+                "name": [
+                    "lampada del soggiorno"
+                ]
+            }
+        },
+        {
+            "text": "spegnere la luce del garage",
+            "slots": {
+                "state": [
+                    "spegnere"
+                ],
+                "name": [
+                    "luce del garage"
+                ]
+            }
+        },
+        {
+            "text": "spegnere lampada del soggiorno",
+            "slots": {
+                "state": [
+                    "spegnere"
+                ],
+                "name": [
+                    "lampada del soggiorno"
+                ]
+            }
+        },
+        {
+            "text": "spegnere luce del garage",
+            "slots": {
+                "state": [
+                    "spegnere"
+                ],
+                "name": [
+                    "luce del garage"
+                ]
+            }
+        }
+    ]
+}

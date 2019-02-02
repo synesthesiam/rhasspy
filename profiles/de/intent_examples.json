@@ -9,6 +9,30 @@
             "slots": {}
         }
     ],
+    "GetGarageState": [
+        {
+            "text": "ist das garagentor offen",
+            "slots": {}
+        },
+        {
+            "text": "ist das garagentor geschlossen",
+            "slots": {}
+        }
+    ],
+    "GetTemperature": [
+        {
+            "text": "wie ist die temperatur",
+            "slots": {}
+        },
+        {
+            "text": "wie hei\u00df ist es",
+            "slots": {}
+        },
+        {
+            "text": "wie kalt ist es",
+            "slots": {}
+        }
+    ],
     "ChangeLightState": [
         {
             "text": "schalten sie die wohnzimmerlampe ein",
@@ -97,30 +121,6 @@
                     "aus"
                 ]
             }
-        }
-    ],
-    "GetTemperature": [
-        {
-            "text": "wie ist die temperatur",
-            "slots": {}
-        },
-        {
-            "text": "wie hei\u00df ist es",
-            "slots": {}
-        },
-        {
-            "text": "wie kalt ist es",
-            "slots": {}
-        }
-    ],
-    "GetGarageState": [
-        {
-            "text": "ist das garagentor offen",
-            "slots": {}
-        },
-        {
-            "text": "ist das garagentor geschlossen",
-            "slots": {}
         }
     ]
 }

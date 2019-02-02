@@ -1,7 +1,6 @@
-# intent:GetGarageState
-- est-ce que la porte de garage est ouverte ou fermée
-- la porte de garage est-elle ouverte ou fermée
-- est-elle ouverte ou fermée la porte de garage
+# intent:GetTime
+- quelle heure est-il
+- il est quelle heure
 
 # intent:GetTemperature
 - quelle est la température
@@ -14,7 +13,8 @@
 - [éteindre](state:off) [la lumière dans la chambre à coucher](name:bedroom light)
 - [éteindre](state:off) [l'éclairage de garage](name:garage light)
 
-# intent:GetTime
-- quelle heure est-il
-- il est quelle heure
+# intent:GetGarageState
+- est-ce que la porte de garage est ouverte ou fermée
+- la porte de garage est-elle ouverte ou fermée
+- est-elle ouverte ou fermée la porte de garage
 

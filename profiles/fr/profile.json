@@ -1,12 +1,9 @@
 {
     "language": "fr",
 
-    "training": {
-        "sentence_casing": "lower",
-        "regex": {
-            "replace": [
-                { "[^\\w ]+": " " }
-            ]
+    "wake": {
+        "pocketsphinx": {
+            "keyphrase": "d'accord râpe"
         }
     }
 }

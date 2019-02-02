@@ -1,6 +1,12 @@
 {
     "language": "ru",
 
+    "wake": {
+        "pocketsphinx": {
+            "keyphrase": "ок хриплый"
+        }
+    },
+
     "training": {
         "sentence_casing": "lower",
         "regex": {

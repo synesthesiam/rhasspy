@@ -1,0 +1,24 @@
+в v
+включить v k lj u0 ch i1 tj
+выключить v y1 k lj u0 ch i0 tj
+гаража g a0 r a0 zh a1
+гараже g a0 r a0 zh e1
+гостиной g o0 s tj i1 n o0 j
+дверь d vj e1 rj
+жарко zh a1 r k o0
+закрыта z a0 k r y1 t a0
+как k a1 k
+какая k a1 k a0 j a0
+какая(2) k a0 k a1 j a0
+который k o0 t o1 r y0 j
+лампу l a1 m p u0
+ок o1 k
+открыта o0 t k r y1 t a0
+свет s vj e1 t
+сейчас sj e0 j ch a1 s
+сейчас(2) sj i0 ch a1 s
+сейчас(3) sch a1 s
+температура tj e0 m pj e0 r a0 t u1 r a0
+холодно h o1 l o0 d n o0
+хриплый h rj i1 p l y0 j
+час ch a1 s
