@@ -551,7 +551,7 @@ class DialogueManager(RhasspyActor):
             return DummyIntentRecognizer
 
     def _get_intent_trainer_class(self, system: str):
-        assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa'], \
+        assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa', 'remote'], \
             'Invalid intent system: %s' % system
 
         if system == 'fuzzywuzzy':
