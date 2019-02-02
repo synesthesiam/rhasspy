@@ -77,16 +77,16 @@ RUN if [ "$BUILD_ARCH" != "aarch64" ]; then pip3 install --no-cache-dir /snowboy
 
 RUN ldconfig
 
+# Copy bw and mllr_solve to /usr/bin
+RUN find / -name bw -exec cp '{}' /usr/bin/ \;
+RUN find / -name mllr_solve -exec cp '{}' /usr/bin/ \;
+
 # Copy my code
 COPY profiles/ /usr/share/rhasspy/profiles/
 COPY dist/ /usr/share/rhasspy/dist/
 COPY etc/wav/* /usr/share/rhasspy/etc/wav/
 COPY *.py /usr/share/rhasspy/
 COPY rhasspy/*.py /usr/share/rhasspy/rhasspy/
-
-# Copy bw and mllr_solve to /usr/bin
-RUN find / -name bw -exec cp '{}' /usr/bin/ \;
-RUN find / -name mllr_solve -exec cp '{}' /usr/bin/ \;
 
 # Copy script to run
 COPY docker/run.sh /run.sh
