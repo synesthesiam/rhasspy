@@ -10,13 +10,8 @@ ARG MAKE_THREADS=4
 
 WORKDIR /
 
-<<<<<<< HEAD
 COPY etc/qemu-arm-static /usr/bin/
 COPY etc/qemu-aarch64-static /usr/bin/
-=======
-COPY etc/qemu-static-arm /usr/bin/
-COPY etc/qemu-static-aarch64 /usr/bin/
->>>>>>> 5fd76f5fe0ab3ca8a1b2644113c1c2c460b7a19d
 
 # Install Python 3.6
 RUN apt-get update && \
