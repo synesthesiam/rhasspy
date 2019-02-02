@@ -23,6 +23,13 @@ class WakeWordDetected:
         self.name = name
 
 # -----------------------------------------------------------------------------
+
+class DummyWakeListener(RhasspyActor):
+    '''Does nothing'''
+    def in_started(self, message, sender):
+        pass
+
+# -----------------------------------------------------------------------------
 # Pocketsphinx based wake word listener
 # https://github.com/cmusphinx/pocketsphinx
 # -----------------------------------------------------------------------------
