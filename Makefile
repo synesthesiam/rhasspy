@@ -35,9 +35,9 @@ docker-aarch64:
      -t synesthesiam/rhasspy-server:aarch64
 
 docker-push:
-	synesthesiam/rhasspy-server:amd64
-	synesthesiam/rhasspy-server:armhf
-	synesthesiam/rhasspy-server:aarch64
+	docker push synesthesiam/rhasspy-server:amd64
+	docker push synesthesiam/rhasspy-server:armhf
+	docker push synesthesiam/rhasspy-server:aarch64
 
 web-dist:
 	yarn build
