@@ -23,11 +23,6 @@ paths:
         - application/json
       parameters:
       - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
-      - in: query
         name: layers
         description: ''
         enum: [all, defaults, profile]
@@ -51,11 +46,6 @@ paths:
               type: object
       parameters:
       - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
-      - in: query
         name: layers
         description: ''
         enum: [default, profile]
@@ -71,15 +61,9 @@ paths:
       summary: 'Make Rhasspy listen for the wake word'
       produces: 
         - application/json
-      parameters:
-      - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
       responses:
         '200':
-          description: Name of profile
+          description: OK
           schema:
             type: string
   /api/listen-for-command:
@@ -89,11 +73,6 @@ paths:
         - application/json
       parameters:
       - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
-      - in: query
         name: nohass
         description: 'True if intent should NOT be sent to Home Assistant'
         schema:
@@ -101,7 +80,7 @@ paths:
           default: false
       responses:
         '200':
-          description: Name of profile
+          description: Intent
           schema:
             type: object
   /api/microphones:
@@ -156,11 +135,6 @@ paths:
         description: 'Voice/language to use (defaults to profile language)'
         schema:
           type: string
-      - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
       responses:
         '200':
           description: OK
@@ -177,12 +151,6 @@ paths:
       summary: 'Get examples of phonemes for a profile'
       produces: 
         - application/json
-      parameters:
-      - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
       responses:
         '200':
           description: OK
@@ -195,12 +163,6 @@ paths:
       summary: 'Get example sentences for profile'
       produces: 
         - text/plain
-      parameters:
-      - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
       responses:
         '200':
           description: OK
@@ -217,12 +179,6 @@ paths:
           text/plain:
             schema:
               type: string
-      parameters:
-      - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
       responses:
         '200':
           description: OK
@@ -235,12 +191,6 @@ paths:
       summary: 'Get custom words for profile'
       produces: 
         - text/plain
-      parameters:
-      - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
       responses:
         '200':
           description: OK
@@ -257,12 +207,6 @@ paths:
           text/plain:
             schema:
               type: string
-      parameters:
-      - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
       responses:
         '200':
           description: OK
@@ -275,12 +219,6 @@ paths:
       summary: 'Get unknown words for profile'
       produces: 
         - application/json
-      parameters:
-      - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
       responses:
         '200':
           description: OK
@@ -291,12 +229,6 @@ paths:
   /api/train:
     post:
       summary: 'Re-train speech/intent recognizers for profile'
-      parameters:
-      - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
       responses:
         '200':
           description: OK
@@ -326,12 +258,6 @@ paths:
             schema:
               type: string
               format: binary
-      parameters:
-      - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
       responses:
         '200':
           description: OK
@@ -350,11 +276,6 @@ paths:
             schema:
               type: string
       parameters:
-      - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
       - in: query
         name: nohass
         description: 'True if intent should NOT be sent to Home Assistant'
@@ -381,11 +302,6 @@ paths:
               format: binary
       parameters:
       - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
-      - in: query
         name: nohass
         description: 'True if intent should NOT be sent to Home Assistant'
         schema:
@@ -401,13 +317,6 @@ paths:
   /api/start-recording:
     post:
       summary: 'Record WAV file from microphone until stopped'
-      parameters:
-      - in: query
-        name: device
-        description: 'Audio device to record from'
-        schema:
-          type: string
-          default: ""
       responses:
         '200':
           description: OK
@@ -420,11 +329,6 @@ paths:
       summary: 'Stop recording WAV file, transcribe, extract intent, and send to Home Assistant'
       parameters:
       - in: query
-        name: profile
-        description: 'Profile name or default profile if not specified'
-        schema:
-          type: string
-      - in: query
         name: nohass
         description: 'True if intent should NOT be sent to Home Assistant'
         schema:
@@ -432,7 +336,7 @@ paths:
           default: false
       responses:
         '200':
-          description: OK
+          description: Intent
           content:
             application/json:
               schema:
