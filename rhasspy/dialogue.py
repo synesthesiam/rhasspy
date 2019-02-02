@@ -1,7 +1,8 @@
 import json
+from datetime import timedelta
 from typing import Dict, Any
 
-from thespian.actors import ActorAddress, ActorExitRequest
+from thespian.actors import ActorAddress, ActorExitRequest, WakeupMessage
 
 from .actor import RhasspyActor, ConfigureEvent, Configured
 from .wake import ListenForWakeWord, StopListeningForWakeWord, WakeWordDetected
@@ -39,7 +40,8 @@ class ProfileTrainingComplete:
     pass
 
 class Ready:
-    pass
+    def __init__(self, timeout=False):
+        self.timeout = timeout
 
 class GetVoiceCommand:
     def __init__(self, receiver=None, timeout=None):
@@ -54,6 +56,7 @@ class DialogueManager(RhasspyActor):
     def to_started(self, from_state):
         self.site_id = self.profile.get('mqtt.site_id')
         self.preload = self.config.get('preload', False)
+        self.timeout_sec = self.config.get('load_timeout_sec', None)
         self.send_ready = self.config.get('ready', False)
         self.wake_receiver = None
         self.intent_receiver = None
@@ -61,6 +64,10 @@ class DialogueManager(RhasspyActor):
         self.handle = True
 
         self.load_actors()
+
+        if self.timeout_sec is not None:
+            self.wakeupAfter(timedelta(seconds=self.timeout_sec))
+
         self.transition('loading')
 
     def in_loading(self, message, sender):
@@ -77,6 +84,18 @@ class DialogueManager(RhasspyActor):
                 # Inform parent actor that we're ready
                 if self.send_ready:
                     self.send(self._parent, Ready())
+
+        elif isinstance(message, WakeupMessage):
+            self._logger.warn('Actor timeout! Loading anyway...')
+            self.transition('ready')
+
+            # Inform all actors that we're ready
+            for actor in self.actors.values():
+                self.send(actor, Ready(timeout=True))
+
+            # Inform parent actor that we're ready
+            if self.send_ready:
+                self.send(self._parent, Ready(timeout=True))
 
     # -------------------------------------------------------------------------
     # Wake

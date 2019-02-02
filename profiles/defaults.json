@@ -53,7 +53,8 @@
     "rhasspy": {
         "default_profile": "en",
         "listen_on_start": true,
-        "preload_profile": true
+        "preload_profile": true,
+        "load_timeout_sec": 15
     },
     "sounds": {
         "recorded": "etc/wav/beep_lo.wav",

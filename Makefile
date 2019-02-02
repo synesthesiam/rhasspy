@@ -14,7 +14,7 @@ RELEASE_FILES := Dockerfile \
 
 ADDON_DIR := ../hassio-addons/rhasspy
 
-docker: docker-amd64 docker-armhf docker-aarch64
+docker: docker-amd64 docker-armhf docker-aarch64 docker-push manifest
 
 docker-amd64:
 	docker build . -f Dockerfile.prebuilt \
@@ -33,6 +33,11 @@ docker-aarch64:
      --build-arg BUILD_ARCH=aarch64 \
      --build-arg BUILD_FROM=arm64v8/openjdk:8-jre-stretch \
      -t synesthesiam/rhasspy-server:aarch64
+
+docker-push:
+	synesthesiam/rhasspy-server:amd64
+	synesthesiam/rhasspy-server:armhf
+	synesthesiam/rhasspy-server:aarch64
 
 web-dist:
 	yarn build

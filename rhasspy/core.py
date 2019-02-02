@@ -47,7 +47,7 @@ class RhasspyCore:
 
     # -------------------------------------------------------------------------
 
-    def start(self, preload=None, block=True):
+    def start(self, preload=None, block=True, timeout=10):
         if self.actor_system is None:
             kwargs = {}
             if not self.do_logging:
@@ -63,7 +63,7 @@ class RhasspyCore:
 
             # Block until ready
             if block:
-                sys.listen()
+                sys.listen(timeout)
 
     # -------------------------------------------------------------------------
 
