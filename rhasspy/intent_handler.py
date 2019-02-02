@@ -52,13 +52,13 @@ class HomeAssistantIntentHandler(RhasspyActor):
             len(hass_config['access_token']) > 0:
             # Use token from config
             headers['Authorization'] = 'Bearer %s' % hass_config['access_token']
-        elif 'HASSIO_TOKEN' in os.environ:
-            # Use token from hass.io
-            headers['Authorization'] = 'Bearer %s' % os.environ['HASSIO_TOKEN']
         elif ('api_password' in hass_config) and \
           len(hass_config['api_password']) > 0:
             # Use API password (deprecated)
             headers['X-HA-Access'] = hass_config['api_password']
+        elif 'HASSIO_TOKEN' in os.environ:
+            # Use token from hass.io
+            headers['Authorization'] = 'Bearer %s' % os.environ['HASSIO_TOKEN']
 
         # Add intent entities as event data properties
         slots = {}
