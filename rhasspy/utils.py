@@ -14,7 +14,7 @@ from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple
 # -----------------------------------------------------------------------------
 
 def read_dict(dict_file: Iterable[str],
-              word_dict: Optional[Dict[str, List[str]]] = None):
+              word_dict: Optional[Dict[str, List[str]]] = None) -> Dict[str, List[str]]:
     '''
     Loads a CMU word dictionary, optionally into an existing Python dictionary.
     '''
@@ -41,7 +41,7 @@ def read_dict(dict_file: Iterable[str],
 
 # -----------------------------------------------------------------------------
 
-def lcm(*nums):
+def lcm(*nums:int) -> int:
     '''Returns the least common multiple of the given integers'''
     if len(nums) == 0:
         return 1
@@ -54,7 +54,8 @@ def lcm(*nums):
 
 # -----------------------------------------------------------------------------
 
-def recursive_update(base_dict: Dict[Any, Any], new_dict: Mapping[Any, Any]):
+def recursive_update(base_dict: Dict[Any, Any],
+                     new_dict: Mapping[Any, Any]) -> None:
     '''Recursively overwrites values in base dictionary with values from new dictionary'''
     for k, v in new_dict.items():
         if isinstance(v, collections.Mapping) and (k in base_dict):
@@ -76,7 +77,7 @@ def extract_entities(phrase: str) -> Tuple[str, List[Tuple[str, str]]]:
     entities = []
     removed_chars = 0
 
-    def match(m):
+    def match(m) -> str:
         nonlocal removed_chars
         value, entity = m.group(1), m.group(2)
         replacement = value
@@ -173,12 +174,12 @@ def empty_intent() -> Dict[str, Any]:
 
 class ByteStream:
     '''Read/write file-like interface to a buffer.'''
-    def __init__(self):
+    def __init__(self) -> None:
         self.buffer = bytes()
         self.event = threading.Event()
         self.closed = False
 
-    def read(self, n=-1):
+    def read(self, n=-1) -> bytes:
         # Block until enough data is available
         while len(self.buffer) < n:
             if not self.closed:
@@ -190,13 +191,13 @@ class ByteStream:
         self.buffer = self.buffer[n:]
         return chunk
 
-    def write(self, data):
+    def write(self, data:bytes) -> None:
         if self.closed:
             return
 
         self.buffer += data
         self.event.set()
 
-    def close(self):
+    def close(self) -> None:
         self.closed = True
         self.event.set()

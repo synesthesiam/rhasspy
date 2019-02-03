@@ -5,10 +5,11 @@ import uuid
 import wave
 import time
 import threading
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 from collections import defaultdict
 
 import paho.mqtt.client as mqtt
+from thespian.actors import ActorAddress
 
 from .actor import RhasspyActor
 
@@ -17,12 +18,14 @@ from .actor import RhasspyActor
 # -----------------------------------------------------------------------------
 
 class MqttPublish:
-    def __init__(self, topic: str, payload: bytes):
+    def __init__(self, topic: str, payload: bytes) -> None:
         self.topic = topic
         self.payload = payload
 
 class MqttSubscribe:
-    def __init__(self, topic: str, receiver=None):
+    def __init__(self,
+                 topic: str,
+                 receiver:Optional[ActorAddress]=None) -> None:
         self.topic = topic
         self.receiver = receiver
 
@@ -33,7 +36,7 @@ class MqttDisconnected:
     pass
 
 class MqttMessage:
-    def __init__(self, topic: str, payload: bytes):
+    def __init__(self, topic: str, payload: bytes) -> None:
         self.topic = topic
         self.payload = payload
 
@@ -43,16 +46,16 @@ class MqttMessage:
 # -----------------------------------------------------------------------------
 
 class HermesMqtt(RhasspyActor):
-    def __init__(self):
+    def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.client = None
         self.connected = False
-        self.subscriptions = defaultdict(list)
-        self.publications = defaultdict(list)
+        self.subscriptions:Dict[str, List[ActorAddress]] = defaultdict(list)
+        self.publications:Dict[str, List[bytes]] = defaultdict(list)
 
     # -------------------------------------------------------------------------
 
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         # Load settings
         self.site_id = self.profile.get('mqtt.site_id', 'default')
         self.host = self.profile.get('mqtt.host', 'localhost')
@@ -64,11 +67,12 @@ class HermesMqtt(RhasspyActor):
         if self.profile.get('mqtt.enabled', False):
             self.transition('connecting')
 
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         self.save_for_later(message, sender)
 
-    def to_connecting(self, from_state):
+    def to_connecting(self, from_state:str) -> None:
         self.client = mqtt.Client()
+        assert self.client is not None
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         self.client.on_disconnect = self.on_disconnect
@@ -81,14 +85,15 @@ class HermesMqtt(RhasspyActor):
         self.client.connect_async(self.host, self.port)
         self.client.loop_start()
 
-    def in_connecting(self, message, sender):
+    def in_connecting(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, MqttConnected):
             self.connected = True
             self.transition('connected')
         else:
             self.save_for_later(message, sender)
 
-    def to_connected(self, from_state):
+    def to_connected(self, from_state:str) -> None:
+        assert self.client is not None
         # Subscribe to topics
         for topic in self.subscriptions:
             self.client.subscribe(topic)
@@ -100,7 +105,7 @@ class HermesMqtt(RhasspyActor):
 
         self.publications.clear()
 
-    def in_connected(self, message, sender):
+    def in_connected(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, MqttDisconnected):
             if self.reconnect_sec > 0:
                 self._logger.debug('Reconnecting in %s second(s)' % self.reconnect_sec)
@@ -112,6 +117,7 @@ class HermesMqtt(RhasspyActor):
             for receiver in self.subscriptions[message.topic]:
                 self.send(receiver, message)
         elif self.connected:
+            assert self.client is not None
             if isinstance(message, MqttSubscribe):
                 receiver = message.receiver or sender
                 self.subscriptions[message.topic].append(receiver)
@@ -122,7 +128,7 @@ class HermesMqtt(RhasspyActor):
         else:
             self.save_for_later(message, sender)
 
-    def to_stopped(self, from_state):
+    def to_stopped(self, from_state:str) -> None:
         if self.client is not None:
             self.connected = False
             self._logger.debug('Stopping MQTT client')
@@ -131,7 +137,7 @@ class HermesMqtt(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def save_for_later(self, message, sender):
+    def save_for_later(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, MqttSubscribe):
             receiver = message.receiver or sender
             self.subscriptions[message.topic].append(receiver)

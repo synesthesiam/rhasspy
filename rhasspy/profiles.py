@@ -5,9 +5,7 @@ import logging
 from typing import List, Dict, Mapping, Any
 
 import pydash
-# from thespian.actors import Actor
 
-# from audio_player import PlayWavFile
 from .utils import recursive_update
 
 # -----------------------------------------------------------------------------
@@ -20,15 +18,15 @@ class Profile:
                  profiles_dirs: List[str],
                  layers: str ='all') -> None:
 
-        self.name = name
-        self.profiles_dirs = profiles_dirs
-        self.layers = layers
+        self.name: str = name
+        self.profiles_dirs: List[str] = profiles_dirs
+        self.layers: str = layers
         self.load_profile()
 
     # -------------------------------------------------------------------------
 
     @classmethod
-    def load_defaults(cls, profiles_dirs: List[str]):
+    def load_defaults(cls, profiles_dirs: List[str]) -> Dict[str, Any]:
         defaults:Dict[str, Any] = {}
         for profiles_dir in profiles_dirs[::-1]:
             defaults_path = os.path.join(profiles_dir, 'defaults.json')
@@ -40,17 +38,17 @@ class Profile:
 
     # -------------------------------------------------------------------------
 
-    def get(self, path: str, default=None):
+    def get(self, path: str, default:Any=None) -> Any:
         return pydash.get(self.json, path, default)
 
-    def set(self, path: str, value: Any):
+    def set(self, path: str, value: Any) -> None:
         pydash.set_(self.json, path, value)
 
     # -------------------------------------------------------------------------
 
-    def load_profile(self):
+    def load_profile(self) -> None:
         # Load defaults first
-        self.json = {}  # no defaults
+        self.json: Dict[str, Any] = {}  # no defaults
 
         if self.layers in ['all', 'defaults']:
             for profiles_dir in self.profiles_dirs[::-1]:
@@ -66,7 +64,7 @@ class Profile:
                 with open(self.json_path, 'r') as profile_file:
                     recursive_update(self.json, json.load(profile_file))
 
-    def read_path(self, *path_parts):
+    def read_path(self, *path_parts: str) -> str:
         for profiles_dir in self.profiles_dirs:
             # Try to find in the runtime profile first
             full_path = os.path.join(profiles_dir, self.name, *path_parts)
@@ -77,7 +75,7 @@ class Profile:
         # Use base dir
         return os.path.join('profiles', self.name, path_parts[-1])
 
-    def write_path(self, *path_parts):
+    def write_path(self, *path_parts: str) -> str:
         # Try to find in the runtime profile first
         for profiles_dir in self.profiles_dirs:
             full_path = os.path.join(profiles_dir, self.name, *path_parts)
@@ -96,7 +94,7 @@ class Profile:
 
         return full_path
 
-    def write_dir(self, *dir_parts):
+    def write_dir(self, *dir_parts: str) -> str:
         # Try to find in the runtime profile first
         for profiles_dir in self.profiles_dirs:
             dir_path = os.path.join(profiles_dir, self.name, *dir_parts)

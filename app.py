@@ -22,6 +22,7 @@ import time
 import atexit
 from uuid import uuid4
 from collections import defaultdict
+from typing import Any, Union, Tuple
 
 from flask import Flask, request, Response, jsonify, send_file, send_from_directory
 from flask_cors import CORS
@@ -68,7 +69,7 @@ core = None
 
 # We really, *really* want shutdown to be called
 @atexit.register
-def shutdown(*args, **kwargs):
+def shutdown(*args: Any, **kwargs: Any) -> None:
     global core
     if core is not None:
         core.shutdown()
@@ -81,7 +82,7 @@ profiles_dirs = [path for path in
 
 profiles_dirs.reverse()
 
-def start_rhasspy():
+def start_rhasspy() -> None:
     global core
 
     default_settings = Profile.load_defaults(profiles_dirs)
@@ -116,8 +117,9 @@ start_rhasspy()
 # -----------------------------------------------------------------------------
 
 @app.route('/api/profiles')
-def api_profiles():
+def api_profiles() -> Response:
     '''Get list of available profiles'''
+    assert core is not None
     profile_names = set()
     for profiles_dir in profiles_dirs:
         if not os.path.exists(profiles_dir):
@@ -136,39 +138,45 @@ def api_profiles():
 # -----------------------------------------------------------------------------
 
 @app.route('/api/microphones', methods=['GET'])
-def api_microphones():
+def api_microphones() -> Response:
     '''Get a dictionary of available recording devices'''
+    assert core is not None
     system = request.args.get('system', None)
     return jsonify(core.get_microphones(system))
 
 # -----------------------------------------------------------------------------
 
 @app.route('/api/test-microphones', methods=['GET'])
-def api_test_microphones():
+def api_test_microphones() -> Response:
     '''Get a dictionary of available, functioning recording devices'''
+    assert core is not None
     system = request.args.get('system', None)
     return jsonify(core.test_microphones(system))
 
 # -----------------------------------------------------------------------------
 
 @app.route('/api/listen-for-wake', methods=['POST'])
-def api_listen_for_wake():
-    # no_hass = request.args.get('nohass', 'false').lower() == 'true'
+def api_listen_for_wake() -> str:
+    '''Make Rhasspy listen for a wake word'''
+    assert core is not None
     core.listen_for_wake()
     return 'OK'
 
 # -----------------------------------------------------------------------------
 
 @app.route('/api/listen-for-command', methods=['POST'])
-def api_listen_for_command():
+def api_listen_for_command() -> Response:
+    '''Wake Rhasspy up and listen for a voice command'''
+    assert core is not None
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
     return jsonify(core.listen_for_command(handle=not no_hass))
 
 # -----------------------------------------------------------------------------
 
 @app.route('/api/profile', methods=['GET', 'POST'])
-def api_profile():
+def api_profile() -> Response:
     '''Read or write profile JSON directly'''
+    assert core is not None
     layers = request.args.get('layers', 'all')
 
     if request.method == 'POST':
@@ -209,8 +217,9 @@ def api_profile():
 # -----------------------------------------------------------------------------
 
 @app.route('/api/lookup', methods=['POST'])
-def api_lookup():
+def api_lookup() -> Response:
     '''Get CMU phonemes from dictionary or guessed pronunciation(s)'''
+    assert core is not None
     n = int(request.args.get('n', 5))
     assert n > 0, 'No pronunciations requested'
 
@@ -231,8 +240,9 @@ def api_lookup():
 # -----------------------------------------------------------------------------
 
 @app.route('/api/pronounce', methods=['POST'])
-def api_pronounce():
+def api_pronounce() -> Union[Response, str]:
     '''Pronounce CMU phonemes or word using eSpeak'''
+    assert core is not None
     download = request.args.get('download', 'false').lower() == 'true'
 
     pronounce_str = request.data.decode('utf-8').strip()
@@ -243,8 +253,7 @@ def api_pronounce():
 
     if pronounce_type == 'phonemes':
         # Convert from Sphinx to espeak phonemes
-        result = core.get_word_phonemes(pronounce_str)
-        espeak_str = result.phonemes
+        espeak_str = core.get_word_phonemes(pronounce_str).phonemes
     else:
         # Speak word directly
         espeak_str = pronounce_str
@@ -266,6 +275,7 @@ def api_pronounce():
 @app.route('/api/phonemes')
 def api_phonemes():
     '''Get phonemes and example words for a profile'''
+    assert core is not None
     examples_path = core.profile.read_path(
         core.profile.get('text_to_speech.phoneme_examples'))
 
@@ -280,6 +290,7 @@ def api_phonemes():
 @app.route('/api/sentences', methods=['GET', 'POST'])
 def api_sentences():
     '''Read or write sentences for a profile'''
+    assert core is not None
 
     if request.method == 'POST':
         # Update sentences
@@ -305,6 +316,7 @@ def api_sentences():
 @app.route('/api/custom-words', methods=['GET', 'POST'])
 def api_custom_words():
     '''Read or write custom word dictionary for a profile'''
+    assert core is not None
     if request.method == 'POST':
         custom_words_path = core.profile.write_path(
             core.profile.get('speech_to_text.pocketsphinx.custom_words'))
@@ -336,7 +348,8 @@ def api_custom_words():
 # -----------------------------------------------------------------------------
 
 @app.route('/api/train', methods=['POST'])
-def api_train():
+def api_train() -> str:
+    assert core is not None
     start_time = time.time()
     logger.info('Starting training')
 
@@ -351,7 +364,8 @@ def api_train():
 # -----------------------------------------------------------------------------
 
 @app.route('/api/restart', methods=['POST'])
-def api_restart():
+def api_restart() -> str:
+    assert core is not None
     logger.debug('Restarting Rhasspy')
 
     # Stop
@@ -367,7 +381,9 @@ def api_restart():
 
 # Get text from a WAV file
 @app.route('/api/speech-to-text', methods=['POST'])
-def api_speech_to_text():
+def api_speech_to_text() -> str:
+    '''speech -> text'''
+    assert core is not None
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
     wav_data = request.data
     return core.transcribe_wav(wav_data).text
@@ -377,6 +393,8 @@ def api_speech_to_text():
 # Get intent from text
 @app.route('/api/text-to-intent', methods=['POST'])
 def api_text_to_intent():
+    '''text -> intent'''
+    assert core is not None
     text = request.data.decode()
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
 
@@ -397,7 +415,9 @@ def api_text_to_intent():
 
 # Get intent from a WAV file
 @app.route('/api/speech-to-intent', methods=['POST'])
-def api_speech_to_intent():
+def api_speech_to_intent() -> Response:
+    '''speech -> text -> intent'''
+    assert core is not None
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
 
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
@@ -426,7 +446,9 @@ def api_speech_to_intent():
 
 # Start recording a WAV file to a temporary buffer
 @app.route('/api/start-recording', methods=['POST'])
-def api_start_recording():
+def api_start_recording() -> str:
+    '''Begin recording voice command'''
+    assert core is not None
     buffer_name = request.args.get('name', '')
     core.start_recording_wav(buffer_name)
 
@@ -434,7 +456,9 @@ def api_start_recording():
 
 # Stop recording WAV file, transcribe, and get intent
 @app.route('/api/stop-recording', methods=['POST'])
-def api_stop_recording():
+def api_stop_recording() -> Response:
+    '''End recording voice command. Transcribe and handle.'''
+    assert core is not None
     no_hass = request.args.get('nohass', 'false').lower() == 'true'
 
     buffer_name = request.args.get('name', '')
@@ -458,7 +482,9 @@ def api_stop_recording():
 # -----------------------------------------------------------------------------
 
 @app.route('/api/unknown_words', methods=['GET'])
-def api_unknown_words():
+def api_unknown_words() -> Response:
+    '''Get list of unknown words'''
+    assert core is not None
     unknown_words = {}
     unknown_path = core.profile.read_path(
         core.profile.get('speech_to_text.pocketsphinx.unknown_words'))
@@ -475,7 +501,7 @@ def api_unknown_words():
 # -----------------------------------------------------------------------------
 
 @app.errorhandler(Exception)
-def handle_error(err):
+def handle_error(err) -> Tuple[str, int]:
     logger.exception(err)
     return (str(err), 500)
 
@@ -486,19 +512,19 @@ def handle_error(err):
 web_dir = os.path.join(os.path.dirname(__file__), 'dist')
 
 @app.route('/css/<path:filename>', methods=['GET'])
-def css(filename):
+def css(filename) -> Response:
     return send_from_directory(os.path.join(web_dir, 'css'), filename)
 
 @app.route('/js/<path:filename>', methods=['GET'])
-def js(filename):
+def js(filename) -> Response:
     return send_from_directory(os.path.join(web_dir, 'js'), filename)
 
 @app.route('/img/<path:filename>', methods=['GET'])
-def img(filename):
+def img(filename) -> Response:
     return send_from_directory(os.path.join(web_dir, 'img'), filename)
 
 @app.route('/webfonts/<path:filename>', methods=['GET'])
-def webfonts(filename):
+def webfonts(filename) -> Response:
     return send_from_directory(os.path.join(web_dir, 'webfonts'), filename)
 
 # ----------------------------------------------------------------------------
@@ -506,11 +532,11 @@ def webfonts(filename):
 # ----------------------------------------------------------------------------
 
 @app.route('/', methods=['GET'])
-def index():
+def index() -> Response:
     return send_file(os.path.join(web_dir, 'index.html'))
 
 @app.route('/swagger.yaml', methods=['GET'])
-def swagger_yaml():
+def swagger_yaml() -> Response:
     return send_file(os.path.join(web_dir, 'swagger.yaml'))
 
 # -----------------------------------------------------------------------------

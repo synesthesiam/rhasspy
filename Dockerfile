@@ -83,6 +83,7 @@ RUN find / -name mllr_solve -exec cp '{}' /usr/bin/ \;
 
 # Copy my code
 COPY profiles/ /usr/share/rhasspy/profiles/
+COPY docker/rhasspy /usr/share/rhasspy/bin/
 COPY dist/ /usr/share/rhasspy/dist/
 COPY etc/wav/* /usr/share/rhasspy/etc/wav/
 COPY *.py /usr/share/rhasspy/

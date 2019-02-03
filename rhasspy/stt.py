@@ -6,6 +6,9 @@ import logging
 import tempfile
 import subprocess
 from urllib.parse import urljoin
+from typing import Any, Optional
+
+from thespian.actors import ActorAddress
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -14,13 +17,16 @@ from .utils import convert_wav
 # -----------------------------------------------------------------------------
 
 class TranscribeWav:
-    def __init__(self, wav_data: bytes, receiver=None, handle=True):
+    def __init__(self,
+                 wav_data: bytes,
+                 receiver:Optional[ActorAddress]=None,
+                 handle:bool=True) -> None:
         self.wav_data = wav_data
         self.receiver = receiver
         self.handle = handle
 
 class WavTranscription:
-    def __init__(self, text: str, handle=True):
+    def __init__(self, text: str, handle:bool=True) -> None:
         self.text = text
         self.handle = handle
 
@@ -28,7 +34,7 @@ class WavTranscription:
 
 class DummyDecoder(RhasspyActor):
     '''Always returns an emptry transcription'''
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, TranscribeWav):
             self.send(message.receiver or sender,
                       WavTranscription(''))
@@ -88,6 +94,7 @@ class PocketsphinxDecoder(RhasspyActor):
 
     def transcribe_wav(self, wav_data: bytes) -> str:
         # Ensure 16-bit 16Khz mono
+        assert self.decoder is not None
         data_size = len(wav_data)
         with io.BytesIO(wav_data) as wav_io:
             with wave.open(wav_io, 'rb') as wav_file:
@@ -146,7 +153,7 @@ class RemoteDecoder(RhasspyActor):
         try:
             response.raise_for_status()
         except Exception as e:
-            self._logger.exception()
+            self._logger.exception('transcribe_wav')
             return ''
 
         return response.text

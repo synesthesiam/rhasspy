@@ -4,31 +4,35 @@ import threading
 import logging
 import json
 from uuid import uuid4
+from typing import Optional, Any, List
+
+from thespian.actors import ActorAddress
 
 from .actor import RhasspyActor
 from .profiles import Profile
 from .audio_recorder import StartStreaming, StopStreaming, AudioData
 from .mqtt import MqttSubscribe, MqttMessage
+from .utils import ByteStream
 
 # -----------------------------------------------------------------------------
 
 class ListenForWakeWord:
-    def __init__(self, receiver=None):
+    def __init__(self, receiver:Optional[ActorAddress]=None) -> None:
         self.receiver = receiver
 
 class StopListeningForWakeWord:
-    def __init__(self, receiver=None):
+    def __init__(self, receiver:Optional[ActorAddress]=None) -> None:
         self.receiver = receiver
 
 class WakeWordDetected:
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.name = name
 
 # -----------------------------------------------------------------------------
 
 class DummyWakeListener(RhasspyActor):
     '''Does nothing'''
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         pass
 
 # -----------------------------------------------------------------------------
@@ -38,44 +42,46 @@ class DummyWakeListener(RhasspyActor):
 
 class PocketsphinxWakeListener(RhasspyActor):
     '''Listens for a wake word with pocketsphinx.'''
-    def __init__(self):
+    def __init__(self) -> None:
         RhasspyActor.__init__(self)
-        self.receivers = []
+        self.receivers: List[ActorAddress] = []
         self.decoder = None
-        self.decoder_started = False
+        self.decoder_started:bool = False
 
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         self.recorder = self.config['recorder']
-        self.preload = self.config.get('preload', False)
+        self.preload:bool = self.config.get('preload', False)
         if self.preload:
             self.load_decoder()
 
         self.transition('loaded')
 
-    def in_loaded(self, message, sender):
+    def in_loaded(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, ListenForWakeWord):
             self.load_decoder()
             self.receivers.append(message.receiver or sender)
             self.transition('listening')
 
             if not self.decoder_started:
+                assert self.decoder is not None
                 self.decoder.start_utt()
                 self.decoder_started = True
 
             self.send(self.recorder, StartStreaming(self.myAddress))
 
-    def in_listening(self, message, sender):
+    def in_listening(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, AudioData):
             result = self.process_data(message.data)
             if result is not None:
                 self._logger.debug('Hotword detected (%s)' % self.keyphrase)
-                result = WakeWordDetected(self.keyphrase)
+                output = WakeWordDetected(self.keyphrase)
                 for receiver in self.receivers:
-                    self.send(receiver, result)
+                    self.send(receiver, output)
         elif isinstance(message, StopListeningForWakeWord):
             self.receivers.remove(message.receiver or sender)
             if len(self.receivers) == 0:
                 if self.decoder_started:
+                    assert self.decoder is not None
                     self.decoder.end_utt()
                     self.decoder_started = False
 
@@ -84,7 +90,8 @@ class PocketsphinxWakeListener(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def process_data(self, data):
+    def process_data(self, data:bytes) -> Optional[str]:
+        assert self.decoder is not None
         self.decoder.process_raw(data, False, False)
         hyp = self.decoder.hyp()
         if hyp:
@@ -98,7 +105,7 @@ class PocketsphinxWakeListener(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def load_decoder(self):
+    def load_decoder(self) -> None:
         '''Loads speech decoder if not cached.'''
         if self.decoder is None:
             import pocketsphinx
@@ -141,12 +148,12 @@ class PocketsphinxWakeListener(RhasspyActor):
 # -----------------------------------------------------------------------------
 
 class SnowboyWakeListener(RhasspyActor):
-    def __init__(self):
+    def __init__(self) -> None:
         RhasspyActor.__init__(self)
-        self.receivers = []
+        self.receivers:List[ActorAddress] = []
         self.detector = None
 
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         self.recorder = self.config['recorder']
         self.preload = self.config.get('preload', False)
         if self.preload:
@@ -154,14 +161,14 @@ class SnowboyWakeListener(RhasspyActor):
 
         self.transition('loaded')
 
-    def in_loaded(self, message, sender):
+    def in_loaded(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, ListenForWakeWord):
             self.load_detector()
             self.receivers.append(message.receiver or sender)
             self.transition('listening')
             self.send(self.recorder, StartStreaming(self.myAddress))
 
-    def in_listening(self, message, sender):
+    def in_listening(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, AudioData):
             index = self.process_data(message.data)
             if index > 0:
@@ -177,7 +184,8 @@ class SnowboyWakeListener(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def process_data(self, data: bytes):
+    def process_data(self, data: bytes) -> int:
+        assert self.detector is not None
         try:
             # Return is:
             # -2 silence
@@ -192,7 +200,7 @@ class SnowboyWakeListener(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def load_detector(self):
+    def load_detector(self) -> None:
         if self.detector is None:
             from snowboy import snowboydetect, snowboydecoder
 
@@ -204,6 +212,8 @@ class SnowboyWakeListener(RhasspyActor):
 
             self.detector = snowboydetect.SnowboyDetect(
                 snowboydecoder.RESOURCE_FILE.encode(), model_path.encode())
+
+            assert self.detector is not None
 
             sensitivity_str = str(sensitivity).encode()
             self.detector.SetSensitivity(sensitivity_str)
@@ -219,14 +229,15 @@ class SnowboyWakeListener(RhasspyActor):
 
 class PreciseWakeListener(RhasspyActor):
     '''Listens for a wake word using Mycroft Precise.'''
-    def __init__(self):
+    def __init__(self) -> None:
         RhasspyActor.__init__(self)
-        self.receivers = []
-        self.stream:ByteStream = None
+        self.receivers: List[ActorAddress] = []
+        self.stream:Optional[ByteStream] = None
         self.engine = None
         self.runner = None
+        self.detected:bool = False
 
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         self.recorder = self.config['recorder']
         self.preload = self.config.get('preload', False)
         if self.preload:
@@ -234,14 +245,14 @@ class PreciseWakeListener(RhasspyActor):
 
         self.transition('loaded')
 
-    def in_loaded(self, message, sender):
+    def in_loaded(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, ListenForWakeWord):
             self.load_runner()
             self.receivers.append(message.receiver or sender)
             self.transition('listening')
             self.send(self.recorder, StartStreaming(self.myAddress))
 
-    def in_listening(self, message, sender):
+    def in_listening(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, AudioData):
             self.process_data(message.data)
             if self.detected:
@@ -256,7 +267,7 @@ class PreciseWakeListener(RhasspyActor):
                 self.send(self.recorder, StopStreaming(self.myAddress))
                 self.transition('loaded')
 
-    def to_stopped(self, from_state):
+    def to_stopped(self, from_state:str) -> None:
         if self.stream is not None:
             self.stream.close()
 
@@ -265,12 +276,13 @@ class PreciseWakeListener(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def process_data(data: bytes) -> None:
+    def process_data(self, data: bytes) -> None:
+        assert self.stream is not None
         self.stream.write(data)
 
     # -------------------------------------------------------------------------
 
-    def load_runner(self):
+    def load_runner(self) -> None:
         if self.engine is None:
             from precise_runner import PreciseEngine
             self.model_name = self.profile.get('wake.precise.model')
@@ -286,7 +298,7 @@ class PreciseWakeListener(RhasspyActor):
             sensitivity = float(self.profile.get('wake.precise.sensitivity', 0.5))
             trigger_level = int(self.profile.get('wake.precise.trigger_level', 3))
 
-            def on_activation():
+            def on_activation() -> None:
                 self.detected = True
 
             self.runner = PreciseRunner(self.engine, stream=self.stream,
@@ -294,9 +306,10 @@ class PreciseWakeListener(RhasspyActor):
                                         trigger_level=trigger_level,
                                         on_activation=on_activation)
 
+            assert self.runner is not None
             self.runner.start()
 
-            logger.debug('Loaded Mycroft Precise (model=%s, sensitivity=%s, trigger_level=%s)' \
+            self._logger.debug('Loaded Mycroft Precise (model=%s, sensitivity=%s, trigger_level=%s)' \
                          % (self.model_path, sensitivity, trigger_level))
 
 # -----------------------------------------------------------------------------
@@ -306,27 +319,27 @@ class PreciseWakeListener(RhasspyActor):
 
 class HermesWakeListener(RhasspyActor):
     '''Listens for a wake word using MQTT.'''
-    def __init__(self):
+    def __init__(self) -> None:
         RhasspyActor.__init__(self)
-        self.receivers = []
+        self.receivers: List[ActorAddress] = []
 
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         self.mqtt = self.config['mqtt']
 
         # Subscribe to wake topic
-        self.site_id = self.profile.get('mqtt.site_id', 'default')
-        self.wakeword_id = self.profile.get('wake.hermes.wakeword_id', 'default')
+        self.site_id:str = self.profile.get('mqtt.site_id', 'default')
+        self.wakeword_id:str = self.profile.get('wake.hermes.wakeword_id', 'default')
         self.wake_topic = 'hermes/hotword/%s/detected' % self.wakeword_id
         self.send(self.mqtt, MqttSubscribe(self.wake_topic))
 
         self.transition('loaded')
 
-    def in_loaded(self, message, sender):
+    def in_loaded(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, ListenForWakeWord):
             self.receivers.append(message.receiver or sender)
             self.transition('listening')
 
-    def in_listening(self, message, sender):
+    def in_listening(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, MqttMessage):
             if message.topic == self.wake_topic:
                 # Check site ID

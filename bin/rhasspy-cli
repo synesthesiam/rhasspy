@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+docker run -i \
+       -u "$(id -u):$(id -g)" \
+       -v "$HOME":"$HOME" \
+       -e RHASSPY_PROFILES="$HOME/.rhasspy/profiles" \
+       -w "$(pwd)" \
+       --device /dev/snd:/dev/snd \
+       --entrypoint /usr/share/rhasspy/bin/rhasspy \
+       synesthesiam/rhasspy-server:latest \
+       "$@"

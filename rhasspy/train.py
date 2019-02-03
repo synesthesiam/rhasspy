@@ -4,7 +4,9 @@ import subprocess
 import logging
 import concurrent.futures
 from collections import defaultdict
-from typing import TextIO, Dict, List, Tuple
+from typing import TextIO, Dict, List, Tuple, Any, Optional
+
+from thespian.actors import ActorAddress
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -12,11 +14,13 @@ from .profiles import Profile
 # -----------------------------------------------------------------------------
 
 class GenerateSentences:
-    def __init__(self, receiver=None):
+    def __init__(self,
+                 receiver:Optional[ActorAddress]=None) -> None:
         self.receiver = receiver
 
 class SentencesGenerated:
-    def __init__(self, tagged_sentences):
+    def __init__(self,
+                 tagged_sentences: Dict[str, List[str]]) -> None:
         self.tagged_sentences = tagged_sentences
 
 # -----------------------------------------------------------------------------
@@ -29,7 +33,7 @@ class SentencesGenerated:
 class JsgfSentenceGenerator(RhasspyActor):
     '''Uses jsgf-gen to generate sentences.'''
 
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, GenerateSentences):
             tagged_sentences = self.generate_sentences()
             self.send(message.receiver or sender,
@@ -37,7 +41,7 @@ class JsgfSentenceGenerator(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def generate_sentences(self):
+    def generate_sentences(self) -> Dict[str, List[str]]:
         ini_path = self.profile.read_path(
             self.profile.get('speech_to_text.sentences_ini'))
 
@@ -50,7 +54,7 @@ class JsgfSentenceGenerator(RhasspyActor):
         # intent -> sentence templates
         tagged_sentences: Dict[str, List[str]] = defaultdict(list)
 
-        def generate(path):
+        def generate(path) -> List[str]:
             cmd = ['jsgf-gen',
                   '--grammar', path,
                   '--exhaustive',

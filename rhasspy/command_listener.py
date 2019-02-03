@@ -5,8 +5,9 @@ import threading
 import wave
 import queue
 from datetime import timedelta
+from typing import Optional, Any, Tuple, Dict
 
-from thespian.actors import WakeupMessage
+from thespian.actors import WakeupMessage, ActorAddress
 
 from .actor import RhasspyActor
 from .audio_recorder import StartStreaming, StopStreaming, AudioData
@@ -14,13 +15,19 @@ from .audio_recorder import StartStreaming, StopStreaming, AudioData
 # -----------------------------------------------------------------------------
 
 class ListenForCommand:
-    def __init__(self, receiver=None, handle=True, timeout=None):
+    def __init__(self,
+                 receiver:Optional[ActorAddress]=None,
+                 handle:bool=True,
+                 timeout:Optional[float]=None) -> None:
         self.receiver = receiver
         self.handle = handle
         self.timeout = timeout
 
 class VoiceCommand:
-    def __init__(self, data: bytes, timeout=False, handle=True):
+    def __init__(self,
+                 data: bytes,
+                 timeout:bool=False,
+                 handle:bool=True) -> None:
         self.data = data
         self.timeout = timeout
         self.handle = handle
@@ -29,7 +36,7 @@ class VoiceCommand:
 
 class DummyCommandListener(RhasspyActor):
     '''Always sends an empty voice command'''
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, ListenForCommand):
             self.send(message.receiver or sender,
                       VoiceCommand(bytes()))
@@ -41,14 +48,14 @@ class DummyCommandListener(RhasspyActor):
 
 class WebrtcvadCommandListener(RhasspyActor):
     '''Listens to microphone for voice commands bracketed by silence.'''
-    def __init__(self):
+    def __init__(self) -> None:
         RhasspyActor.__init__(self)
-        self.recorder = None
-        self.receiver = None
-        self.buffer = None
-        self.chunk = None
+        self.recorder:Optional[ActorAddress] = None
+        self.receiver:Optional[ActorAddress] = None
+        self.buffer:bytes = bytes()
+        self.chunk:bytes = bytes()
 
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         import webrtcvad
         self.recorder = self.config['recorder']
 
@@ -75,9 +82,9 @@ class WebrtcvadCommandListener(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def to_loaded(self, from_state):
+    def to_loaded(self, from_state:str) -> None:
         # Recording state
-        self.chunk = bytes()
+        self.chunk:bytes = bytes()
         self.silence_buffers = int(math.ceil(self.silence_sec / self.seconds_per_buffer))
         self.min_phrase_buffers = int(math.ceil(self.min_sec / self.seconds_per_buffer))
         self.throwaway_buffers_left = self.throwaway_buffers
@@ -86,7 +93,7 @@ class WebrtcvadCommandListener(RhasspyActor):
         self.after_phrase = False
         self.buffer_count = 0
 
-    def in_loaded(self, message, sender):
+    def in_loaded(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, ListenForCommand):
             if message.timeout is not None:
                 # Use message timeout
@@ -101,18 +108,20 @@ class WebrtcvadCommandListener(RhasspyActor):
             self.handle = message.handle
             self.send(self.recorder, StartStreaming(self.myAddress))
 
-    def to_listening(self, from_state):
+    def to_listening(self, from_state:str) -> None:
         self.wakeupAfter(timedelta(seconds=self.timeout_sec))
 
-    def in_listening(self, message, sender):
+    def in_listening(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, WakeupMessage):
             # Timeout
             self._logger.warn('Timeout')
             self.send(self.recorder, StopStreaming(self.myAddress))
             self.send(self.receiver,
-                      VoiceCommand(self.buffer, timeout=True, handle=self.handle))
+                      VoiceCommand(self.buffer or bytes(),
+                                   timeout=True,
+                                   handle=self.handle))
 
-            self.buffer = None
+            self.buffer = bytes()
             self.transition('loaded')
         elif isinstance(message, AudioData):
             self.chunk += message.data
@@ -132,16 +141,16 @@ class WebrtcvadCommandListener(RhasspyActor):
                     self.send(self.receiver,
                               VoiceCommand(self.buffer, timeout, self.handle))
 
-                    self.buffer = None
+                    self.buffer = bytes()
                     self.transition('loaded')
 
-    def to_stopped(self, from_state):
+    def to_stopped(self, from_state:str) -> None:
         # Stop recording
         self.send(self.recorder, StopStreaming(self.myAddress))
 
     # -------------------------------------------------------------------------
 
-    def process_data(self, data):
+    def process_data(self, data: bytes) -> Tuple[bool, bool]:
         finished = False
         timeout = False
 
@@ -161,6 +170,7 @@ class WebrtcvadCommandListener(RhasspyActor):
             return False, False
 
         # Detect speech in chunk
+        assert self.vad is not None
         is_speech = self.vad.is_speech(data, self.sample_rate)
 
         if is_speech and self.speech_buffers_left > 0:

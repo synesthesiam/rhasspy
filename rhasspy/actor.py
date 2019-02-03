@@ -1,14 +1,14 @@
 import logging
-from typing import List
+from typing import List, Callable, Optional, Any, Dict
 
-from thespian.actors import Actor, ActorExitRequest, ChildActorExited
+from thespian.actors import Actor, ActorExitRequest, ChildActorExited, ActorAddress
 
 from .profiles import Profile
 
 # -----------------------------------------------------------------------------
 
 class ConfigureEvent:
-    def __init__(self, profile: Profile, **kwargs):
+    def __init__(self, profile: Profile, **kwargs: Any) -> None:
         self.profile = profile
         self.config = kwargs
 
@@ -18,23 +18,22 @@ class Configured:
 # -----------------------------------------------------------------------------
 
 class RhasspyActor(Actor):
-    def __init__(self):
-        self._name = self.__class__.__name__
+    def __init__(self) -> None:
+        self._name: str = self.__class__.__name__
         self._logger = logging.getLogger(self._name)
-        self._state = ''
-        self._state_method = None
-        self._parent = None
+        self._state:str = ''
+        self._state_method: Optional[Callable[[Any, ActorAddress], None]] = None
 
     # -------------------------------------------------------------------------
 
-    def receiveMessage(self, message, sender):
+    def receiveMessage(self, message: Any, sender: ActorAddress) -> None:
         try:
             if isinstance(message, ActorExitRequest):
                 self.transition('stopped')
             elif isinstance(message, ConfigureEvent):
-                self._parent = sender
-                self.profile = message.profile
-                self.config = message.config
+                self._parent: ActorAddress = sender
+                self.profile: Profile = message.profile
+                self.config: Dict[str, Any] = message.config
                 self.transition('started')
                 self.send(sender, Configured())
             else:
@@ -49,7 +48,7 @@ class RhasspyActor(Actor):
 
     # -------------------------------------------------------------------------
 
-    def transition(self, to_state):
+    def transition(self, to_state: str) -> None:
         from_state = self._state
         transition_method = 'to_' + to_state
         self._state = to_state

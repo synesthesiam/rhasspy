@@ -1,6 +1,6 @@
 import json
 from datetime import timedelta
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 
 from thespian.actors import ActorAddress, ActorExitRequest, WakeupMessage
 
@@ -22,15 +22,15 @@ from .utils import buffer_to_wav
 # -----------------------------------------------------------------------------
 
 class GetMicrophones:
-    def __init__(self, system=None):
+    def __init__(self, system:Optional[str]=None) -> None:
         self.system = system
 
 class TestMicrophones:
-    def __init__(self, system=None):
+    def __init__(self, system:Optional[str]=None) -> None:
         self.system = system
 
 class TrainProfile:
-    def __init__(self, receiver=None):
+    def __init__(self, receiver:Optional[ActorAddress]=None) -> None:
         self.receiver = receiver
 
 class ProfileTrainingFailed:
@@ -40,11 +40,13 @@ class ProfileTrainingComplete:
     pass
 
 class Ready:
-    def __init__(self, timeout=False):
+    def __init__(self, timeout:bool=False) -> None:
         self.timeout = timeout
 
 class GetVoiceCommand:
-    def __init__(self, receiver=None, timeout=None):
+    def __init__(self,
+                 receiver:Optional[ActorAddress]=None,
+                 timeout:Optional[float]=None):
         self.receiver = receiver
         self.timeout = timeout
 
@@ -255,7 +257,7 @@ class DialogueManager(RhasspyActor):
             self.actors['recognizer'] = self.recognizer
 
             # Configure actors
-            self.wait_actors = []
+            self.wait_actors: List[ActorAddress] = []
             for actor in [self.wake, self.decoder, self.recognizer]:
                 self.send(actor, ConfigureEvent(self.profile,
                                                 preload=self.preload,
@@ -565,7 +567,7 @@ class DialogueManager(RhasspyActor):
         elif system == 'rasa':
             # Use rasaNLU remotely
             from .intent_train import RasaIntentTrainer
-            return RasaIntentRecognizer
+            return RasaIntentTrainer
         else:
             # Does nothing
             from .intent_train import DummyIntentTrainer

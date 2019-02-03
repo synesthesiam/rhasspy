@@ -6,15 +6,18 @@ import subprocess
 import tempfile
 from typing import Dict, Tuple, List, Optional
 
+from thespian.actors import ActorAddress
+
 from .actor import RhasspyActor
 from .utils import read_dict, load_phoneme_map
+from .profiles import Profile
 
 # -----------------------------------------------------------------------------
 # Events
 # -----------------------------------------------------------------------------
 
 class SpeakWord:
-    def __init__(self, word: str, receiver=None):
+    def __init__(self, word: str, receiver: Optional[ActorAddress]=None):
         self.word = word
         self.receiver = receiver
 
@@ -25,7 +28,7 @@ class WordSpoken:
         self.phonemes = phonemes
 
 class GetWordPhonemes:
-    def __init__(self, word: str, receiver=None):
+    def __init__(self, word: str, receiver: Optional[ActorAddress]=None):
         self.word = word
         self.receiver = receiver
 
@@ -35,7 +38,7 @@ class WordPhonemes:
         self.phonemes = phonemes
 
 class GetWordPronunciations:
-    def __init__(self, word: str, n: int=5, receiver=None):
+    def __init__(self, word: str, n: int=5, receiver: Optional[ActorAddress]=None):
         self.word = word
         self.n = n
         self.receiver = receiver

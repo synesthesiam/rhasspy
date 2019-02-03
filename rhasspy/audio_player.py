@@ -3,6 +3,10 @@ import os
 import logging
 import subprocess
 import tempfile
+import uuid
+from typing import Any
+
+from thespian.actors import ActorAddress
 
 from .actor import RhasspyActor
 from .mqtt import MqttPublish
@@ -12,11 +16,11 @@ from .mqtt import MqttPublish
 # -----------------------------------------------------------------------------
 
 class PlayWavFile:
-    def __init__(self, wav_path: str):
+    def __init__(self, wav_path: str) -> None:
         self.wav_path = wav_path
 
 class PlayWavData:
-    def __init__(self, wav_data: bytes):
+    def __init__(self, wav_data: bytes) -> None:
         self.wav_data = wav_data
 
 # -----------------------------------------------------------------------------
@@ -33,11 +37,11 @@ class DummyAudioPlayer(RhasspyActor):
 
 class APlayAudioPlayer(RhasspyActor):
     '''Plays WAV files using aplay'''
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         self.device = self.config.get('device') \
             or self.profile.get('sounds.aplay.device')
 
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, PlayWavFile):
             self.play_file(message.wav_path)
         elif isinstance(message, PlayWavData):
@@ -45,7 +49,7 @@ class APlayAudioPlayer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def play_file(self, path: str):
+    def play_file(self, path: str) -> None:
         if not os.path.exists(path):
             self._logger.warn('Path does not exist: %s', path)
             return
@@ -61,7 +65,7 @@ class APlayAudioPlayer(RhasspyActor):
         self._logger.debug(aplay_cmd)
         subprocess.run(aplay_cmd)
 
-    def play_data(self, wav_data: bytes):
+    def play_data(self, wav_data: bytes) -> None:
         aplay_cmd = ['aplay', '-q']
 
         if self.device is not None:
@@ -77,12 +81,12 @@ class APlayAudioPlayer(RhasspyActor):
 # https://docs.snips.ai/ressources/hermes-protocol
 # -----------------------------------------------------------------------------
 
-class HeremesAudioPlayer(RhasspyActor):
+class HermesAudioPlayer(RhasspyActor):
     '''Sends audio data over MQTT via Hermes protocol'''
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         self.site_id = self.profile.get('mqtt.site_id')
 
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, PlayWavFile):
             self.play_file(message.wav_path)
         elif isinstance(message, PlayWavData):
@@ -90,7 +94,7 @@ class HeremesAudioPlayer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def play_file(self, path: str):
+    def play_file(self, path: str) -> None:
         if not os.path.exists(path):
             self._logger.warn('Path does not exist: %s', path)
             return
@@ -98,7 +102,7 @@ class HeremesAudioPlayer(RhasspyActor):
         with open(path, 'rb') as wav_file:
             self.play_data(wav_file.read())
 
-    def play_data(self, wav_data: bytes):
+    def play_data(self, wav_data: bytes) -> None:
         request_id = str(uuid.uuid4())
         topic = 'hermes/audioServer/%s/playBytes/%s' % (self.site_id, request_id)
         self.send(self.mqtt, MqttPublish(topic, wav_data))
