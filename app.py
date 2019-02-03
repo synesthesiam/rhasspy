@@ -305,10 +305,10 @@ def api_sentences():
 @app.route('/api/custom-words', methods=['GET', 'POST'])
 def api_custom_words():
     '''Read or write custom word dictionary for a profile'''
-    custom_words_path = core.profile.write_path(
-        core.profile.get('speech_to_text.pocketsphinx.custom_words'))
-
     if request.method == 'POST':
+        custom_words_path = core.profile.write_path(
+            core.profile.get('speech_to_text.pocketsphinx.custom_words'))
+
         # Update custom words
         lines_written = 0
         with open(custom_words_path, 'w') as custom_words_file:
@@ -322,6 +322,9 @@ def api_custom_words():
                 lines_written += 1
 
             return 'Wrote %s line(s) to %s' % (lines_written, custom_words_path)
+
+    custom_words_path = core.profile.read_path(
+        core.profile.get('speech_to_text.pocketsphinx.custom_words'))
 
     # Return custom_words
     if not os.path.exists(custom_words_path):

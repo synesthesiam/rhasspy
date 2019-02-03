@@ -86,9 +86,11 @@ class PocketsphinxWakeListener(RhasspyActor):
         self.decoder.process_raw(data, False, False)
         hyp = self.decoder.hyp()
         if hyp:
-            self.decoder.end_utt()
-            self.decoder_started = False
-            return hyp.hypstr()
+            if self.decoder_started:
+                self.decoder.end_utt()
+                self.decoder_started = False
+
+            return hyp.hypstr
 
         return None
 
@@ -129,6 +131,7 @@ class PocketsphinxWakeListener(RhasspyActor):
                 decoder_config.set_string('-mllr', mllr_path)
 
             self.decoder = pocketsphinx.Decoder(decoder_config)
+            self.decoder_started = False
 
 # -----------------------------------------------------------------------------
 # Snowboy wake listener

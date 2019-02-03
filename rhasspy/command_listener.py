@@ -59,6 +59,8 @@ class WebrtcvadCommandListener(RhasspyActor):
         self.min_sec = self.settings['min_sec']  # min seconds that command must last
         self.silence_sec = self.settings['silence_sec']  # min seconds of silence after command
         self.timeout_sec = self.settings['timeout_sec']  # max seconds that command can last
+        self.throwaway_buffers = self.settings['throwaway_buffers']
+        self.speech_buffers = self.settings['speech_buffers']
 
         self.seconds_per_buffer = self.chunk_size / self.sample_rate
         self.max_buffers = int(math.ceil(self.timeout_sec / self.seconds_per_buffer))
@@ -78,8 +80,11 @@ class WebrtcvadCommandListener(RhasspyActor):
         self.chunk = bytes()
         self.silence_buffers = int(math.ceil(self.silence_sec / self.seconds_per_buffer))
         self.min_phrase_buffers = int(math.ceil(self.min_sec / self.seconds_per_buffer))
+        self.throwaway_buffers_left = self.throwaway_buffers
+        self.speech_buffers_left = self.speech_buffers
         self.in_phrase = False
         self.after_phrase = False
+        self.buffer_count = 0
 
     def in_loaded(self, message, sender):
         if isinstance(message, ListenForCommand):
@@ -140,6 +145,8 @@ class WebrtcvadCommandListener(RhasspyActor):
         finished = False
         timeout = False
 
+        self.buffer_count += 1
+
         # Check maximum number of seconds to record
         self.max_buffers -= 1
         if self.max_buffers <= 0:
@@ -148,9 +155,17 @@ class WebrtcvadCommandListener(RhasspyActor):
             timeout = True
             self._logger.warn('Timeout')
 
+        # Throw away first N buffers (noise)
+        if self.throwaway_buffers_left > 0:
+            self.throwaway_buffers_left -= 1
+            return False, False
+
         # Detect speech in chunk
         is_speech = self.vad.is_speech(data, self.sample_rate)
-        if is_speech and not self.in_phrase:
+
+        if is_speech and self.speech_buffers_left > 0:
+            self.speech_buffers_left -= 1
+        elif is_speech and not self.in_phrase:
             # Start of phrase
             self.in_phrase = True
             self.after_phrase = False
@@ -165,7 +180,10 @@ class WebrtcvadCommandListener(RhasspyActor):
             self.buffer += data
         elif not is_speech:
             # Outside of speech
-            if self.after_phrase and (self.silence_buffers > 0):
+            if not self.in_phrase:
+                # Reset
+                self.speech_buffers_left = self.speech_buffers
+            elif self.after_phrase and (self.silence_buffers > 0):
                 # After phrase, before stop
                 self.silence_buffers -= 1
                 self.buffer += data

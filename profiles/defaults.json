@@ -37,7 +37,9 @@
             "vad_mode": 0,
             "min_sec": 2.0,
             "silence_sec": 0.5,
-            "timeout_sec": 30.0
+            "timeout_sec": 30.0,
+            "throwaway_buffers": 10,
+            "speech_buffers": 5
         }
     },
     "mqtt": {
