@@ -94,6 +94,17 @@ Available profile sections and settings are:
   * `hermes` - configuration for MQTT "speakers" ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
     * WAV data published to `hermes/audioServer/<SITE_ID>/playBytes/<REQUEST_ID>`
     * Requires MQTT to be enabled
+* `command`
+  * `system` - which voice command listener system to use (`webrtcvad`)
+  * `webrtcvad` - configuration for [webrtcvad](https://github.com/wiseman/py-webrtcvad) system
+    * `sample_rate` - sample rate of input audio
+    * `chunk_size` - bytes per buffer (must be 10,20,30 ms)
+    * `vad_mode` - sensitivity of `webrtcvad` (0-3)
+    * `min_sec` - minimum number of seconds in a command
+    * `silence_sec` - number of seconds of silences after voice command before stopping
+    * `timeout_sec` - maximum number of seconds before stopping
+    * `throwaway_buffers` - number of buffers to drop when recording starts
+    * `speech_buffers` - number of buffers with speech before command starts
 * `tuning` - configuration for acoustic model tuning
   * `system` - system for tuning (currently only `sphinxtrain`)
   * `sphinxtrain` - configuration for [sphinxtrain](https://github.com/cmusphinx/sphinxtrain) based acoustic model tuning
