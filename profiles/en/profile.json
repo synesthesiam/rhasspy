@@ -19,10 +19,19 @@
         "access_token": ""
     },
     "speech_to_text": {
-        "system": "pocketsphinx"
+        "system": "pocketsphinx",
+        "remote": {
+            "url": "http://my-server:12101/api/speech-to-text"
+        }
     },
     "intent": {
-        "system": "fuzzywuzzy"
+        "system": "fuzzywuzzy",
+        "rasa": {
+            "url": "http://localhost:5000/"
+        },
+        "remote": {
+            "url": "http://my-server:12101/api/text-to-intent"
+        }
     },
     "wake": {
         "snowboy": {
@@ -30,9 +39,32 @@
         },
         "pocketsphinx": {
             "keyphrase": "okay rhasspy"
+        },
+        "system": "pocketsphinx",
+        "precise": {
+            "model": "okay-rhasspy.pb"
+        },
+        "hermes": {
+            "wakeword_id": "default"
         }
     },
     "microphone": {
-        "system": "pyaudio"
+        "system": "pyaudio",
+        "pyaudio": {
+            "device": ""
+        }
+    },
+    "rhasspy": {
+        "listen_on_start": true
+    },
+    "sounds": {
+        "system": "aplay"
+    },
+    "mqtt": {
+        "enabled": false,
+        "host": "localhost",
+        "password": "",
+        "username": "",
+        "site_id": "default"
     }
 }

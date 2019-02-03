@@ -32,7 +32,7 @@ class RhasspyCore:
                  profile_name: str,
                  profiles_dirs: List[str],
                  actor_system: Optional[ActorSystem] = None,
-                 do_logging=True) -> None:
+                 do_logging:bool=True) -> None:
 
         self._logger = logging.getLogger(self.__class__.__name__)
         self.profiles_dirs = profiles_dirs
@@ -76,12 +76,16 @@ class RhasspyCore:
     def get_microphones(self, system:Optional[str]=None) -> Dict[Any, Any]:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, GetMicrophones(system))
+            result = sys.ask(self.dialogue_manager, GetMicrophones(system))
+            assert isinstance(result, dict)
+            return result
 
     def test_microphones(self, system:Optional[str]=None) -> Dict[Any, Any]:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, TestMicrophones(system))
+            result = sys.ask(self.dialogue_manager, TestMicrophones(system))
+            assert isinstance(result, dict)
+            return result
 
     # -------------------------------------------------------------------------
 
@@ -89,37 +93,47 @@ class RhasspyCore:
         assert self.actor_system is not None
         self.actor_system.tell(self.dialogue_manager, ListenForWakeWord())
 
-
-    def listen_for_command(self, handle=True) -> Dict[str, Any]:
+    def listen_for_command(self, handle:bool=True) -> Dict[str, Any]:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, ListenForCommand(handle=handle))
+            result = sys.ask(self.dialogue_manager, ListenForCommand(handle=handle))
+            assert isinstance(result, dict)
+            return result
 
-    def record_command(self, timeout=None) -> VoiceCommand:
+    def record_command(self, timeout:Optional[float]=None) -> VoiceCommand:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, GetVoiceCommand(timeout=timeout))
+            result = sys.ask(self.dialogue_manager,
+                             GetVoiceCommand(timeout=timeout))
+            assert isinstance(result, VoiceCommand)
+            return result
 
     # -------------------------------------------------------------------------
 
     def transcribe_wav(self, wav_data: bytes) -> WavTranscription:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, TranscribeWav(wav_data, handle=False))
+            result = sys.ask(self.dialogue_manager, TranscribeWav(wav_data, handle=False))
+            assert isinstance(result, WavTranscription)
+            return result
 
     def recognize_intent(self, text: str) -> IntentRecognized:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, RecognizeIntent(text, handle=False))
+            result = sys.ask(self.dialogue_manager, RecognizeIntent(text, handle=False))
+            assert isinstance(result, IntentRecognized)
+            return result
 
     def handle_intent(self, intent: Dict[str, Any]) -> IntentHandled:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, HandleIntent(intent))
+            result = sys.ask(self.dialogue_manager, HandleIntent(intent))
+            assert isinstance(result, IntentHandled)
+            return result
 
     # -------------------------------------------------------------------------
 
-    def start_recording_wav(self, buffer_name:str = ''):
+    def start_recording_wav(self, buffer_name:str = '') -> None:
         assert self.actor_system is not None
         self.actor_system.tell(self.dialogue_manager,
                                StartRecordingToBuffer(buffer_name))
@@ -127,8 +141,10 @@ class RhasspyCore:
     def stop_recording_wav(self, buffer_name:str = '') -> AudioData:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            return self.actor_system.ask(self.dialogue_manager,
-                                         StopRecordingToBuffer(buffer_name))
+            result = self.actor_system.ask(self.dialogue_manager,
+                                           StopRecordingToBuffer(buffer_name))
+            assert isinstance(result, AudioData)
+            return result
 
     # -------------------------------------------------------------------------
 
@@ -145,24 +161,33 @@ class RhasspyCore:
     def get_word_pronunciations(self, word: str, n: int = 5) -> WordPronunciation:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, GetWordPronunciations(word, n))
+            result = sys.ask(self.dialogue_manager, GetWordPronunciations(word, n))
+            assert isinstance(result, WordPronunciation)
+            return result
 
     def get_word_phonemes(self, word: str) -> WordPhonemes:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, GetWordPhonemes(word))
+            result = sys.ask(self.dialogue_manager, GetWordPhonemes(word))
+            assert isinstance(result, WordPhonemes)
+            return result
 
     def speak_word(self, word: str) -> WordSpoken:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, SpeakWord(word))
+            result = sys.ask(self.dialogue_manager, SpeakWord(word))
+            assert isinstance(result, WordSpoken)
+            return result
 
     # -------------------------------------------------------------------------
 
     def train(self) -> Union[ProfileTrainingComplete, ProfileTrainingFailed]:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, TrainProfile())
+            result = sys.ask(self.dialogue_manager, TrainProfile())
+            assert isinstance(result, ProfileTrainingComplete) \
+                or isinstance(result, ProfileTrainingFailed)
+            return result
 
     # -------------------------------------------------------------------------
 
@@ -176,7 +201,9 @@ class RhasspyCore:
     def wakeup_and_wait(self) -> WakeWordDetected:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            return sys.ask(self.dialogue_manager, ListenForWakeWord())
+            result = sys.ask(self.dialogue_manager, ListenForWakeWord())
+            assert isinstance(result, WakeWordDetected)
+            return result
 
     # -------------------------------------------------------------------------
 

@@ -1,6 +1,11 @@
-# intent:GetTime
-- what time is it
-- tell me the time
+# intent:GetTemperature
+- whats the temperature
+- how hot is it
+- how cold is it
+
+# intent:GetGarageState
+- is the garage door open
+- is the garage door closed
 
 # intent:ChangeLightColor
 - set the [bedroom light](name) to [red](color)
@@ -21,15 +26,6 @@
 - make [bedroom light](name) [red](color)
 - make [bedroom light](name) [green](color)
 - make [bedroom light](name) [blue](color)
-
-# intent:GetGarageState
-- is the garage door open
-- is the garage door closed
-
-# intent:GetTemperature
-- whats the temperature
-- how hot is it
-- how cold is it
 
 # intent:ChangeLightState
 - turn [on](state) the [living room lamp](name)
@@ -56,4 +52,8 @@
 - turn [garage light](name) [off](state)
 - turn [bedroom light](name) [on](state)
 - turn [bedroom light](name) [off](state)
+
+# intent:GetTime
+- what time is it
+- tell me the time
 

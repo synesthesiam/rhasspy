@@ -1,4 +1,17 @@
 {
+    "command": {
+        "system": "webrtcvad",
+        "webrtcvad": {
+            "chunk_size": 960,
+            "min_sec": 2,
+            "sample_rate": 16000,
+            "silence_sec": 0.5,
+            "speech_buffers": 5,
+            "throwaway_buffers": 10,
+            "timeout_sec": 30,
+            "vad_mode": 0
+        }
+    },
     "home_assistant": {
         "access_token": "",
         "api_password": "",
@@ -24,23 +37,10 @@
     },
     "language": "en",
     "microphone": {
-        "system": "pyaudio",
         "pyaudio": {
             "frames_per_buffer": 480
-        }
-    },
-    "command": {
-        "system": "webrtcvad",
-        "webrtcvad": {
-            "sample_rate": 16000,
-            "chunk_size": 960,
-            "vad_mode": 0,
-            "min_sec": 2.0,
-            "silence_sec": 0.5,
-            "timeout_sec": 30.0,
-            "throwaway_buffers": 10,
-            "speech_buffers": 5
-        }
+        },
+        "system": "pyaudio"
     },
     "mqtt": {
         "enabled": false,
@@ -54,8 +54,8 @@
     "rhasspy": {
         "default_profile": "en",
         "listen_on_start": true,
-        "preload_profile": true,
-        "load_timeout_sec": 15
+        "load_timeout_sec": 15,
+        "preload_profile": true
     },
     "sounds": {
         "recorded": "etc/wav/beep_lo.wav",
@@ -112,23 +112,23 @@
         "system": "sphinxtrain"
     },
     "wake": {
+        "hermes": {
+            "wakeword_id": "default"
+        },
         "pocketsphinx": {
             "keyphrase": "okay rhasspy",
             "mllr_matrix": "wake_mllr",
             "threshold": 1e-30
         },
+        "precise": {
+            "model": "okay-rhasspy.pb",
+            "sensitivity": 0.5,
+            "trigger_level": 3
+        },
         "snowboy": {
             "audio_gain": 1,
             "model": "snowboy.umdl",
             "sensitivity": 0.5
-        },
-        "precise": {
-            "trigger_level": 3,
-            "model": "okay-rhasspy.pb",
-            "sensitivity": 0.5
-        },
-        "hermes": {
-            "wakeword_id": "default"
         },
         "system": "pocketsphinx"
     }

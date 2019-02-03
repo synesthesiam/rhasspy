@@ -6,6 +6,8 @@ import logging
 from urllib.parse import urljoin
 from typing import Dict, Any, Optional, Tuple, List
 
+from thespian.actors import ActorAddress
+
 from .actor import RhasspyActor
 from .profiles import Profile
 from .utils import empty_intent
@@ -15,21 +17,25 @@ from .utils import empty_intent
 # -----------------------------------------------------------------------------
 
 class RecognizeIntent:
-    def __init__(self, text: str, receiver=None, handle=True):
+    def __init__(self, text: str,
+                 receiver:Optional[ActorAddress]=None,
+                 handle:bool=True):
         self.text = text
         self.receiver = receiver
         self.handle = handle
 
 class IntentRecognized:
-    def __init__(self, intent: Dict[str, Any], handle=True):
+    def __init__(self,
+                 intent: Dict[str, Any],
+                 handle:bool=True):
         self.intent = intent
         self.handle = handle
 
 # -----------------------------------------------------------------------------
 
-class DummyIntentRecognizer:
+class DummyIntentRecognizer(RhasspyActor):
     '''Always returns an empty intent'''
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, RecognizeIntent):
             self.send(message.receiver or sender,
                       IntentRecognized(empty_intent()))
@@ -40,15 +46,15 @@ class DummyIntentRecognizer:
 
 class RemoteRecognizer(RhasspyActor):
     '''HTTP based recognizer for remote rhasspy server'''
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         self.remote_url = self.profile.get('intent.remote.url')
 
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, RecognizeIntent):
             try:
                 intent = self.recognize(message.text)
             except Exception as e:
-                self._logger.exception()
+                self._logger.exception('in_started')
                 intent = empty_intent()
 
             self.send(message.receiver or sender,
@@ -78,17 +84,17 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
         RhasspyActor.__init__(self)
         self.examples: Optional[Dict[str, Any]] = None
 
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         self.load_examples()
         self.transition('loaded')
 
-    def in_loaded(self, message, sender):
+    def in_loaded(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, RecognizeIntent):
             try:
                 self.load_examples()
                 intent = self.recognize(message.text)
             except Exception as e:
-                self._logger.exception()
+                self._logger.exception('in_loaded')
                 intent = empty_intent()
 
             self.send(message.receiver or sender,
@@ -134,7 +140,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def load_examples(self):
+    def load_examples(self) -> None:
         if self.examples is None:
             '''Load JSON file with intent examples if not already cached'''
             examples_path = self.profile.read_path(
@@ -154,18 +160,18 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
 
 class RasaIntentRecognizer(RhasspyActor):
     '''Uses rasaNLU HTTP API to recognize intents.'''
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         rasa_config = self.profile.get('intent.rasa', {})
         url = rasa_config.get('url', 'http://locahost:5000')
         self.project_name = rasa_config.get('project_name', 'rhasspy_%s' % self.profile.name)
         self.parse_url = urljoin(url, 'parse')
 
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, RecognizeIntent):
             try:
                 intent = self.recognize(message.text)
             except Exception as e:
-                self._logger.exception()
+                self._logger.exception('in_started')
                 intent = empty_intent()
 
             self.send(message.receiver or sender,
@@ -197,11 +203,11 @@ class AdaptIntentRecognizer(RhasspyActor):
         RhasspyActor.__init__(self)
         self.engine = None
 
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         self.load_engine()
         self.transition('loaded')
 
-    def in_loaded(self, message, sender):
+    def in_loaded(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, RecognizeIntent):
             try:
                 self.load_engine()
@@ -248,7 +254,7 @@ class AdaptIntentRecognizer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def load_engine(self):
+    def load_engine(self) -> None:
         '''Configure Adapt engine if not already cached'''
         if self.engine is None:
             from adapt.intent import IntentBuilder
@@ -260,6 +266,7 @@ class AdaptIntentRecognizer(RhasspyActor):
 
             # Create empty engine
             self.engine = IntentDeterminationEngine()
+            assert self.engine is not None
 
             # { intents: { ... }, entities: { ... } }
             with open(config_path, 'r') as config_file:

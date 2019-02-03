@@ -49,7 +49,7 @@ class StopRecordingToBuffer:
 # Dummy audio recorder
 # -----------------------------------------------------------------------------
 
-class DummyAudioRecorder:
+class DummyAudioRecorder(RhasspyActor):
     '''Does nothing'''
     pass
 

@@ -26,7 +26,7 @@ def read_dict(dict_file: Iterable[str],
         if len(line) == 0:
             continue
 
-        word, pronounce = re.split('\s+', line, maxsplit=1)
+        word, pronounce = re.split(r'\s+', line, maxsplit=1)
         idx = word.find('(')
         if idx > 0:
             word = word[:idx]

@@ -2,7 +2,9 @@
 import os
 import logging
 from urllib.parse import urljoin
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+
+from thespian.actors import ActorAddress
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -10,7 +12,9 @@ from .profiles import Profile
 # -----------------------------------------------------------------------------
 
 class HandleIntent:
-    def __init__(self, intent: Dict[str, Any], receiver = None) -> None:
+    def __init__(self,
+                 intent: Dict[str, Any],
+                 receiver:Optional[ActorAddress]=None) -> None:
         self.intent = intent
         self.receiver = receiver
 
@@ -23,7 +27,7 @@ class IntentHandled:
 class HomeAssistantIntentHandler(RhasspyActor):
     '''Forward intents to Home Assistant as events.'''
 
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, HandleIntent):
             intent = message.intent
             try:

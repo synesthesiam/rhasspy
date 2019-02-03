@@ -5,7 +5,9 @@ import tempfile
 import re
 from urllib.parse import urljoin
 from collections import defaultdict, Counter
-from typing import Dict, List, Set, Any
+from typing import Dict, List, Set, Any, Optional
+
+from thespian.actors import ActorAddress
 
 from .actor import RhasspyActor
 from .stt_train import SBI_TYPE
@@ -16,8 +18,8 @@ from .stt_train import SBI_TYPE
 
 class TrainIntent:
     def __init__(self, tagged_sentences: Dict[str, List[str]],
-                 sentences_by_intent,
-                 receiver=None):
+                 sentences_by_intent: SBI_TYPE,
+                 receiver:Optional[ActorAddress]=None):
         self.tagged_sentences = tagged_sentences
         self.sentences_by_intent = sentences_by_intent
         self.receiver = receiver
@@ -29,7 +31,7 @@ class IntentTrainingComplete:
 
 class DummyIntentTrainer(RhasspyActor):
     '''Does nothing.'''
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, TrainIntent):
             self.send(message.receiver or sender,
                       IntentTrainingComplete())
@@ -41,7 +43,7 @@ class DummyIntentTrainer(RhasspyActor):
 
 class FuzzyWuzzyIntentTrainer(RhasspyActor):
     '''Save examples to JSON for fuzzy string matching later.'''
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, TrainIntent):
             self.train(message.tagged_sentences,
                        message.sentences_by_intent)
@@ -51,7 +53,7 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
 
     def train(self,
               tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SBI_TYPE):
+              sentences_by_intent: SBI_TYPE) -> None:
 
         examples_path = self.profile.write_path(
             self.profile.get('intent.fuzzywuzzy.examples_json'))
@@ -90,7 +92,7 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
 
 class RasaIntentTrainer(RhasspyActor):
     '''Uses rasaNLU HTTP API to train a recognizer.'''
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, TrainIntent):
             self.train(message.tagged_sentences,
                        message.sentences_by_intent)
@@ -102,7 +104,7 @@ class RasaIntentTrainer(RhasspyActor):
 
     def train(self,
               tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SBI_TYPE):
+              sentences_by_intent: SBI_TYPE) -> None:
 
         import requests
 
@@ -167,7 +169,7 @@ class RasaIntentTrainer(RhasspyActor):
 
 class AdaptIntentTrainer(RhasspyActor):
     '''Configure a Mycroft Adapt engine.'''
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, TrainIntent):
             self.train(message.tagged_sentences,
                        message.sentences_by_intent)
@@ -178,7 +180,7 @@ class AdaptIntentTrainer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def train(self, tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SBI_TYPE):
+              sentences_by_intent: SBI_TYPE) -> None:
 
         # Load "stop" words (common words that are excluded from training)
         stop_words: Set[str] = set()

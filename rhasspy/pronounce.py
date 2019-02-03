@@ -4,7 +4,7 @@ import re
 import logging
 import subprocess
 import tempfile
-from typing import Dict, Tuple, List, Optional
+from typing import Dict, Tuple, List, Optional, Any
 
 from thespian.actors import ActorAddress
 
@@ -71,7 +71,7 @@ class PhonetisaurusPronounce(RhasspyActor):
         RhasspyActor.__init__(self)
         self.speed = 80  # wpm for speaking
 
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, SpeakWord):
             espeak_phonemes, wav_data = self.speak(message.word)
             self.send(message.receiver or sender,
@@ -174,7 +174,10 @@ class PhonetisaurusPronounce(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def _lookup_word(self, word: str, word_dict, n=5) -> Tuple[bool, List[str]]:
+    def _lookup_word(self,
+                     word: str,
+                     word_dict: Dict[str, List[str]],
+                     n:int=5) -> Tuple[bool, List[str]]:
         '''Look up or guess word pronunciations.'''
 
         # Dictionary uses upper-case letters

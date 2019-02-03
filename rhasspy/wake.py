@@ -3,6 +3,7 @@ import os
 import threading
 import logging
 import json
+import re
 from uuid import uuid4
 from typing import Optional, Any, List
 
@@ -12,7 +13,7 @@ from .actor import RhasspyActor
 from .profiles import Profile
 from .audio_recorder import StartStreaming, StopStreaming, AudioData
 from .mqtt import MqttSubscribe, MqttMessage
-from .utils import ByteStream
+from .utils import ByteStream, read_dict
 
 # -----------------------------------------------------------------------------
 
@@ -122,6 +123,21 @@ class PocketsphinxWakeListener(RhasspyActor):
             self.threshold = float(self.profile.get('wake.pocketsphinx.threshold', 1e-40))
             self.keyphrase = self.profile.get('wake.pocketsphinx.keyphrase', '')
             assert len(self.keyphrase) > 0, 'No wake keyphrase'
+
+            # Verify that keyphrase words are in dictionary
+            keyphrase_words = re.split(r'\s+', self.keyphrase)
+            with open(dict_path, 'r') as dict_file:
+                word_dict = read_dict(dict_file)
+
+            dict_upper = self.profile.get('speech_to_text.dictionary_upper', False)
+            for word in keyphrase_words:
+                if dict_upper:
+                    word = word.upper()
+                else:
+                    word = word.lower()
+
+                if not word in word_dict:
+                    self._logger.warn('%s not in dictionary' % word)
 
             self._logger.debug('Loading wake decoder with hmm=%s, dict=%s' % (hmm_path, dict_path))
 
@@ -291,7 +307,6 @@ class PreciseWakeListener(RhasspyActor):
 
         if self.runner is None:
             from precise_runner import PreciseRunner
-            from utils import ByteStream
 
             self.stream = ByteStream()
 

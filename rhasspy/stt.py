@@ -46,18 +46,18 @@ class DummyDecoder(RhasspyActor):
 
 class PocketsphinxDecoder(RhasspyActor):
     '''Pocketsphinx based WAV to text decoder.'''
-    def __init__(self):
+    def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.decoder = None
 
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         self.preload = self.config.get('preload', False)
         if self.preload:
             self.load_decoder()
 
         self.transition('loaded')
 
-    def in_loaded(self, message, sender):
+    def in_loaded(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, TranscribeWav):
             self.load_decoder()
             text = self.transcribe_wav(message.wav_data)
@@ -66,7 +66,7 @@ class PocketsphinxDecoder(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def load_decoder(self):
+    def load_decoder(self) -> None:
         if self.decoder is None:
             # Load decoder
             import pocketsphinx
@@ -131,10 +131,10 @@ class PocketsphinxDecoder(RhasspyActor):
 
 class RemoteDecoder(RhasspyActor):
     '''Forwards speech to text request to a rmemote Rhasspy server'''
-    def to_started(self, from_state):
+    def to_started(self, from_state:str) -> None:
         self.remote_url = self.profile.get('speech_to_text.remote.url')
 
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, TranscribeWav):
             text = self.transcribe_wav(message.wav_data)
             self.send(message.receiver or sender,

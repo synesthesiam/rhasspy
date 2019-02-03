@@ -1,11 +1,25 @@
 {
-    "GetTime": [
+    "GetTemperature": [
         {
-            "text": "what time is it",
+            "text": "whats the temperature",
             "slots": {}
         },
         {
-            "text": "tell me the time",
+            "text": "how hot is it",
+            "slots": {}
+        },
+        {
+            "text": "how cold is it",
+            "slots": {}
+        }
+    ],
+    "GetGarageState": [
+        {
+            "text": "is the garage door open",
+            "slots": {}
+        },
+        {
+            "text": "is the garage door closed",
             "slots": {}
         }
     ],
@@ -207,30 +221,6 @@
                     "blue"
                 ]
             }
-        }
-    ],
-    "GetGarageState": [
-        {
-            "text": "is the garage door open",
-            "slots": {}
-        },
-        {
-            "text": "is the garage door closed",
-            "slots": {}
-        }
-    ],
-    "GetTemperature": [
-        {
-            "text": "whats the temperature",
-            "slots": {}
-        },
-        {
-            "text": "how hot is it",
-            "slots": {}
-        },
-        {
-            "text": "how cold is it",
-            "slots": {}
         }
     ],
     "ChangeLightState": [
@@ -497,6 +487,16 @@
                     "off"
                 ]
             }
+        }
+    ],
+    "GetTime": [
+        {
+            "text": "what time is it",
+            "slots": {}
+        },
+        {
+            "text": "tell me the time",
+            "slots": {}
         }
     ]
 }

@@ -5,7 +5,9 @@ import subprocess
 import logging
 import shutil
 from collections import defaultdict
-from typing import Dict, List, Any, Tuple, Set
+from typing import Dict, List, Any, Tuple, Set, Optional
+
+from thespian.actors import ActorAddress
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -19,14 +21,16 @@ SBI_TYPE = Dict[str, List[Tuple[str, List[Tuple[str, str]], List[str]]]]
 # -----------------------------------------------------------------------------
 
 class TrainSpeech:
-    def __init__(self, tagged_sentences: Dict[str, List[str]],
-                 receiver=None):
+    def __init__(self,
+                 tagged_sentences: Dict[str, List[str]],
+                 receiver:Optional[ActorAddress]=None) -> None:
         self.tagged_sentences = tagged_sentences
         self.receiver = receiver
 
 class SpeechTrainingComplete:
-    def __init__(self, tagged_sentences: Dict[str, List[str]],
-                 sentences_by_intent):
+    def __init__(self,
+                 tagged_sentences: Dict[str, List[str]],
+                 sentences_by_intent: SBI_TYPE) -> None:
         self.tagged_sentences = tagged_sentences
         self.sentences_by_intent = sentences_by_intent
 
@@ -37,21 +41,22 @@ class SpeechTrainingFailed:
 
 class PocketsphinxSpeechTrainer(RhasspyActor):
     '''Trains an ARPA language model using opengrm.'''
-    def to_started(self, from_state):
-        self.word_pronouncer = self.config['word_pronouncer']
-        self.tagged_sentences = None
-        self.unknown_words = None
-        self.waiting_words = None
-        self.receiver = None
-        self.dictionary_upper = self.profile.get('speech_to_text.dictionary_upper', False)
+    def to_started(self, from_state:str) -> None:
+        self.word_pronouncer:ActorAddress = self.config['word_pronouncer']
+        self.tagged_sentences:Dict[str, List[str]] = {}
+        self.unknown_words:Dict[str, Optional[WordPronunciation]] = {}
+        self.waiting_words:List[str] = []
+        self.receiver:Optional[ActorAddress] = None
+        self.dictionary_upper:bool = \
+            self.profile.get('speech_to_text.dictionary_upper', False)
 
-    def in_started(self, message, sender):
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, TrainSpeech):
             self.receiver = message.receiver or sender
             self.tagged_sentences = message.tagged_sentences
             self.transition('writing_dictionary')
 
-    def to_writing_dictionary(self, from_state):
+    def to_writing_dictionary(self, from_state:str) -> None:
         self.sentences_by_intent: SBI_TYPE = defaultdict(list)
         self.unknown_words = {
             word: None
@@ -72,13 +77,13 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
             if os.path.exists(unknown_path):
                 os.unlink(unknown_path)
 
-    def to_unknown_words(self, from_state):
+    def to_unknown_words(self, from_state:str) -> None:
         self.waiting_words = list(self.unknown_words.keys())
         for word in self.unknown_words:
             self.send(self.word_pronouncer,
                       GetWordPronunciations(word, n=1))
 
-    def in_unknown_words(self, message, sender):
+    def in_unknown_words(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, WordPronunciation):
             self.waiting_words.remove(message.word)
             self.unknown_words[message.word] = message
@@ -87,11 +92,11 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
                 self.send(self.receiver, SpeechTrainingFailed())
                 self.transition('started')
 
-    def to_writing_sentences(self, from_state):
+    def to_writing_sentences(self, from_state:str) -> None:
         self.write_sentences(self.sentences_by_intent)
         self.transition('writing_language_model')
 
-    def to_writing_language_model(self, from_state):
+    def to_writing_language_model(self, from_state:str) -> None:
         self.write_language_model()
         self.send(self.receiver,
                   SpeechTrainingComplete(self.tagged_sentences,
@@ -101,7 +106,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def write_dictionary(self, tagged_sentences: Dict[str, List[str]],
-                         sentences_by_intent: SBI_TYPE):
+                         sentences_by_intent: SBI_TYPE) -> Set[str]:
         '''Writes all required words to a CMU dictionary.
         Unknown words have their pronunciations guessed and written to a separate dictionary.
         Fails if any unknown words are found.'''
@@ -180,12 +185,13 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def write_unknown_words(self, unknown_words):
+    def write_unknown_words(self, unknown_words: Dict[str, Optional[WordPronunciation]]) -> None:
         unknown_path = self.profile.read_path(
             self.profile.get('speech_to_text.pocketsphinx.unknown_words'))
 
         with open(unknown_path, 'w') as unknown_file:
             for word, word_pron in unknown_words.items():
+                assert word_pron is not None
                 pronunciations = word_pron.pronunciations
                 phonemes = pronunciations[0]
 
@@ -199,7 +205,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def write_sentences(self, sentences_by_intent: SBI_TYPE):
+    def write_sentences(self, sentences_by_intent: SBI_TYPE) -> None:
         '''Writes all raw sentences to a text file.
         Optionally balances (repeats) sentences so all intents have the same number.'''
 
@@ -230,7 +236,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def write_language_model(self):
+    def write_language_model(self) -> None:
         '''Generates an ARPA language model using opengrm'''
         sentences_text_path = self.profile.read_path(
             self.profile.get('speech_to_text.sentences_text'))
