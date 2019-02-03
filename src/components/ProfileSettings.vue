@@ -15,7 +15,7 @@
             <button class="btn btn-primary">Save Settings</button>
 
             <div class="card mt-3">
-                <div class="card-header">Rhasspy</div>
+                <div class="card-header"><i class="fas fa-crow"></i>Rhasspy</div>
                 <div class="card-body">
                     <div class="form-group">
                         <div class="form-row">
@@ -95,7 +95,7 @@
             <h2 class="mt-3">{{ this.profile }}</h2>
 
             <div class="card mt-3">
-                <div class="card-header">Home Assistant</div>
+                <div class="card-header"><i class="fas fa-home"></i>Home Assistant</div>
                 <div class="card-body">
                     <div class="form-group">
                         <div class="form-row">
@@ -136,7 +136,7 @@
             <button class="btn btn-primary mt-3">Save Settings</button>
 
             <div class="card mt-3">
-                <div class="card-header">Wake Word</div>
+                <div class="card-header"><i class="fas fa-exclamation-circle"></i>Wake Word</div>
                 <div class="card-body">
                     <div class="form-group">
                         <div class="form-row">
@@ -217,7 +217,7 @@
             <button class="btn btn-primary mt-3">Save Settings</button>
 
             <div class="card mt-3">
-                <div class="card-header">Speech Recognition</div>
+                <div class="card-header"><i class="fas fa-phone-volume"></i>Speech Recognition</div>
                 <div class="card-body">
                     <div class="form-group">
                         <div class="form-row">
@@ -270,7 +270,7 @@
             <button class="btn btn-primary mt-3">Save Settings</button>
 
             <div class="card mt-3">
-                <div class="card-header">Intent Recognition</div>
+                <div class="card-header"><i class="fas fa-comment"></i>Intent Recognition</div>
                 <div class="card-body">
                     <div class="form-group">
                         <div class="form-row">
@@ -360,7 +360,7 @@
             <button class="btn btn-primary mt-3">Save Settings</button>
 
             <div class="card mt-3">
-                <div class="card-header">Audio Recording</div>
+                <div class="card-header"><i class="fas fa-microphone"></i>Audio Recording</div>
                 <div class="card-body">
                     <div class="form-group">
                         <div class="form-row">
@@ -442,6 +442,52 @@
 
             <button class="btn btn-primary mt-3">Save Settings</button>
 
+            <div class="card mt-3">
+                <div class="card-header"><i class="fas fa-volume-up"></i>Audio Playing</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="soundSystem" id="sound-dummy" value="dummy" v-model="soundSystem">
+                                <label class="form-check-label" for="sound-dummy">
+                                    No playback on this device
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="soundSystem" id="sound-aplay" value="aplay" v-model="soundSystem">
+                                <label class="form-check-label" for="sound-aplay">
+                                    Use <tt>aplay</tt> directly (ALSA)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="soundSystem" id="sound-mqtt" value="hermes" v-model="soundSystem">
+                                <label class="form-check-label" for="sound-mqtt">
+                                    Play sound remotely with MQTT (<a href="https://docs.snips.ai/ressources/hermes-protocol">Hermes protocol</a>)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col text-muted">
+                                Rhasspy will publish WAV data on: <tt>hermes/audioServer/{{ this.mqttSiteId }}/playBytes/&lt;REQUEST_ID&gt;</tt>
+                                <div class="alert alert-danger" v-if="soundSystem == 'hermes' && !mqttEnabled">
+                                    MQTT is not enabled
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary mt-3">Save Settings</button>
+
             <h2 class="mt-5">Current</h2>
             <div class="card">
                 <div class="card-header">
@@ -504,6 +550,8 @@
              microphones: {},
              device: '',
              testing: false,
+
+             soundSystem: '',
 
              wakeOnStart: false,
              wakeKeyphrase: '',
@@ -588,6 +636,11 @@
                                var devicePath = 'microphone.' + this.audioSystem + '.device'
                                this.device = this._.get(this.profileSettings, devicePath,
                                                         this._.get(this.defaultSettings, devicePath, ''))
+
+                               // Speakers
+                               this.soundSystem = this._.get(this.profileSettings,
+                                                             'sounds.system',
+                                                             this.defaultSettings.sounds.system)
 
                                // MQTT
                                this.mqttEnabled = this._.get(this.profileSettings,
@@ -695,6 +748,11 @@
              this._.set(this.profileSettings,
                         'microphone.' + this.audioSystem + '.device',
                         this.device)
+
+             // Speakers
+             this._.set(this.profileSettings,
+                        'sounds.system',
+                        this.soundSystem)
 
              // MQTT
              this._.set(this.profileSettings,
