@@ -25,8 +25,14 @@ class HomeAssistantIntentHandler(RhasspyActor):
 
     def in_started(self, message, sender):
         if isinstance(message, HandleIntent):
-            intent = self.handle_intent(message.intent)
-            self.send(message.receiver or sender, IntentHandled(intent))
+            intent = message.intent
+            try:
+                intent = self.handle_intent(intent)
+            except Exception as e:
+                self._logger.exception('handle_intent')
+
+            self.send(message.receiver or sender,
+                      IntentHandled(intent))
 
     # -------------------------------------------------------------------------
 

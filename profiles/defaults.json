@@ -49,7 +49,6 @@
         "port": 1883,
         "reconnect_sec": 5,
         "site_id": "default",
-        "wakeword_id": "default",
         "username": ""
     },
     "rhasspy": {
@@ -127,6 +126,9 @@
             "trigger_level": 3,
             "model": "okay-rhasspy.pb",
             "sensitivity": 0.5
+        },
+        "hermes": {
+            "wakeword_id": "default"
         },
         "system": "pocketsphinx"
     }

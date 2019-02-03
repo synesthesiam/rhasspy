@@ -2,11 +2,13 @@
 import os
 import threading
 import logging
+import json
 from uuid import uuid4
 
 from .actor import RhasspyActor
 from .profiles import Profile
 from .audio_recorder import StartStreaming, StopStreaming, AudioData
+from .mqtt import MqttSubscribe, MqttMessage
 
 # -----------------------------------------------------------------------------
 
@@ -296,3 +298,50 @@ class PreciseWakeListener(RhasspyActor):
 
             logger.debug('Loaded Mycroft Precise (model=%s, sensitivity=%s, trigger_level=%s)' \
                          % (self.model_path, sensitivity, trigger_level))
+
+# -----------------------------------------------------------------------------
+# MQTT-based wake listener (Hermes protocol)
+# https://docs.snips.ai/ressources/hermes-protocol
+# -----------------------------------------------------------------------------
+
+class HermesWakeListener(RhasspyActor):
+    '''Listens for a wake word using MQTT.'''
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.receivers = []
+
+    def to_started(self, from_state):
+        self.mqtt = self.config['mqtt']
+
+        # Subscribe to wake topic
+        self.site_id = self.profile.get('mqtt.site_id', 'default')
+        self.wakeword_id = self.profile.get('wake.hermes.wakeword_id', 'default')
+        self.wake_topic = 'hermes/hotword/%s/detected' % self.wakeword_id
+        self.send(self.mqtt, MqttSubscribe(self.wake_topic))
+
+        self.transition('loaded')
+
+    def in_loaded(self, message, sender):
+        if isinstance(message, ListenForWakeWord):
+            self.receivers.append(message.receiver or sender)
+            self.transition('listening')
+
+    def in_listening(self, message, sender):
+        if isinstance(message, MqttMessage):
+            if message.topic == self.wake_topic:
+                # Check site ID
+                payload = json.loads(message.payload.decode())
+                payload_site_id = payload.get('siteId', '')
+                if payload_site_id != self.site_id:
+                    self._logger.debug('Got detected message, but wrong site id (%s)' % payload_site_id)
+                    return
+
+                # Pass downstream to receivers
+                self._logger.debug('Hotword detected (%s)' % self.wakeword_id)
+                result = WakeWordDetected(self.wakeword_id)
+                for receiver in self.receivers:
+                    self.send(receiver, result)
+        elif isinstance(message, StopListeningForWakeWord):
+            self.receivers.remove(message.receiver or sender)
+            if len(self.receivers) == 0:
+                self.transition('loaded')

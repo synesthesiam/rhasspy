@@ -211,6 +211,25 @@
                             </div>
                         </div>
                     </div>
+                    <hr>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="wake-system" id="mqtt-wake" value="hermes" v-model="rhasspyWake">
+                                <label class="form-check-label" for="mqtt-wake">
+                                    Wake up on MQTT message (<a href="https://docs.snips.ai/ressources/hermes-protocol">Hermes protocol</a>)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col text-muted">
+                                Rhasspy will listen for a message on: <tt>hermes/hotword/{{ this.wakewordId }}/detected</tt>
+                                <div class="alert alert-danger" v-if="rhasspyWake == 'hermes' && !mqttEnabled">
+                                    MQTT is not enabled
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -545,6 +564,7 @@
              rhasspyWake: '',
              snowboyModel: '',
              preciseModel: '',
+             wakewordId: '',
 
              audioSystem: '',
              microphones: {},
@@ -605,6 +625,10 @@
                                this.rhasspyWake = this._.get(this.profileSettings,
                                                              'wake.system',
                                                              this.defaultSettings.wake.system)
+
+                               this.wakewordId = this._.get(this.profileSettings,
+                                                            'wake.hermes.wakeword_id',
+                                                            this.defaultSettings.wake.hermes.wakeword_id)
 
                                // Speech
                                this.rhasspySTT = this._.get(this.profileSettings,
@@ -739,6 +763,10 @@
              this._.set(this.profileSettings,
                         'wake.pocketsphinx.keyphrase',
                         this.wakeKeyphrase)
+
+             this._.set(this.profileSettings,
+                        'wake.hermes.wakeword_id',
+                        this.wakewordId)
 
              // Microphone
              this._.set(this.profileSettings,
