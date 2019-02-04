@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional, List, Type
 
 from thespian.actors import ActorAddress, ActorExitRequest, WakeupMessage
 
-from .actor import RhasspyActor, ConfigureEvent, Configured
+from .actor import RhasspyActor, ConfigureEvent, Configured, StateTransition
 from .wake import ListenForWakeWord, StopListeningForWakeWord, WakeWordDetected
 from .command_listener import ListenForCommand, VoiceCommand
 from .audio_recorder import StartRecordingToBuffer, StopRecordingToBuffer
@@ -50,6 +50,9 @@ class GetVoiceCommand:
         self.receiver = receiver
         self.timeout = timeout
 
+class GetActorStates:
+    pass
+
 # -----------------------------------------------------------------------------
 
 class DialogueManager(RhasspyActor):
@@ -64,6 +67,7 @@ class DialogueManager(RhasspyActor):
         self.intent_receiver:Optional[ActorAddress] = None
         self.training_receiver:Optional[ActorAddress] = None
         self.handle:bool = True
+        self.actor_states:Dict[str, str] = {}
 
         self.load_actors()
 
@@ -98,6 +102,9 @@ class DialogueManager(RhasspyActor):
             # Inform parent actor that we're ready
             if self.send_ready:
                 self.send(self._parent, Ready(timeout=True))
+
+        elif isinstance(message, StateTransition):
+            self.handle_transition(message, sender)
 
     # -------------------------------------------------------------------------
     # Wake
@@ -352,8 +359,21 @@ class DialogueManager(RhasspyActor):
         elif isinstance(message, MqttPublish):
             # Forward directly
             self.send(self.mqtt, message)
+        elif isinstance(message, StateTransition):
+            # Track state of every actor
+            self.handle_transition(message, sender)
+        elif isinstance(message, GetActorStates):
+            self.send(sender, self.actor_states)
         else:
             self._logger.warn('Unhandled message: %s' % message)
+
+    def handle_transition(self,
+                          message:StateTransition,
+                          sender:ActorAddress) -> None:
+        self.actor_states[message.name] = message.to_state
+        topic = 'rhasspy/%s/transition/%s' % (self.profile.name, message.name)
+        payload = message.to_state.encode()
+        self.send(self.mqtt, MqttPublish(topic, payload))
 
     # -------------------------------------------------------------------------
     # Utilities

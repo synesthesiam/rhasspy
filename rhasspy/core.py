@@ -21,7 +21,8 @@ from .dialogue import (DialogueManager, GetMicrophones, TestMicrophones,
                        TranscribeWav, PlayWavData, PlayWavFile,
                        RecognizeIntent, HandleIntent,
                        ProfileTrainingComplete, ProfileTrainingFailed,
-                       MqttPublish, GetVoiceCommand, VoiceCommand)
+                       MqttPublish, GetVoiceCommand, VoiceCommand,
+                       GetActorStates)
 
 # -----------------------------------------------------------------------------
 
@@ -203,6 +204,15 @@ class RhasspyCore:
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, ListenForWakeWord())
             assert isinstance(result, WakeWordDetected)
+            return result
+
+    # -------------------------------------------------------------------------
+
+    def get_actor_states(self) -> Dict[str, str]:
+        assert self.actor_system is not None
+        with self.actor_system.private() as sys:
+            result = sys.ask(self.dialogue_manager, GetActorStates())
+            assert isinstance(result, dict)
             return result
 
     # -------------------------------------------------------------------------

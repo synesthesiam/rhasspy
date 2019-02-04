@@ -100,8 +100,9 @@ class HermesMqtt(RhasspyActor):
             self._logger.debug('Subscribed to %s' % topic)
 
         # Publish outstanding messages
-        for topic, payload in self.publications.items():
-            self.client.publish(topic, payload)
+        for topic, payloads in self.publications.items():
+            for payload in payloads:
+                self.client.publish(topic, payload)
 
         self.publications.clear()
 

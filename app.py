@@ -500,6 +500,14 @@ def api_unknown_words() -> Response:
 
 # -----------------------------------------------------------------------------
 
+@app.route('/api/actor_states', methods=['GET'])
+def api_actor_states() -> Response:
+    '''Get the states of all actors'''
+    assert core is not None
+    return jsonify(core.get_actor_states())
+
+# -----------------------------------------------------------------------------
+
 @app.errorhandler(Exception)
 def handle_error(err) -> Tuple[str, int]:
     logger.exception(err)

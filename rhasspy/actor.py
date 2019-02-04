@@ -15,6 +15,12 @@ class ConfigureEvent:
 class Configured:
     pass
 
+class StateTransition:
+    def __init__(self, name:str, from_state:str, to_state:str):
+        self.name = name
+        self.from_state = from_state
+        self.to_state = to_state
+
 # -----------------------------------------------------------------------------
 
 class RhasspyActor(Actor):
@@ -58,6 +64,9 @@ class RhasspyActor(Actor):
             getattr(self, transition_method)(from_state)
 
         self._logger.debug('%s -> %s', from_state, to_state)
+        if self._parent is not None:
+            self.send(self._parent,
+                      StateTransition(self._name, from_state, to_state))
 
         # Set state method
         state_method_name = 'in_' + self._state
