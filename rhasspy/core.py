@@ -66,11 +66,12 @@ class RhasspyCore:
         self.dialogue_manager = self.actor_system.createActor(DialogueManager)
         with self.actor_system.private() as sys:
             sys.ask(self.dialogue_manager,
-                    ConfigureEvent(self.profile, preload=preload, ready=block))
+                    ConfigureEvent(self.profile, preload=preload, ready=block,
+                                   transitions=False))
 
             # Block until ready
             if block:
-                sys.listen(timeout)
+                result = sys.listen(timeout)
 
     # -------------------------------------------------------------------------
 

@@ -29,6 +29,7 @@ class RhasspyActor(Actor):
         self._logger = logging.getLogger(self._name)
         self._state:str = ''
         self._state_method: Optional[Callable[[Any, ActorAddress], None]] = None
+        self._transitions:bool = False
 
     # -------------------------------------------------------------------------
 
@@ -40,6 +41,7 @@ class RhasspyActor(Actor):
                 self._parent: ActorAddress = sender
                 self.profile: Profile = message.profile
                 self.config: Dict[str, Any] = message.config
+                self._transitions = self.config.get('transitions', True)
                 self.transition('started')
                 self.send(sender, Configured())
             else:
@@ -64,7 +66,9 @@ class RhasspyActor(Actor):
             getattr(self, transition_method)(from_state)
 
         self._logger.debug('%s -> %s', from_state, to_state)
-        if self._parent is not None:
+
+        # Report state transition
+        if self._transitions and (self._parent is not None):
             self.send(self._parent,
                       StateTransition(self._name, from_state, to_state))
 
