@@ -290,7 +290,7 @@ class DialogueManager(RhasspyActor):
             # Get all microphones
             recorder_class = self.recorder_class
             if message.system is not None:
-                recorder_class = self._get_microphone_class(message.system)
+                recorder_class = DialogueManager.get_microphone_class(message.system)
 
             mics = recorder_class.get_microphones()
             self.send(sender, mics)
@@ -300,7 +300,7 @@ class DialogueManager(RhasspyActor):
             if message.system is not None:
                 recorder_system = message.system
 
-            recorder_class = self._get_microphone_class(recorder_system)
+            recorder_class = DialogueManager.get_microphone_class(recorder_system)
             test_path = 'microphone.%s.test_chunk_size' % recorder_system
             chunk_size = int(self.profile.get(test_path, 1024))
 
@@ -384,37 +384,37 @@ class DialogueManager(RhasspyActor):
 
         # Microphone
         mic_system = self.profile.get('microphone.system', 'dummy')
-        self.recorder_class = self._get_microphone_class(mic_system)
+        self.recorder_class = DialogueManager.get_microphone_class(mic_system)
         self.recorder:ActorAddress = self.createActor(self.recorder_class)
         self.actors['recorder'] = self.recorder
 
         # Audio player
         player_system = self.profile.get('sounds.system', 'dummy')
-        self.player_class = self._get_sound_class(player_system)
+        self.player_class = DialogueManager.get_sound_class(player_system)
         self.player:ActorAddress = self.createActor(self.player_class)
         self.actors['player'] = self.player
 
         # Wake listener
         wake_system = self.profile.get('wake.system', 'dummy')
-        self.wake_class = self._get_wake_class(wake_system)
+        self.wake_class = DialogueManager.get_wake_class(wake_system)
         self.wake:ActorAddress = self.createActor(self.wake_class)
         self.actors['wake'] = self.wake
 
         # Command listener
         command_system = self.profile.get('command.system', 'dummy')
-        self.command_class = self._get_command_class(command_system)
+        self.command_class = DialogueManager.get_command_class(command_system)
         self.command:ActorAddress = self.createActor(self.command_class)
         self.actors['command'] = self.command
 
         # Speech decoder
         decoder_system = self.profile.get('speech_to_text.system', 'dummy')
-        self.decoder_class = self._get_decoder_class(decoder_system)
+        self.decoder_class = DialogueManager.get_decoder_class(decoder_system)
         self.decoder:ActorAddress = self.createActor(self.decoder_class)
         self.actors['decoder'] = self.decoder
 
         # Intent recognizer
         recognizer_system = self.profile.get('intent.system', 'dummy')
-        self.recognizer_class = self._get_recognizer_class(recognizer_system)
+        self.recognizer_class = DialogueManager.get_recognizer_class(recognizer_system)
         self.recognizer:ActorAddress = self.createActor(self.recognizer_class)
         self.actors['recognizer'] = self.recognizer
 
@@ -437,7 +437,7 @@ class DialogueManager(RhasspyActor):
         self.actors['speech_trainer'] = self.speech_trainer
 
         # Intent trainer
-        self.intent_trainer_class = self._get_intent_trainer_class(recognizer_system)
+        self.intent_trainer_class = DialogueManager.get_intent_trainer_class(recognizer_system)
         self.intent_trainer:ActorAddress = self.createActor(self.intent_trainer_class)
         self.actors['intent_trainer'] = self.intent_trainer
 
@@ -465,7 +465,8 @@ class DialogueManager(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def _get_sound_class(self, system:str) -> Type[RhasspyActor]:
+    @classmethod
+    def get_sound_class(cls, system:str) -> Type[RhasspyActor]:
         assert system in ['aplay', 'hermes', 'dummy'], \
             'Unknown sound system: %s' % system
 
@@ -479,7 +480,8 @@ class DialogueManager(RhasspyActor):
             from .audio_player import DummyAudioPlayer
             return DummyAudioPlayer
 
-    def _get_wake_class(self, system:str) -> Type[RhasspyActor]:
+    @classmethod
+    def get_wake_class(cls, system:str) -> Type[RhasspyActor]:
         assert system in ['dummy', 'pocketsphinx', 'hermes',
                           'snowboy', 'precise'], \
                           'Invalid wake system: %s' % system
@@ -505,7 +507,8 @@ class DialogueManager(RhasspyActor):
             from .wake import DummyWakeListener
             return DummyWakeListener
 
-    def _get_microphone_class(self, system: str) -> Type[RhasspyActor]:
+    @classmethod
+    def get_microphone_class(cls, system: str) -> Type[RhasspyActor]:
         assert system in ['arecord', 'pyaudio', 'dummy', 'hermes'], \
             'Unknown microphone system: %s' % system
 
@@ -522,7 +525,8 @@ class DialogueManager(RhasspyActor):
             from .audio_recorder import DummyAudioRecorder
             return DummyAudioRecorder
 
-    def _get_command_class(self, system: str) -> Type[RhasspyActor]:
+    @classmethod
+    def get_command_class(cls, system: str) -> Type[RhasspyActor]:
         assert system in ['dummy', 'webrtcvad'], \
             'Unknown voice command system: %s' % system
 
@@ -533,7 +537,8 @@ class DialogueManager(RhasspyActor):
             from .command_listener import DummyCommandListener
             return DummyCommandListener
 
-    def _get_decoder_class(self, system: str) -> Type[RhasspyActor]:
+    @classmethod
+    def get_decoder_class(cls, system: str) -> Type[RhasspyActor]:
         assert system in ['dummy', 'pocketsphinx', 'remote'], \
             'Invalid speech to text system: %s' % system
 
@@ -547,7 +552,8 @@ class DialogueManager(RhasspyActor):
             from .stt import DummyDecoder
             return DummyDecoder
 
-    def _get_recognizer_class(self, system: str) -> Type[RhasspyActor]:
+    @classmethod
+    def get_recognizer_class(cls, system: str) -> Type[RhasspyActor]:
         assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa', 'remote'], \
             'Invalid intent system: %s' % system
 
@@ -572,7 +578,8 @@ class DialogueManager(RhasspyActor):
             from .intent import DummyIntentRecognizer
             return DummyIntentRecognizer
 
-    def _get_intent_trainer_class(self, system: str) -> Type[RhasspyActor]:
+    @classmethod
+    def get_intent_trainer_class(cls, system: str) -> Type[RhasspyActor]:
         assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa', 'remote'], \
             'Invalid intent system: %s' % system
 

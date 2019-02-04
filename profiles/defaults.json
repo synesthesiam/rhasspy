@@ -118,17 +118,20 @@
         "pocketsphinx": {
             "keyphrase": "okay rhasspy",
             "mllr_matrix": "wake_mllr",
-            "threshold": 1e-30
+            "threshold": 1e-30,
+            "chunk_size": 960
         },
         "precise": {
             "model": "okay-rhasspy.pb",
             "sensitivity": 0.5,
-            "trigger_level": 3
+            "trigger_level": 3,
+            "chunk_size": 2048
         },
         "snowboy": {
             "audio_gain": 1,
             "model": "snowboy.umdl",
-            "sensitivity": 0.5
+            "sensitivity": 0.5,
+            "chunk_size": 960
         },
         "system": "pocketsphinx"
     }

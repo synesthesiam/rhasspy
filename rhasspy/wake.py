@@ -5,7 +5,7 @@ import logging
 import json
 import re
 from uuid import uuid4
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Dict
 
 from thespian.actors import ActorAddress
 
@@ -18,16 +18,24 @@ from .utils import ByteStream, read_dict
 # -----------------------------------------------------------------------------
 
 class ListenForWakeWord:
-    def __init__(self, receiver:Optional[ActorAddress]=None) -> None:
+    def __init__(self, receiver:Optional[ActorAddress]=None, record=True) -> None:
         self.receiver = receiver
+        self.record = record
 
 class StopListeningForWakeWord:
-    def __init__(self, receiver:Optional[ActorAddress]=None) -> None:
+    def __init__(self, receiver:Optional[ActorAddress]=None, record=True) -> None:
         self.receiver = receiver
+        self.record = record
 
 class WakeWordDetected:
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, audio_data_info:Dict[Any, Any]={}) -> None:
         self.name = name
+        self.audio_data_info = audio_data_info
+
+class WakeWordNotDetected:
+    def __init__(self, name: str, audio_data_info:Dict[Any, Any]={}) -> None:
+        self.name = name
+        self.audio_data_info = audio_data_info
 
 # -----------------------------------------------------------------------------
 
@@ -52,6 +60,8 @@ class PocketsphinxWakeListener(RhasspyActor):
     def to_started(self, from_state:str) -> None:
         self.recorder = self.config['recorder']
         self.preload:bool = self.config.get('preload', False)
+        self.not_detected:bool = self.config.get('not_detected', False)
+        self.chunk_size:int = self.profile.get('wake.pocketsphinx.chunk_size', 960)
         if self.preload:
             self.load_decoder()
 
@@ -63,30 +73,58 @@ class PocketsphinxWakeListener(RhasspyActor):
             self.receivers.append(message.receiver or sender)
             self.transition('listening')
 
+            if message.record:
+                self.send(self.recorder, StartStreaming(self.myAddress))
+
+    def in_listening(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, AudioData):
             if not self.decoder_started:
                 assert self.decoder is not None
                 self.decoder.start_utt()
                 self.decoder_started = True
 
-            self.send(self.recorder, StartStreaming(self.myAddress))
+            audio_data = message.data
+            chunk = audio_data[:self.chunk_size]
+            detected = False
+            while len(chunk) > 0:
+                result = self.process_data(chunk)
+                if result is not None:
+                    detected = True
+                    self._logger.debug('Hotword detected (%s)' % self.keyphrase)
+                    output = WakeWordDetected(self.keyphrase,
+                                              audio_data_info=message.info)
+                    for receiver in self.receivers:
+                        self.send(receiver, output)
 
-    def in_listening(self, message: Any, sender: ActorAddress) -> None:
-        if isinstance(message, AudioData):
-            result = self.process_data(message.data)
-            if result is not None:
-                self._logger.debug('Hotword detected (%s)' % self.keyphrase)
-                output = WakeWordDetected(self.keyphrase)
+                    break
+
+                audio_data = audio_data[self.chunk_size:]
+                chunk = audio_data[:self.chunk_size]
+
+            # End utterance
+            if detected and self.decoder_started:
+                assert self.decoder is not None
+                self.decoder.end_utt()
+                self.decoder_started = False
+
+            if not detected and self.not_detected:
+                # Report non-detection
+                output = WakeWordNotDetected(self.keyphrase,
+                                             audio_data_info=message.info)
                 for receiver in self.receivers:
                     self.send(receiver, output)
         elif isinstance(message, StopListeningForWakeWord):
             self.receivers.remove(message.receiver or sender)
             if len(self.receivers) == 0:
+                # End utterance
                 if self.decoder_started:
                     assert self.decoder is not None
                     self.decoder.end_utt()
                     self.decoder_started = False
 
-                self.send(self.recorder, StopStreaming(self.myAddress))
+                if message.record:
+                    self.send(self.recorder, StopStreaming(self.myAddress))
+
                 self.transition('loaded')
 
     # -------------------------------------------------------------------------
@@ -172,6 +210,8 @@ class SnowboyWakeListener(RhasspyActor):
     def to_started(self, from_state:str) -> None:
         self.recorder = self.config['recorder']
         self.preload = self.config.get('preload', False)
+        self.not_detected:bool = self.config.get('not_detected', False)
+        self.chunk_size:int = self.profile.get('wake.snowboy.chunk_size', 960)
         if self.preload:
             self.load_detector()
 
@@ -182,20 +222,41 @@ class SnowboyWakeListener(RhasspyActor):
             self.load_detector()
             self.receivers.append(message.receiver or sender)
             self.transition('listening')
-            self.send(self.recorder, StartStreaming(self.myAddress))
+            if message.record:
+                self.send(self.recorder, StartStreaming(self.myAddress))
 
     def in_listening(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, AudioData):
-            index = self.process_data(message.data)
-            if index > 0:
+            audio_data = message.data
+            chunk = audio_data[:self.chunk_size]
+            detected = False
+            while len(chunk) > 0:
+                index = self.process_data(chunk)
+                if index > 0:
+                    detected = True
+                    break
+
+                audio_data = audio_data[self.chunk_size:]
+                chunk = audio_data[:self.chunk_size]
+
+            if detected:
+                # Detected
                 self._logger.debug('Hotword detected (%s)' % self.model_name)
-                result = WakeWordDetected(self.model_name)
+                result = WakeWordDetected(self.model_name,
+                                          audio_data_info=message.info)
+                for receiver in self.receivers:
+                    self.send(receiver, result)
+            elif self.not_detected:
+                # Not detected
+                result = WakeWordNotDetected(self.model_name,
+                                             audio_data_info=message.info)
                 for receiver in self.receivers:
                     self.send(receiver, result)
         elif isinstance(message, StopListeningForWakeWord):
             self.receivers.remove(message.receiver or sender)
             if len(self.receivers) == 0:
-                self.send(self.recorder, StopStreaming(self.myAddress))
+                if message.record:
+                    self.send(self.recorder, StopStreaming(self.myAddress))
                 self.transition('loaded')
 
     # -------------------------------------------------------------------------
@@ -251,11 +312,14 @@ class PreciseWakeListener(RhasspyActor):
         self.stream:Optional[ByteStream] = None
         self.engine = None
         self.runner = None
+        self.prediction_event = threading.Event()
         self.detected:bool = False
 
     def to_started(self, from_state:str) -> None:
         self.recorder = self.config['recorder']
         self.preload = self.config.get('preload', False)
+        self.not_detected:bool = self.config.get('not_detected', False)
+        self.chunk_size:int = self.profile.get('wake.precise.chunk_size', 2048)
         if self.preload:
             self.load_runner()
 
@@ -266,21 +330,41 @@ class PreciseWakeListener(RhasspyActor):
             self.load_runner()
             self.receivers.append(message.receiver or sender)
             self.transition('listening')
-            self.send(self.recorder, StartStreaming(self.myAddress))
+            if message.record:
+                self.send(self.recorder, StartStreaming(self.myAddress))
 
     def in_listening(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, AudioData):
-            self.process_data(message.data)
+            audio_data = message.data
+            chunk = audio_data[:self.chunk_size]
+            detected = False
+            while len(chunk) > 0:
+                self.process_data(audio_data)
+                if self.detected:
+                    break
+
+                audio_data = audio_data[self.chunk_size:]
+                chunk = audio_data[:self.chunk_size]
+
             if self.detected:
+                # Detected
                 self._logger.debug('Hotword detected (%s)' % self.model_name)
-                result = WakeWordDetected(self.model_name)
+                result = WakeWordDetected(self.model_name,
+                                          audio_data_info=message.info)
                 for receiver in self.receivers:
                     self.send(receiver, result)
                 self.detected = False # reset
+            elif self.not_detected:
+                # Not detected
+                result = WakeWordNotDetected(self.model_name,
+                                             audio_data_info=message.info)
+                for receiver in self.receivers:
+                    self.send(receiver, result)
         elif isinstance(message, StopListeningForWakeWord):
             self.receivers.remove(message.receiver or sender)
             if len(self.receivers) == 0:
-                self.send(self.recorder, StopStreaming(self.myAddress))
+                if message.record:
+                    self.send(self.recorder, StopStreaming(self.myAddress))
                 self.transition('loaded')
 
     def to_stopped(self, from_state:str) -> None:
@@ -295,6 +379,7 @@ class PreciseWakeListener(RhasspyActor):
     def process_data(self, data: bytes) -> None:
         assert self.stream is not None
         self.stream.write(data)
+        self.prediction_event.wait()
 
     # -------------------------------------------------------------------------
 
@@ -303,7 +388,9 @@ class PreciseWakeListener(RhasspyActor):
             from precise_runner import PreciseEngine
             self.model_name = self.profile.get('wake.precise.model')
             self.model_path = self.profile.read_path(self.model_name)
-            self.engine = PreciseEngine('precise-engine', self.model_path)
+            self.engine = PreciseEngine('precise-engine',
+                                        self.model_path,
+                                        chunk_size=self.chunk_size)
 
         if self.runner is None:
             from precise_runner import PreciseRunner
@@ -313,12 +400,16 @@ class PreciseWakeListener(RhasspyActor):
             sensitivity = float(self.profile.get('wake.precise.sensitivity', 0.5))
             trigger_level = int(self.profile.get('wake.precise.trigger_level', 3))
 
+            def on_prediction(prob:float) -> None:
+                self.prediction_event.set()
+
             def on_activation() -> None:
                 self.detected = True
 
             self.runner = PreciseRunner(self.engine, stream=self.stream,
                                         sensitivity=sensitivity,
                                         trigger_level=trigger_level,
+                                        on_prediction=on_prediction,
                                         on_activation=on_activation)
 
             assert self.runner is not None

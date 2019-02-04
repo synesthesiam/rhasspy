@@ -130,6 +130,16 @@ def convert_wav(wav_data: bytes) -> bytes:
             with wave.open(out_wav_file.name, 'rb') as wav_file:
                 return wav_file.readframes(wav_file.getnframes())
 
+def maybe_convert_wav(wav_data: bytes) -> bytes:
+    '''Converts WAV data to 16-bit, 16Khz mono if necessary.'''
+    with io.BytesIO(wav_data) as wav_io:
+        with wave.open(wav_io, 'rb') as wav_file:
+            rate, width, channels = wav_file.getframerate(), wav_file.getsampwidth(), wav_file.getnchannels()
+            if (rate != 16000) or (width != 2) or (channels != 1):
+                return convert_wav(wav_data)
+            else:
+                return wav_file.readframes(wav_file.getnframes())
+
 # -----------------------------------------------------------------------------
 
 def load_phoneme_examples(path: str) -> Dict[str, Dict[str, str]]:
@@ -176,19 +186,20 @@ class ByteStream:
     '''Read/write file-like interface to a buffer.'''
     def __init__(self) -> None:
         self.buffer = bytes()
-        self.event = threading.Event()
+        self.read_event = threading.Event()
         self.closed = False
 
     def read(self, n=-1) -> bytes:
         # Block until enough data is available
         while len(self.buffer) < n:
             if not self.closed:
-                self.event.wait()
+                self.read_event.wait()
             else:
                 self.buffer += bytearray(n - len(self.buffer))
 
         chunk = self.buffer[:n]
         self.buffer = self.buffer[n:]
+
         return chunk
 
     def write(self, data:bytes) -> None:
@@ -196,8 +207,8 @@ class ByteStream:
             return
 
         self.buffer += data
-        self.event.set()
+        self.read_event.set()
 
     def close(self) -> None:
         self.closed = True
-        self.event.set()
+        self.read_event.set()

@@ -12,13 +12,21 @@ import logging
 import itertools
 import wave
 import math
-from typing import Any
+import random
+from typing import Any, List, Optional, Dict
 
 import pydash
+from thespian.actors import ActorAddress, Actor, ActorSystem
 
 from .core import RhasspyCore
+from .actor import ConfigureEvent, Configured
 from .profiles import Profile
-from .utils import extract_entities, buffer_to_wav
+from .utils import extract_entities, buffer_to_wav, maybe_convert_wav
+from .audio_recorder import AudioData, StartStreaming, StopStreaming
+from .dialogue import DialogueManager
+from .wake import (PocketsphinxWakeListener, ListenForWakeWord,
+                   StopListeningForWakeWord, WakeWordDetected,
+                   WakeWordNotDetected)
 
 # -----------------------------------------------------------------------------
 
@@ -72,8 +80,10 @@ def main() -> None:
     # test_parser.add_argument('directory', help='Directory with WAV files and intent JSON files')
 
     # test-wake
-    # test_wake_parser = sub_parsers.add_parser('test-wake', help='Test wake word examples for profile')
-    # test_wake_parser.add_argument('--directory', help='Directory with WAV files')
+    test_wake_parser = sub_parsers.add_parser('test-wake', help='Test wake word examples for profile')
+    test_wake_parser.add_argument('directory', help='Directory with WAV files')
+    test_wake_parser.add_argument('--threads', type=int, default=4, help='Number of threads to use')
+    test_wake_parser.add_argument('--system', type=str, default=None, help='Override wake word system')
 
     # mic2wav
     mic2wav_parser = sub_parsers.add_parser('mic2wav', help='Voice command to WAV data')
@@ -172,7 +182,7 @@ def main() -> None:
             # 'tune': tune,
             # 'tune-wake': tune_wake,
             # 'test': test,
-            # 'test-wake': test_wake,
+            'test-wake': test_wake,
             'mic2text': mic2text,
             'mic2intent': mic2intent,
             'mic2wav': mic2wav,
@@ -182,7 +192,10 @@ def main() -> None:
             'sleep': sleep
         }
 
-        core.start()
+        if not args.command in ['test-wake']:
+            # Automatically start core
+            core.start()
+
         try:
             command_funcs[args.command](core, profile, args)
         finally:
@@ -527,99 +540,157 @@ def train_profile(core:RhasspyCore, profile:Profile, args:Any) -> None:
 # test-wake: test wake word examples
 # -----------------------------------------------------------------------------
 
-# def test_wake(core:RhasspyCore, profile:Profile, args:Any) -> None:
-#     keyphrase = profile.get('wake.pocketsphinx.keyphrase', '')
-#     assert len(keyphrase) > 0, 'No wake word'
+def test_wake(core:RhasspyCore, profile:Profile, args:Any) -> None:
+    base_dir_path = args.directory
+    wake_system = args.system or  profile.get('wake.system', 'pocketsphinx')
 
-#     wav_prefix = keyphrase.replace(' ', '-')
-#     base_dir_path = args.directory or profile.read_path('record')
+    # Path to positive examples
+    true_path = os.path.join(base_dir_path, 'wake-word')
+    if os.path.exists(true_path):
+        true_wav_paths = [os.path.join(true_path, name)
+                          for name in os.listdir(true_path)
+                          if name.endswith('.wav')]
+    else:
+        true_wav_paths = []
 
-#     # Path to positive examples
-#     true_path = os.path.join(base_dir_path, wav_prefix, 'wake-word')
-#     if os.path.exists(true_path):
-#         true_wav_paths = [os.path.join(true_path, name)
-#                           for name in os.listdir(true_path)
-#                           if name.endswith('.wav')]
-#     else:
-#         true_wav_paths = []
+    # Path to negative examples
+    false_path = os.path.join(base_dir_path, 'not-wake-word')
+    if os.path.exists(false_path):
+        false_wav_paths = [os.path.join(false_path, name)
+                          for name in os.listdir(false_path)
+                          if name.endswith('.wav')]
+    else:
+        false_wav_paths = []
 
-#     # Path to negative examples
-#     false_path = os.path.join(base_dir_path, wav_prefix, 'not-wake-word')
-#     if os.path.exists(false_path):
-#         false_wav_paths = [os.path.join(false_path, name)
-#                           for name in os.listdir(false_path)
-#                           if name.endswith('.wav')]
-#     else:
-#         false_wav_paths = []
+    # Spin up actors
+    kwargs = {}
+    if not args.debug:
+        kwargs = { 'logDefs': { 'version': 1, 'loggers': { '': {}} } }
 
-#     # Instantiate wake listener
-#     wake_listener = PocketsphinxWakeListener(
-#         core, audio_recorder=None, profile=profile, detected_callback=None)
+    system = ActorSystem('multiprocQueueBase', **kwargs)
+    detected_paths:Set[str] = set()
 
-#     wake_listener.preload()
+    try:
+        test_actor = system.createActor(TestWakeActor)
+        all_wav_paths = true_wav_paths + false_wav_paths
 
-#     # TODO: parallelize
-#     expected_true = len(true_wav_paths)
-#     expected_false = len(false_wav_paths)
+        start_time = time.time()
+        with system.private() as private:
+            private.tell(test_actor, (profile, wake_system, args.threads, all_wav_paths))
 
-#     true_positives = 0
-#     false_positives = 0
-#     true_negatives = 0
-#     false_negatives = 0
+            # Collect WAV paths that had a positive detection
+            detected_paths = private.listen()
 
-#     should_be_true = True
-#     for wav_path in itertools.chain(true_wav_paths, [None], false_wav_paths):
-#         # Switch between true and false examples
-#         if wav_path is None:
-#             should_be_true = not should_be_true
-#             continue
+        end_time = time.time()
+    finally:
+        system.shutdown()
 
-#         done_event = threading.Event()
-#         audio_recorder = WavAudioRecorder(
-#             core,
-#             wav_path,
-#             lambda wp: done_event.set())
+    # Compute statistics
+    expected_true = len(true_wav_paths)
+    expected_false = len(false_wav_paths)
 
-#         wake_listener.audio_recorder = audio_recorder
+    true_positives = 0
+    false_positives = 0
+    true_negatives = 0
+    false_negatives = 0
 
-#         detected = False
-#         def callback(profile_name, keyphrase):
-#             nonlocal detected
-#             detected = True
+    should_be_true = True
+    for wav_path in itertools.chain(true_wav_paths, [None], false_wav_paths):
+        # Switch between true and false examples
+        if wav_path is None:
+            should_be_true = not should_be_true
+            continue
 
-#         wake_listener.callback = callback
+        detected = wav_path in detected_paths
+        if detected:
+            if should_be_true:
+                true_positives += 1
+                status = ''
+            else:
+                false_positives += 1
+                status = ':('
+        else:
+            if should_be_true:
+                false_negatives += 1
+                status = ':('
+            else:
+                true_negatives += 1
+                status = ''
 
-#         # Listen and wait until WAV is finished playing
-#         wake_listener.start_listening()
-#         done_event.wait()
-#         audio_recorder.stop_recording(False, True)
+    # Report
+    result = {
+        'system': wake_system,
+        'settings': profile.get('wake.%s' % wake_system, {}),
+        'detected': list(detected_paths),
+        'not_detected': list(set(all_wav_paths) - set(detected_paths)),
+        'time_sec': end_time - start_time,
+        'statistics': {
+            'true_positives': true_positives,
+            'true_negatives': true_negatives,
+            'false_positives': false_positives,
+            'false_negatives': false_negatives
+        }
+    }
 
-#         # Wait for listener to finish up
-#         while wake_listener.is_listening:
-#             time.sleep(0.1)
+    json.dump(result, sys.stdout, indent=4)
 
-#         if detected:
-#             if should_be_true:
-#                 true_positives += 1
-#                 status = ''
-#             else:
-#                 false_positives += 1
-#                 status = ':('
-#         else:
-#             if should_be_true:
-#                 false_negatives += 1
-#                 status = ':('
-#             else:
-#                 true_negatives += 1
-#                 status = ''
+# -----------------------------------------------------------------------------
 
-#         print('%s %s ' % (wav_path, status))
+class TestWakeActor(Actor):
+    def __init__(self):
+        self.actors:List[ActorAddress] = []
+        self.wav_paths:List[str] = []
+        self.wav_paths_left:List[str] = []
+        self.detected_paths:Set[str] = set()
 
-#     print('')
-#     print('True positives: %s' % true_positives)
-#     print('True negatives: %s' % true_negatives)
-#     print('False positives: %s' % false_positives)
-#     print('False negatives: %s' % false_negatives)
+    def receiveMessage(self, message:Any, sender:ActorAddress):
+        if isinstance(message, tuple):
+            # Start up
+            self.parent = sender
+            self.profile, wake_system, num_actors, self.wav_paths = message
+            self.wav_paths_left = list(self.wav_paths)
+
+            # Create actors
+            wake_class = DialogueManager.get_wake_class(wake_system)
+            for i in range(num_actors):
+                actor = self.createActor(wake_class)
+                self.send(actor, ConfigureEvent(profile=self.profile,
+                                                preload=True,
+                                                recorder=self.myAddress,
+                                                transitions=False,
+                                                not_detected=True))
+        elif isinstance(message, Configured):
+            self.send(sender, ListenForWakeWord())
+        elif isinstance(message, StartStreaming):
+            if len(self.wav_paths) > 0:
+                self.send_random_wav(sender)
+        elif isinstance(message, WakeWordDetected):
+            # Detected
+            wav_path = message.audio_data_info['path']
+            # print('!', end='', flush=True)
+            self.detected_paths.add(wav_path)
+            self.wav_paths_left.remove(wav_path)
+            if len(self.wav_paths) > 0:
+                self.send_random_wav(sender)
+
+        elif isinstance(message, WakeWordNotDetected):
+            # Not detected
+            wav_path = message.audio_data_info['path']
+            # print('.', end='', flush=True)
+            self.wav_paths_left.remove(wav_path)
+            if len(self.wav_paths) > 0:
+                self.send_random_wav(sender)
+
+        if len(self.wav_paths_left) == 0:
+            self.send(self.parent, self.detected_paths)
+
+    def send_random_wav(self, receiver):
+        index = random.randint(0, len(self.wav_paths) - 1)
+        wav_path = self.wav_paths.pop(index)
+        with open(wav_path, 'rb') as wav_file:
+            audio_data = maybe_convert_wav(wav_file.read())
+            self.send(receiver, AudioData(audio_data, path=wav_path))
+
 
 # -----------------------------------------------------------------------------
 # mic2wav: record voice command and output WAV data

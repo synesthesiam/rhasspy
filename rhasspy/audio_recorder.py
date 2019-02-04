@@ -23,8 +23,9 @@ from .mqtt import MqttSubscribe, MqttMessage
 # -----------------------------------------------------------------------------
 
 class AudioData:
-    def __init__(self, data: bytes) -> None:
+    def __init__(self, data: bytes, **kwargs: Any) -> None:
         self.data = data
+        self.info = kwargs
 
 class StartStreaming:
     def __init__(self, receiver:Optional[ActorAddress]=None) -> None:
