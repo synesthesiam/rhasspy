@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
+
+if [[ -z "$XDG_CONFIG_HOME" ]]; then
+    profile_dir="$HOME/.config/rhasspy/profiles"
+else
+    profile_dir="$XDG_CONFIG_HOME/rhasspy/profiles"
+fi
+
 docker run -i \
        -u "$(id -u):$(id -g)" \
        -v "$HOME":"$HOME" \
-       -e RHASSPY_PROFILES="$HOME/.rhasspy/profiles" \
+       -e RHASSPY_PROFILES="$profile_dir" \
        -w "$(pwd)" \
        --device /dev/snd:/dev/snd \
        --entrypoint /usr/share/rhasspy/bin/rhasspy \

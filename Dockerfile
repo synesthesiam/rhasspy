@@ -82,7 +82,13 @@ RUN find / -name bw -exec cp '{}' /usr/bin/ \;
 RUN find / -name mllr_solve -exec cp '{}' /usr/bin/ \;
 
 # Copy my code
-COPY profiles/ /usr/share/rhasspy/profiles/
+COPY profiles/de/ /usr/share/rhasspy/profiles/de/
+COPY profiles/it/ /usr/share/rhasspy/profiles/it/
+COPY profiles/es/ /usr/share/rhasspy/profiles/es/
+COPY profiles/fr/ /usr/share/rhasspy/profiles/fr/
+COPY profiles/it/ /usr/share/rhasspy/profiles/it/
+COPY profiles/nl/ /usr/share/rhasspy/profiles/nl/
+COPY profiles/en/ /usr/share/rhasspy/profiles/en/
 COPY docker/rhasspy /usr/share/rhasspy/bin/
 COPY dist/ /usr/share/rhasspy/dist/
 COPY etc/wav/* /usr/share/rhasspy/etc/wav/
