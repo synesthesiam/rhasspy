@@ -89,6 +89,7 @@ COPY profiles/fr/ /usr/share/rhasspy/profiles/fr/
 COPY profiles/it/ /usr/share/rhasspy/profiles/it/
 COPY profiles/nl/ /usr/share/rhasspy/profiles/nl/
 COPY profiles/en/ /usr/share/rhasspy/profiles/en/
+COPY profiles/defaults.json /usr/share/rhasspy/profiles/
 COPY docker/rhasspy /usr/share/rhasspy/bin/
 COPY dist/ /usr/share/rhasspy/dist/
 COPY etc/wav/* /usr/share/rhasspy/etc/wav/
