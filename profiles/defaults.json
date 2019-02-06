@@ -65,6 +65,7 @@
     "speech_to_text": {
         "g2p_model": "g2p.fst",
         "grammars_dir": "grammars",
+        "slots_dir": "slots",
         "pocketsphinx": {
             "acoustic_model": "acoustic_model",
             "base_dictionary": "base_dictionary.txt",

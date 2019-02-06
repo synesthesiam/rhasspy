@@ -15,4 +15,5 @@ fi
 docker run -d -p 12101:12101 \
        --device /dev/snd:/dev/snd \
        -e RHASSPY_PROFILES="/usr/share/rhasspy/profiles:$profile_dir" \
+       -v "$profile_dir":"$profile_dir" \
        synesthesiam/rhasspy-server:latest

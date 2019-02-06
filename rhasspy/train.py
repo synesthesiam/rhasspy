@@ -1,6 +1,8 @@
 import os
+import re
 import configparser
 import subprocess
+import itertools
 import logging
 import concurrent.futures
 from collections import defaultdict
@@ -54,21 +56,32 @@ class JsgfSentenceGenerator(RhasspyActor):
         # intent -> sentence templates
         tagged_sentences: Dict[str, List[str]] = defaultdict(list)
 
-        def generate(path) -> List[str]:
-            cmd = ['jsgf-gen',
-                  '--grammar', path,
-                  '--exhaustive',
-                  '--tags']
+        # Ready slots values
+        slots_dir = self.profile.write_dir(
+            self.profile.get('speech_to_text.slots_dir'))
 
-            self._logger.debug(cmd)
-            return subprocess.check_output(cmd)\
-                            .decode()\
-                            .splitlines()
+        # colors -> [red, green, blue]
+        slot_values = {}
+        if os.path.exists(slots_dir):
+            for slot_file_name in os.listdir(slots_dir):
+                slot_path = os.path.join(slots_dir, slot_file_name)
+                if os.path.isfile(slot_path):
+                    slot_name = os.path.splitext(slot_file_name)[0]
+                    values = []
+                    with open(slot_path, 'r') as slot_file:
+                        for line in slot_file:
+                            line = line.strip()
+                            if len(line) > 0:
+                                values.append(line)
+
+                    slot_values[slot_name] = values
+
+        print(slot_values)
 
         # Generate sentences concurrently
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future_to_name = { executor.submit(generate, path) : name
-                              for name, path in grammar_paths.items() }
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            future_to_name = { executor.submit(_jsgf_generate, path, slot_values) : name
+                               for name, path in grammar_paths.items() }
 
             # Add to the list as they get done
             for future in concurrent.futures.as_completed(future_to_name):
@@ -137,3 +150,35 @@ class JsgfSentenceGenerator(RhasspyActor):
             grammar_paths[name] = grammar_path
 
         return grammar_paths
+
+# -----------------------------------------------------------------------------
+
+def _jsgf_generate(path, slot_values) -> List[str]:
+    cmd = ['jsgf-gen',
+            '--grammar', path,
+            '--exhaustive',
+            '--tags']
+
+    logging.debug(cmd)
+
+    # Generate sentences
+    sentences = []
+    for sentence in subprocess.check_output(cmd).decode().splitlines():
+        # Check for template replacements ($name$)
+        if '$' in sentence:
+            chunks = re.split(r'\$([^$]+)\$', sentence)
+            replacements = []
+            for i, chunk in enumerate(chunks):
+                if ((i % 2) != 0) and (chunk in slot_values):
+                    replacements.append(slot_values[chunk])
+                else:
+                    replacements.append([chunk])
+
+            # Create all combinations of replacements
+            for replacement in itertools.product(*replacements):
+                sentences.append(''.join(replacement))
+        else:
+            # No replacements
+            sentences.append(sentence)
+
+    return sentences

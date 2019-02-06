@@ -222,17 +222,16 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         sentences_text_path = self.profile.write_path(
             self.profile.get('speech_to_text.sentences_text'))
 
+        num_sentences = 0
         with open(sentences_text_path, 'w') as sentences_text_file:
-            num_sentences = 0
             for intent_name, intent_sents in sentences_by_intent.items():
                 num_repeats = max(1, lcm_sentences // len(intent_sents))
                 for sentence, slots, tokens in intent_sents:
                     for i in range(num_repeats):
                         print(sentence, file=sentences_text_file)
-                        num_sentences = num_sentences + 1
+                    num_sentences = num_sentences + 1
 
         self._logger.debug('Wrote %s sentence(s) to %s' % (num_sentences, sentences_text_path))
-
 
     # -------------------------------------------------------------------------
 
@@ -245,38 +244,38 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         sentences_text_path = os.path.split(sentences_text_path)[1]
         working_dir = self.profile.write_dir()
 
-        # Generate symbols
+        # Use opengrm
         subprocess.check_call(['ngramsymbols',
-                               sentences_text_path,
-                               'sentences.syms'],
+                              sentences_text_path,
+                              'sentences.syms'],
                               cwd=working_dir)
 
         # Convert to archive (FAR)
         subprocess.check_call(['farcompilestrings',
-                               '-symbols=sentences.syms',
-                               '-keep_symbols=1',
-                               sentences_text_path,
-                               'sentences.far'],
+                                '-symbols=sentences.syms',
+                                '-keep_symbols=1',
+                                sentences_text_path,
+                                'sentences.far'],
                               cwd=working_dir)
 
         # Generate trigram counts
         subprocess.check_call(['ngramcount',
-                              '-order=3',
-                              'sentences.far',
-                              'sentences.cnts'],
+                                '-order=3',
+                                'sentences.far',
+                                'sentences.cnts'],
                               cwd=working_dir)
 
         # Create trigram model
         subprocess.check_call(['ngrammake',
-                               'sentences.cnts',
-                               'sentences.mod'],
+                                'sentences.cnts',
+                                'sentences.mod'],
                               cwd=working_dir)
 
         # Convert to ARPA format
         subprocess.check_call(['ngramprint',
-                               '--ARPA',
-                               'sentences.mod',
-                               'sentences.arpa'],
+                                '--ARPA',
+                                'sentences.mod',
+                                'sentences.arpa'],
                               cwd=working_dir)
 
         lm_source_path = os.path.join(working_dir, 'sentences.arpa')
