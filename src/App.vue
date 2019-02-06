@@ -37,9 +37,9 @@
                 <li class="nav-item">
                     <a class="nav-link" id="advanced-tab" data-toggle="tab" href="#advanced" role="tab" aria-controls="advanced" aria-selected="true">Advanced</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="states-tab" data-toggle="tab" href="#states" role="tab" aria-controls="states" aria-selected="true">States</a>
-                </li>
+                <!-- <li class="nav-item"> -->
+                <!-- <a class="nav-link" id="states-tab" data-toggle="tab" href="#states" role="tab" aria-controls="states" aria-selected="true">States</a> -->
+                <!-- </li> -->
             </ul>
             <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade show active" id="speech" role="tabpanel" aria-labelledby="speech-tab">
@@ -57,9 +57,9 @@
                 <div class="tab-pane fade" id="advanced" role="tabpanel" aria-labelledby="advanced-tab">
                     <AdvancedSettings :profile="profile" :profiles="profiles" />
                 </div>
-                <div class="tab-pane fade" id="states" role="tabpanel" aria-labelledby="states-tab">
-                    <ActorStates />
-                </div>
+                <!-- <div class="tab-pane fade" id="states" role="tabpanel" aria-labelledby="states-tab"> -->
+                <!-- <ActorStates /> -->
+                <!-- </div> -->
             </div>
 
         </div> <!-- main container -->
