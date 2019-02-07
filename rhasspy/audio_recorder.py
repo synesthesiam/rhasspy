@@ -52,7 +52,14 @@ class StopRecordingToBuffer:
 
 class DummyAudioRecorder(RhasspyActor):
     '''Does nothing'''
-    pass
+
+    @classmethod
+    def get_microphones(self) -> Dict[Any, Any]:
+        return {}
+
+    @classmethod
+    def test_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+        return {}
 
 # -----------------------------------------------------------------------------
 # PyAudio based audio recorder
