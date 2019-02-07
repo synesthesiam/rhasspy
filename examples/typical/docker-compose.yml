@@ -1,0 +1,18 @@
+version: '2'
+services:
+  rhasspy:
+    image: synesthesiam/rhasspy-server:latest
+    environment:
+      - RHASSPY_PROFILES=/profiles
+    volumes:
+      - ./rhasspy/profiles:/profiles
+    devices:
+      - /dev/snd:/dev/snd
+    ports:
+      - "12101:12101"
+  hass:
+    image: homeassistant/home-assistant
+    volumes:
+      - ./home-assistant/config:/config
+    ports:
+      - "8123:8123"

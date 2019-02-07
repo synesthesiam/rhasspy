@@ -1,0 +1,76 @@
+{
+    "language": "en",
+    "training": {
+        "regex": {
+            "replace": [
+                {
+                    "'s": "s"
+                },
+                {
+                    "[^\\w ]+": " "
+                }
+            ]
+        },
+        "sentence_casing": "lower"
+    },
+    "home_assistant": {
+        "url": "http://hass:8123",
+        "api_password": "secret",
+        "access_token": ""
+    },
+    "speech_to_text": {
+        "system": "pocketsphinx",
+        "remote": {
+            "url": "http://my-server:12101/api/speech-to-text"
+        }
+    },
+    "intent": {
+        "system": "fuzzywuzzy",
+        "rasa": {
+            "url": "http://localhost:5000/"
+        },
+        "remote": {
+            "url": "http://my-server:12101/api/text-to-intent"
+        }
+    },
+    "wake": {
+        "snowboy": {
+            "model": "okay_rhasspy.pmdl"
+        },
+        "pocketsphinx": {
+            "keyphrase": "okay rhasspy"
+        },
+        "system": "dummy",
+        "precise": {
+            "model": "okay-rhasspy.pb"
+        },
+        "hermes": {
+            "wakeword_id": "default"
+        }
+    },
+    "microphone": {
+        "system": "dummy",
+        "pyaudio": {
+            "device": ""
+        },
+        "arecord": {
+            "device": ""
+        },
+        "dummy": {
+            "device": ""
+        }
+    },
+    "rhasspy": {
+        "listen_on_start": false
+    },
+    "sounds": {
+        "system": "dummy"
+    },
+    "mqtt": {
+        "enabled": false,
+        "host": "localhost",
+        "password": "",
+        "username": "",
+        "site_id": "default"
+    }
+}

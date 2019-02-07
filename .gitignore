@@ -19,3 +19,13 @@ etc/qemu-aarch64-static
 profiles/en/record/
 workbench.xmi
 etc/*.deb
+examples/typical/home-assistant/config/.storage/
+examples/typical/home-assistant/config/deps/
+examples/typical/home-assistant/config/tts/
+examples/typical/home-assistant/config/*.log
+examples/typical/home-assistant/config/.HA_VERSION
+examples/client-server/home-assistant/config/.storage/
+examples/client-server/home-assistant/config/deps/
+examples/client-server/home-assistant/config/tts/
+examples/client-server/home-assistant/config/*.log
+examples/client-server/home-assistant/config/.HA_VERSION
