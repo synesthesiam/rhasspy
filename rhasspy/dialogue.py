@@ -483,7 +483,7 @@ class DialogueManager(RhasspyActor):
     @classmethod
     def get_wake_class(cls, system:str) -> Type[RhasspyActor]:
         assert system in ['dummy', 'pocketsphinx', 'hermes',
-                          'snowboy', 'precise'], \
+                          'snowboy', 'precise', 'command'], \
                           'Invalid wake system: %s' % system
 
         if system == 'pocketsphinx':
@@ -502,6 +502,10 @@ class DialogueManager(RhasspyActor):
             # Use Mycroft Precise locally
             from .wake import PreciseWakeListener
             return PreciseWakeListener
+        elif system == 'command':
+            # Use command-line listener
+            from .wake import CommandWakeListener
+            return CommandWakeListener
         else:
             # Does nothing
             from .wake import DummyWakeListener
@@ -527,19 +531,22 @@ class DialogueManager(RhasspyActor):
 
     @classmethod
     def get_command_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ['dummy', 'webrtcvad'], \
+        assert system in ['dummy', 'webrtcvad', 'command'], \
             'Unknown voice command system: %s' % system
 
         if system == 'webrtcvad':
             from .command_listener import WebrtcvadCommandListener
             return WebrtcvadCommandListener
+        elif system == 'command':
+            from .command_listener import CommandCommandListener
+            return CommandCommandListener
         else:
             from .command_listener import DummyCommandListener
             return DummyCommandListener
 
     @classmethod
     def get_decoder_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ['dummy', 'pocketsphinx', 'remote'], \
+        assert system in ['dummy', 'pocketsphinx', 'remote', 'command'], \
             'Invalid speech to text system: %s' % system
 
         if system == 'pocketsphinx':
@@ -548,13 +555,16 @@ class DialogueManager(RhasspyActor):
         elif system == 'remote':
             from .stt import RemoteDecoder
             return RemoteDecoder
+        elif system == 'command':
+            from .stt import CommandDecoder
+            return CommandDecoder
         else:
             from .stt import DummyDecoder
             return DummyDecoder
 
     @classmethod
     def get_recognizer_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa', 'remote'], \
+        assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa', 'remote', 'command'], \
             'Invalid intent system: %s' % system
 
         if system == 'fuzzywuzzy':
@@ -573,6 +583,10 @@ class DialogueManager(RhasspyActor):
             # Use remote rhasspy server
             from .intent import RemoteRecognizer
             return RemoteRecognizer
+        elif system == 'command':
+            # Use command line
+            from .intent import CommandRecognizer
+            return CommandRecognizer
         else:
             # Does nothing
             from .intent import DummyIntentRecognizer
@@ -580,7 +594,7 @@ class DialogueManager(RhasspyActor):
 
     @classmethod
     def get_intent_trainer_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa', 'remote'], \
+        assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa', 'remote', 'command'], \
             'Invalid intent system: %s' % system
 
         if system == 'fuzzywuzzy':

@@ -171,6 +171,11 @@ def main() -> None:
         if args.command == 'wav2mqtt':
             profile.set('mqtt.enabled', True)
 
+        # Set environment variables
+        os.environ['RHASSPY_BASE_DIR'] = os.getcwd()
+        os.environ['RHASSPY_PROFILE'] = core.profile.name
+        os.environ['RHASSPY_PROFILE_DIR'] = core.profile.write_dir()
+
         # Execute command
         command_funcs = {
             'wav2text': wav2text,

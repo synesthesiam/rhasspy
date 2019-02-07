@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import logging
+import subprocess
 from urllib.parse import urljoin
 from typing import Dict, Any, Optional, Tuple, List
 
@@ -37,8 +38,10 @@ class DummyIntentRecognizer(RhasspyActor):
     '''Always returns an empty intent'''
     def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, RecognizeIntent):
+            intent = empty_intent()
+            intent['text'] = message.text
             self.send(message.receiver or sender,
-                      IntentRecognized(empty_intent()))
+                      IntentRecognized(intent))
 
 # -----------------------------------------------------------------------------
 # Remote HTTP Intent Recognizer
@@ -56,6 +59,7 @@ class RemoteRecognizer(RhasspyActor):
             except Exception as e:
                 self._logger.exception('in_started')
                 intent = empty_intent()
+                intent['text'] = message.text
 
             self.send(message.receiver or sender,
                       IntentRecognized(intent, handle=message.handle))
@@ -136,7 +140,10 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                 }
 
         # Empty intent
-        return empty_intent()
+        intent = empty_intent()
+        intent['text'] = message.text
+
+        return intent
 
     # -------------------------------------------------------------------------
 
@@ -173,6 +180,7 @@ class RasaIntentRecognizer(RhasspyActor):
             except Exception as e:
                 self._logger.exception('in_started')
                 intent = empty_intent()
+                intent['text'] = message.text
 
             self.send(message.receiver or sender,
                       IntentRecognized(intent, handle=message.handle))
@@ -289,3 +297,35 @@ class AdaptIntentRecognizer(RhasspyActor):
                 self.engine.register_intent_parser(intent.build())
 
             self._logger.debug('Loaded engine from config file %s' % config_path)
+
+# -----------------------------------------------------------------------------
+# Command Intent Recognizer
+# -----------------------------------------------------------------------------
+
+class CommandRecognizer(RhasspyActor):
+    '''Command-line based recognizer'''
+    def to_started(self, from_state:str) -> None:
+        program = os.path.expandvars(self.profile.get('intent.command.program'))
+        arguments = [os.path.expandvars(str(a))
+                     for a in self.profile.get('intent.command.arguments', [])]
+
+        self.command = [program] + arguments
+
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, RecognizeIntent):
+            try:
+                self._logger.debug(self.command)
+
+                # Text -> STDIN -> STDOUT -> JSON
+                output = subprocess.check_output(
+                    self.command, input=message.text.encode()).decode()
+
+                intent = json.loads(output)
+
+            except Exception as e:
+                self._logger.exception('in_started')
+                intent = empty_intent()
+                intent['text'] = message.text
+
+            self.send(message.receiver or sender,
+                      IntentRecognized(intent, handle=message.handle))

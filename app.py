@@ -96,6 +96,11 @@ def start_rhasspy() -> None:
     core = RhasspyCore(profile_name, profiles_dirs)
     core.start()
 
+    # Set environment variables
+    os.environ['RHASSPY_BASE_DIR'] = os.getcwd()
+    os.environ['RHASSPY_PROFILE'] = core.profile.name
+    os.environ['RHASSPY_PROFILE_DIR'] = core.profile.write_dir()
+
     # Add profile settings from the command line
     extra_settings = {}
     for key, value in args.set:

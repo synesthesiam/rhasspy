@@ -10,6 +10,10 @@
             "throwaway_buffers": 10,
             "timeout_sec": 30,
             "vad_mode": 0
+        },
+        "command": {
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/listen.sh",
+            "arguments": []
         }
     },
     "home_assistant": {
@@ -32,6 +36,10 @@
         },
         "remote": {
             "url": "http://my-server:12101/api/text-to-intent"
+        },
+        "command": {
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/text2intent.sh",
+            "arguments": ["ChangeLightState", "living room lamp", "on"]
         },
         "system": "fuzzywuzzy"
     },
@@ -77,6 +85,10 @@
         },
         "remote": {
             "url": "http://my-server:12101/api/speech-to-text"
+        },
+        "command": {
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/speech2text.sh",
+            "arguments": []
         },
         "sentences_ini": "sentences.ini",
         "sentences_text": "sentences.txt",
@@ -133,6 +145,10 @@
             "model": "snowboy.umdl",
             "sensitivity": 0.5,
             "chunk_size": 960
+        },
+        "command": {
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/sleep.sh",
+            "arguments": []
         },
         "system": "pocketsphinx"
     }

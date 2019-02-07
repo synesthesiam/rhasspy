@@ -1,9 +1,11 @@
+import os
 import io
 import math
 import logging
 import threading
 import wave
 import queue
+import subprocess
 from datetime import timedelta
 from typing import Optional, Any, Tuple, Dict
 
@@ -207,3 +209,47 @@ class WebrtcvadCommandListener(RhasspyActor):
                 self.silence_buffers = int(math.ceil(self.silence_sec / self.seconds_per_buffer))
 
         return finished, timeout
+
+# -----------------------------------------------------------------------------
+# Command-line Voice Command Listener
+# -----------------------------------------------------------------------------
+
+class CommandCommandListener(RhasspyActor):
+    '''Command-line based voice command listener'''
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.receiver:Optional[ActorAddress] = None
+
+    def to_started(self, from_state:str) -> None:
+        program = os.path.expandvars(self.profile.get('command.command.program'))
+        arguments = [os.path.expandvars(str(a))
+                     for a in self.profile.get('command.command.arguments', [])]
+
+        self.command = [program] + arguments
+
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, ListenForCommand):
+            self.receiver = message.receiver or sender
+            self.listen_proc = subprocess.Popen(self.command, stdout=subprocess.PIPE)
+
+            def post_result() -> None:
+                # STDOUT -> WAV data
+                try:
+                    wav_data, _ = self.listen_proc.communicate()
+                except:
+                    wav_data = bytes()
+                    self._logger.exception('post_result')
+
+                # Actor will forward
+                self.send(self.myAddress, VoiceCommand(wav_data, handle=message.handle))
+
+            self.transition('listening')
+
+            # Wait for program in a separate thread
+            threading.Thread(target=post_result, daemon=True).start()
+
+    def in_listening(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, VoiceCommand):
+            # Pass downstream to receiver
+            self.send(self.receiver, message)
+            self.transition('started')

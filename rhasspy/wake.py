@@ -4,6 +4,7 @@ import threading
 import logging
 import json
 import re
+import subprocess
 from uuid import uuid4
 from typing import Optional, Any, List, Dict
 
@@ -464,3 +465,64 @@ class HermesWakeListener(RhasspyActor):
             self.receivers.remove(message.receiver or sender)
             if len(self.receivers) == 0:
                 self.transition('loaded')
+
+# -----------------------------------------------------------------------------
+# Command Wake Listener
+# -----------------------------------------------------------------------------
+
+class CommandWakeListener(RhasspyActor):
+    '''Command-line based wake word listener'''
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.receivers: List[ActorAddress] = []
+        self.wake_proc = None
+
+    def to_started(self, from_state:str) -> None:
+        program = os.path.expandvars(self.profile.get('wake.command.program'))
+        arguments = [os.path.expandvars(str(a))
+                     for a in self.profile.get('wake.command.arguments', [])]
+
+        self.command = [program] + arguments
+
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, ListenForWakeWord):
+            self.receivers.append(message.receiver or sender)
+            self.wake_proc = subprocess.Popen(self.command, stdout=subprocess.PIPE)
+
+            def post_result() -> None:
+                # STDOUT -> text
+                try:
+                    out, _ = self.wake_proc.communicate()
+                    wakeword_id = out.decode().strip()
+                except:
+                    wakeword_id = ''
+                    self._logger.exception('post_result')
+
+                # Actor will forward
+                if len(wakeword_id) > 0:
+                    self.send(self.myAddress, WakeWordDetected(wakeword_id))
+                else:
+                    self.send(self.myAddress, WakeWordNotDetected(wakeword_id))
+
+            self.transition('listening')
+
+            # Wait for program in a separate thread
+            threading.Thread(target=post_result, daemon=True).start()
+
+    def in_listening(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, WakeWordDetected):
+            # Pass downstream to receivers
+            self._logger.debug('Hotword detected (%s)' % message.name)
+            for receiver in self.receivers:
+                self.send(receiver, message)
+        elif isinstance(message, WakeWordNotDetected):
+            # Pass downstream to receivers
+            for receiver in self.receivers:
+                self.send(receiver, message)
+        elif isinstance(message, StopListeningForWakeWord):
+            self.receivers.remove(message.receiver or sender)
+            if len(self.receivers) == 0:
+                if self.wake_proc is not None:
+                    self.wake_proc.terminate()
+
+                self.transition('started')

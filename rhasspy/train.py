@@ -76,8 +76,6 @@ class JsgfSentenceGenerator(RhasspyActor):
 
                     slot_values[slot_name] = values
 
-        print(slot_values)
-
         # Generate sentences concurrently
         with concurrent.futures.ProcessPoolExecutor() as executor:
             future_to_name = { executor.submit(_jsgf_generate, path, slot_values) : name

@@ -246,8 +246,8 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
 
         # Use opengrm
         subprocess.check_call(['ngramsymbols',
-                              sentences_text_path,
-                              'sentences.syms'],
+                               sentences_text_path,
+                               'sentences.syms'],
                               cwd=working_dir)
 
         # Convert to archive (FAR)

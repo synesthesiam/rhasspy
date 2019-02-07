@@ -157,3 +157,34 @@ class RemoteDecoder(RhasspyActor):
             return ''
 
         return response.text
+
+# -----------------------------------------------------------------------------
+# Command Decoder
+# -----------------------------------------------------------------------------
+
+class CommandDecoder(RhasspyActor):
+    '''Command-line based decoder'''
+    def to_started(self, from_state:str) -> None:
+        program = os.path.expandvars(self.profile.get('speech_to_text.command.program'))
+        arguments = [os.path.expandvars(str(a))
+                     for a in self.profile.get('speech_to_text.command.arguments', [])]
+
+        self.command = [program] + arguments
+
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, TranscribeWav):
+            text = self.transcribe_wav(message.wav_data)
+            self.send(message.receiver or sender,
+                      WavTranscription(text))
+
+    def transcribe_wav(self, wav_data: bytes) -> str:
+        try:
+            self._logger.debug(self.command)
+
+            # WAV -> STDIN -> STDOUT -> text
+            return subprocess.check_output(
+                self.command, input=wav_data).decode().strip()
+
+        except Exception as e:
+            self._logger.exception('transcribe_wav')
+            return ''
