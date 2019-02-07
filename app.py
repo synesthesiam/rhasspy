@@ -500,6 +500,23 @@ def api_unknown_words() -> Response:
 
 # -----------------------------------------------------------------------------
 
+@app.route('/api/text-to-speech', methods=['POST'])
+def api_text_to_speech() -> str:
+    '''Speaks a sentence with eSpeak'''
+    voice = request.args.get('voice', None)
+    text = request.data.decode()
+
+    espeak_cmd = ['espeak']
+    if voice is not None:
+        espeak_cmd.extend(['-v', str(voice)])
+
+    espeak_cmd.append(text)
+    logger.debug(espeak_cmd)
+
+    return subprocess.check_output(espeak_cmd).decode()
+
+# -----------------------------------------------------------------------------
+
 @app.route('/api/actor_states', methods=['GET'])
 def api_actor_states() -> Response:
     '''Get the states of all actors'''
