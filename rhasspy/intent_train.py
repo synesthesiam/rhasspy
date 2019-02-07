@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import tempfile
+import subprocess
 import re
 from urllib.parse import urljoin
 from collections import defaultdict, Counter
@@ -289,3 +290,55 @@ class AdaptIntentTrainer(RhasspyActor):
             json.dump(config, config_file, indent=4)
 
         self._logger.debug('Wrote adapt configuration to %s' % config_path)
+
+
+# -----------------------------------------------------------------------------
+# Command-line Based Intent Trainer
+# -----------------------------------------------------------------------------
+
+class CommandIntentTrainer(RhasspyActor):
+    '''Calls out to a command-line program to do intent system training.'''
+
+    def to_started(self, from_state:str) -> None:
+        program = os.path.expandvars(self.profile.get('training.intent.command.program'))
+        arguments = [os.path.expandvars(str(a))
+                     for a in self.profile.get('training.intent.command.arguments', [])]
+
+        self.command = [program] + arguments
+
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, TrainIntent):
+            self.train(message.sentences_by_intent)
+            self.send(message.receiver or sender,
+                      IntentTrainingComplete())
+
+    def train(self, sentences_by_intent: SBI_TYPE) -> None:
+        try:
+            self._logger.debug(self.command)
+
+            # JSON -> STDIN
+            subprocess.run(self.command,
+                           input=json.dumps(sentences_by_intent).encode(),
+                           check=True)
+        except:
+            self._logger.exception('train')
+
+    # -------------------------------------------------------------------------
+
+    def _make_examples(self, sentences_by_intent: SBI_TYPE) -> Dict[str, Any]:
+        '''Write intent examples to a JSON file.'''
+        from fuzzywuzzy import process
+
+        # { intent: [ { 'text': ..., 'slots': { ... } }, ... ] }
+        examples: Dict[str, Any] = defaultdict(list)
+
+        for intent, intent_sents in sentences_by_intent.items():
+            for sentence, entities, tokens in intent_sents:
+                slots: Dict[str, List[str]] = defaultdict(list)
+                for entity, value in entities:
+                    slots[entity].append(value)
+
+                examples[intent].append({ 'text': sentence,
+                                          'slots': slots })
+
+        return examples

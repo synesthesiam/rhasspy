@@ -6,10 +6,15 @@ import logging
 import math
 import itertools
 import collections
+from collections import defaultdict
 import threading
 import tempfile
 import subprocess
 from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple
+
+# -----------------------------------------------------------------------------
+
+SBI_TYPE = Dict[str, List[Tuple[str, List[Tuple[str, str]], List[str]]]]
 
 # -----------------------------------------------------------------------------
 
@@ -182,6 +187,8 @@ def empty_intent() -> Dict[str, Any]:
         'entities': {}
     }
 
+# -----------------------------------------------------------------------------
+
 class ByteStream:
     '''Read/write file-like interface to a buffer.'''
     def __init__(self) -> None:
@@ -212,3 +219,44 @@ class ByteStream:
     def close(self) -> None:
         self.closed = True
         self.read_event.set()
+
+# -----------------------------------------------------------------------------
+
+def sanitize_sentence(sentence:str,
+                      sentence_casing:str,
+                      replace_patterns:List[Any],
+                      split_pattern:Any) -> Tuple[str, List[str]]:
+    '''Applies profile-specific casing and tokenization to a sentence.
+    Returns the sanitized sentence and tokens.'''
+
+    if sentence_casing == 'lower':
+        sentence = sentence.lower()
+    elif sentence_casing == 'upper':
+        sentence = sentence.upper()
+
+    # Process replacement patterns
+    for pattern_set in replace_patterns:
+        for pattern, repl in pattern_set.items():
+            sentence = re.sub(pattern, repl, sentence)
+
+    # Tokenize
+    tokens = [t for t in re.split(split_pattern, sentence)
+              if len(t.strip()) > 0]
+
+    return sentence, tokens
+
+def group_sentences_by_intent(tagged_sentences: Dict[str, List[str]],
+                              *sanitize_args) -> SBI_TYPE:
+    sentences_by_intent: SBI_TYPE = defaultdict(list)
+
+    # Extract entities from tagged sentences
+    for intent_name, intent_sents in tagged_sentences.items():
+        for intent_sent in intent_sents:
+            # Template -> untagged sentence + entities
+            sentence, entities = extract_entities(intent_sent)
+
+            # Split sentence into words (tokens)
+            sentence, tokens = sanitize_sentence(sentence, *sanitize_args)
+            sentences_by_intent[intent_name].append((sentence, entities, tokens))
+
+    return sentences_by_intent

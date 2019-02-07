@@ -431,13 +431,18 @@ class DialogueManager(RhasspyActor):
         self.actors['sentence_generator'] = self.sentence_generator
 
         # Speech trainer
-        from .stt_train import PocketsphinxSpeechTrainer
-        self.speech_trainer_class = PocketsphinxSpeechTrainer
+        speech_trainer_system = self.profile.get('training.speech_to_text.system', 'auto')
+        self.speech_trainer_class = DialogueManager.get_speech_trainer_class(decoder_system,
+                                                                             speech_trainer_system)
+
         self.speech_trainer:ActorAddress = self.createActor(self.speech_trainer_class)
         self.actors['speech_trainer'] = self.speech_trainer
 
         # Intent trainer
-        self.intent_trainer_class = DialogueManager.get_intent_trainer_class(recognizer_system)
+        intent_trainer_system = self.profile.get('training.intent.system', 'auto')
+        self.intent_trainer_class = DialogueManager.get_intent_trainer_class(
+            intent_trainer_system, recognizer_system)
+
         self.intent_trainer:ActorAddress = self.createActor(self.intent_trainer_class)
         self.actors['intent_trainer'] = self.intent_trainer
 
@@ -593,23 +598,77 @@ class DialogueManager(RhasspyActor):
             return DummyIntentRecognizer
 
     @classmethod
-    def get_intent_trainer_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ['dummy', 'fuzzywuzzy', 'adapt', 'rasa', 'remote', 'command'], \
-            'Invalid intent system: %s' % system
+    def get_intent_trainer_class(cls, trainer_system: str,
+                                 recognizer_system: str='dummy') -> Type[RhasspyActor]:
 
-        if system == 'fuzzywuzzy':
+        assert trainer_system in ['dummy', 'fuzzywuzzy', 'adapt', 'auto', 'command'], \
+            'Invalid intent training system: %s' % system
+
+        if trainer_system == 'auto':
+            # Use intent recognizer system
+            if recognizer_system == 'fuzzywuzzy':
+                # Use fuzzy string matching locally
+                from .intent_train import FuzzyWuzzyIntentTrainer
+                return FuzzyWuzzyIntentTrainer
+            elif recognizer_system == 'adapt':
+                # Use Mycroft Adapt locally
+                from .intent_train import AdaptIntentTrainer
+                return AdaptIntentTrainer
+            elif recognizer_system == 'rasa':
+                # Use rasaNLU remotely
+                from .intent_train import RasaIntentTrainer
+                return RasaIntentTrainer
+            elif recognizer_system == 'command':
+                # Use command-line intent trainer
+                from .intent_train import CommandIntentTrainer
+                return CommandIntentTrainer
+        elif trainer_system == 'fuzzywuzzy':
             # Use fuzzy string matching locally
             from .intent_train import FuzzyWuzzyIntentTrainer
             return FuzzyWuzzyIntentTrainer
-        elif system == 'adapt':
+        elif trainer_system == 'adapt':
             # Use Mycroft Adapt locally
             from .intent_train import AdaptIntentTrainer
             return AdaptIntentTrainer
-        elif system == 'rasa':
+        elif trainer_system == 'rasa':
             # Use rasaNLU remotely
             from .intent_train import RasaIntentTrainer
             return RasaIntentTrainer
-        else:
-            # Does nothing
-            from .intent_train import DummyIntentTrainer
-            return DummyIntentTrainer
+        elif trainer_system == 'command':
+            # Use command-line intent trainer
+            from .intent_train import CommandIntentTrainer
+            return CommandIntentTrainer
+
+        # Use dummy trainer as a fallback
+        from .intent_train import DummyIntentTrainer
+        return DummyIntentTrainer
+
+    @classmethod
+    def get_speech_trainer_class(cls, trainer_system: str,
+                                 decoder_system: str='dummy') -> Type[RhasspyActor]:
+
+        assert trainer_system in ['dummy', 'pocketsphinx', 'auto', 'command'], \
+            'Invalid speech training system: %s' % system
+
+        if trainer_system == 'auto':
+            # Use intent recognizer system
+            if decoder_system == 'pocketsphinx':
+                # Use opengrm/phonetisaurus
+                from .stt_train import PocketsphinxSpeechTrainer
+                return PocketsphinxSpeechTrainer
+            elif decoder_system == 'command':
+                # Use command-line speech trainer
+                from .stt_train import CommandSpeechTrainer
+                return CommandSpeechTrainer
+        elif trainer_system == 'pocketsphinx':
+            # Use opengrm/phonetisaurus
+            from .stt_train import PocketsphinxSpeechTrainer
+            return PocketsphinxSpeechTrainer
+        elif decoder_system == 'command':
+            # Use command-line speech trainer
+            from .stt_train import CommandSpeechTrainer
+            return CommandSpeechTrainer
+
+        # Use dummy trainer as a fallback
+        from .intent_train import DummySpeechTrainer
+        return DummyIntentTrainer

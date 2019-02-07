@@ -116,7 +116,21 @@
         },
         "sentence_casing": "lower",
         "tagged_sentences": "tagged_sentences.md",
-        "tokenizer": "regex"
+        "tokenizer": "regex",
+        "speech_to_text": {
+            "system": "auto",
+            "command": {
+                "program": "$RHASSPY_BASE_DIR/bin/mock-commands/train-stt.sh",
+                "arguments": []
+            }
+        },
+        "intent": {
+            "system": "auto",
+            "command": {
+                "program": "$RHASSPY_BASE_DIR/bin/mock-commands/train-intent.sh",
+                "arguments": []
+            }
+        }
     },
     "tuning": {
         "sphinxtrain": {

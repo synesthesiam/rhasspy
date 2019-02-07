@@ -4,6 +4,7 @@ import tempfile
 import subprocess
 import logging
 import shutil
+import json
 from collections import defaultdict
 from typing import Dict, List, Any, Tuple, Set, Optional
 
@@ -12,11 +13,7 @@ from thespian.actors import ActorAddress
 from .actor import RhasspyActor
 from .profiles import Profile
 from .pronounce import GetWordPronunciations, WordPronunciation
-from .utils import read_dict, lcm, extract_entities
-
-# -----------------------------------------------------------------------------
-
-SBI_TYPE = Dict[str, List[Tuple[str, List[Tuple[str, str]], List[str]]]]
+from .utils import read_dict, lcm, group_sentences_by_intent, SBI_TYPE
 
 # -----------------------------------------------------------------------------
 
@@ -39,6 +36,34 @@ class SpeechTrainingFailed:
 
 # -----------------------------------------------------------------------------
 
+class DummySpeechTrainer(RhasspyActor):
+    '''Passes sentences along'''
+    def to_started(self, from_state:str) -> None:
+        self.sentence_casing = self.profile.get('training.sentence_casing', None)
+        tokenizer = self.profile.get('training.tokenizer', 'regex')
+        regex_config = self.profile.get(f'training.{tokenizer}', {})
+        self.replace_patterns = regex_config.get('replace', [])
+        self.split_pattern = regex_config.get('split', r'\s+')
+
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, TrainSpeech):
+            self.send(message.receiver or sender,
+                      SpeechTrainingComplete(messages.tagged_sentences,
+                                             self.train(messages.tagged_sentences)))
+
+    # -------------------------------------------------------------------------
+
+    def train(self, tagged_sentences: Dict[str, List[str]]) -> SBI_TYPE:
+        return group_sentences_by_intent(tagged_sentences,
+                                         self.sentence_casing,
+                                         self.replace_patterns,
+                                         self.split_pattern)
+
+# -----------------------------------------------------------------------------
+# Speech system trainer for Pocketsphinx.
+# Uses opengrm (ARPA model) and phonetisaurus (pronunciations).
+# -----------------------------------------------------------------------------
+
 class PocketsphinxSpeechTrainer(RhasspyActor):
     '''Trains an ARPA language model using opengrm.'''
     def to_started(self, from_state:str) -> None:
@@ -47,8 +72,14 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         self.unknown_words:Dict[str, Optional[WordPronunciation]] = {}
         self.waiting_words:List[str] = []
         self.receiver:Optional[ActorAddress] = None
+        self.sentence_casing = self.profile.get('training.sentence_casing', None)
         self.dictionary_upper:bool = \
             self.profile.get('speech_to_text.dictionary_upper', False)
+
+        tokenizer = self.profile.get('training.tokenizer', 'regex')
+        regex_config = self.profile.get(f'training.{tokenizer}', {})
+        self.replace_patterns = regex_config.get('replace', [])
+        self.split_pattern = regex_config.get('split', r'\s+')
 
     def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, TrainSpeech):
@@ -57,7 +88,12 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
             self.transition('writing_dictionary')
 
     def to_writing_dictionary(self, from_state:str) -> None:
-        self.sentences_by_intent: SBI_TYPE = defaultdict(list)
+        self.sentences_by_intent = group_sentences_by_intent(
+            self.tagged_sentences,
+            self.sentence_casing,
+            self.replace_patterns,
+            self.split_pattern)
+
         self.unknown_words = {
             word: None
             for word in self.write_dictionary(self.tagged_sentences,
@@ -114,14 +150,9 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         words_needed: Set[str] = set()
 
         # Extract entities from tagged sentences
-        for intent_name, intent_sents in tagged_sentences.items():
+        for intent_name, intent_sents in sentences_by_intent.items():
             for intent_sent in intent_sents:
-                # Template -> untagged sentence + entities
-                sentence, entities = extract_entities(intent_sent)
-
-                # Split sentence into words (tokens)
-                sentence, tokens = self._sanitize_sentence(sentence)
-                sentences_by_intent[intent_name].append((sentence, entities, tokens))
+                sentence, entities, tokens = intent_sent
 
                 # Collect all used words
                 for word in tokens:
@@ -295,26 +326,66 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         '''Applies profile-specific casing and tokenization to a sentence.
         Returns the sanitized sentence and tokens.'''
 
-        sentence_casing = self.profile.get('training.sentence_casing', None)
-        if sentence_casing == 'lower':
+        if self.sentence_casing == 'lower':
             sentence = sentence.lower()
         elif sentence_casing == 'upper':
             sentence = sentence.upper()
 
-        tokenizer = self.profile.get('training.tokenizer', 'regex')
-        assert tokenizer in ['regex'], 'Unknown tokenizer: %s' % tokenizer
+        # Process replacement patterns
+        for pattern, repl in self.replace_patterns.items():
+            sentence = re.sub(pattern, repl, sentence)
 
-        if tokenizer == 'regex':
-            regex_config = self.profile.get('training.regex', {})
-
-            # Process replacement patterns
-            for repl_dict in regex_config.get('replace', []):
-                for pattern, repl in repl_dict.items():
-                    sentence = re.sub(pattern, repl, sentence)
-
-            # Tokenize
-            split_pattern = regex_config.get('split', r'\s+')
-            tokens = [t for t in re.split(split_pattern, sentence)
-                      if len(t.strip()) > 0]
+        # Tokenize
+        tokens = [t for t in re.split(self.split_pattern, sentence)
+                  if len(t.strip()) > 0]
 
         return sentence, tokens
+
+# -----------------------------------------------------------------------------
+# Command-line based speed trainer.
+# -----------------------------------------------------------------------------
+
+class CommandSpeechTrainer(RhasspyActor):
+    '''Trains a speech to text system via command line.'''
+
+    def to_started(self, from_state:str) -> None:
+        program = os.path.expandvars(self.profile.get('training.speech_to_text.command.program'))
+        arguments = [os.path.expandvars(str(a))
+                     for a in self.profile.get('training.speech_to_text.command.arguments', [])]
+
+        self.command = [program] + arguments
+
+        self.sentence_casing = self.profile.get('training.sentence_casing', None)
+        tokenizer = self.profile.get('training.tokenizer', 'regex')
+        regex_config = self.profile.get(f'training.{tokenizer}', {})
+        self.replace_patterns = regex_config.get('replace', [])
+        self.split_pattern = regex_config.get('split', r'\s+')
+
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, TrainSpeech):
+            try:
+                sentences_by_intent = self.train(message.tagged_sentences)
+                self.send(message.receiver or sender,
+                          SpeechTrainingComplete(message.tagged_sentences,
+                                                 sentences_by_intent))
+            except:
+                self._logger.exception('train')
+                self.send(message.receiver or sender,
+                          SpeechTrainingFailed())
+
+    # -------------------------------------------------------------------------
+
+    def train(self, tagged_sentences: Dict[str, List[str]]) -> SBI_TYPE:
+        sentences_by_intent = group_sentences_by_intent(tagged_sentences,
+                                                        self.sentence_casing,
+                                                        self.replace_patterns,
+                                                        self.split_pattern)
+
+        self._logger.debug(self.command)
+
+        # JSON -> STDIN
+        subprocess.run(self.command,
+                       input=json.dumps(sentences_by_intent).encode(),
+                       check=True)
+
+        return sentences_by_intent
