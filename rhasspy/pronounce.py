@@ -17,28 +17,28 @@ from .profiles import Profile
 # -----------------------------------------------------------------------------
 
 class SpeakWord:
-    def __init__(self, word: str, receiver: Optional[ActorAddress]=None):
+    def __init__(self, word: str, receiver: Optional[ActorAddress]=None) -> None:
         self.word = word
         self.receiver = receiver
 
 class WordSpoken:
-    def __init__(self, word: str, wav_data: bytes, phonemes: str):
+    def __init__(self, word: str, wav_data: bytes, phonemes: str) -> None:
         self.word = word
         self.wav_data = wav_data
         self.phonemes = phonemes
 
 class GetWordPhonemes:
-    def __init__(self, word: str, receiver: Optional[ActorAddress]=None):
+    def __init__(self, word: str, receiver: Optional[ActorAddress]=None) -> None:
         self.word = word
         self.receiver = receiver
 
 class WordPhonemes:
-    def __init__(self, word: str, phonemes: str):
+    def __init__(self, word: str, phonemes: str) -> None:
         self.word = word
         self.phonemes = phonemes
 
 class GetWordPronunciations:
-    def __init__(self, word: str, n: int=5, receiver: Optional[ActorAddress]=None):
+    def __init__(self, word: str, n: int=5, receiver: Optional[ActorAddress]=None) -> None:
         self.word = word
         self.n = n
         self.receiver = receiver
@@ -47,7 +47,7 @@ class WordPronunciation:
     def __init__(self, word: str,
                  pronunciations: List[str],
                  in_dictionary: bool,
-                 phonemes: str):
+                 phonemes: str) -> None:
         self.word = word
         self.pronunciations = pronunciations
         self.in_dictionary = in_dictionary

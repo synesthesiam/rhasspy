@@ -48,8 +48,8 @@ class DummySpeechTrainer(RhasspyActor):
     def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, TrainSpeech):
             self.send(message.receiver or sender,
-                      SpeechTrainingComplete(messages.tagged_sentences,
-                                             self.train(messages.tagged_sentences)))
+                      SpeechTrainingComplete(message.tagged_sentences,
+                                             self.train(message.tagged_sentences)))
 
     # -------------------------------------------------------------------------
 

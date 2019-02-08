@@ -340,7 +340,7 @@ class PreciseWakeListener(RhasspyActor):
             chunk = audio_data[:self.chunk_size]
             detected = False
             while len(chunk) > 0:
-                self.process_data(audio_data)
+                self.process_data(chunk)
                 if self.detected:
                     break
 

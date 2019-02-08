@@ -261,10 +261,10 @@ class ARecordAudioRecorder(RhasspyActor):
     def __init__(self) -> None:
         # Chunk size is set to 30 ms for webrtcvad
         RhasspyActor.__init__(self)
-        self.record_proc = None
+        self.record_proc:Any = None
         self.receivers: List[ActorAddress] = []
         self.buffers:Dict[str, bytes] = {}
-        self.recording_thread = None
+        self.recording_thread:Any = None
         self.is_recording = True
 
     def to_started(self, from_state:str) -> None:
@@ -304,6 +304,7 @@ class ARecordAudioRecorder(RhasspyActor):
 
         def process_data() -> None:
             self.record_proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
+            assert self.record_proc is not None
             while self.is_recording:
                 # Pull from process STDOUT
                 data = self.record_proc.stdout.read(self.chunk_size)
@@ -314,6 +315,7 @@ class ARecordAudioRecorder(RhasspyActor):
         # Start recording
         self.is_recording = True
         self.recording_thread = threading.Thread(target=process_data, daemon=True)
+        assert self.recording_thread is not None
         self.recording_thread.start()
 
         self._logger.debug('Recording from microphone (arecord)')

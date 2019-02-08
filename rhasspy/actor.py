@@ -16,7 +16,7 @@ class Configured:
     pass
 
 class StateTransition:
-    def __init__(self, name:str, from_state:str, to_state:str):
+    def __init__(self, name:str, from_state:str, to_state:str) -> None:
         self.name = name
         self.from_state = from_state
         self.to_state = to_state
