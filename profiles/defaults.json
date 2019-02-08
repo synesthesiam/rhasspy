@@ -22,6 +22,14 @@
         "event_type_format": "rhasspy_{0}",
         "url": "http://hassio/homeassistant/"
     },
+    "handle": {
+        "system": "hass",
+        "command": {
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/handle.sh",
+            "arguments": []
+        },
+        "forward_to_hass": true
+    },
     "intent": {
         "adapt": {
             "stop_words": "stop_words.txt"

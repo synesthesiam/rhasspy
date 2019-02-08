@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 import os
 import logging
+import json
+import subprocess
 from urllib.parse import urljoin
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 
 from thespian.actors import ActorAddress
+import pydash
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -22,10 +25,43 @@ class IntentHandled:
     def __init__(self, intent: Dict[str, Any]) -> None:
         self.intent = intent
 
+class ForwardIntent:
+    def __init__(self,
+                 intent: Dict[str, Any],
+                 receiver:Optional[ActorAddress]=None) -> None:
+        self.intent = intent
+        self.receiver = receiver
+
+class IntentForwarded:
+    def __init__(self, intent: Dict[str, Any]) -> None:
+        self.intent = intent
+
+# -----------------------------------------------------------------------------
+
+class DummyIntentHandler(RhasspyActor):
+    '''Does nothing'''
+
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, HandleIntent):
+            self.send(message.receiver or sender,
+                      IntentHandled(message.intent))
+        elif isinstance(message, ForwardIntent):
+            self.send(message.receiver or sender,
+                      IntentForwarded(message.intent))
+
+# -----------------------------------------------------------------------------
+# Home Assistant Intent Handler
 # -----------------------------------------------------------------------------
 
 class HomeAssistantIntentHandler(RhasspyActor):
     '''Forward intents to Home Assistant as events.'''
+
+    def to_started(self, from_state:str) -> None:
+        self.hass_config = self.profile.get('home_assistant', {})
+
+        # Python format string for generating event type name
+        self.event_type_format = self.hass_config['event_type_format']
+
 
     def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, HandleIntent):
@@ -34,46 +70,39 @@ class HomeAssistantIntentHandler(RhasspyActor):
                 intent = self.handle_intent(intent)
             except Exception as e:
                 self._logger.exception('handle_intent')
+                intent['error'] = str(e)
 
             self.send(message.receiver or sender,
                       IntentHandled(intent))
+        elif isinstance(message, ForwardIntent):
+            intent = message.intent
+            try:
+                if not 'hass_event' in intent:
+                    event_type, event_data = self.make_hass_event(intent)
+                    intent['hass_event'] = {
+                        'event_type': event_type,
+                        'event_data': event_data
+                    }
+                else:
+                    event_type:str = intent['hass_event']['event_type']
+                    event_data:Dict[str, Any] = intent['hass_event']['event_data']
+
+                intent = self.forward_intent(event_type, event_data)
+            except Exception as e:
+                self._logger.exception('forward_intent')
+                intent['error'] = str(e)
+
+            self.send(message.receiver or sender,
+                      IntentForwarded(intent))
 
     # -------------------------------------------------------------------------
 
     def handle_intent(self, intent: Dict[str, Any]) -> Dict[str, Any]:
-        if len(intent['intent']['name']) == 0:
+        if len(pydash.get(intent, 'intent.name', '')) == 0:
             self._logger.warn('Empty intent. Not sending to Home Assistant')
             return intent
 
-        import requests
-
-        hass_config = self.profile.get('home_assistant', {})
-
-        # Python format string for generating event type name
-        event_type_format = hass_config['event_type_format']
-        event_type = event_type_format.format(intent['intent']['name'])
-
-        # Base URL of Home Assistant server
-        post_url = urljoin(hass_config['url'], 'api/events/' + event_type)
-        headers = {}
-
-        # Security stuff
-        if ('access_token' in hass_config) and \
-            len(hass_config['access_token']) > 0:
-            # Use token from config
-            headers['Authorization'] = 'Bearer %s' % hass_config['access_token']
-        elif ('api_password' in hass_config) and \
-          len(hass_config['api_password']) > 0:
-            # Use API password (deprecated)
-            headers['X-HA-Access'] = hass_config['api_password']
-        elif 'HASSIO_TOKEN' in os.environ:
-            # Use token from hass.io
-            headers['Authorization'] = 'Bearer %s' % os.environ['HASSIO_TOKEN']
-
-        # Add intent entities as event data properties
-        slots = {}
-        for entity in intent['entities']:
-            slots[entity['entity']] = entity['value']
+        event_type, slots = self.make_hass_event(intent)
 
         # Add a copy of the event to the intent for easier debugging
         intent['hass_event'] = {
@@ -81,15 +110,93 @@ class HomeAssistantIntentHandler(RhasspyActor):
             'event_data': slots
         }
 
-        try:
-            # Send to Home Assistant
-            response = requests.post(post_url, headers=headers, json=slots)
-            self._logger.debug('POSTed intent to %s with headers=%s' % (post_url, headers))
+        return self.forward_intent(event_type, slots)
 
-            response.raise_for_status()
-        except Exception as e:
-            # Fail gracefully
-            self._logger.exception('send_intent')
-            intent['error'] = str(e)
+
+    def forward_intent(self, event_type: str, slots: Dict[str, Any]) -> Dict[str, Any]:
+        import requests
+
+        # Base URL of Home Assistant server
+        post_url = urljoin(self.hass_config['url'], 'api/events/' + event_type)
+        headers = {}
+
+        # Security stuff
+        if ('access_token' in self.hass_config) and \
+            len(self.hass_config['access_token']) > 0:
+            # Use token from config
+            headers['Authorization'] = 'Bearer %s' % self.hass_config['access_token']
+        elif ('api_password' in self.hass_config) and \
+          len(self.hass_config['api_password']) > 0:
+            # Use API password (deprecated)
+            headers['X-HA-Access'] = self.hass_config['api_password']
+        elif 'HASSIO_TOKEN' in os.environ:
+            # Use token from hass.io
+            headers['Authorization'] = 'Bearer %s' % os.environ['HASSIO_TOKEN']
+
+        # Send to Home Assistant
+        response = requests.post(post_url, headers=headers, json=slots)
+        self._logger.debug('POSTed intent to %s with headers=%s' % (post_url, headers))
+        response.raise_for_status()
 
         return intent
+
+    # -------------------------------------------------------------------------
+
+    def make_hass_event(self, intent: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+        event_type = self.event_type_format.format(intent['intent']['name'])
+        slots = {}
+        for entity in intent['entities']:
+            slots[entity['entity']] = entity['value']
+
+        return event_type, slots
+
+
+# -----------------------------------------------------------------------------
+# Command Intent Recognizer
+# -----------------------------------------------------------------------------
+
+class CommandIntentHandler(RhasspyActor):
+    '''Command-line based intent handler'''
+
+    def to_started(self, from_state:str) -> None:
+        program = os.path.expandvars(self.profile.get('handle.command.program'))
+        arguments = [os.path.expandvars(str(a))
+                     for a in self.profile.get('handle.command.arguments', [])]
+
+        self.command = [program] + arguments
+
+        self.forward_to_hass:bool = self.profile.get('handle.forward_to_hass', True)
+        self.hass_handler:ActorAddress = self.config['hass_handler']
+        self.receiver:Optional[ActorAddress] = None
+
+        self.transition('ready')
+
+    def in_ready(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, HandleIntent):
+            self.receiver = message.receiver or sender
+            intent = message.intent
+            try:
+                self._logger.debug(self.command)
+
+                # JSON -> STDIN -> STDOUT -> JSON
+                input = json.dumps(intent).encode()
+                output = subprocess.check_output(
+                    self.command, input=input).decode()
+
+                intent = json.loads(output)
+            except Exception as e:
+                self._logger.exception('in_started')
+                intent['error'] = str(e)
+
+            if self.forward_to_hass:
+                self.transition('forwarding')
+                self.send(self.hass_handler, ForwardIntent(intent))
+            else:
+                # No forwarding
+                self.send(self.receiver, IntentHandled(intent))
+
+    def in_forwarding(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, IntentForwarded):
+            # Return back to sender
+            self.transition('ready')
+            self.send(self.receiver, IntentHandled(message.intent))

@@ -18,8 +18,8 @@ slot_state="$3"
 echo "{
   \"intent\": { \"name\": \"$intent_name\" },
   \"entities\": [
-    { \"entitiy\": \"name\", \"value\": \"$slot_name\" },
-    { \"entitiy\": \"state\", \"value\": \"$slot_state\" }
+    { \"entity\": \"name\", \"value\": \"$slot_name\" },
+    { \"entity\": \"state\", \"value\": \"$slot_state\" }
   ],
   \"text\": \"$text\"
 }"

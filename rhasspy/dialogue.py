@@ -419,10 +419,18 @@ class DialogueManager(RhasspyActor):
         self.actors['recognizer'] = self.recognizer
 
         # Intent handler
-        from .intent_handler import HomeAssistantIntentHandler
-        self.handler_class = HomeAssistantIntentHandler
+        handler_system = self.profile.get('handle.system', 'dummy')
+        self.handler_class = DialogueManager.get_intent_handler_class(handler_system)
         self.handler:ActorAddress = self.createActor(self.handler_class)
         self.actors['handler'] = self.handler
+
+        self.hass_handler:ActorAddress = self.handler
+        if handler_system != 'hass':
+            # Create a separate actor just for home assistant
+            from .intent_handler import HomeAssistantIntentHandler
+            self.hass_handler = self.createActor(HomeAssistantIntentHandler)
+
+        self.actors['hass_handler'] = self.hass_handler
 
         # Sentence generator
         from .train import JsgfSentenceGenerator
@@ -672,3 +680,21 @@ class DialogueManager(RhasspyActor):
         # Use dummy trainer as a fallback
         from .intent_train import DummySpeechTrainer
         return DummyIntentTrainer
+
+    @classmethod
+    def get_intent_handler_class(cls, system: str) -> Type[RhasspyActor]:
+        assert system in ['dummy', 'hass', 'command'], \
+            'Invalid intent handler system: %s' % system
+
+        if system == 'hass':
+            # Use Home Assistant directly
+            from .intent_handler import HomeAssistantIntentHandler
+            return HomeAssistantIntentHandler
+        elif system == 'command':
+            # Use command-line speech trainer
+            from .intent_handler import CommandIntentHandler
+            return CommandIntentHandler
+        else:
+            # Use dummy handlers as a fallback
+            from .intent_handler import DummyIntentHandler
+            return DummyIntentHandler

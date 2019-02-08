@@ -50,10 +50,12 @@ def main() -> None:
     # text2intent
     text2intent_parser = sub_parsers.add_parser('text2intent', help='Text parsed to intent')
     text2intent_parser.add_argument('sentences', nargs='*', help='Sentences to parse')
+    text2intent_parser.add_argument('--handle', action='store_true', help='Pass result to intent handler')
 
     # wav2intent
     wav2intent_parser = sub_parsers.add_parser('wav2intent', help='WAV file to parsed intent')
     wav2intent_parser.add_argument('wav_files', nargs='*', help='Paths to WAV files')
+    wav2intent_parser.add_argument('--handle', action='store_true', help='Pass result to intent handler')
 
     # train
     train_parser = sub_parsers.add_parser('train', help='Re-train profile')
@@ -97,6 +99,7 @@ def main() -> None:
 
     # mic2intent
     mic2intent_parser = sub_parsers.add_parser('mic2intent', help='Voice command to parsed intent')
+    mic2intent_parser.add_argument('--handle', action='store_true', help='Pass result to intent handler')
     mic2intent_parser.add_argument('--timeout', type=float, default=None,
                                    help='Maximum number of seconds to record (default=profile)')
 
@@ -239,6 +242,10 @@ def text2intent(core:RhasspyCore, profile:Profile, args:Any) -> None:
     for sentence in sentences:
         sentence = sentence.strip()
         intent = core.recognize_intent(sentence).intent
+
+        if args.handle:
+            intent = core.handle_intent(intent).intent
+
         intents[sentence] = intent
 
     # Output JSON
@@ -261,6 +268,10 @@ def wav2intent(core:RhasspyCore, profile:Profile, args:Any) -> None:
         intents = {}
         for wav_path, sentence in transcriptions.items():
             intent = core.recognize_intent(sentence).intent
+
+            if args.handle:
+                intent = core.handle_intent(intent).intent
+
             intents[wav_path] = intent
 
         # Output JSON
@@ -269,6 +280,9 @@ def wav2intent(core:RhasspyCore, profile:Profile, args:Any) -> None:
         # Read WAV data from stdin
         sentence = core.transcribe_wav(sys.stdin.buffer.read()).text
         intent = core.recognize_intent(sentence).intent
+
+        if args.handle:
+            intent = core.handle_intent(intent).intent
 
         # Output JSON
         json.dump(intent, sys.stdout, indent=4)
@@ -735,6 +749,9 @@ def mic2intent(core:RhasspyCore, profile:Profile, args:Any) -> None:
 
     # Parse
     intent = core.recognize_intent(sentence).intent
+
+    if args.handle:
+        intent = core.handle_intent(intent).intent
 
     # Output JSON
     json.dump(intent, sys.stdout, indent=4)
