@@ -29,11 +29,20 @@ from .wake import (PocketsphinxWakeListener, ListenForWakeWord,
                    WakeWordNotDetected)
 
 # -----------------------------------------------------------------------------
+# Globals
+# -----------------------------------------------------------------------------
+mic_stdin_thread = None
+mic_stdin_running = False
+
+# -----------------------------------------------------------------------------
 
 def main() -> None:
+    global mic_stdin_running, mic_stdin_thread
+
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description='Rhasspy Voice Assistant')
     parser.add_argument('--profile', type=str, help='Name of profile to use', default=None)
+    parser.add_argument('--profiles', action='append', help='Directories where profiles are stored', default=None)
     parser.add_argument('--debug', action='store_true', help='Print DEBUG log to console')
 
     sub_parsers = parser.add_subparsers(dest='command')
@@ -99,6 +108,7 @@ def main() -> None:
 
     # mic2intent
     mic2intent_parser = sub_parsers.add_parser('mic2intent', help='Voice command to parsed intent')
+    mic2intent_parser.add_argument('--stdin', action='store_true', help='Read audio data from stdin')
     mic2intent_parser.add_argument('--handle', action='store_true', help='Pass result to intent handler')
     mic2intent_parser.add_argument('--timeout', type=float, default=None,
                                    help='Maximum number of seconds to record (default=profile)')
@@ -140,9 +150,15 @@ def main() -> None:
         do_logging = False
 
     # Like PATH, searched in reverse order
-    profiles_dirs = [path for path in
-                     os.environ.get('RHASSPY_PROFILES', 'profiles')\
-                     .split(':') if len(path.strip()) > 0]
+    if args.profiles is not None:
+        profiles_dirs = args.profiles
+    else:
+        profiles_dirs = [os.path.abspath(path) for path in
+                         os.environ.get('RHASSPY_PROFILES', 'profiles')\
+                         .split(':') if len(path.strip()) > 0]
+
+    if args.debug:
+        logging.debug(profiles_dirs)
 
     profiles_dirs.reverse()
 
@@ -174,6 +190,11 @@ def main() -> None:
         if args.command == 'wav2mqtt':
             profile.set('mqtt.enabled', True)
 
+        if args.command in ['mic2intent'] and args.stdin:
+            profile.set('microphone.system', 'stdin')
+            profile.set('microphone.stdin.auto_start', False)
+            mic_stdin_running = True
+
         # Set environment variables
         os.environ['RHASSPY_BASE_DIR'] = os.getcwd()
         os.environ['RHASSPY_PROFILE'] = core.profile.name
@@ -204,8 +225,19 @@ def main() -> None:
             # Automatically start core
             core.start()
 
+        if mic_stdin_running:
+            logging.debug('Reading audio data from stdin')
+            mic_stdin_thread = threading.Thread(target=read_audio_stdin,
+                                                args=(core,), daemon=True)
+            mic_stdin_thread.start()
+
+        # Run command
         try:
             command_funcs[args.command](core, profile, args)
+
+            if mic_stdin_thread is not None:
+                mic_stdin_running = False
+                mic_stdin_thread.join()
         finally:
             core.shutdown()
 
@@ -739,6 +771,12 @@ def mic2text(core:RhasspyCore, profile:Profile, args:Any) -> None:
 # -----------------------------------------------------------------------------
 # mic2intent: record voice command, then transcribe/parse
 # -----------------------------------------------------------------------------
+
+def read_audio_stdin(core:RhasspyCore, chunk_size:int=960):
+    global mic_stdin_running
+    while mic_stdin_running:
+        audio_data = sys.stdin.buffer.read(chunk_size)
+        core.send_audio_data(AudioData(audio_data))
 
 def mic2intent(core:RhasspyCore, profile:Profile, args:Any) -> None:
     # Listen until silence

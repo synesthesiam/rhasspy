@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import logging
 import subprocess
 import threading
@@ -602,4 +603,97 @@ class HermesAudioRecorder(RhasspyActor):
 
     @classmethod
     def test_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+        return {}
+
+# -----------------------------------------------------------------------------
+# STDIN Microphone Recorder
+# -----------------------------------------------------------------------------
+
+class StdinAudioRecorder(RhasspyActor):
+    '''Records from audio input from standard in'''
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.receivers: List[ActorAddress] = []
+        self.buffers:Dict[str, bytes] = {}
+        self.is_recording:bool = False
+
+    def to_started(self, from_state:str) -> None:
+        self.chunk_size = int(self.profile.get(
+            'microphone.stdin.chunk_size', 480*2))
+
+        if self.profile.get('microphone.stdin.auto_start', True):
+            threading.Thread(target=self.process_data,
+                             daemon=True).start()
+
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, StartStreaming):
+            self.receivers.append(message.receiver or sender)
+            self.transition('recording')
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+            self.transition('recording')
+
+    def to_recording(self, from_state:str) -> None:
+        self.is_recording = True
+        self._logger.debug('Recording from microphone (stdin)')
+
+    def in_recording(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, AudioData):
+            # Forward to subscribers
+            for receiver in self.receivers:
+                self.send(receiver, message)
+
+            # Append to buffers
+            for receiver in self.buffers:
+                self.buffers[receiver] += message.data
+        elif isinstance(message, StartStreaming):
+            self.receivers.append(message.receiver or sender)
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+        elif isinstance(message, StopStreaming):
+            if message.receiver is None:
+                # Clear all receivers
+                self.receivers.clear()
+            else:
+                self.receivers.remove(message.receiver)
+        elif isinstance(message, StopRecordingToBuffer):
+            if message.buffer_name is None:
+                # Clear all buffers
+                self.buffers.clear()
+            else:
+                # Respond with buffer
+                buffer = self.buffers.pop(message.buffer_name, bytes())
+                self.send(message.receiver or sender, AudioData(buffer))
+
+        # Check to see if anyone is still listening
+        if (len(self.receivers) == 0) and (len(self.buffers) == 0):
+            # Terminate audio recording
+            self.is_recording = False
+            self.transition('started')
+            self._logger.debug('Stopped recording from microphone (stdin)')
+
+    def to_stopped(self, from_state:str) -> None:
+        if self.is_recording:
+            self.is_recording = False
+            self._logger.debug('Stopped recording from microphone (stdin)')
+
+    # -------------------------------------------------------------------------
+
+    def process_data(self):
+        while True:
+            data = sys.stdin.buffer.read(self.chunk_size)
+            if self.is_recording and (len(data) > 0):
+                # Actor will forward
+                self.send(self.myAddress, AudioData(data))
+
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def get_microphones(cls) -> Dict[Any, Any]:
+        return {}
+
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def test_microphones(cls, chunk_size:int) -> Dict[Any, Any]:
         return {}

@@ -141,7 +141,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
 
         # Empty intent
         intent = empty_intent()
-        intent['text'] = message.text
+        intent['text'] = text
 
         return intent
 

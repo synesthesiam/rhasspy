@@ -7,7 +7,7 @@ from thespian.actors import ActorAddress, ActorExitRequest, WakeupMessage
 from .actor import RhasspyActor, ConfigureEvent, Configured, StateTransition
 from .wake import ListenForWakeWord, StopListeningForWakeWord, WakeWordDetected
 from .command_listener import ListenForCommand, VoiceCommand
-from .audio_recorder import StartRecordingToBuffer, StopRecordingToBuffer
+from .audio_recorder import StartRecordingToBuffer, StopRecordingToBuffer, AudioData
 from .audio_player import PlayWavFile, PlayWavData
 from .stt import TranscribeWav, WavTranscription
 from .stt_train import TrainSpeech, SpeechTrainingComplete, SpeechTrainingFailed
@@ -364,6 +364,9 @@ class DialogueManager(RhasspyActor):
             self.handle_transition(message, sender)
         elif isinstance(message, GetActorStates):
             self.send(sender, self.actor_states)
+        elif isinstance(message, AudioData):
+            # Forward to audio recorder
+            self.send(self.recorder, message)
         else:
             self._logger.warn('Unhandled message: %s' % message)
 
@@ -526,7 +529,8 @@ class DialogueManager(RhasspyActor):
 
     @classmethod
     def get_microphone_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ['arecord', 'pyaudio', 'dummy', 'hermes'], \
+        assert system in ['arecord', 'pyaudio', 'dummy',
+                          'hermes', 'stdin'], \
             'Unknown microphone system: %s' % system
 
         if system == 'arecord':
@@ -538,6 +542,9 @@ class DialogueManager(RhasspyActor):
         elif system == 'hermes':
             from .audio_recorder import HermesAudioRecorder
             return HermesAudioRecorder
+        elif system == 'stdin':
+            from .audio_recorder import StdinAudioRecorder
+            return StdinAudioRecorder
         else:
             from .audio_recorder import DummyAudioRecorder
             return DummyAudioRecorder
