@@ -72,13 +72,23 @@ class DialogueManager(RhasspyActor):
         self.load_actors()
 
         if self.timeout_sec is not None:
+            self._logger.debug(f'Loading...will time out after {self.timeout_sec} second(s)')
             self.wakeupAfter(timedelta(seconds=self.timeout_sec))
 
         self.transition('loading')
 
     def in_loading(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, Configured):
-            self.wait_actors.remove(sender)
+            # Remove sender
+            sender_name = None
+            for name, actor in self.wait_actors.items():
+                if actor == sender:
+                    sender_name = name
+                    break
+
+            if sender_name is not None:
+                del self.wait_actors[sender_name]
+
             if len(self.wait_actors) == 0:
                 self._logger.info('Actors loaded')
                 self.transition('ready')
@@ -90,7 +100,6 @@ class DialogueManager(RhasspyActor):
                 # Inform parent actor that we're ready
                 if self.send_ready:
                     self.send(self._parent, Ready())
-
         elif isinstance(message, WakeupMessage):
             self._logger.warn('Actor timeout! Loading anyway...')
             self.transition('ready')
@@ -233,6 +242,8 @@ class DialogueManager(RhasspyActor):
             self.transition('training_speech')
             self.send(self.speech_trainer,
                       TrainSpeech(message.tagged_sentences))
+        else:
+            self.handle_forward(message, sender)
 
     def in_training_speech(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, SpeechTrainingComplete):
@@ -243,6 +254,8 @@ class DialogueManager(RhasspyActor):
         elif isinstance(message, SpeechTrainingFailed):
             self.transition('ready')
             self.send(self.training_receiver, ProfileTrainingFailed())
+        else:
+            self.handle_forward(message, sender)
 
     def in_training_intent(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, IntentTrainingComplete):
@@ -264,12 +277,16 @@ class DialogueManager(RhasspyActor):
             self.actors['recognizer'] = self.recognizer
 
             # Configure actors
-            self.wait_actors: List[ActorAddress] = []
-            for actor in [self.wake, self.decoder, self.recognizer]:
+            self.wait_actors: Dict[ActorAddress, str] = {
+                'wake': self.wake,
+                'decoder': self.decoder,
+                'recognizer': self.recognizer
+            }
+
+            for name, actor in self.wait_actors.items():
                 self.send(actor, ConfigureEvent(self.profile,
                                                 preload=self.preload,
                                                 **self.actors))
-                self.wait_actors.append(actor)
 
             self._logger.info('Training complete')
             self.transition('training_loading')
@@ -282,31 +299,13 @@ class DialogueManager(RhasspyActor):
                 self.transition('ready')
                 self.send(self.training_receiver,
                           ProfileTrainingComplete())
+        else:
+            self.handle_forward(message, sender)
 
     # -------------------------------------------------------------------------
 
     def handle_any(self, message: Any, sender: ActorAddress) -> None:
-        if isinstance(message, GetMicrophones):
-            # Get all microphones
-            recorder_class = self.recorder_class
-            if message.system is not None:
-                recorder_class = DialogueManager.get_microphone_class(message.system)
-
-            mics = recorder_class.get_microphones()
-            self.send(sender, mics)
-        elif isinstance(message, TestMicrophones):
-            # Get working microphones
-            recorder_system = self.profile.get('microphone.system', 'pyaudio')
-            if message.system is not None:
-                recorder_system = message.system
-
-            recorder_class = DialogueManager.get_microphone_class(recorder_system)
-            test_path = 'microphone.%s.test_chunk_size' % recorder_system
-            chunk_size = int(self.profile.get(test_path, 1024))
-
-            test_mics = recorder_class.test_microphones(chunk_size)
-            self.send(sender, test_mics)
-        elif isinstance(message, ListenForCommand):
+        if isinstance(message, ListenForCommand):
             # Force voice command
             self.intent_receiver = message.receiver or sender
             self.transition('awake')
@@ -339,9 +338,6 @@ class DialogueManager(RhasspyActor):
                       GetWordPronunciations(message.word,
                                             n=message.n,
                                             receiver=sender))
-        elif isinstance(message, PlayWavData):
-            # Forward to audio player
-            self.send(self.player, message)
         elif isinstance(message, TrainProfile):
             # Training
             self.send(self.wake, StopListeningForWakeWord())
@@ -356,27 +352,55 @@ class DialogueManager(RhasspyActor):
             self.send(self.recorder,
                       StopRecordingToBuffer(message.buffer_name,
                                             message.receiver or sender))
-        elif isinstance(message, MqttPublish):
-            # Forward directly
-            self.send(self.mqtt, message)
         elif isinstance(message, StateTransition):
             # Track state of every actor
             self.handle_transition(message, sender)
         elif isinstance(message, GetActorStates):
             self.send(sender, self.actor_states)
+        elif isinstance(message, WakeupMessage):
+            pass
+        else:
+            self.handle_forward(message, sender)
+
+    def handle_transition(self, message:StateTransition, sender:ActorAddress) -> None:
+        self.actor_states[message.name] = message.to_state
+        topic = 'rhasspy/%s/transition/%s' % (self.profile.name, message.name)
+        payload = message.to_state.encode()
+        self.send(self.mqtt, MqttPublish(topic, payload))
+
+    def handle_forward(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, GetMicrophones):
+            # Get all microphones
+            recorder_class = self.recorder_class
+            if message.system is not None:
+                recorder_class = DialogueManager.get_microphone_class(message.system)
+
+            mics = recorder_class.get_microphones()
+            self.send(sender, mics)
+        elif isinstance(message, TestMicrophones):
+            # Get working microphones
+            recorder_system = self.profile.get('microphone.system', 'pyaudio')
+            if message.system is not None:
+                recorder_system = message.system
+
+            recorder_class = DialogueManager.get_microphone_class(recorder_system)
+            test_path = 'microphone.%s.test_chunk_size' % recorder_system
+            chunk_size = int(self.profile.get(test_path, 1024))
+
+            test_mics = recorder_class.test_microphones(chunk_size)
+            self.send(sender, test_mics)
+        elif isinstance(message, PlayWavData) \
+             or isinstance(message, PlayWavFile):
+            # Forward to audio player
+            self.send(self.player, message)
+        elif isinstance(message, MqttPublish):
+            # Forward directly
+            self.send(self.mqtt, message)
         elif isinstance(message, AudioData):
             # Forward to audio recorder
             self.send(self.recorder, message)
         else:
             self._logger.warn('Unhandled message: %s' % message)
-
-    def handle_transition(self,
-                          message:StateTransition,
-                          sender:ActorAddress) -> None:
-        self.actor_states[message.name] = message.to_state
-        topic = 'rhasspy/%s/transition/%s' % (self.profile.name, message.name)
-        payload = message.to_state.encode()
-        self.send(self.mqtt, MqttPublish(topic, payload))
 
     # -------------------------------------------------------------------------
     # Utilities
@@ -470,12 +494,12 @@ class DialogueManager(RhasspyActor):
         self.actors['mqtt'] = self.mqtt
 
         # Configure actors
-        self.wait_actors = []
+        self.wait_actors:Dict[str, ActorAddress] = {}
         for name, actor in self.actors.items():
             self.send(actor, ConfigureEvent(self.profile,
                                             preload=self.preload,
                                             **self.actors))
-            self.wait_actors.append(actor)
+            self.wait_actors[name] = actor
 
         self._logger.debug('Actors created')
 
@@ -489,7 +513,7 @@ class DialogueManager(RhasspyActor):
         if system == 'aplay':
             from .audio_player import APlayAudioPlayer
             return APlayAudioPlayer
-        elif system == 'heremes':
+        elif system == 'hermes':
             from .audio_player import HermesAudioPlayer
             return HermesAudioPlayer
         else:
@@ -551,7 +575,7 @@ class DialogueManager(RhasspyActor):
 
     @classmethod
     def get_command_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ['dummy', 'webrtcvad', 'command'], \
+        assert system in ['dummy', 'webrtcvad', 'command', 'oneshot'], \
             'Unknown voice command system: %s' % system
 
         if system == 'webrtcvad':
@@ -560,6 +584,9 @@ class DialogueManager(RhasspyActor):
         elif system == 'command':
             from .command_listener import CommandCommandListener
             return CommandCommandListener
+        elif system == 'oneshot':
+            from .command_listener import OneShotCommandListener
+            return OneShotCommandListener
         else:
             from .command_listener import DummyCommandListener
             return DummyCommandListener

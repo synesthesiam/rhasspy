@@ -1,0 +1,118 @@
+- alias: "Turn living room lamp on/off"
+  trigger:
+    platform: event
+    event_type: rhasspy_ChangeLightState
+    event_data:
+      name: 'living room lamp'
+  action:
+    service_template: 'switch.turn_{{ trigger.event.data["state"] }}'
+    data:
+      entity_id: switch.living_room_lamp
+
+- alias: "Turn garage light on/off"
+  trigger:
+    platform: event
+    event_type: rhasspy_ChangeLightState
+    event_data:
+      name: 'garage light'
+  action:
+    service_template: 'switch.turn_{{ trigger.event.data["state"] }}'
+    data:
+      entity_id: switch.garage_light
+
+- alias: "Turn bedroom light on"
+  trigger:
+    platform: event
+    event_type: rhasspy_ChangeLightState
+    event_data:
+      name: 'bedroom light'
+      state: 'on'
+  action:
+    service: mqtt.publish
+    data_template:
+      topic: "bedroom_light/set"
+      payload: "on,255,255,255"
+
+- alias: "Turn bedroom light off"
+  trigger:
+    platform: event
+    event_type: rhasspy_ChangeLightState
+    event_data:
+      name: 'bedroom light'
+      state: 'off'
+  action:
+    service: mqtt.publish
+    data_template:
+      topic: "bedroom_light/set"
+      payload: "off,0,0,0"
+
+- alias: "Say garage open/closed"
+  trigger:
+    platform: event
+    event_type: rhasspy_GetGarageState
+  action:
+    service: rest_command.espeak
+    data_template:
+      message: >
+        {% if is_state('binary_sensor.garage_door', 'off') %}
+          The garage door is closed.
+        {% else %}
+          The garage door is open.
+        {% endif %}
+
+- alias: "Say the time"
+  trigger:
+    platform: event
+    event_type: rhasspy_GetTime
+  action:
+    service: rest_command.espeak
+    data_template:
+      message: "It is {{ now().strftime('%I') | int }} {{ now().strftime('%M %p') }}."
+
+- alias: "Say the temperature"
+  trigger:
+    platform: event
+    event_type: rhasspy_GetTemperature
+  action:
+    service: rest_command.espeak
+    data_template:
+      message: "It is {{ states('sensor.temperature') }} degrees."
+
+- alias: "Set bedroom light color (red)"
+  trigger:
+    platform: event
+    event_type: rhasspy_ChangeLightColor
+    event_data:
+      name: 'bedroom light'
+      color: 'red'
+  action:
+    service: mqtt.publish
+    data:
+      topic: "bedroom_light/set"
+      payload: "on,255,0,0"
+
+- alias: "Set bedroom light color (green)"
+  trigger:
+    platform: event
+    event_type: rhasspy_ChangeLightColor
+    event_data:
+      name: 'bedroom light'
+      color: 'green'
+  action:
+    service: mqtt.publish
+    data:
+      topic: "bedroom_light/set"
+      payload: "on,0,255,0"
+
+- alias: "Set bedroom light color (blue)"
+  trigger:
+    platform: event
+    event_type: rhasspy_ChangeLightColor
+    event_data:
+      name: 'bedroom light'
+      color: 'blue'
+  action:
+    service: mqtt.publish
+    data:
+      topic: "bedroom_light/set"
+      payload: "on,0,0,255"

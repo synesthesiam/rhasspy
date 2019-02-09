@@ -1,2 +1,0 @@
-2019-02-07 02:46:54 WARNING (MainThread) [homeassistant.components.http] legacy_api_password support has been enabled. If you don't require it, remove the 'api_password' from your http config.
-2019-02-07 02:48:34 WARNING (MainThread) [hbmqtt.mqtt.protocol.handler] BrokerProtocolHandler Unhandled exception in reader coro: IncompleteReadError('0 bytes read on a total of 1 expected bytes',)

@@ -1,0 +1,43 @@
+title: Home
+views:
+  - title: default
+    cards:
+      - type: light
+        name: Bedroom Light
+        entity: light.bedroom_light
+      - type: horizontal-stack
+        cards:
+          - type: entity-button
+            name: Living Room
+            entity: switch.living_room_lamp
+            icon: 'mdi:lamp'
+            hold_action:
+              action: none
+            tap_action:
+              action: toggle
+          - type: entity-button
+            name: Garage Light
+            entity: switch.garage_light
+            icon: 'mdi:lightbulb'
+            hold_action:
+              action: none
+            tap_action:
+              action: toggle
+      - type: horizontal-stack
+        cards:
+          - type: entity-button
+            entity: binary_sensor.garage_door
+            icon: 'mdi:garage'
+            hold_action:
+              action: none
+            tap_action:
+              action: none
+          - type: gauge
+            entity: sensor.temperature
+            max: 100
+            min: 0
+            severity:
+              green: 50
+              red: 0
+              yellow: 32
+            theme: default

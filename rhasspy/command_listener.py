@@ -179,6 +179,7 @@ class WebrtcvadCommandListener(RhasspyActor):
             self.speech_buffers_left -= 1
         elif is_speech and not self.in_phrase:
             # Start of phrase
+            self._logger.debug('Voice command started')
             self.in_phrase = True
             self.after_phrase = False
             self.min_phrase_buffers = int(math.ceil(self.min_sec / self.seconds_per_buffer))
@@ -201,6 +202,7 @@ class WebrtcvadCommandListener(RhasspyActor):
                 self.buffer += data
             elif self.after_phrase and (self.silence_buffers <= 0):
                 # Phrase complete
+                self._logger.debug('Voice command finished')
                 finished = True
                 self.buffer += data
             elif self.in_phrase and (self.min_phrase_buffers <= 0):
@@ -252,4 +254,53 @@ class CommandCommandListener(RhasspyActor):
         if isinstance(message, VoiceCommand):
             # Pass downstream to receiver
             self.send(self.receiver, message)
+            self.transition('started')
+
+# -----------------------------------------------------------------------------
+# One Shot Command Listener
+# -----------------------------------------------------------------------------
+
+class OneShotCommandListener(RhasspyActor):
+    '''Assumes entire voice command comes in first audio data'''
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.receiver:Optional[ActorAddress] = None
+        self.handle:bool = False
+
+    def to_started(self, from_state:str) -> None:
+        self.recorder = self.config['recorder']
+        self.timeout_sec = self.profile.get('command.oneshot.timeout_sec', 30)
+
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, ListenForCommand):
+            self.receiver = message.receiver or sender
+            self.handle = message.handle
+            self.transition('listening')
+
+            if message.timeout is not None:
+                # Use message timeout
+                timeout_sec = message.timeout
+            else:
+                # Use default timeout
+                timeout_sec = self.timeout_sec
+
+            self.send(self.recorder, StartStreaming(self.myAddress))
+            self.wakeupAfter(timedelta(seconds=timeout_sec))
+
+    def in_listening(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, AudioData):
+            assert self.receiver is not None
+            self.transition('started')
+            self.send(self.recorder, StopStreaming(self.myAddress))
+            self._logger.debug(f'Received {len(message.data)} byte(s) of audio data')
+            self.send(self.receiver, VoiceCommand(message.data, self.handle))
+        elif isinstance(message, WakeupMessage):
+            # Timeout
+            self._logger.warn('Timeout')
+            self.send(self.recorder, StopStreaming(self.myAddress))
+            self.send(self.receiver,
+                      VoiceCommand(bytes(),
+                                   timeout=True,
+                                   handle=self.handle))
+
             self.transition('started')

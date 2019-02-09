@@ -87,7 +87,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
                     event_type:str = intent['hass_event']['event_type']
                     event_data:Dict[str, Any] = intent['hass_event']['event_data']
 
-                intent = self.forward_intent(event_type, event_data)
+                self.forward_intent(event_type, event_data)
             except Exception as e:
                 self._logger.exception('forward_intent')
                 intent['error'] = str(e)
@@ -110,10 +110,10 @@ class HomeAssistantIntentHandler(RhasspyActor):
             'event_data': slots
         }
 
-        return self.forward_intent(event_type, slots)
+        self.forward_intent(event_type, slots)
+        return intent
 
-
-    def forward_intent(self, event_type: str, slots: Dict[str, Any]) -> Dict[str, Any]:
+    def forward_intent(self, event_type: str, slots: Dict[str, Any]):
         import requests
 
         # Base URL of Home Assistant server
@@ -137,8 +137,6 @@ class HomeAssistantIntentHandler(RhasspyActor):
         response = requests.post(post_url, headers=headers, json=slots)
         self._logger.debug('POSTed intent to %s with headers=%s' % (post_url, headers))
         response.raise_for_status()
-
-        return intent
 
     # -------------------------------------------------------------------------
 

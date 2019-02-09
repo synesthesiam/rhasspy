@@ -126,7 +126,7 @@ def main() -> None:
     wav2mqtt_parser = sub_parsers.add_parser('wav2mqtt', help='Push WAV file(s) to MQTT')
     wav2mqtt_parser.add_argument('wav_files', nargs='*', help='Paths to WAV files')
     wav2mqtt_parser.add_argument('--frames', type=int,
-                                 default=480, help='WAV frames per MQTT message (default=480)')
+                                 default=0, help='WAV frames per MQTT message (default=0 for all)')
     wav2mqtt_parser.add_argument('--site-id', type=str,
                                  default='default', help='Hermes siteId (default=default)')
     wav2mqtt_parser.add_argument('--silence-before', type=float,
@@ -856,31 +856,37 @@ def wav2mqtt(core:RhasspyCore, profile:Profile, args:Any) -> None:
                 rate = wav_file.getframerate()
                 width = wav_file.getsampwidth()
                 channels = wav_file.getnchannels()
-                chunk_size = args.frames * width * channels
 
-                if args.silence_before > 0:
-                    # Silence
-                    num_chunks = int((args.silence_before * rate * width * channels) / chunk_size)
-                    for i in range(num_chunks):
-                        _send_frame(core, topic, bytes(chunk_size), rate, width, channels)
-                        time.sleep(args.pause)
+                if args.frames > 0:
+                    # Split into chunks
+                    chunk_size = args.frames * width * channels
+                    if args.silence_before > 0:
+                        # Silence
+                        num_chunks = int((args.silence_before * rate * width * channels) / chunk_size)
+                        for i in range(num_chunks):
+                            _send_frame(core, topic, bytes(chunk_size), rate, width, channels)
+                            time.sleep(args.pause)
 
-                # Read actual audio data
-                audio_data = wav_file.readframes(args.frames)
-
-                while len(audio_data) > 0:
-                    _send_frame(core, topic, audio_data, rate, width, channels)
-                    time.sleep(args.pause)
-
-                    # Read next chunk
+                    # Read actual audio data
                     audio_data = wav_file.readframes(args.frames)
 
-                if args.silence_after > 0:
-                    # Silence
-                    num_chunks = int((args.silence_after * rate * width * channels) / chunk_size)
-                    for i in range(num_chunks):
-                        _send_frame(core, topic, bytes(chunk_size), rate, width, channels)
+                    while len(audio_data) > 0:
+                        _send_frame(core, topic, audio_data, rate, width, channels)
                         time.sleep(args.pause)
+
+                        # Read next chunk
+                        audio_data = wav_file.readframes(args.frames)
+
+                    if args.silence_after > 0:
+                        # Silence
+                        num_chunks = int((args.silence_after * rate * width * channels) / chunk_size)
+                        for i in range(num_chunks):
+                            _send_frame(core, topic, bytes(chunk_size), rate, width, channels)
+                            time.sleep(args.pause)
+                else:
+                    # Send all at once
+                    audio_data = wav_file.readframes(wav_file.getnframes())
+                    _send_frame(core, topic, audio_data, rate, width, channels)
 
             print(wav_path)
 

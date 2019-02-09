@@ -51,7 +51,7 @@ class RhasspyCore:
     def start(self,
               preload:Optional[bool]=None,
               block:bool=True,
-              timeout:float=10) -> None:
+              timeout:float=60) -> None:
         '''Start Rhasspy'''
 
         if self.actor_system is None:
@@ -67,7 +67,7 @@ class RhasspyCore:
         with self.actor_system.private() as sys:
             sys.ask(self.dialogue_manager,
                     ConfigureEvent(self.profile, preload=preload, ready=block,
-                                   transitions=False))
+                                   transitions=False, load_timeout_sec=30))
 
             # Block until ready
             if block:

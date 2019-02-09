@@ -1,0 +1,27 @@
+version: '2'
+services:
+  rhasspy:
+    image: synesthesiam/rhasspy-server:latest
+    environment:
+      - RHASSPY_PROFILES=/profiles
+    volumes:
+      - ./rhasspy/profiles:/profiles
+    devices:
+      - /dev/snd:/dev/snd
+    network_mode: host
+    depends_on:
+      - mosquitto
+    ports:
+      - "12101:12101"
+  hass:
+    image: homeassistant/home-assistant
+    volumes:
+      - ./home-assistant/config:/config
+    network_mode: host
+    ports:
+      - "8123:8123"
+  mosquitto:
+    image: eclipse-mosquitto
+    network_mode: host
+    ports:
+      - "1883:1883"

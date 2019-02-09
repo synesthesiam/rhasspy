@@ -516,9 +516,13 @@ def api_text_to_speech() -> str:
         espeak_cmd.extend(['-v', str(voice)])
 
     espeak_cmd.append(text)
+    espeak_cmd.append('--stdout')
     logger.debug(espeak_cmd)
 
-    return subprocess.check_output(espeak_cmd).decode()
+    audio_data = subprocess.check_output(espeak_cmd)
+    core.play_wav_data(audio_data)
+
+    return 'OK'
 
 # -----------------------------------------------------------------------------
 

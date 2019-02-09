@@ -1,5 +1,12 @@
 {
     "command": {
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/listen.sh"
+        },
+        "oneshot": {
+            "timeout_sec": 30
+        },
         "system": "webrtcvad",
         "webrtcvad": {
             "chunk_size": 960,
@@ -10,14 +17,15 @@
             "throwaway_buffers": 10,
             "timeout_sec": 30,
             "vad_mode": 0
-        },
-        "command": {
-            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/listen.sh",
-            "arguments": []
-        },
-        "oneshot": {
-            "timeout_sec": 30
         }
+    },
+    "handle": {
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/handle.sh"
+        },
+        "forward_to_hass": true,
+        "system": "hass"
     },
     "home_assistant": {
         "access_token": "",
@@ -25,17 +33,17 @@
         "event_type_format": "rhasspy_{0}",
         "url": "http://hassio/homeassistant/"
     },
-    "handle": {
-        "system": "hass",
-        "command": {
-            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/handle.sh",
-            "arguments": []
-        },
-        "forward_to_hass": true
-    },
     "intent": {
         "adapt": {
             "stop_words": "stop_words.txt"
+        },
+        "command": {
+            "arguments": [
+                "ChangeLightState",
+                "living room lamp",
+                "on"
+            ],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/text2intent.sh"
         },
         "fuzzywuzzy": {
             "examples_json": "intent_examples.json"
@@ -47,10 +55,6 @@
         },
         "remote": {
             "url": "http://my-server:12101/api/text-to-intent"
-        },
-        "command": {
-            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/text2intent.sh",
-            "arguments": ["ChangeLightState", "living room lamp", "on"]
         },
         "system": "fuzzywuzzy"
     },
@@ -82,9 +86,12 @@
         "wake": "etc/wav/beep_hi.wav"
     },
     "speech_to_text": {
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/speech2text.sh"
+        },
         "g2p_model": "g2p.fst",
         "grammars_dir": "grammars",
-        "slots_dir": "slots",
         "pocketsphinx": {
             "acoustic_model": "acoustic_model",
             "base_dictionary": "base_dictionary.txt",
@@ -97,12 +104,9 @@
         "remote": {
             "url": "http://my-server:12101/api/speech-to-text"
         },
-        "command": {
-            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/speech2text.sh",
-            "arguments": []
-        },
         "sentences_ini": "sentences.ini",
         "sentences_text": "sentences.txt",
+        "slots_dir": "slots",
         "system": "pocketsphinx"
     },
     "text_to_speech": {
@@ -114,6 +118,13 @@
     },
     "training": {
         "balance_sentences": true,
+        "intent": {
+            "command": {
+                "arguments": [],
+                "program": "$RHASSPY_BASE_DIR/bin/mock-commands/train-intent.sh"
+            },
+            "system": "auto"
+        },
         "regex": {
             "replace": [
                 {
@@ -126,22 +137,15 @@
             "split": "\\s+"
         },
         "sentence_casing": "lower",
-        "tagged_sentences": "tagged_sentences.md",
-        "tokenizer": "regex",
         "speech_to_text": {
-            "system": "auto",
             "command": {
-                "program": "$RHASSPY_BASE_DIR/bin/mock-commands/train-stt.sh",
-                "arguments": []
-            }
+                "arguments": [],
+                "program": "$RHASSPY_BASE_DIR/bin/mock-commands/train-stt.sh"
+            },
+            "system": "auto"
         },
-        "intent": {
-            "system": "auto",
-            "command": {
-                "program": "$RHASSPY_BASE_DIR/bin/mock-commands/train-intent.sh",
-                "arguments": []
-            }
-        }
+        "tagged_sentences": "tagged_sentences.md",
+        "tokenizer": "regex"
     },
     "tuning": {
         "sphinxtrain": {
@@ -150,30 +154,30 @@
         "system": "sphinxtrain"
     },
     "wake": {
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/sleep.sh"
+        },
         "hermes": {
             "wakeword_id": "default"
         },
         "pocketsphinx": {
+            "chunk_size": 960,
             "keyphrase": "okay rhasspy",
             "mllr_matrix": "wake_mllr",
-            "threshold": 1e-30,
-            "chunk_size": 960
+            "threshold": 1e-30
         },
         "precise": {
+            "chunk_size": 2048,
             "model": "okay-rhasspy.pb",
             "sensitivity": 0.5,
-            "trigger_level": 3,
-            "chunk_size": 2048
+            "trigger_level": 3
         },
         "snowboy": {
             "audio_gain": 1,
+            "chunk_size": 960,
             "model": "snowboy.umdl",
-            "sensitivity": 0.5,
-            "chunk_size": 960
-        },
-        "command": {
-            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/sleep.sh",
-            "arguments": []
+            "sensitivity": 0.5
         },
         "system": "pocketsphinx"
     }

@@ -85,6 +85,7 @@ class HermesAudioPlayer(RhasspyActor):
     '''Sends audio data over MQTT via Hermes protocol'''
     def to_started(self, from_state:str) -> None:
         self.site_id = self.profile.get('mqtt.site_id')
+        self.mqtt = self.config['mqtt']
 
     def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, PlayWavFile):
