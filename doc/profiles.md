@@ -24,7 +24,7 @@ Available profile sections and settings are:
   * `api_password` - Password, if you have that enabled (deprecated)
   * `event_type_format` - Python format string used to create event type from intent type (`{0}`)
 * `speech_to_text` - transcribing speech to text commands
-  * `system` - name of speech to text system (`pocketsphinx`, `remote`, or `remote`)
+  * `system` - name of speech to text system (`pocketsphinx`, `remote`, `command`, or `dummy`)
   * `pocketsphinx` - configuration for Pocketsphinx
     * `acoustic_model` - directory with CMU 16Khz acoustic model
     * `base_dictionary` - large text file with word pronunciations (read only)
@@ -35,12 +35,15 @@ Available profile sections and settings are:
     * `mllr_matrix` - MLLR matrix from [acoustic model tuning](https://cmusphinx.github.io/wiki/tutorialtuning/) 
   * `remote` - configuration for remote Rhasspy server
     * `url` - URL to POST WAV data for transcription (e.g., `http://your-rhasspy-server:12101/api/speech-to-text`)
+  * `command` - configuration for external speech-to-text program
+    * `program` - path to executable
+    * `arguments` - list of arguments to pass to program
   * `sentences_ini` - Ini file with example [sentences/JSGF templates](sentences.md) grouped by intent
   * `sentences_text` - text file with all example sentences expanded and repeated
   * `g2p_model` - finite-state transducer for phonetisaurus to guess word pronunciations
   * `grammars_dir` - directory to write generated JSGF grammars from sentences ini file
 * `intent` - transforming text commands to intents
-  * `system` - intent recognition system (`fuzzywuzzy`, `rasa`, `remote`, `adapt`, or `dummy`)
+  * `system` - intent recognition system (`fuzzywuzzy`, `rasa`, `remote`, `adapt`, `command`, or `dummy`)
   * `fuzzywuzzy` - configuration for simplistic [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) based intent recognizer
     * `examples_json` - JSON file with intents/example sentences
   * `remote` - configuration for remote Rhasspy server
@@ -51,6 +54,9 @@ Available profile sections and settings are:
     * `project_name` - name of project to generate during training
   * `adapt` - configuration for [Mycroft Adapt](https://github.com/MycroftAI/adapt) based intent recognizer
     * `stop_words` - text file with words to ignore in training sentences
+  * `command` - configuration for external speech-to-text program
+    * `program` - path to executable
+    * `arguments` - list of arguments to pass to program
 * `text_to_speech` - pronouncing words
   * `system` - text to speech system (only `espeak` for now)
   * `espeak`
@@ -63,19 +69,35 @@ Available profile sections and settings are:
   * `regex` - configuration for regex tokenizer
     * `replace` - list of dictionaries with patterns/replacements used on each example sentence
     * `split` - pattern used to break sentences into words
+  * `speech_to_text` - training for speech decoder
+    * `system` - speech to text training system (`auto`, `pocketsphinx`, `command`, or `dummy`)
+    * `command` - configuration for external speech-to-text training program
+      * `program` - path to executable
+      * `arguments` - list of arguments to pass to program
+  * `intent` - training for intent recognizer
+    * `system` - intent recognizer training system (`auto`, `fuzzywuzzy`, `rasa`, `adapt`, `command`, or `dummy`)
+    * `command` - configuration for external intent recognizer training program
+      * `program` - path to executable
+      * `arguments` - list of arguments to pass to program
 * `wake` - waking Rhasspy up for speech input
-  * `system` - wake word recognition system (`pocketsphinx`, `snowboy`, `precise`, or `dummy`)
+  * `system` - wake word recognition system (`pocketsphinx`, `snowboy`, `precise`, `command`, or `dummy`)
     * `pocketsphinx` - configuration for Pocketsphinx wake word recognizer
       * `keyphrase` - phrase to wake up on (3-4 syllables recommended)
       * `threshold` - sensitivity of detection (recommended range 1e-50 to 1e-5)
+      * `chunk_size` - number of bytes per chunk to feed to Pocketsphinx (default 960)
     * `snowboy` - configuration for [snowboy](https://snowboy.kitt.ai)
       * `model` - path to model file (in profile directory)
       * `sensitivity` - model sensitivity (0-1, default 0.5)
       * `audio_gain` - audio gain (default 1)
+      * `chunk_size` - number of bytes per chunk to feed to snowboy (default 960)
     * `precise` - configuration for [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise)
       * `model` - path to model file (in profile directory)
       * `sensitivity` - model sensitivity (0-1, default 0.5)
       * `trigger_level`  - number of events to trigger activation (default 3)
+      * `chunk_size` - number of bytes per chunk to feed to Precise (default 2048)
+  * `command` - configuration for external speech-to-text program
+    * `program` - path to executable
+    * `arguments` - list of arguments to pass to program
 * `microphone` - configuration for audio recording
   * `system` - audio recording system (`pyaudio`, `arecord`, `hermes`, or `dummy`)
   * `pyaudio` - configuration for [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) microphone
@@ -95,7 +117,7 @@ Available profile sections and settings are:
     * WAV data published to `hermes/audioServer/<SITE_ID>/playBytes/<REQUEST_ID>`
     * Requires MQTT to be enabled
 * `command`
-  * `system` - which voice command listener system to use (`webrtcvad`)
+  * `system` - which voice command listener system to use (`webrtcvad`, `oneshot`, or `dummy`)
   * `webrtcvad` - configuration for [webrtcvad](https://github.com/wiseman/py-webrtcvad) system
     * `sample_rate` - sample rate of input audio
     * `chunk_size` - bytes per buffer (must be 10,20,30 ms)
@@ -105,10 +127,17 @@ Available profile sections and settings are:
     * `timeout_sec` - maximum number of seconds before stopping
     * `throwaway_buffers` - number of buffers to drop when recording starts
     * `speech_buffers` - number of buffers with speech before command starts
-* `tuning` - configuration for acoustic model tuning
-  * `system` - system for tuning (currently only `sphinxtrain`)
-  * `sphinxtrain` - configuration for [sphinxtrain](https://github.com/cmusphinx/sphinxtrain) based acoustic model tuning
-    * `mllr_matrix` - name of generated MLLR matrix (should match `speech_to_text.pocketsphinx.mllr_matrix`)
+  * `oneshot` - configuration for voice command system that takes first audio frame as entire command
+    * `timeout_sec` - maximum number of seconds before stopping
+  * `command` - configuration for external voice command program
+    * `program` - path to executable
+    * `arguments` - list of arguments to pass to program
+* `handle`
+  * `system` - which intent handling system to use (`hass`, `command`, or `dummy`)
+  * `forward_to_hass` - true if intents are always forwarded to Home Assistant (even if `system` is `command`)
+  * `command` - configuration for external speech-to-text program
+    * `program` - path to executable
+    * `arguments` - list of arguments to pass to program
 * `mqtt` - configuration for MQTT ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
   * `enabled` - true if MQTT client should be started
   * `host` - MQTT host
@@ -117,6 +146,11 @@ Available profile sections and settings are:
   * `password` - MQTT password
   * `reconnect_sec` - number of seconds before client will reconnect
   * `site_id` - ID of site ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
+  * `publish_intents` - true if intents are published to MQTT
+* `tuning` - configuration for acoustic model tuning
+  * `system` - system for tuning (currently only `sphinxtrain`)
+  * `sphinxtrain` - configuration for [sphinxtrain](https://github.com/cmusphinx/sphinxtrain) based acoustic model tuning
+    * `mllr_matrix` - name of generated MLLR matrix (should match `speech_to_text.pocketsphinx.mllr_matrix`)
 
 The RHASSPY_PROFILES Variable
 -----------------------------
