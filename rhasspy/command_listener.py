@@ -13,6 +13,7 @@ from thespian.actors import WakeupMessage, ActorAddress
 
 from .actor import RhasspyActor
 from .audio_recorder import StartStreaming, StopStreaming, AudioData
+from .utils import convert_wav
 
 # -----------------------------------------------------------------------------
 
@@ -243,7 +244,8 @@ class CommandCommandListener(RhasspyActor):
                     self._logger.exception('post_result')
 
                 # Actor will forward
-                self.send(self.myAddress, VoiceCommand(wav_data, handle=message.handle))
+                audio_data = convert_wav(wav_data)
+                self.send(self.myAddress, VoiceCommand(audio_data, handle=message.handle))
 
             self.transition('listening')
 
