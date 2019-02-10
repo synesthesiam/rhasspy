@@ -289,6 +289,30 @@ paths:
             application/json:
               schema:
                 type: object
+  /api/text-to-speech:
+    post:
+      summary: 'Speak a message using eSpeak'
+      requestBody:
+        description: 'Text to speak'
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      parameters:
+      - in: query
+        name: voice
+        description: 'eSpeak voice to use'
+        schema:
+          type: string
+          default: ''
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
   /api/speech-to-intent:
     post:
       summary: 'Transcribe WAV data, extract intent, and send to Home Assistant'
