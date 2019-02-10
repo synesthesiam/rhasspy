@@ -89,6 +89,17 @@
                             </div>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <input type="checkbox" id="mqtt-publish_intents" v-model="mqttPublishIntents" :disabled="!mqttEnabled">
+                            <label for="mqtt-publish_intents" class="col-form-label">Publish intents over MQTT</label>
+                        </div>
+                        <div class="form-row">
+                            <div class="col text-muted">
+                                Intents will be published to <tt>hermes/intent/&lt;INTENT_NAME&gt;</tt>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -581,7 +592,8 @@
              mqttPort: 0,
              mqttUsername: '',
              mqttPassword: '',
-             mqttSiteId: ''
+             mqttSiteId: '',
+             mqttPublishIntents: false
          }
      },
 
@@ -690,6 +702,10 @@
                                this.mqttSiteId = this._.get(this.profileSettings,
                                                             'mqtt.site_id',
                                                             this.defaultSettings.mqtt.site_id)
+
+                               this.mqttPublishIntents = this._.get(this.profileSettings,
+                                                                    'mqtt.publish_intents',
+                                                                    this.defaultSettings.mqtt.publish_intents)
                            })
                            .catch(err => this.$parent.error(err))
          },
@@ -806,6 +822,10 @@
              this._.set(this.profileSettings,
                         'mqtt.site_id',
                         this.mqttSiteId)
+
+             this._.set(this.profileSettings,
+                        'mqtt.publish_intents',
+                        this.mqttPublishIntents)
 
              // POST to server
              this.$parent.beginAsync()
