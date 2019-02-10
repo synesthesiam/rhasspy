@@ -93,7 +93,7 @@ class DialogueManager(RhasspyActor):
         if isinstance(message, Configured) and (sender == self.mqtt):
             self.transition('loading')
         elif isinstance(message, WakeupMessage):
-            self._logger.warn('MQTT actor did not load! Trying to keep going...')
+            self._logger.warning('MQTT actor did not load! Trying to keep going...')
             self.transition('loading')
 
     def to_loading(self, from_state:str) -> None:
@@ -125,7 +125,7 @@ class DialogueManager(RhasspyActor):
                 if self.send_ready:
                     self.send(self._parent, Ready())
         elif isinstance(message, WakeupMessage):
-            self._logger.warn('Actor timeout! Loading anyway...')
+            self._logger.warning('Actor timeout! Loading anyway...')
             self.transition('ready')
 
             # Inform all actors that we're ready
@@ -320,7 +320,11 @@ class DialogueManager(RhasspyActor):
 
     def in_training_loading(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, Configured):
-            self.wait_actors.remove(sender)
+            self.wait_actors = {
+                name: actor for name, actor in self.wait_actors.items()
+                if actor != sender
+            }
+
             if len(self.wait_actors) == 0:
                 self._logger.info('Actors reloaded')
                 self.transition('ready')
@@ -427,7 +431,7 @@ class DialogueManager(RhasspyActor):
             # Forward to audio recorder
             self.send(self.recorder, message)
         else:
-            self._logger.warn('Unhandled message: %s' % message)
+            self._logger.warning('Unhandled message: %s' % message)
 
     # -------------------------------------------------------------------------
     # Utilities
@@ -669,7 +673,7 @@ class DialogueManager(RhasspyActor):
                                  recognizer_system: str='dummy') -> Type[RhasspyActor]:
 
         assert trainer_system in ['dummy', 'fuzzywuzzy', 'adapt', 'auto', 'command'], \
-            'Invalid intent training system: %s' % system
+            'Invalid intent training system: %s' % trainer_system
 
         if trainer_system == 'auto':
             # Use intent recognizer system
@@ -715,7 +719,7 @@ class DialogueManager(RhasspyActor):
                                  decoder_system: str='dummy') -> Type[RhasspyActor]:
 
         assert trainer_system in ['dummy', 'pocketsphinx', 'auto', 'command'], \
-            'Invalid speech training system: %s' % system
+            'Invalid speech training system: %s' % trainer_system
 
         if trainer_system == 'auto':
             # Use intent recognizer system
@@ -737,7 +741,7 @@ class DialogueManager(RhasspyActor):
             return CommandSpeechTrainer
 
         # Use dummy trainer as a fallback
-        from .intent_train import DummySpeechTrainer
+        from .stt_train import DummySpeechTrainer
         return DummyIntentTrainer
 
     @classmethod

@@ -113,10 +113,10 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
 
             # sentence -> (sentence, intent, slots)
             choices: Dict[str, Tuple[str, str, Dict[str, List[str]]]] = {}
-            for intent, intent_examples in self.examples.items():
+            for intent_name, intent_examples in self.examples.items():
                 for example in intent_examples:
                     example_text = example['text']
-                    choices[example_text] = (example_text, intent, example['slots'])
+                    choices[example_text] = (example_text, intent_name, example['slots'])
 
             # Find closest matching sentence
             best_text, best_score = process.extractOne(text, choices.keys())

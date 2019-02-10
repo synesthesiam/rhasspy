@@ -13,7 +13,8 @@ from thespian.actors import ActorAddress
 from .actor import RhasspyActor
 from .profiles import Profile
 from .pronounce import GetWordPronunciations, WordPronunciation
-from .utils import read_dict, lcm, group_sentences_by_intent, SBI_TYPE
+from .utils import (read_dict, lcm, group_sentences_by_intent,
+                    sanitize_sentence, SBI_TYPE)
 
 # -----------------------------------------------------------------------------
 
@@ -180,7 +181,10 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         # Add words from wake word if using pocketsphinx
         if self.profile.get('wake.system') == 'pocketsphinx':
             wake_keyphrase = self.profile.get('wake.pocketsphinx.keyphrase')
-            _, wake_tokens = self._sanitize_sentence(wake_keyphrase)
+            _, wake_tokens = sanitize_sentence(wake_keyphrase,
+                                               self.sentence_casing,
+                                               self.replace_patterns,
+                                               self.split_pattern)
 
             for word in wake_tokens:
                 # Dictionary uses upper-case letters
@@ -319,27 +323,6 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
             shutil.copy(lm_source_path, lm_dest_path)
 
         self._logger.debug('Wrote language model to %s' % lm_dest_path)
-
-    # -------------------------------------------------------------------------
-
-    def _sanitize_sentence(self, sentence: str) -> Tuple[str, List[str]]:
-        '''Applies profile-specific casing and tokenization to a sentence.
-        Returns the sanitized sentence and tokens.'''
-
-        if self.sentence_casing == 'lower':
-            sentence = sentence.lower()
-        elif sentence_casing == 'upper':
-            sentence = sentence.upper()
-
-        # Process replacement patterns
-        for pattern, repl in self.replace_patterns.items():
-            sentence = re.sub(pattern, repl, sentence)
-
-        # Tokenize
-        tokens = [t for t in re.split(self.split_pattern, sentence)
-                  if len(t.strip()) > 0]
-
-        return sentence, tokens
 
 # -----------------------------------------------------------------------------
 # Command-line based speed trainer.

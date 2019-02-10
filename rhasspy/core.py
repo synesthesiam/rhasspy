@@ -219,6 +219,7 @@ class RhasspyCore:
     # -------------------------------------------------------------------------
 
     def send_audio_data(self, data:AudioData) -> None:
+        assert self.actor_system is not None
         self.actor_system.tell(self.dialogue_manager, data)
 
     # -------------------------------------------------------------------------

@@ -92,10 +92,10 @@ class PocketsphinxWakeListener(RhasspyActor):
                 if result is not None:
                     detected = True
                     self._logger.debug('Hotword detected (%s)' % self.keyphrase)
-                    output = WakeWordDetected(self.keyphrase,
-                                              audio_data_info=message.info)
+                    detected_msg = WakeWordDetected(self.keyphrase,
+                                                    audio_data_info=message.info)
                     for receiver in self.receivers:
-                        self.send(receiver, output)
+                        self.send(receiver, detected_msg)
 
                     break
 
@@ -110,10 +110,10 @@ class PocketsphinxWakeListener(RhasspyActor):
 
             if not detected and self.not_detected:
                 # Report non-detection
-                output = WakeWordNotDetected(self.keyphrase,
-                                             audio_data_info=message.info)
+                not_detected_msg = WakeWordNotDetected(self.keyphrase,
+                                                       audio_data_info=message.info)
                 for receiver in self.receivers:
-                    self.send(receiver, output)
+                    self.send(receiver, not_detected_msg)
         elif isinstance(message, StopListeningForWakeWord):
             self.receivers.remove(message.receiver or sender)
             if len(self.receivers) == 0:
