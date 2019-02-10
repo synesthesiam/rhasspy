@@ -141,7 +141,63 @@ grouped by intent in JSON to standard in. No output is expected from your
 program besides a successful exit code. **NOTE**: Rhasspy will not generate
 `dictionary.txt` or `language_model.txt` if you use a custom program.
 
-TODO: Describe JSON format
+The input JSON is an object where each key is the name of an intent and the values are lists of training sentence objects. Each sentence object has the text of the sentence, all tagged entities, and the tokens of the sentence.
+
+Example input:
+
+    {
+      "GetTime": [
+        {
+          "sentence": "what time is it",
+          "entities": [],
+          "tokens": [
+            "what",
+            "time",
+            "is",
+            "it"
+          ]
+        },
+        {
+          "sentence": "tell me the time",
+          "entities": [],
+          "tokens": [
+            "tell",
+            "me",
+            "the",
+            "time"
+          ]
+        }
+      ],
+      "ChangeLightColor": [
+        {
+          "sentence": "set the bedroom light to red",
+          "entities": [
+            {
+              "entity": "name",
+              "value": "bedroom light",
+              "text": "bedroom light",
+              "start": 8,
+              "end": 21
+            },
+            {
+              "entity": "color",
+              "value": "red",
+              "text": "red",
+              "start": 25,
+              "end": 28
+            }
+          ],
+          "tokens": [
+            "set",
+            "the",
+            "bedroom",
+            "light",
+            "to",
+            "red"
+          ]
+        }
+      ]
+    }
 
 See
 [train-stt.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/train-stt.sh)
@@ -172,15 +228,19 @@ with the text transcription printed to standard in. Your program should return
 JSON on standard out, something like:
 
     {
-      "intent": "ChangeLightColor",
-      "entities": {
-        "name": "living room lamp",
-        "color": "red"
-      }
+      "intent": {
+        "name": "ChangeLightColor",
+        "confidence": 1.0
+      },
+      "entities": [
+        { "entity": "name",
+          "value": "bedroom light" },
+        { "entity": "color",
+          "value": "red" }
+      ],
+      "text": "set the bedroom light to red"
     }
     
-TODO: Fix internal JSON format
-
 See
 [text2intent.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/text2intent.sh)
 for an example.
@@ -215,7 +275,63 @@ During training, Rhasspy will call your program with the training sentences
 grouped by intent in JSON printed to standard in. No output is expected, besides
 a successful exit code.
 
-TODO: Describe JSON format
+The input JSON is an object where each key is the name of an intent and the values are lists of training sentence objects. Each sentence object has the text of the sentence, all tagged entities, and the tokens of the sentence.
+
+Example input:
+
+    {
+      "GetTime": [
+        {
+          "sentence": "what time is it",
+          "entities": [],
+          "tokens": [
+            "what",
+            "time",
+            "is",
+            "it"
+          ]
+        },
+        {
+          "sentence": "tell me the time",
+          "entities": [],
+          "tokens": [
+            "tell",
+            "me",
+            "the",
+            "time"
+          ]
+        }
+      ],
+      "ChangeLightColor": [
+        {
+          "sentence": "set the bedroom light to red",
+          "entities": [
+            {
+              "entity": "name",
+              "value": "bedroom light",
+              "text": "bedroom light",
+              "start": 8,
+              "end": 21
+            },
+            {
+              "entity": "color",
+              "value": "red",
+              "text": "red",
+              "start": 25,
+              "end": 28
+            }
+          ],
+          "tokens": [
+            "set",
+            "the",
+            "bedroom",
+            "light",
+            "to",
+            "red"
+          ]
+        }
+      ]
+    }
     
 See
 [train-intent.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/train-intent.sh)

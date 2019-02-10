@@ -11,55 +11,61 @@
 # list of sentence tokens (words).
 #
 # Something like:
-# {
-#     "GetTime": [
-#         [
-#             "what time is it",
-#             [],
-#             [
-#                 "what",
-#                 "time",
-#                 "is",
-#                 "it"
-#             ]
-#         ],
-#         [
-#             "tell me the time",
-#             [],
-#             [
-#                 "tell",
-#                 "me",
-#                 "the",
-#                 "time"
-#             ]
-#         ]
-#     ],
-#     "ChangeLightColor": [
-#         [
-#             "set the living room lamp to red",
-#             [
-#                 [
-#                     "name",
-#                     "living room lamp"
-#                 ],
-#                 [
-#                     "color",
-#                     "red"
-#                 ]
-#             ],
-#             [
-#                 "set",
-#                 "the",
-#                 "living",
-#                 "room",
-#                 "lamp",
-#                 "to",
-#                 "red"
-#             ]
-#         ]
-#     ]
-# }
+#
+#  {
+#      "GetTime": [
+#          {
+#              "sentence": "what time is it",
+#              "entities": [],
+#              "tokens": [
+#                  "what",
+#                  "time",
+#                  "is",
+#                  "it"
+#              ]
+#          },
+#          {
+#              "sentence": "tell me the time",
+#              "entities": [],
+#              "tokens": [
+#                  "tell",
+#                  "me",
+#                  "the",
+#                  "time"
+#              ]
+#          }
+#      ],
+#      "ChangeLightColor": [
+#          {
+#              "sentence": "set the bedroom light to red",
+#              "entities": [
+#                  {
+#                      "entity": "name",
+#                      "value": "bedroom light",
+#                      "text": "bedroom light",
+#                      "start": 8,
+#                      "end": 21
+#                  },
+#                  {
+#                      "entity": "color",
+#                      "value": "red",
+#                      "text": "red",
+#                      "start": 25,
+#                      "end": 28
+#                  }
+#              ],
+#              "tokens": [
+#                  "set",
+#                  "the",
+#                  "bedroom",
+#                  "light",
+#                  "to",
+#                  "red"
+#              ]
+#          }
+#      ]
+#  }
 
 # No output is expected.
 # Here, we just show the training sentences we received.
-cat | jq -r '.[] | .[] | .[0]'
+cat | jq -r '.[] | .[] | .sentence'

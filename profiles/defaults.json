@@ -50,7 +50,7 @@
         },
         "command": {
             "program": "$RHASSPY_BASE_DIR/bin/mock-commands/text2intent.sh",
-            "arguments": ["ChangeLightState", "living room lamp", "on"]
+            "arguments": []
         },
         "system": "fuzzywuzzy"
     },

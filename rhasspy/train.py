@@ -26,8 +26,6 @@ class SentencesGenerated:
         self.tagged_sentences = tagged_sentences
 
 # -----------------------------------------------------------------------------
-
-# -----------------------------------------------------------------------------
 # jsgf-gen based sentence generator
 # https://github.com/synesthesiam/jsgf-gen
 # -----------------------------------------------------------------------------

@@ -506,8 +506,8 @@ class DialogueManager(RhasspyActor):
 
         # Speech trainer
         speech_trainer_system = self.profile.get('training.speech_to_text.system', 'auto')
-        self.speech_trainer_class = DialogueManager.get_speech_trainer_class(decoder_system,
-                                                                             speech_trainer_system)
+        self.speech_trainer_class = DialogueManager.get_speech_trainer_class(
+            speech_trainer_system, decoder_system)
 
         self.speech_trainer:ActorAddress = self.createActor(self.speech_trainer_class)
         self.actors['speech_trainer'] = self.speech_trainer
@@ -730,7 +730,7 @@ class DialogueManager(RhasspyActor):
             'Invalid speech training system: %s' % trainer_system
 
         if trainer_system == 'auto':
-            # Use intent recognizer system
+            # Use speech decoder system
             if decoder_system == 'pocketsphinx':
                 # Use opengrm/phonetisaurus
                 from .stt_train import PocketsphinxSpeechTrainer
@@ -743,14 +743,14 @@ class DialogueManager(RhasspyActor):
             # Use opengrm/phonetisaurus
             from .stt_train import PocketsphinxSpeechTrainer
             return PocketsphinxSpeechTrainer
-        elif decoder_system == 'command':
+        elif trainer_system == 'command':
             # Use command-line speech trainer
             from .stt_train import CommandSpeechTrainer
             return CommandSpeechTrainer
 
         # Use dummy trainer as a fallback
         from .stt_train import DummySpeechTrainer
-        return DummyIntentTrainer
+        return DummySpeechTrainer
 
     @classmethod
     def get_intent_handler_class(cls, system: str) -> Type[RhasspyActor]:

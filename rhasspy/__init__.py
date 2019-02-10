@@ -21,7 +21,7 @@ from thespian.actors import ActorAddress, Actor, ActorSystem
 from .core import RhasspyCore
 from .actor import ConfigureEvent, Configured
 from .profiles import Profile
-from .utils import extract_entities, buffer_to_wav, maybe_convert_wav
+from .utils import buffer_to_wav, maybe_convert_wav
 from .audio_recorder import AudioData, StartStreaming, StopStreaming
 from .dialogue import DialogueManager
 from .wake import (PocketsphinxWakeListener, ListenForWakeWord,

@@ -3,10 +3,9 @@
 # Input text is avaiable via STDIN
 read -r text
 
-# Arguments here are passed in from intent.command.arguments
-intent_name="$1"
-slot_name="$2"
-slot_state="$3"
+intent_name="ChangeLightState"
+slot_name="living room lamp"
+slot_state="on"
 
 # Available environment variables
 # -------------------------------
@@ -16,7 +15,7 @@ slot_state="$3"
 
 # Output should be JSON
 echo "{
-  \"intent\": { \"name\": \"$intent_name\" },
+  \"intent\": { \"name\": \"$intent_name\", \"confidence\": 1.0 },
   \"entities\": [
     { \"entity\": \"name\", \"value\": \"$slot_name\" },
     { \"entity\": \"state\", \"value\": \"$slot_state\" }

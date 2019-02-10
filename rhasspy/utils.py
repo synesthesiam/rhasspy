@@ -5,6 +5,7 @@ import wave
 import logging
 import math
 import itertools
+import json
 import collections
 from collections import defaultdict
 import threading
@@ -14,7 +15,40 @@ from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple
 
 # -----------------------------------------------------------------------------
 
-SBI_TYPE = Dict[str, List[Tuple[str, List[Tuple[str, str]], List[str]]]]
+class SentenceEntity:
+    def __init__(self, entity:str, value:str,
+                 text:Optional[str]=None,
+                 start:Optional[int]=None,
+                 end:Optional[int]=None) -> None:
+        self.entity = entity
+        self.value = value
+        self.text = text or value
+        self.start = start or -1
+        self.end = end or -1
+
+    def json(self):
+        return {
+            'entity': self.entity,
+            'value': self.value,
+            'text': self.text,
+            'start': self.start,
+            'end': self.end
+        }
+
+class TrainingSentence:
+    def __init__(self, sentence: str,
+                 entities: List[SentenceEntity],
+                 tokens: List[str]) -> None:
+        self.sentence = sentence
+        self.entities = entities
+        self.tokens = tokens
+
+    def json(self):
+        return {
+            'sentence': self.sentence,
+            'entities': [e.__dict__ for e in self.entities],
+            'tokens': self.tokens
+        }
 
 # -----------------------------------------------------------------------------
 
@@ -70,7 +104,7 @@ def recursive_update(base_dict: Dict[Any, Any],
 
 # -----------------------------------------------------------------------------
 
-def extract_entities(phrase: str) -> Tuple[str, List[Tuple[str, str]]]:
+def extract_entities(phrase: str) -> Tuple[str, List[SentenceEntity]]:
     '''Extracts embedded entity markings from a phrase.
     Returns the phrase with entities removed and a list of entities.
 
@@ -86,6 +120,7 @@ def extract_entities(phrase: str) -> Tuple[str, List[Tuple[str, str]]]:
         nonlocal removed_chars
         value, entity = m.group(1), m.group(2)
         replacement = value
+        start = m.start(0) - removed_chars
         removed_chars += 1 + len(entity) + 3  # 1 for [, 3 for ], (, and )
 
         # Replace value with entity synonym, if present.
@@ -94,7 +129,8 @@ def extract_entities(phrase: str) -> Tuple[str, List[Tuple[str, str]]]:
             entity = entity_parts[0]
             value = entity_parts[1]
 
-        entities.append((entity, value))
+        end = m.end(0) - removed_chars
+        entities.append(SentenceEntity(entity, value, replacement, start, end))
         return replacement
 
     # [text](entity label) => text
@@ -246,8 +282,8 @@ def sanitize_sentence(sentence:str,
     return sentence, tokens
 
 def group_sentences_by_intent(tagged_sentences: Dict[str, List[str]],
-                              *sanitize_args) -> SBI_TYPE:
-    sentences_by_intent: SBI_TYPE = defaultdict(list)
+                              *sanitize_args) -> Dict[str, List[TrainingSentence]]:
+    sentences_by_intent:Dict[str, List[TrainingSentence]] = defaultdict(list)
 
     # Extract entities from tagged sentences
     for intent_name, intent_sents in tagged_sentences.items():
@@ -257,6 +293,7 @@ def group_sentences_by_intent(tagged_sentences: Dict[str, List[str]],
 
             # Split sentence into words (tokens)
             sentence, tokens = sanitize_sentence(sentence, *sanitize_args)
-            sentences_by_intent[intent_name].append((sentence, entities, tokens))
+            sentences_by_intent[intent_name].append(
+                TrainingSentence(sentence, entities, tokens))
 
     return sentences_by_intent

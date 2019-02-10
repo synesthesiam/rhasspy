@@ -14,7 +14,7 @@ from .actor import RhasspyActor
 from .profiles import Profile
 from .pronounce import GetWordPronunciations, WordPronunciation
 from .utils import (read_dict, lcm, group_sentences_by_intent,
-                    sanitize_sentence, SBI_TYPE)
+                    sanitize_sentence, TrainingSentence)
 
 # -----------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ class TrainSpeech:
 class SpeechTrainingComplete:
     def __init__(self,
                  tagged_sentences: Dict[str, List[str]],
-                 sentences_by_intent: SBI_TYPE) -> None:
+                 sentences_by_intent: Dict[str, List[TrainingSentence]]) -> None:
         self.tagged_sentences = tagged_sentences
         self.sentences_by_intent = sentences_by_intent
 
@@ -54,7 +54,7 @@ class DummySpeechTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def train(self, tagged_sentences: Dict[str, List[str]]) -> SBI_TYPE:
+    def train(self, tagged_sentences: Dict[str, List[str]]) -> Dict[str, List[TrainingSentence]]:
         return group_sentences_by_intent(tagged_sentences,
                                          self.sentence_casing,
                                          self.replace_patterns,
@@ -143,7 +143,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def write_dictionary(self, tagged_sentences: Dict[str, List[str]],
-                         sentences_by_intent: SBI_TYPE) -> Set[str]:
+                         sentences_by_intent: Dict[str, List[TrainingSentence]]) -> Set[str]:
         '''Writes all required words to a CMU dictionary.
         Unknown words have their pronunciations guessed and written to a separate dictionary.
         Fails if any unknown words are found.'''
@@ -153,10 +153,8 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         # Extract entities from tagged sentences
         for intent_name, intent_sents in sentences_by_intent.items():
             for intent_sent in intent_sents:
-                sentence, entities, tokens = intent_sent
-
                 # Collect all used words
-                for word in tokens:
+                for word in intent_sent.tokens:
                     # Dictionary uses upper-case letters
                     if self.dictionary_upper:
                         word = word.upper()
@@ -240,7 +238,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def write_sentences(self, sentences_by_intent: SBI_TYPE) -> None:
+    def write_sentences(self, sentences_by_intent: Dict[str, List[TrainingSentence]]) -> None:
         '''Writes all raw sentences to a text file.
         Optionally balances (repeats) sentences so all intents have the same number.'''
 
@@ -261,9 +259,9 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         with open(sentences_text_path, 'w') as sentences_text_file:
             for intent_name, intent_sents in sentences_by_intent.items():
                 num_repeats = max(1, lcm_sentences // len(intent_sents))
-                for sentence, slots, tokens in intent_sents:
+                for intent_sent in intent_sents:
                     for i in range(num_repeats):
-                        print(sentence, file=sentences_text_file)
+                        print(intent_sent.sentence, file=sentences_text_file)
                     num_sentences = num_sentences + 1
 
         self._logger.debug('Wrote %s sentence(s) to %s' % (num_sentences, sentences_text_path))
@@ -358,7 +356,7 @@ class CommandSpeechTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def train(self, tagged_sentences: Dict[str, List[str]]) -> SBI_TYPE:
+    def train(self, tagged_sentences: Dict[str, List[str]]) -> Dict[str, List[TrainingSentence]]:
         sentences_by_intent = group_sentences_by_intent(tagged_sentences,
                                                         self.sentence_casing,
                                                         self.replace_patterns,
@@ -367,8 +365,11 @@ class CommandSpeechTrainer(RhasspyActor):
         self._logger.debug(self.command)
 
         # JSON -> STDIN
-        subprocess.run(self.command,
-                       input=json.dumps(sentences_by_intent).encode(),
-                       check=True)
+        input = json.dumps({
+            intent_name: [s.json() for s in sentences]
+            for intent_name, sentences in sentences_by_intent.items()
+        }).encode()
+
+        subprocess.run(self.command, input=input, check=True)
 
         return sentences_by_intent

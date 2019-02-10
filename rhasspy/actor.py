@@ -48,7 +48,8 @@ class RhasspyActor(Actor):
                 # Call in_<state> method
                 if self._state_method is not None:
                     self._state_method(message, sender)
-                elif not isinstance(message, ChildActorExited):
+                elif not isinstance(message, ChildActorExited) \
+                     and not isinstance(message, StateTransition):
                     self._logger.warn('Unhandled message in state %s: %s',
                                       self._state, message)
         except:

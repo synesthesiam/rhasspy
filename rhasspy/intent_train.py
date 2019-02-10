@@ -11,7 +11,7 @@ from typing import Dict, List, Set, Any, Optional
 from thespian.actors import ActorAddress
 
 from .actor import RhasspyActor
-from .stt_train import SBI_TYPE
+from .stt_train import TrainingSentence
 
 # -----------------------------------------------------------------------------
 # Events
@@ -19,7 +19,7 @@ from .stt_train import SBI_TYPE
 
 class TrainIntent:
     def __init__(self, tagged_sentences: Dict[str, List[str]],
-                 sentences_by_intent: SBI_TYPE,
+                 sentences_by_intent: Dict[str, List[TrainingSentence]],
                  receiver:Optional[ActorAddress]=None):
         self.tagged_sentences = tagged_sentences
         self.sentences_by_intent = sentences_by_intent
@@ -54,7 +54,7 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
 
     def train(self,
               tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SBI_TYPE) -> None:
+              sentences_by_intent: Dict[str, List[TrainingSentence]]) -> None:
 
         examples_path = self.profile.write_path(
             self.profile.get('intent.fuzzywuzzy.examples_json'))
@@ -67,7 +67,7 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def _make_examples(self, sentences_by_intent: SBI_TYPE) -> Dict[str, Any]:
+    def _make_examples(self, sentences_by_intent: Dict[str, List[TrainingSentence]]) -> Dict[str, Any]:
         '''Write intent examples to a JSON file.'''
         from fuzzywuzzy import process
 
@@ -75,12 +75,12 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
         examples: Dict[str, Any] = defaultdict(list)
 
         for intent, intent_sents in sentences_by_intent.items():
-            for sentence, entities, tokens in intent_sents:
+            for intent_sent in intent_sents:
                 slots: Dict[str, List[str]] = defaultdict(list)
-                for entity, value in entities:
-                    slots[entity].append(value)
+                for sent_ent in intent_sent.entities:
+                    slots[sent_ent.entity].append(sent_ent.value)
 
-                examples[intent].append({ 'text': sentence,
+                examples[intent].append({ 'text': intent_sent.sentence,
                                           'slots': slots })
 
         return examples
@@ -105,7 +105,7 @@ class RasaIntentTrainer(RhasspyActor):
 
     def train(self,
               tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SBI_TYPE) -> None:
+              sentences_by_intent: Dict[str, List[TrainingSentence]]) -> None:
 
         import requests
 
@@ -181,7 +181,7 @@ class AdaptIntentTrainer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def train(self, tagged_sentences: Dict[str, List[str]],
-              sentences_by_intent: SBI_TYPE) -> None:
+              sentences_by_intent: Dict[str, List[TrainingSentence]]) -> None:
 
         # Load "stop" words (common words that are excluded from training)
         stop_words: Set[str] = set()
@@ -207,13 +207,14 @@ class AdaptIntentTrainer(RhasspyActor):
             entity_counts: Dict[str, int] = Counter()
 
             # Process sentences for this intent
-            for sentence, slots, word_tokens in intent_sents:
+            for intent_sent in intent_sents:
+                sentence, slots, word_tokens = intent_sent.sentence, intent_sent.entities, intent_sent.tokens
                 entity_tokens: Set[str] = set()
 
                 # Group slot values by entity
                 slot_entities: Dict[str, List[str]] = defaultdict(list)
-                for entity_name, entity_value in slots:
-                    slot_entities[entity_name].append(entity_value)
+                for sent_ent in slots:
+                    slot_entities[sent_ent.entity].append(sent_ent.value)
 
                 # Add entities
                 for entity_name, entity_values in slot_entities.items():
@@ -312,20 +313,23 @@ class CommandIntentTrainer(RhasspyActor):
             self.send(message.receiver or sender,
                       IntentTrainingComplete())
 
-    def train(self, sentences_by_intent: SBI_TYPE) -> None:
+    def train(self, sentences_by_intent: Dict[str, List[TrainingSentence]]) -> None:
         try:
             self._logger.debug(self.command)
 
             # JSON -> STDIN
-            subprocess.run(self.command,
-                           input=json.dumps(sentences_by_intent).encode(),
-                           check=True)
+            input = json.dumps({
+                intent_name: [s.json() for s in sentences]
+                for intent_name, sentences in sentences_by_intent.items()
+            }).encode()
+
+            subprocess.run(self.command, input=input, check=True)
         except:
             self._logger.exception('train')
 
     # -------------------------------------------------------------------------
 
-    def _make_examples(self, sentences_by_intent: SBI_TYPE) -> Dict[str, Any]:
+    def _make_examples(self, sentences_by_intent: Dict[str, List[TrainingSentence]]) -> Dict[str, Any]:
         '''Write intent examples to a JSON file.'''
         from fuzzywuzzy import process
 
@@ -333,12 +337,12 @@ class CommandIntentTrainer(RhasspyActor):
         examples: Dict[str, Any] = defaultdict(list)
 
         for intent, intent_sents in sentences_by_intent.items():
-            for sentence, entities, tokens in intent_sents:
+            for intent_sent in intent_sents:
                 slots: Dict[str, List[str]] = defaultdict(list)
-                for entity, value in entities:
-                    slots[entity].append(value)
+                for sent_ent in intent_sent.entities:
+                    slots[sent_ent.entity].append(sent_ent.value)
 
-                examples[intent].append({ 'text': sentence,
+                examples[intent].append({ 'text': intent_sent.sentence,
                                           'slots': slots })
 
         return examples
