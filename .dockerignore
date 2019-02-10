@@ -4,3 +4,4 @@ node_modules/
 etc/homeassistant/config/.storage
 examples/typical/home-assistant/config/.storage
 examples/client-server/home-assistant/config/.storage
+examples/mqtt-hermes/home-assistant/config/.storage

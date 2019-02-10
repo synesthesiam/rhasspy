@@ -14,7 +14,7 @@
         "sentence_casing": "lower"
     },
     "home_assistant": {
-        "url": "http://localhost:8123",
+        "url": "http://hass:8123",
         "api_password": "secret",
         "access_token": ""
     },
@@ -46,11 +46,12 @@
         "listen_on_start": true
     },
     "sounds": {
-        "system": "hermes"
+        "system": "aplay"
     },
     "mqtt": {
         "enabled": true,
-        "host": "localhost",
+        "host": "pumpkin.lan",
+        "port": 1883,
         "password": "",
         "username": "",
         "site_id": "default"

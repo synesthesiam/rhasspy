@@ -26,54 +26,12 @@ frontend:
 # Enables configuration UI
 config:
 
-lovelace:
-  mode: yaml
-
 http:
   api_password: secret
 
-# Lights
-switch:
-  - platform: command_line
-    switches:
-      living_room_lamp:
-        command_on: "echo 'Living room lamp ON'"
-        command_off: "echo 'Living room lamp OFF'"
-      garage_light:
-        command_on:  "echo 'Garage light ON'"
-        command_off: "echo 'Garage light OFF'"
-
-# Doors
-binary_sensor:
-  - platform: command_line
-    name: garage_door
-    command: "bash -c 'sec=$(date +%s); [[ $(($sec % 2)) -eq 0 ]] && echo open || echo closed'"
-    payload_on: "closed"
-    payload_off: "open"
-    
-# Temperature
-sensor:
-  - platform: command_line
-    name: temperature
-    unit_of_measurement: "°C"
-    command: "date +%S"
-
-light:
-  - platform: mqtt
-    schema: template
-    name: bedroom_light
-    command_topic: "bedroom_light"
-    command_on_template: "on"
-    command_off_template: "off"
-    state_topic: "bedroom_light/set"
-    state_template: "{{ value.split(',')[0] }}"
-    red_template: "{{ value.split(',')[1] }}"
-    green_template: "{{ value.split(',')[2] }}"
-    blue_template: "{{ value.split(',')[3] }}"
-
 rest_command:
   espeak:
-    url: http://localhost:12101/api/text-to-speech?voice=en
+    url: http://rhasspy:12101/api/text-to-speech?voice=en
     method: POST
     headers:
       content_type: text/plain

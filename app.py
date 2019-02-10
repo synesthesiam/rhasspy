@@ -515,11 +515,12 @@ def api_text_to_speech() -> str:
     if voice is not None:
         espeak_cmd.extend(['-v', str(voice)])
 
-    espeak_cmd.append(text)
     espeak_cmd.append('--stdout')
+    espeak_cmd.append(text)
     logger.debug(espeak_cmd)
 
     audio_data = subprocess.check_output(espeak_cmd)
+    assert core is not None
     core.play_wav_data(audio_data)
 
     return 'OK'

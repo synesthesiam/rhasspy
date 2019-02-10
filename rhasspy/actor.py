@@ -61,6 +61,13 @@ class RhasspyActor(Actor):
         transition_method = 'to_' + to_state
         self._state = to_state
 
+        # Set state method
+        state_method_name = 'in_' + self._state
+        if hasattr(self, state_method_name):
+            self._state_method = getattr(self, state_method_name)
+        else:
+            self._state_method = None
+
         self._logger.debug('%s -> %s', from_state, to_state)
 
         # Call transition method
@@ -71,10 +78,3 @@ class RhasspyActor(Actor):
         if self._transitions and (self._parent is not None):
             self.send(self._parent,
                       StateTransition(self._name, from_state, to_state))
-
-        # Set state method
-        state_method_name = 'in_' + self._state
-        if hasattr(self, state_method_name):
-            self._state_method = getattr(self, state_method_name)
-        else:
-            self._state_method = None

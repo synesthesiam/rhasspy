@@ -67,15 +67,38 @@ class DialogueManager(RhasspyActor):
         self.intent_receiver:Optional[ActorAddress] = None
         self.training_receiver:Optional[ActorAddress] = None
         self.handle:bool = True
+        self.actors: Dict[str, ActorAddress] = {}
         self.actor_states:Dict[str, str] = {}
 
-        self.load_actors()
+        self.transition('loading_mqtt')
+
+    def to_loading_mqtt(self, from_state:str) -> None:
+        self._logger.debug('Loading MQTT first')
+
+        # MQTT client *first*
+        from .mqtt import HermesMqtt
+        self.mqtt_class = HermesMqtt
+        self.mqtt:ActorAddress = self.createActor(self.mqtt_class)
+        self.actors['mqtt'] = self.mqtt
+
+        self.send(self.mqtt, ConfigureEvent(self.profile,
+                                            preload=self.preload,
+                                            **self.actors))
 
         if self.timeout_sec is not None:
             self._logger.debug(f'Loading...will time out after {self.timeout_sec} second(s)')
             self.wakeupAfter(timedelta(seconds=self.timeout_sec))
 
-        self.transition('loading')
+    def in_loading_mqtt(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, Configured) and (sender == self.mqtt):
+            self.transition('loading')
+        elif isinstance(message, WakeupMessage):
+            self._logger.warn('MQTT actor did not load! Trying to keep going...')
+            self.transition('loading')
+
+    def to_loading(self, from_state:str) -> None:
+        # Load all of the other actors
+        self.load_actors()
 
     def in_loading(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, Configured):
@@ -88,6 +111,7 @@ class DialogueManager(RhasspyActor):
 
             if sender_name is not None:
                 del self.wait_actors[sender_name]
+                self._logger.debug(f'{sender_name} started')
 
             if len(self.wait_actors) == 0:
                 self._logger.info('Actors loaded')
@@ -284,6 +308,9 @@ class DialogueManager(RhasspyActor):
             }
 
             for name, actor in self.wait_actors.items():
+                if actor in [self.mqtt]:
+                    continue # skip
+
                 self.send(actor, ConfigureEvent(self.profile,
                                                 preload=self.preload,
                                                 **self.actors))
@@ -407,7 +434,7 @@ class DialogueManager(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def load_actors(self) -> None:
-        self.actors: Dict[str, ActorAddress] = {}
+        self._logger.debug('Loading actors')
 
         # Microphone
         mic_system = self.profile.get('microphone.system', 'dummy')
@@ -487,21 +514,19 @@ class DialogueManager(RhasspyActor):
         self.word_pronouncer:ActorAddress = self.createActor(self.word_pronouncer_class)
         self.actors['word_pronouncer'] = self.word_pronouncer
 
-        # MQTT client
-        from .mqtt import HermesMqtt
-        self.mqtt_class = HermesMqtt
-        self.mqtt:ActorAddress = self.createActor(self.mqtt_class)
-        self.actors['mqtt'] = self.mqtt
-
         # Configure actors
         self.wait_actors:Dict[str, ActorAddress] = {}
         for name, actor in self.actors.items():
+            if actor in [self.mqtt]:
+                continue # skip
+
             self.send(actor, ConfigureEvent(self.profile,
                                             preload=self.preload,
                                             **self.actors))
             self.wait_actors[name] = actor
 
-        self._logger.debug('Actors created')
+        actor_names = list(self.wait_actors.keys())
+        self._logger.debug(f'Actors created. Waiting for {actor_names} to start.')
 
     # -------------------------------------------------------------------------
 
