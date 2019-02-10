@@ -8,10 +8,12 @@ import threading
 from typing import Dict, Any, Optional, List
 from collections import defaultdict
 
+import pydash
 import paho.mqtt.client as mqtt
 from thespian.actors import ActorAddress
 
 from .actor import RhasspyActor
+from .intent import IntentRecognized
 
 # -----------------------------------------------------------------------------
 # Events
@@ -63,6 +65,7 @@ class HermesMqtt(RhasspyActor):
         self.username = self.profile.get('mqtt.username', '')
         self.password = self.profile.get('mqtt.password', None)
         self.reconnect_sec = self.profile.get('mqtt.reconnect_sec', 5)
+        self.publish_intents = self.profile.get('mqtt.publish_intents', True)
 
         if self.profile.get('mqtt.enabled', False):
             self.transition('connecting')
@@ -84,9 +87,27 @@ class HermesMqtt(RhasspyActor):
         self._logger.debug('Connecting to MQTT broker %s:%s' % (self.host, self.port))
 
         def do_connect():
-            self.client.connect(self.host, self.port)
-            self.client.loop_start()
+            success = False
+            while not success:
+                try:
+                    ret = self.client.connect(self.host, self.port)
+                    self.client.loop_start()
+                    while (ret != 0) and (self.reconnect_sec > 0):
+                        self._logger.warning(f'Connection failed: {ret}')
+                        self._logger.debug('Reconnecting in %s second(s)' % self.reconnect_sec)
+                        time.sleep(self.reconnect_sec)
+                        ret = self.client.connect(self.host, self.port)
 
+                    success = True
+                except:
+                    self._logger.exception('connecting')
+                    if self.reconnect_sec > 0:
+                        self._logger.debug('Reconnecting in %s second(s)' % self.reconnect_sec)
+                        time.sleep(self.reconnect_sec)
+
+            self._logger.debug('Connection successful.')
+
+        # Connect in a separate thread
         threading.Thread(target=do_connect, daemon=True).start()
 
     def in_connecting(self, message: Any, sender: ActorAddress) -> None:
@@ -135,6 +156,9 @@ class HermesMqtt(RhasspyActor):
                 self._logger.debug('Subscribed to %s' % message.topic)
             elif isinstance(message, MqttPublish):
                 self.client.publish(message.topic, message.payload)
+            elif isinstance(message, IntentRecognized):
+                if self.publish_intents:
+                    self.publish_intent(message.intent)
         else:
             self.save_for_later(message, sender)
 
@@ -167,3 +191,32 @@ class HermesMqtt(RhasspyActor):
 
     def on_message(self, client, userdata, msg):
         self.send(self.myAddress, MqttMessage(msg.topic, msg.payload))
+
+    # -------------------------------------------------------------------------
+
+    def publish_intent(self, intent:Dict[str, Any]) -> None:
+        intent_name = pydash.get(intent, 'intent.name', '')
+        if len(intent_name) == 0:
+            self._logger.warning('Empty intent. Not forwarding to MQTT')
+            return
+
+        topic = f'hermes/intent/{intent_name}'
+        payload = json.dumps({
+            'sessionId': '',
+            'siteId': self.site_id,
+            'input': intent.get('text', ''),
+            'intent': {
+                'intentName': intent_name,
+                'probability': pydash.get(intent, 'intent.confidence', 1)
+            },
+            'slots': [{
+                'confidence': 1,
+                'raw_value': ev['value'],
+                'value': ev['value'],
+                'entity': ev['entity'],
+                'slotName': ev['entity']
+            } for ev in intent.get('entities', [])]
+        }).encode()
+
+        self.client.publish(topic, payload)
+        self._logger.debug(f'Published intent to {topic}')

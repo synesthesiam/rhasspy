@@ -1,9 +1,0 @@
-- alias: "Say the time"
-  initial_state: "on"
-  trigger:
-    platform: event
-    event_type: rhasspy_GetTime
-  action:
-    service: rest_command.espeak
-    data_template:
-      message: "It is {{ now().strftime('%I') | int }} {{ now().strftime('%M %p') }}."

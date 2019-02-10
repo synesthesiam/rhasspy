@@ -68,7 +68,8 @@
         "port": 1883,
         "reconnect_sec": 5,
         "site_id": "default",
-        "username": ""
+        "username": "",
+        "publish_intents": true
     },
     "rhasspy": {
         "default_profile": "en",

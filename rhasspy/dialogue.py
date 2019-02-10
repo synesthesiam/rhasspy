@@ -222,7 +222,12 @@ class DialogueManager(RhasspyActor):
             # Handle intent
             self._logger.debug(message.intent)
             if message.handle:
+                # Forward to Home Assistant
                 self.send(self.handler, HandleIntent(message.intent))
+
+                # Forward to MQTT (hermes)
+                self.send(self.mqtt, message)
+
                 self.transition('handling')
             else:
                 self._logger.debug('Not actually handling intent')
@@ -355,6 +360,9 @@ class DialogueManager(RhasspyActor):
         elif isinstance(message, HandleIntent):
             # intent -> action
             self.send(self.handler, HandleIntent(message.intent, sender))
+
+            # Forward to MQTT (hermes)
+            self.send(self.mqtt, IntentRecognized(message.intent))
         elif isinstance(message, GetWordPhonemes):
             # eSpeak -> CMU
             self.send(self.word_pronouncer,

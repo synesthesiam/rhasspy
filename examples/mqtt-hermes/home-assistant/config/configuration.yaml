@@ -20,6 +20,8 @@ homeassistant:
 # Show links to resources in log and frontend
 # introduction:
 
+logger:
+
 # Enables the frontend
 frontend:
 
@@ -28,6 +30,18 @@ config:
 
 http:
   api_password: secret
+
+mqtt:
+  broker: mosquitto
+
+snips:
+
+intent_script:
+  GetTime:
+    action:
+      service: rest_command.espeak
+      data_template:
+        message: "It is {{ now().strftime('%I') | int }} {{ now().strftime('%M %p') }}."
 
 rest_command:
   espeak:

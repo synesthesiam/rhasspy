@@ -183,7 +183,7 @@ def load_phoneme_map(path: str) -> Dict[str, str]:
 def empty_intent() -> Dict[str, Any]:
     return {
         'text': '',
-        'intent': { 'name': '' },
+        'intent': { 'name': '', 'confidence': 0 },
         'entities': {}
     }
 

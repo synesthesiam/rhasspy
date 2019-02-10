@@ -50,11 +50,12 @@
     },
     "mqtt": {
         "enabled": true,
-        "host": "pumpkin.lan",
+        "host": "mosquitto",
         "port": 1883,
         "password": "",
         "username": "",
-        "site_id": "default"
+        "site_id": "default",
+        "publish_intents": true
     },
     "speech_to_text": {
         "system": "pocketsphinx",
