@@ -210,11 +210,13 @@ class HermesMqtt(RhasspyActor):
                 'probability': pydash.get(intent, 'intent.confidence', 1)
             },
             'slots': [{
+                'slotName': ev['entity'],
                 'confidence': 1,
-                'raw_value': ev['value'],
-                'value': ev['value'],
-                'entity': ev['entity'],
-                'slotName': ev['entity']
+                'value': {
+                    'kind': ev['entity'],
+                    'value': ev['value']
+                },
+                'rawValue': ev['value']
             } for ev in intent.get('entities', [])]
         }).encode()
 

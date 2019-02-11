@@ -24,6 +24,11 @@ examples/typical/home-assistant/config/deps/
 examples/typical/home-assistant/config/tts/
 examples/typical/home-assistant/config/*.log
 examples/typical/home-assistant/config/.HA_VERSION
+examples/typical-intent/home-assistant/config/.storage/
+examples/typical-intent/home-assistant/config/deps/
+examples/typical-intent/home-assistant/config/tts/
+examples/typical-intent/home-assistant/config/*.log
+examples/typical-intent/home-assistant/config/.HA_VERSION
 examples/client-server/home-assistant/config/.storage/
 examples/client-server/home-assistant/config/deps/
 examples/client-server/home-assistant/config/tts/
