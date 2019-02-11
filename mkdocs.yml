@@ -1,0 +1,8 @@
+site_name: Rhasspy Voice Assistant
+theme: readthedocs
+nav:
+  - Home: index.md
+  - Running: running.md
+  - Profiles: profiles.md
+  - Training: training.md
+  - Customizing: customizing.md
