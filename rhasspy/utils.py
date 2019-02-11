@@ -153,23 +153,15 @@ def buffer_to_wav(buffer: bytes) -> bytes:
 
 def convert_wav(wav_data: bytes) -> bytes:
     '''Converts WAV data to 16-bit, 16Khz mono with sox.'''
-    with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb+') as out_wav_file:
-        with tempfile.NamedTemporaryFile(suffix='.wav', mode='wb') as in_wav_file:
-            in_wav_file.write(wav_data)
-            in_wav_file.seek(0)
-            subprocess.check_call(['sox',
-                                    in_wav_file.name,
-                                    '-r', '16000',
-                                    '-e', 'signed-integer',
-                                    '-b', '16',
-                                    '-c', '1',
-                                    out_wav_file.name])
-
-            out_wav_file.seek(0)
-
-            # Return converted data
-            with wave.open(out_wav_file.name, 'rb') as wav_file:
-                return wav_file.readframes(wav_file.getnframes())
+    return subprocess.run(['sox', '-t', 'wav', '-',
+                           '-r', '16000',
+                           '-e', 'signed-integer',
+                           '-b', '16',
+                           '-c', '1',
+                           '-t', 'wav',
+                           '-'],
+                          check=True, stdout=subprocess.PIPE,
+                          input=wav_data).stdout
 
 def maybe_convert_wav(wav_data: bytes) -> bytes:
     '''Converts WAV data to 16-bit, 16Khz mono if necessary.'''
