@@ -14,7 +14,7 @@
         "sentence_casing": "lower"
     },
     "home_assistant": {
-        "url": "http://hass:8123",
+        "url": "http://localhost:8123",
         "api_password": "secret",
         "access_token": ""
     },
@@ -40,7 +40,7 @@
         "pocketsphinx": {
             "keyphrase": "okay rhasspy"
         },
-        "system": "dummy",
+        "system": "snowboy",
         "precise": {
             "model": "okay-rhasspy.pb"
         },
@@ -49,7 +49,7 @@
         }
     },
     "microphone": {
-        "system": "arecord",
+        "system": "pyaudio",
         "pyaudio": {
             "device": ""
         },
@@ -58,7 +58,7 @@
         }
     },
     "rhasspy": {
-        "listen_on_start": false
+        "listen_on_start": true
     },
     "sounds": {
         "system": "aplay"
@@ -68,6 +68,7 @@
         "host": "localhost",
         "password": "",
         "username": "",
-        "site_id": "default"
+        "site_id": "default",
+        "publish_intents": true
     }
 }

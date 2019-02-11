@@ -1,5 +1,12 @@
 {
     "command": {
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/listen.sh"
+        },
+        "oneshot": {
+            "timeout_sec": 30
+        },
         "system": "webrtcvad",
         "webrtcvad": {
             "chunk_size": 960,
@@ -12,6 +19,14 @@
             "vad_mode": 0
         }
     },
+    "handle": {
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/handle.sh"
+        },
+        "forward_to_hass": true,
+        "system": "hass"
+    },
     "home_assistant": {
         "access_token": "",
         "api_password": "",
@@ -21,6 +36,10 @@
     "intent": {
         "adapt": {
             "stop_words": "stop_words.txt"
+        },
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/text2intent.sh"
         },
         "fuzzywuzzy": {
             "examples_json": "intent_examples.json"
@@ -47,6 +66,7 @@
         "host": "localhost",
         "password": "",
         "port": 1883,
+        "publish_intents": true,
         "reconnect_sec": 5,
         "site_id": "default",
         "username": ""
@@ -63,6 +83,10 @@
         "wake": "etc/wav/beep_hi.wav"
     },
     "speech_to_text": {
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/speech2text.sh"
+        },
         "g2p_model": "g2p.fst",
         "grammars_dir": "grammars",
         "pocketsphinx": {
@@ -91,6 +115,13 @@
     },
     "training": {
         "balance_sentences": true,
+        "intent": {
+            "command": {
+                "arguments": [],
+                "program": "$RHASSPY_BASE_DIR/bin/mock-commands/train-intent.sh"
+            },
+            "system": "auto"
+        },
         "regex": {
             "replace": [
                 {
@@ -103,6 +134,13 @@
             "split": "\\s+"
         },
         "sentence_casing": "lower",
+        "speech_to_text": {
+            "command": {
+                "arguments": [],
+                "program": "$RHASSPY_BASE_DIR/bin/mock-commands/train-stt.sh"
+            },
+            "system": "auto"
+        },
         "tagged_sentences": "tagged_sentences.md",
         "tokenizer": "regex"
     },
@@ -113,6 +151,10 @@
         "system": "sphinxtrain"
     },
     "wake": {
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/sleep.sh"
+        },
         "hermes": {
             "wakeword_id": "default"
         },

@@ -100,8 +100,6 @@ def start_rhasspy() -> None:
     os.environ['RHASSPY_PROFILE'] = core.profile.name
     os.environ['RHASSPY_PROFILE_DIR'] = core.profile.write_dir()
 
-    core.start()
-
     # Add profile settings from the command line
     extra_settings = {}
     for key, value in args.set:
@@ -113,6 +111,8 @@ def start_rhasspy() -> None:
         logger.debug('Profile: {0}={1}'.format(key, value))
         extra_settings[key] = value
         core.profile.set(key, value)
+
+    core.start()
 
 # -----------------------------------------------------------------------------
 

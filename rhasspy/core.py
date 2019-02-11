@@ -59,7 +59,7 @@ class RhasspyCore:
             if not self.do_logging:
                 kwargs['logDefs'] = { 'version': 1, 'loggers': { '': {}} }
 
-            self.actor_system = ActorSystem('multiprocQueueBase', **kwargs)
+            self.actor_system = ActorSystem('multiprocTCPBase', **kwargs)
 
         preload = preload or self.profile.get('rhasspy.preload_profile', False)
         assert self.actor_system is not None

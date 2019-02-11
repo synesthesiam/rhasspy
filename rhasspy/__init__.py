@@ -618,7 +618,7 @@ def test_wake(core:RhasspyCore, profile:Profile, args:Any) -> None:
     if not args.debug:
         kwargs = { 'logDefs': { 'version': 1, 'loggers': { '': {}} } }
 
-    system = ActorSystem('multiprocQueueBase', **kwargs)
+    system = ActorSystem('multiprocTCPBase', **kwargs)
     detected_paths:Set[str] = set()
 
     try:

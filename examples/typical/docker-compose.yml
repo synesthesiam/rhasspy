@@ -2,6 +2,7 @@ version: '2'
 services:
   rhasspy:
     image: synesthesiam/rhasspy-server:latest
+    network_host: true
     environment:
       - RHASSPY_PROFILES=/profiles
     volumes:
@@ -12,6 +13,7 @@ services:
       - "12101:12101"
   hass:
     image: homeassistant/home-assistant
+    network_host: true
     volumes:
       - ./home-assistant/config:/config
     ports:

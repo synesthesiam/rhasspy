@@ -26,6 +26,8 @@ frontend:
 # Enables configuration UI
 config:
 
+logger:
+
 lovelace:
   mode: yaml
 
@@ -76,7 +78,7 @@ mqtt:
 
 rest_command:
   espeak:
-    url: http://rhasspy:12101/api/text-to-speech?voice=en
+    url: http://localhost:12101/api/text-to-speech?voice=en
     method: POST
     headers:
       content_type: text/plain
