@@ -15,8 +15,9 @@
                 </div>
                 <div class="navbar-container ml-auto">
                     <span title="Profile name" class="badge badge-primary ml-2" style="font-size: 1em">{{ this.profile }}</span>
-                    <button class="btn btn-success ml-3" @click="train" :disabled="this.training" title="Re-train current profile">Train</button>
-                    <button class="btn btn-danger ml-3" @click="restart" :disabled="this.restarting" title="Restart Rhasspy server">Restart</button>
+                    <button class="btn btn-success ml-2" @click="train" :disabled="this.training" title="Re-train current profile">Train</button>
+                    <button class="btn btn-warning ml-2" @click="wakeup" title="Make Rhasspy listen for a voice command">Wake</button>
+                    <button class="btn btn-danger ml-2" @click="restart" :disabled="this.restarting" title="Restart Rhasspy server">Restart</button>
                 </div>
             </div>
         </nav>
@@ -76,6 +77,7 @@
 
 <script>
  import ProfileService from '@/services/ProfileService'
+ import TranscribeService from '@/services/TranscribeService'
  import LanguageModelService from '@/services/LanguageModelService'
  import PronounceService from '@/services/PronounceService'
  import RhasspyService from '@/services/RhasspyService'
@@ -193,6 +195,10 @@
                                  this.unknownWords.sort()
                              })
                              .catch(err => this.error(err))
+         },
+
+         wakeup: function() {
+             TranscribeService.wakeup()
          }
      },
 

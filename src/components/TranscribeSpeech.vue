@@ -22,10 +22,24 @@
                                 title="Record a voice command while held, interpret when released"
                                 :disabled="interpreting || holdRecording">{{ tapRecording ? 'Tap to Stop' : 'Tap to Record' }}</button>
                     </div>
-                    <div class="col-auto">
-                        <button type="button" class="btn btn-warning"
-                                @click="wakeup"
-                                title="Make Rhasspy listen for a voice command">Wake-up</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="col">
+                        <input type="radio" name="microphone" id="rhasspy-microphone" value="rhasspy" v-model="microphone">
+                        <label class="ml-2" for="rhasspy-microphone">
+                            <i class="fas fa-crow"></i>
+                            Use Rhasspy's microphone
+                        </label>
+                    </div>
+                    <div class="col">
+                        <input type="radio" name="microphone" id="browser-microphone" value="browser" v-model="microphone"
+                               @click="getMicrophonePermission">
+                        <label class="ml-2" for="browser-microphone">
+                            <i class="fas fa-laptop"></i>
+                            Use this web browser's microphone
+                        </label>
                     </div>
                 </div>
             </div>
@@ -101,6 +115,10 @@
              tapRecording: false,
              interpreting: false,
 
+             microphone: 'rhasspy',
+             audioContext: null,
+             recorder: null,
+
              sendHass: true
          }
      },
@@ -148,48 +166,89 @@
          },
 
          startRecording: function() {
-             TranscribeService.startRecording()
-                              .then(() => {
-                                  this.holdRecording = true
-                              })
-                              .catch(err => this.$parent.error(err))
+             this.holdRecording = true
+             if (this.microphone == 'browser') {
+                 // Use browser microphone
+                 this.getMicrophonePermission()
+                 this.recorder.clear()
+                 this.recorder.record()
+             } else {
+                 // Use Rhasspy microphone
+                 TranscribeService.startRecording()
+                                  .catch(err => this.$parent.error(err))
+             }
          },
 
          stopRecording: function() {
-             this.interpreting = true
-             this.$parent.beginAsync()
-             TranscribeService.stopRecording(this.sendHass)
-                 .then(request => {
-                     this.holdRecording = false
-                     this.tapRecording = false
-                     this.jsonSource = request.data
-                     this.sentence = request.data.text
+             if (this.microphone == 'browser') {
+                 // Use browser microphone
+                 this.recorder.stop()
+
+                 // Export recording data
+                 var that = this
+                 this.recorder.exportWAV(function(blob) {
+                     that.interpreting = true
+                     that.$parent.beginAsync()
+                     TranscribeService.transcribeWav(blob, that.sendHass)
+                         .then(request => {
+                             that.holdRecording = false
+                             that.tapRecording = false
+                             that.jsonSource = request.data
+                             that.sentence = request.data.text
+                         })
+                         .catch(err => that.$parent.error(err))
+                         .then(() => {
+                             that.holdRecording = false
+                             that.tapRecording = false
+                             that.interpreting = false
+                             that.$parent.endAsync()
+                         })
                  })
-                 .catch(err => this.$parent.error(err))
-                 .then(() => {
-                     this.holdRecording = false
-                     this.tapRecording = false
-                     this.interpreting = false
-                     this.$parent.endAsync()
-                 })
+             } else {
+                 // Use Rhasspy microphone
+                 this.interpreting = true
+                 this.$parent.beginAsync()
+                 TranscribeService.stopRecording(this.sendHass)
+                     .then(request => {
+                         this.holdRecording = false
+                         this.tapRecording = false
+                         this.jsonSource = request.data
+                         this.sentence = request.data.text
+                     })
+                     .catch(err => this.$parent.error(err))
+                     .then(() => {
+                         this.holdRecording = false
+                         this.tapRecording = false
+                         this.interpreting = false
+                         this.$parent.endAsync()
+                     })
+             }
          },
 
          toggleRecording: function() {
              if (this.tapRecording) {
                  this.stopRecording();
              } else {
-                 TranscribeService.startRecording()
-                                  .then(() => {
-                                      this.tapRecording = true
-                                  })
-                                  .catch(err => this.$parent.error(err))
+                 this.tapRecording = true
+                 this.startRecording()
              }
          },
 
-         wakeup: function() {
-             TranscribeService.wakeup()
-         }
+         getMicrophonePermission: function() {
+             // Request microphone permissions
+             if (this.audioContext == null) {
+                 this.audioContext = new AudioContext()
+             }
 
+             if (this.recorder == null) {
+                 var that = this
+                 navigator.mediaDevices.getUserMedia({audio: true})
+                          .then(function(stream) {
+                              var input = that.audioContext.createMediaStreamSource(stream)
+                              that.recorder = new Recorder(input)
+                          })
+             }
+         }
      }
  }
 </script>
