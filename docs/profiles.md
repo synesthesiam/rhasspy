@@ -101,8 +101,10 @@ Available profile sections and settings are:
   * `system` - audio recording system (`pyaudio`, `arecord`, `hermes`, or `dummy`)
   * `pyaudio` - configuration for [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) microphone
     * `device` - index of device to use or empty for default device
+    * `frames_per_buffer` - number of frames to read at a time (default 480)
   * `arecord` - configuration for ALSA microphone
     * `device` - name of ALSA device (see `arecord -L`) to use or empty for default device
+    * `chunk_size` - number of bytes to read at a time (default 960)
   * `hermes` - configuration for MQTT "microphone" ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
     * Subscribes to WAV data from `hermes/audioServer/<SITE_ID>/audioFrame`
     * Requires MQTT to be enabled

@@ -120,15 +120,6 @@ Rhasspy allows you to customize every stage of intent recognition, including:
 3. Specifying how you pronounce specific words, including words that Rhasspy doesn't know yet
 4. Splitting speech recording, transcription, and intent recognition across multiple machines
 
-Audio Input
--------------
-
-Rhasspy can listen to audio input from one of several sources:
-
-* [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) (local)
-* ALSA (via direct use of `arecord`)
-* MQTT ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
-
 Profiles
 ----------
 
