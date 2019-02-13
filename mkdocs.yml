@@ -2,14 +2,18 @@ site_name: Rhasspy Voice Assistant
 theme: readthedocs
 nav:
   - Home: index.md
-  - Running: running.md
+  - Hardware: hardware.md
+  - Installation: installation.md
+  - Usage: usage.md
   - Profiles: profiles.md
   - Training: training.md
   - Audio Input: audio-input.md
+  - Audio Output: audio-output.md
   - Wake Word: wake-word.md
   - Command Listener: command-listener.md
   - Speech to Text: speech-to-text.md
   - Intent Recognition: intent-recognition.md
   - Intent Handling: intent-handling.md
-  - Audio Output: audio-output.md
   - Customizing: customizing.md
+  - License: license.md
+  - About: about.md

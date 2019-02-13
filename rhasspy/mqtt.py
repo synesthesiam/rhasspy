@@ -9,7 +9,6 @@ from typing import Dict, Any, Optional, List
 from collections import defaultdict
 
 import pydash
-import paho.mqtt.client as mqtt
 from thespian.actors import ActorAddress
 
 from .actor import RhasspyActor
@@ -74,6 +73,7 @@ class HermesMqtt(RhasspyActor):
         self.save_for_later(message, sender)
 
     def to_connecting(self, from_state:str) -> None:
+        import paho.mqtt.client as mqtt
         self.client = mqtt.Client()
         assert self.client is not None
         self.client.on_connect = self.on_connect
