@@ -896,7 +896,11 @@ def wav2mqtt(core:RhasspyCore, profile:Profile, args:Any) -> None:
 # -----------------------------------------------------------------------------
 
 def sleep(core:RhasspyCore, profile:Profile, args:Any) -> None:
-    print(core.wakeup_and_wait().name)
+    result = core.wakeup_and_wait()
+    if isinstance(result, WakeWordDetected):
+        print(result.name)
+    else:
+        print('')  # not detected
 
 # -----------------------------------------------------------------------------
 

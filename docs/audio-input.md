@@ -59,11 +59,11 @@ Add to your profile:
     
     "mqtt": {
       "enabled": true,
-        "host": "localhost",
-        "username": "",
-        "port": 1883,
-        "password": "",
-        "site_id": "default"
+      "host": "localhost",
+      "username": "",
+      "port": 1883,
+      "password": "",
+      "site_id": "default"
     }
     
 Adjust the `mqtt` configuration to connect to your MQTT broker.

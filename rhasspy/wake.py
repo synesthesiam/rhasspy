@@ -4,6 +4,7 @@ import threading
 import logging
 import json
 import re
+import time
 import subprocess
 from uuid import uuid4
 from typing import Optional, Any, List, Dict
@@ -321,6 +322,7 @@ class PreciseWakeListener(RhasspyActor):
         self.preload = self.config.get('preload', False)
         self.not_detected:bool = self.config.get('not_detected', False)
         self.chunk_size:int = self.profile.get('wake.precise.chunk_size', 2048)
+        self.chunk_delay:float = self.profile.get('wake.precise.chunk_delay', 0)
         if self.preload:
             self.load_runner()
 
@@ -341,6 +343,7 @@ class PreciseWakeListener(RhasspyActor):
             detected = False
             while len(chunk) > 0:
                 self.process_data(chunk)
+                time.sleep(self.chunk_delay)
                 if self.detected:
                     break
 
@@ -389,7 +392,10 @@ class PreciseWakeListener(RhasspyActor):
             from precise_runner import PreciseEngine
             self.model_name = self.profile.get('wake.precise.model')
             self.model_path = self.profile.read_path(self.model_name)
-            self.engine = PreciseEngine('precise-engine',
+            self.engine_path = self.profile.get('wake.precise.engine_path')
+
+            self._logger.debug(f'Loading Precise engine at {self.engine_path}')
+            self.engine = PreciseEngine(self.engine_path,
                                         self.model_path,
                                         chunk_size=self.chunk_size)
 

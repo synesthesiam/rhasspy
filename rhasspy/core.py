@@ -15,7 +15,8 @@ from .intent import IntentRecognized
 from .intent_handler import IntentHandled
 from .pronounce import WordPronunciation, WordPhonemes, WordSpoken
 from .dialogue import (DialogueManager, GetMicrophones, TestMicrophones,
-                       ListenForCommand, ListenForWakeWord, WakeWordDetected,
+                       ListenForCommand, ListenForWakeWord,
+                       WakeWordDetected, WakeWordNotDetected,
                        TrainProfile, ProfileTrainingFailed,
                        GetWordPhonemes, SpeakWord, GetWordPronunciations,
                        TranscribeWav, PlayWavData, PlayWavFile,
@@ -200,11 +201,13 @@ class RhasspyCore:
 
     # -------------------------------------------------------------------------
 
-    def wakeup_and_wait(self) -> WakeWordDetected:
+    def wakeup_and_wait(self) -> Union[WakeWordDetected, WakeWordNotDetected]:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, ListenForWakeWord())
-            assert isinstance(result, WakeWordDetected)
+            assert isinstance(result, WakeWordDetected) \
+                or isinstance(result, WakeWordNotDetected)
+
             return result
 
     # -------------------------------------------------------------------------

@@ -164,7 +164,9 @@
             "model": "okay-rhasspy.pb",
             "sensitivity": 0.5,
             "trigger_level": 3,
-            "chunk_size": 2048
+            "chunk_size": 2048,
+            "engine_path": "precise-engine",
+            "chunk_delay": 0.005
         },
         "snowboy": {
             "audio_gain": 1,

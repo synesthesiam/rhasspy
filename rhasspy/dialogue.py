@@ -5,7 +5,7 @@ from typing import Dict, Any, Optional, List, Type
 from thespian.actors import ActorAddress, ActorExitRequest, WakeupMessage
 
 from .actor import RhasspyActor, ConfigureEvent, Configured, StateTransition
-from .wake import ListenForWakeWord, StopListeningForWakeWord, WakeWordDetected
+from .wake import ListenForWakeWord, StopListeningForWakeWord, WakeWordDetected, WakeWordNotDetected
 from .command_listener import ListenForCommand, VoiceCommand
 from .audio_recorder import StartRecordingToBuffer, StopRecordingToBuffer, AudioData
 from .audio_player import PlayWavFile, PlayWavData
@@ -162,6 +162,11 @@ class DialogueManager(RhasspyActor):
         if isinstance(message, WakeWordDetected):
             self._logger.debug('Awake!')
             self.transition('awake')
+            if self.wake_receiver is not None:
+                self.send(self.wake_receiver, message)
+        elif isinstance(message, WakeWordNotDetected):
+            self._logger.debug('Wake word NOT detected. Staying asleep.')
+            self.transition('ready')
             if self.wake_receiver is not None:
                 self.send(self.wake_receiver, message)
         else:

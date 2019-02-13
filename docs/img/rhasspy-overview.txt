@@ -1,0 +1,36 @@
+@startuml
+skinparam roundcorner 10
+skinparam EntityBorderColor black
+
+skinparam sequence {
+  ActorBorderColor black
+  ActorBackgroundColor white
+  ParticipantFontColor white
+  ParticipantBorderColor black
+}
+
+actor User as U
+participant "Rhasspy" as R #MediumSeaGreen
+participant "Home Assistant" as HA #RoyalBlue
+
+autonumber
+
+== Wake Up ==
+U -> R: "okay, Rhasspy"
+R -> U: *beep*
+
+== Voice Command ==
+U -> R: "is the garage door open?"
+R -> U: *beep*
+
+== Recognition ==
+R -> R: speech to text
+R -> R: intent recognition
+
+== Handling ==
+R -> HA: rhasspy_GetGarageState
+HA -> HA: automation triggered
+HA -> HA: text to speech
+HA -> U: "the garage door is open"
+
+@enduml

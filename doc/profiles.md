@@ -91,6 +91,7 @@ Available profile sections and settings are:
       * `audio_gain` - audio gain (default 1)
       * `chunk_size` - number of bytes per chunk to feed to snowboy (default 960)
     * `precise` - configuration for [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise)
+      * `engine_path` - path to the precise-engine binary
       * `model` - path to model file (in profile directory)
       * `sensitivity` - model sensitivity (0-1, default 0.5)
       * `trigger_level`  - number of events to trigger activation (default 3)
