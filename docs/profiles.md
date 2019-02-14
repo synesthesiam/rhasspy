@@ -8,9 +8,37 @@ Each profile is a directory contained in the top-level `profiles` directory, The
 profiles. The `profile.json` file *inside* each individual profile directory
 (e.g., `profiles/en/profile.json`) **overrides** settings in `defaults.json`.
 
-## All Settings
+## Profile Directories
 
-Available profile sections and settings are:
+Rhasspy uses an environment variable named `RHASSPY_PROFILES` to decide where to read/write profile files. By default, this is set to a directory named `profiles` wherever Rhasspy is running.
+
+Similar to the Unix `PATH` environment variable, you can add more directories to `RHASSPY_PROFILES` (separated by ":"). Rhasspy will go through the list of directories from **right to left** (like `PATH`) when reading or writing a profile file (like `profile.json`). When *reading* a profile file, Rhasspy tries each of the directories until the file is found. When *writing* a profile file, Rhasspy will try to write to each directory, stopping when it succeeds.
+
+### Example
+
+Assume you have `RHASSPY_PROFILES="/usr/share/rhasspy/profiles:/profiles"` and you add some new sentences to the `en` (English) profile in the web interface. When saving the `sentences.ini` file, Rhasspy will search for a **writable** directory in the following order:
+
+1. `/profiles/en/`
+2. `/usr/share/rhasspy/profiles/en/`
+
+If `/profiles/en` is writable, then `/profiles/en/sentences.ini` will be written with all of your sentences. When Rhasspy attempts to locate the profile file `sentences.ini` in the future, `/profiles/en/sentences.ini` will be found **first** and loaded *instead of* `/usr/share/rhasspy/profiles/en/sentences.ini`.
+
+## Default Profile
+
+Rhasspy desides which profile to load by looking at the value of `rhasspy.default_profile` in the **first** `defaults.json` file in can find in the `RHASSPY_PROFILES` environment variable (right to left). You can override this behavior by setting `RHASSPY_PROFILE` to the name of a different profile. This is easy to see with the [command-line interface](usage.md#command-line):
+
+    rhasspy-cli info --debugs | jq .rhasspy.default_profile
+    "en"
+
+    rhasspy-cli info | jq .language
+    "en"
+    
+    RHASSPY_PROFILE=fr rhasspy-cli info | jq .language
+    "fr"
+
+## Available Settings
+
+All available profile sections and settings are listed below:
 
 * `rhasspy` - configuration for Rhasspy assistant
     * `default_profile` - name of the default profile
@@ -21,9 +49,9 @@ Available profile sections and settings are:
     * `access_token` -  long-lived access token for Home Assistant (Hass.io token is used automatically)
     * `api_password` - Password, if you have that enabled (deprecated)
     * `event_type_format` - Python format string used to create event type from intent type (`{0}`)
-* `speech_to_text` - transcribing speech to text commands
+* `speech_to_text` - transcribing [voice commands to text](speech-to-text.md)
     * `system` - name of speech to text system (`pocketsphinx`, `remote`, `command`, or `dummy`)
-    * `pocketsphinx` - configuration for Pocketsphinx
+    * `pocketsphinx` - configuration for [Pocketsphinx](speech-to-text.md#pocketsphinx)
         * `acoustic_model` - directory with CMU 16Khz acoustic model
         * `base_dictionary` - large text file with word pronunciations (read only)
         * `custom_words` - small text file with words/pronunciations added by user
@@ -31,12 +59,12 @@ Available profile sections and settings are:
         * `unknown_words` - small text file with guessed word pronunciations (from phonetisaurus)
         * `language_model` - text file with trigram [ARPA language model](https://cmusphinx.github.io/wiki/arpaformat/) built from example sentences
         * `mllr_matrix` - MLLR matrix from [acoustic model tuning](https://cmusphinx.github.io/wiki/tutorialtuning/) 
-    * `remote` - configuration for remote Rhasspy server
+    * `remote` - configuration for [remote Rhasspy server](speech-to-text.md#remote-http-server)
         * `url` - URL to POST WAV data for transcription (e.g., `http://your-rhasspy-server:12101/api/speech-to-text`)
-    * `command` - configuration for external speech-to-text program
+    * `command` - configuration for [external speech-to-text program](speech-to-text.md#command)
         * `program` - path to executable
         * `arguments` - list of arguments to pass to program
-    * `sentences_ini` - Ini file with example [sentences/JSGF templates](sentences.md) grouped by intent
+    * `sentences_ini` - Ini file with example [sentences/JSGF templates](training.md#sentencesini) grouped by intent
     * `sentences_text` - text file with all example sentences expanded and repeated
     * `g2p_model` - finite-state transducer for phonetisaurus to guess word pronunciations
     * `grammars_dir` - directory to write generated JSGF grammars from sentences ini file
@@ -152,18 +180,3 @@ Available profile sections and settings are:
     * `system` - system for tuning (currently only `sphinxtrain`)
     * `sphinxtrain` - configuration for [sphinxtrain](https://github.com/cmusphinx/sphinxtrain) based acoustic model tuning
         * `mllr_matrix` - name of generated MLLR matrix (should match `speech_to_text.pocketsphinx.mllr_matrix`)
-
-## The RHASSPY_PROFILES Variable
-
-Rhasspy uses an environment variable named `RHASSPY_PROFILES` to decide where to read/write profile files. By default, this is set to a directory named `profiles` wherever Rhasspy is running.
-
-Similar to the Unix `PATH` environment variable, you can add more directories to `RHASSPY_PROFILES` (separated by ":"). Rhasspy will go through the list of directories from **right to left** (like `PATH`) when reading or writing a profile file (like `profile.json`). When *reading* a profile file, Rhasspy tries each of the directories until the file is found. When *writing* a profile file, Rhasspy will try to write to each directory, stopping when it succeeds.
-
-### Example
-
-Assume you have `RHASSPY_PROFILES="/usr/share/rhasspy/profiles:/profiles"` and you add some new sentences to the `en` (English) profile in the web interface. When saving, Rhasspy will search for a writable directory in the following order:
-
-1. `/profiles/en/`
-2. `/usr/share/rhasspy/profiles/en/`
-
-If `/profiles/en` is writable, then `/profiles/en/sentences.ini` will be written with all of your sentences. When Rhasspy attempts to locate the profile file `sentences.ini` in the future, `/profiles/en/sentences.ini` will be found **first** and loaded *instead of* `/usr/share/rhasspy/profiles/en/sentences.ini`.

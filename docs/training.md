@@ -196,3 +196,166 @@ will generate `rhasspy_PlayMovie` events like:
 If you update `movies.txt`, make sure to re-train Rhasspy in order to pick up the new movies.
     
 ## Custom Words
+
+TODO
+
+## Speech to Text
+
+Rhasspy generates training sentences from your [sentences.ini](#sentencesini) file, and then trains a custom language model using [opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary). You can call a custom program instead if you want to use a different language modeling toolkit or your custom speech to text system needs special training.
+
+Add to your [profile](profiles.md):
+
+```json
+"training": {
+  "speech_to_text": {
+    "system": "command",
+    "command": {
+      "program": "/path/to/program",
+      "arguments": ["argument1", "argument2"]
+    }
+  }
+}
+```
+
+When training, your program will be called with all of the training sentences grouped by intent in JSON to standard in. No output is expected from your program besides a successful exit code. **NOTE**: Rhasspy will not generate `dictionary.txt` or `language_model.txt` if you use a custom program.
+
+The input JSON is an object where each key is the name of an intent and the values are lists of training sentence objects. Each sentence object has the text of the sentence, all tagged entities, and the tokens of the sentence.
+
+Example input:
+
+    {
+      "GetTime": [
+        {
+          "sentence": "what time is it",
+          "entities": [],
+          "tokens": [
+            "what",
+            "time",
+            "is",
+            "it"
+          ]
+        },
+        {
+          "sentence": "tell me the time",
+          "entities": [],
+          "tokens": [
+            "tell",
+            "me",
+            "the",
+            "time"
+          ]
+        }
+      ],
+      "ChangeLightColor": [
+        {
+          "sentence": "set the bedroom light to red",
+          "entities": [
+            {
+              "entity": "name",
+              "value": "bedroom light",
+              "text": "bedroom light",
+              "start": 8,
+              "end": 21
+            },
+            {
+              "entity": "color",
+              "value": "red",
+              "text": "red",
+              "start": 25,
+              "end": 28
+            }
+          ],
+          "tokens": [
+            "set",
+            "the",
+            "bedroom",
+            "light",
+            "to",
+            "red"
+          ]
+        }
+      ]
+    }
+
+See [train-stt.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/train-stt.sh) for an example program.
+
+## Intent Recognition
+
+During training, Rhasspy uses the sentences generated from [sentences.ini](#sentencesini) as training material for the selected intent recognition system. These sentences are typically available in Markdown format in your profile directory as `tagged_sentences.md`. If your intent recognition system requires some special training, you can call a custom program here.
+
+Add to your [profile](profiles.md):
+
+```json
+"training": {
+  "intent": {
+    "system": "command",
+    "command": {
+      "program": "/path/to/program",
+      "arguments": ["argument1", "argument2"]
+    }
+  }
+}
+```
+    
+During training, Rhasspy will call your program with the training sentences grouped by intent in JSON printed to standard in. No output is expected, besides a successful exit code.
+
+The input JSON is an object where each key is the name of an intent and the values are lists of training sentence objects. Each sentence object has the text of the sentence, all tagged entities, and the tokens of the sentence.
+
+Example input:
+
+    {
+      "GetTime": [
+        {
+          "sentence": "what time is it",
+          "entities": [],
+          "tokens": [
+            "what",
+            "time",
+            "is",
+            "it"
+          ]
+        },
+        {
+          "sentence": "tell me the time",
+          "entities": [],
+          "tokens": [
+            "tell",
+            "me",
+            "the",
+            "time"
+          ]
+        }
+      ],
+      "ChangeLightColor": [
+        {
+          "sentence": "set the bedroom light to red",
+          "entities": [
+            {
+              "entity": "name",
+              "value": "bedroom light",
+              "text": "bedroom light",
+              "start": 8,
+              "end": 21
+            },
+            {
+              "entity": "color",
+              "value": "red",
+              "text": "red",
+              "start": 25,
+              "end": 28
+            }
+          ],
+          "tokens": [
+            "set",
+            "the",
+            "bedroom",
+            "light",
+            "to",
+            "red"
+          ]
+        }
+
+    }
+    
+See [train-intent.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/train-intent.sh) for an example program.
+

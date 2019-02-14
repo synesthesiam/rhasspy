@@ -7,8 +7,7 @@ else
 fi
 
 docker run -i \
-       -u "$(id -u):$(id -g)" \
-       -v "$HOME":"$HOME" \
+       -v "$HOME":"$HOME:ro" \
        -e RHASSPY_PROFILES="$profile_dir" \
        -e RHASSPY_PROFILE="$RHASSPY_PROFILE" \
        -w "$(pwd)" \

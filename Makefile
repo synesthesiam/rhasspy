@@ -1,4 +1,4 @@
-.PHONY: web-dist docker release update-addon manifest
+.PHONY: web-dist docker release update-addon manifest docs-uml
 SHELL := bash
 RELEASE_FILES := Dockerfile \
                  *.py \
@@ -13,6 +13,9 @@ RELEASE_FILES := Dockerfile \
                  etc/wav/
 
 ADDON_DIR := ../hassio-addons/rhasspy
+
+DOCS_UML_FILES := $(wildcard docs/img/*.uml.txt)
+DOCS_PNG_FILES := $(patsubst %.uml.txt,%.png,$(DOCS_UML_FILES))
 
 docker: docker-amd64 docker-armhf docker-aarch64 docker-push manifest
 
@@ -64,3 +67,8 @@ manifest:
 	docker manifest annotate synesthesiam/rhasspy-server:latest synesthesiam/rhasspy-server:armhf --os linux --arch arm
 	docker manifest annotate synesthesiam/rhasspy-server:latest synesthesiam/rhasspy-server:aarch64 --os linux --arch arm64
 	docker manifest push synesthesiam/rhasspy-server:latest
+
+%.png: %.uml.txt
+	plantuml -p -tsvg < $< | inkscape --export-dpi=300 --export-png=$@ /dev/stdin
+
+docs-uml: $(DOCS_PNG_FILES)
