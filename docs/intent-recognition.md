@@ -1,4 +1,13 @@
+<style>
+  h1::before {
+    content:url('/img/intent.png');
+    padding-right: 5px;
+  }
+</style>
+
 # Intent Recognition
+
+After you voice command has been transcribed by the [speech to text](speech-to-text.md) system, the next step is to recognize your intent. 
 
 ## Fuzzywuzzy
 

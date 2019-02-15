@@ -1,3 +1,10 @@
+<style>
+  h1::before {
+    content:url('/img/smiley-face.png');
+    padding-right: 5px;
+  }
+</style>
+
 # Command Listener
 
 ## WebRTCVAD

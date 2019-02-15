@@ -1,3 +1,10 @@
+<style>
+  h1::before {
+    content:url('/img/wakeup.png');
+    padding-right: 5px;
+  }
+</style>
+
 # Wake Word
 
 The typical workflow for interacting with a voice assistant is to first activate it with a "wake" or "hot" word, then provide your voice command. Rhasspy supports listening for a wake word with one of several systems, using [pocketsphinx](#pocketsphinx).

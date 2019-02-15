@@ -1,3 +1,10 @@
+<style>
+  h1::before {
+    content:url('/img/bear-gun.png');
+    padding-right: 5px;
+  }
+</style>
+
 # Intent Handling
 
 ## Home Assistant

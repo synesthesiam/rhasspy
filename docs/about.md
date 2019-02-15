@@ -2,6 +2,8 @@
 
 Rhasspy was created and is currently maintained by [Michael Hansen](https://synesthesiam.com/).
 
+![Mike head](img/mike-head.png)
+
 ## Supporting Tools
 
 The following tools/libraries help to support Rhasspy:

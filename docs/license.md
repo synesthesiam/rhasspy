@@ -3,6 +3,8 @@
 Rhasspy itself is licensed under the MIT license, so feel free to do what you
 want with the code.
 
+![Computer monitor riding an elephant in front of a rainbow](img/license.png)
+
 ## MIT License
 
 Copyright 2019 Michael Hansen

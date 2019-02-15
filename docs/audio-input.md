@@ -1,3 +1,10 @@
+<style>
+  h1::before {
+    content:url('/img/microphone.png');
+    padding-right: 5px;
+  }
+</style>
+
 # Audio Input
 
 Rhasspy can listen to audio input from a local microphone or from a remote audio
