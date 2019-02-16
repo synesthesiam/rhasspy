@@ -4,7 +4,7 @@
             <div class="form-group">
                 <div class="form-row text-muted pl-1">
                     <p>
-                        This is a simplified interface to edit your <a href="https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/doc/profiles.md">your Rhasspy profile</a>. If you want to access the JSON directly, see the Advanced tab.
+                        This is a simplified interface to edit your <a href="https://rhasspy.readthedocs.io/en/latest/profiles/">your Rhasspy profile</a>. If you want to access the JSON directly, see the Advanced tab.
                     </p>
                 </div>
                 <div class="form-row pl-1">

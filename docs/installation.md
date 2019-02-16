@@ -66,11 +66,11 @@ Before starting the add-on, make sure to give it access to your microphone and s
 
 Rhasspy can be installed into a Python virtual environment, though there are a number of requirements. This may be desirable, however, if you have trouble getting Rhasspy to access your microphone from within a Docker container. To start, clone the repo somewhere:
 
-    git clone https://github.com/synesthesiam/rhasspy-hassio-addon.git
+    git clone https://github.com/synesthesiam/rhasspy.git
     
 Then run the `create-venv.sh` script (assumes a Debian distribution):
 
-    cd rhasspy-hassio-addon/
+    cd rhasspy/
     ./create-venv.sh
     
 Once the installation finishes (5-10 minutes on a Raspberry Pi 3), you can use the `run-venv.sh` script to start Rhasspy:

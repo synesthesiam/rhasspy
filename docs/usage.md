@@ -86,9 +86,9 @@ The `rhasspy` Python module runs this interface in its `__main__`, so it's acces
     python3 -m rhasspy <COMMAND> <ARGUMENTS>
     
 This will only work inside a properly set up [virtual environment](installation.md#virtual-environment), however.
-If you run Rhasspy through [Docker](installation.md#docker), the [rhasspy-cli](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/rhasspy-cli) script should be used instead:
+If you run Rhasspy through [Docker](installation.md#docker), the [rhasspy-cli](https://github.com/synesthesiam/rhasspy/blob/master/bin/rhasspy-cli) script should be used instead:
 
-    wget https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/rhasspy-cli
+    wget https://github.com/synesthesiam/rhasspy/blob/master/bin/rhasspy-cli
     chmod +x rhasspy-cli
     ./rhasspy-cli --help
     
@@ -97,7 +97,7 @@ By default, it will look for profiles in `$XDG_CONFIG_FILE/rhasspy/profiles`, wh
     
 **Beware**: the `rhasspy-cli` script run under your user accout and grants Rhasspy **write access to your home directory**.
 This is needed to save files during the training process, and to avoid those files being owned by `root`.
-The [rhasspy-cli-ro](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/rhasspy-cli-ro) script can be used for read only operations, such as speech to text or intent handling, but cannot make any changes to your file system.
+The [rhasspy-cli-ro](https://github.com/synesthesiam/rhasspy/blob/master/bin/rhasspy-cli-ro) script can be used for read only operations, such as speech to text or intent handling, but cannot make any changes to your file system.
 
 ### Top-Level Arguments
 

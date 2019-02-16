@@ -277,7 +277,7 @@ Example input:
       ]
     }
 
-See [train-stt.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/train-stt.sh) for an example program.
+See [train-stt.sh](https://github.com/synesthesiam/rhasspy/blob/master/bin/mock-commands/train-stt.sh) for an example program.
 
 ## Intent Recognition
 
@@ -365,5 +365,5 @@ The following environment variables are available to your program:
 * `$RHASSPY_PROFILE` - name of the current profile (e.g., "en")
 * `$RHASSPY_PROFILE_DIR` - directory of the current profile (where `profile.json` is)
 
-See [train-intent.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/train-intent.sh) for an example program.
+See [train-intent.sh](https://github.com/synesthesiam/rhasspy/blob/master/bin/mock-commands/train-intent.sh) for an example program.
 

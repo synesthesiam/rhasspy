@@ -46,7 +46,7 @@ web-dist:
 	yarn build
 
 release:
-	tar -czf rhasspy-hassio-addon.tar.gz ${RELEASE_FILES}
+	tar -czf rhasspy-release.tar.gz ${RELEASE_FILES}
 
 update-addon:
 	rm -rf ${ADDON_DIR}/dist

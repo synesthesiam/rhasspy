@@ -2,7 +2,7 @@
     <div class="container">
         <div class="text-muted pl-1">
             <p>
-                You can edit <a href="https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/doc/profiles.md">your Rhasspy profile</a> directly here as JSON. These settings will override the defaults below.
+                You can edit <a href="https://rhasspy.readthedocs.io/en/latest/profiles/">your Rhasspy profile</a> directly here as JSON. These settings will override the defaults below.
             </p>
         </div>
         <div class="pl-1">
@@ -40,7 +40,7 @@
 
             <div class="text-muted pl-1">
                 <p>
-                    These are the default settings for all <a href="https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/doc/profiles.md">your Rhasspy profiles</a>. If a setting is missing in any profile, the value here will be used.
+                    These are the default settings for all <a href="https://rhasspy.readthedocs.io/en/latest/profiles/">your Rhasspy profiles</a>. If a setting is missing in any profile, the value here will be used.
                 </p>
             </div>
 

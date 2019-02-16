@@ -3,7 +3,7 @@
         <form class="form" v-on:submit.prevent="saveSentences">
             <div class="form-group">
                 <div class="form-row text-muted pl-1">
-                    <p>Example sentences, formatted <a href="https://docs.python.org/3/library/configparser.html">ini style</a>, with each section (intent) containing a <a href="https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/doc/sentences.md">simplified JSGF Grammar</a>.</p>
+                    <p>Example sentences, formatted <a href="https://docs.python.org/3/library/configparser.html">ini style</a>, with each section (intent) containing a <a href="https://rhasspy.readthedocs.io/en/latest/training/#sentencesini">simplified JSGF Grammar</a>.</p>
                 </div>
                 <div class="form-row text-muted pl-1">
                     <p>Sentences shouldn't contain non-words characters like commas and periods. Optional words are <tt>[bracketed]</tt>. Alternatives are <tt>(separated | by | pipes)</tt>. Rules have an <tt>=</tt> after their name, optionally contain <tt>{tags}</tt>, and are referenced <tt>&lt;by_name&gt;</tt>.</p>

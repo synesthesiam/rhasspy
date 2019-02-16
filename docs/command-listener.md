@@ -75,7 +75,7 @@ The following environment variables are available to your program:
 * `$RHASSPY_PROFILE` - name of the current profile (e.g., "en")
 * `$RHASSPY_PROFILE_DIR` - directory of the current profile (where `profile.json` is)
 
-See [listen.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/listen.sh) for an example program.
+See [listen.sh](https://github.com/synesthesiam/rhasspy/blob/master/bin/mock-commands/listen.sh) for an example program.
 
 See `rhasspy.command_listener.CommandCommandListener` for details.
 

@@ -80,7 +80,7 @@ The following environment variables are available to your program:
 * `$RHASSPY_PROFILE` - name of the current profile (e.g., "en")
 * `$RHASSPY_PROFILE_DIR` - directory of the current profile (where `profile.json` is)
 
-See [speech2text.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/speech2text.sh) for an example program.
+See [speech2text.sh](https://github.com/synesthesiam/rhasspy/blob/master/bin/mock-commands/speech2text.sh) for an example program.
 
 If your speech to text system requires some kind of custom training, you should also override Rhasspy's [speech to text training system](training.md#speech-to-text).
 
