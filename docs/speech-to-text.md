@@ -74,9 +74,13 @@ Add to your [profile](profiles.md):
 
 When a voice command is received, Rhasspy will call your program and push the recorded WAV data (16-bit 16 Khz mono) to standard in. Your program should print the text transcription to standard out.
 
-See
-[speech2text.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/speech2text.sh)
-for an example program.
+The following environment variables are available to your program:
+
+* `$RHASSPY_BASE_DIR` - path to the directory where Rhasspy is running from
+* `$RHASSPY_PROFILE` - name of the current profile (e.g., "en")
+* `$RHASSPY_PROFILE_DIR` - directory of the current profile (where `profile.json` is)
+
+See [speech2text.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/speech2text.sh) for an example program.
 
 If your speech to text system requires some kind of custom training, you should also override Rhasspy's [speech to text training system](training.md#speech-to-text).
 

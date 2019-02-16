@@ -1,10 +1,3 @@
-<style>
-  h1::before {
-    content:url('/img/hardware.png');
-    padding-right: 5px;
-  }
-</style>
-
 # Hardware
 
 Rhasspy is designed to be run on different kinds of hardware, such as:

@@ -1,10 +1,3 @@
-<style>
-  h1::before {
-    content:url('/img/intent.png');
-    padding-right: 5px;
-  }
-</style>
-
 # Intent Recognition
 
 After you voice command has been transcribed by the [speech to text](speech-to-text.md) system, the next step is to recognize your intent. 
@@ -91,23 +84,31 @@ Rhasspy recognizes intents from text using one of several systems, such as [fuzz
 
 When a voice command is successfully transcribed, your program will be called with the text transcription printed to standard in. Your program should return JSON on standard out, something like:
 
-    {
-      "intent": {
-        "name": "ChangeLightColor",
-        "confidence": 1.0
-      },
-      "entities": [
-        { "entity": "name",
-          "value": "bedroom light" },
-        { "entity": "color",
-          "value": "red" }
-      ],
-      "text": "set the bedroom light to red"
-    }
+```json
+{
+  "intent": {
+    "name": "ChangeLightColor",
+    "confidence": 1.0
+  },
+  "entities": [
+    { "entity": "name",
+      "value": "bedroom light" },
+    { "entity": "color",
+      "value": "red" }
+  ],
+  "text": "set the bedroom light to red"
+}
+```
     
+The following environment variables are available to your program:
+
+* `$RHASSPY_BASE_DIR` - path to the directory where Rhasspy is running from
+* `$RHASSPY_PROFILE` - name of the current profile (e.g., "en")
+* `$RHASSPY_PROFILE_DIR` - directory of the current profile (where `profile.json` is)
+
 See [text2intent.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/text2intent.sh) for an example program.
 
-If you intent recognition system requires some special training, you should also override Rhasspy's intent training system.
+If you intent recognition system requires some special training, you should also override Rhasspy's [intent training system](training.md#intent-recognition).
 
 See `rhasspy.intent.CommandRecognizer` for details.
 
@@ -122,3 +123,5 @@ Add to your [profile](profiles.md):
   "system": "dummy"
 }
 ```
+
+See `rhasspy.intent.DummyRecognizer` for details.

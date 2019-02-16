@@ -1,4 +1,4 @@
-site_name: Rhasspy Voice Assistant
+site_name: Rhasspy
 theme: readthedocs
 nav:
   - Home: index.md

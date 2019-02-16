@@ -149,6 +149,12 @@ Add to your [profile](profiles.md):
     
 When Rhasspy starts, your program will be called with the given arguments. Once your program detects the wake word, it should print it to standard out and exit. Rhasspy will call your program again when it goes back to sleep. If the empty string is printed, Rhasspy will **not** wake up and your program will be called again.
 
+The following environment variables are available to your program:
+
+* `$RHASSPY_BASE_DIR` - path to the directory where Rhasspy is running from
+* `$RHASSPY_PROFILE` - name of the current profile (e.g., "en")
+* `$RHASSPY_PROFILE_DIR` - directory of the current profile (where `profile.json` is)
+
 See [sleep.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/sleep.sh) for an example program.
 
 See `rhasspy.wake.CommandWakeListener` for details.

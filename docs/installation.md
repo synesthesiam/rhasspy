@@ -89,3 +89,5 @@ At its core, Rhasspy requires:
     * [flask-swagger-ui](https://pypi.org/project/flask-swagger-ui/) for HTTP API documentation
     * [Flask-Cors](https://pypi.org/project/Flask-Cors/) for [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) stuff
 * [pydash](https://pypi.org/project/pydash/) utility library
+
+To actually use any components, however, requires a lot of [extra software](about.md#supporting-tools).

@@ -303,59 +303,67 @@ The input JSON is an object where each key is the name of an intent and the valu
 
 Example input:
 
+```json
+{
+  "GetTime": [
     {
-      "GetTime": [
+      "sentence": "what time is it",
+      "entities": [],
+      "tokens": [
+        "what",
+        "time",
+        "is",
+        "it"
+      ]
+    },
+    {
+      "sentence": "tell me the time",
+      "entities": [],
+      "tokens": [
+        "tell",
+        "me",
+        "the",
+        "time"
+      ]
+    }
+  ],
+  "ChangeLightColor": [
+    {
+      "sentence": "set the bedroom light to red",
+      "entities": [
         {
-          "sentence": "what time is it",
-          "entities": [],
-          "tokens": [
-            "what",
-            "time",
-            "is",
-            "it"
-          ]
+          "entity": "name",
+          "value": "bedroom light",
+          "text": "bedroom light",
+          "start": 8,
+          "end": 21
         },
         {
-          "sentence": "tell me the time",
-          "entities": [],
-          "tokens": [
-            "tell",
-            "me",
-            "the",
-            "time"
-          ]
+          "entity": "color",
+          "value": "red",
+          "text": "red",
+          "start": 25,
+          "end": 28
         }
       ],
-      "ChangeLightColor": [
-        {
-          "sentence": "set the bedroom light to red",
-          "entities": [
-            {
-              "entity": "name",
-              "value": "bedroom light",
-              "text": "bedroom light",
-              "start": 8,
-              "end": 21
-            },
-            {
-              "entity": "color",
-              "value": "red",
-              "text": "red",
-              "start": 25,
-              "end": 28
-            }
-          ],
-          "tokens": [
-            "set",
-            "the",
-            "bedroom",
-            "light",
-            "to",
-            "red"
-          ]
-        }
-
+      "tokens": [
+        "set",
+        "the",
+        "bedroom",
+        "light",
+        "to",
+        "red"
+      ]
     }
+
+}
+```
     
+The following environment variables are available to your program:
+
+* `$RHASSPY_BASE_DIR` - path to the directory where Rhasspy is running from
+* `$RHASSPY_PROFILE` - name of the current profile (e.g., "en")
+* `$RHASSPY_PROFILE_DIR` - directory of the current profile (where `profile.json` is)
+
 See [train-intent.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/train-intent.sh) for an example program.
 

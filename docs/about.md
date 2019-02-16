@@ -21,5 +21,6 @@ The following tools/libraries help to support Rhasspy:
 * [sphinxtrain](https://github.com/cmusphinx/sphinxtrain) (acoustic model tuning)
 * [snowboy](https://snowboy.kitt.ai) (wake word)
 * [Sox](http://sox.sourceforge.net) (WAV conversion)
+* [thespian](https://pypi.org/project/thespian/) actor library
 * [Vue.js](https://vuejs.org/) (web UI)
 * [webrtcvad](https://github.com/wiseman/py-webrtcvad) (voice activity detection)

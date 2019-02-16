@@ -1,10 +1,3 @@
-<style>
-  h1::before {
-    content:url('/img/smiley-face.png');
-    padding-right: 5px;
-  }
-</style>
-
 # Command Listener
 
 ## WebRTCVAD
@@ -75,6 +68,12 @@ Add to your [profile](profiles.md):
 When awake, Rhasspy normally listens for voice commands from the microphone and waits for silence by using [webrtcvad](https://github.com/wiseman/py-webrtcvad). You can call a custom program that will listen for a voice command and simply return the recorded WAV audio data to Rhasspy.
 
 When Rhasspy wakes up, your program will be called with the given arguments. The program's output should be WAV data with the recorded voice command (Rhasspy will automatically convert this to 16-bit 16Khz mono if necessary).
+
+The following environment variables are available to your program:
+
+* `$RHASSPY_BASE_DIR` - path to the directory where Rhasspy is running from
+* `$RHASSPY_PROFILE` - name of the current profile (e.g., "en")
+* `$RHASSPY_PROFILE_DIR` - directory of the current profile (where `profile.json` is)
 
 See [listen.sh](https://github.com/synesthesiam/rhasspy-hassio-addon/blob/master/bin/mock-commands/listen.sh) for an example program.
 

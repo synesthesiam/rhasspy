@@ -1,10 +1,3 @@
-<style>
-  h1::before {
-    content:url('/img/speaker.png');
-    padding-right: 5px;
-  }
-</style>
-
 # Audio Output
 
 Rhasspy provides audio feedback when waking up, processing commands, and when pronouncing custom words.
