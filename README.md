@@ -1,4 +1,4 @@
-![Rhasspy logo](docs.img/rhasspy.svg)
+![Rhasspy logo](docs/img/rhasspy.svg)
 
 Rhasspy (pronounced RAH-SPEE) is an offline, [multilingual](#supported-languages) voice assistant toolkit inspired by [Jasper](https://jasperproject.github.io/) that works with [Home Assistant](https://www.home-assistant.io/) and [Hass.io](https://www.home-assistant.io/hassio/).
 
