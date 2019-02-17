@@ -4,6 +4,8 @@ After you voice command has been transcribed by the [speech to text](speech-to-t
 
 ## Fuzzywuzzy
 
+Finds the closest matching intent by using the [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) between the text and the all of the [training sentences](training.md#sentencesini) you provided. Works best when you have a small number of sentences (dozens).
+
 Add to your [profile](profiles.md):
 
 ```json
@@ -19,6 +21,8 @@ See `rhasspy.intent.FuzzyWuzzyRecognizer` for details.
 
 ## Mycroft Adapt
 
+Recognizes intents using [Mycroft Adapt](https://github.com/MycroftAI/adapt). Works best when you have a medium number of sentences (hundreds).
+
 Add to your [profile](profiles.md):
 
 ```json
@@ -30,9 +34,13 @@ Add to your [profile](profiles.md):
 }
 ```
 
+The `intent.adapt.stop_words` text file contains words that should be ignored (i.e., cannot be "required" or "optional").
+
 See `rhasspy.intent.AdaptIntentRecognizer` for details.
 
 ## RasaNLU
+
+Recognizes intents using a remote [rasaNLU](https://rasa.com/) server. Works well when you have a large number of sentences (thousands).
 
 Add to your [profile](profiles.md):
 
@@ -50,6 +58,8 @@ Add to your [profile](profiles.md):
 See `rhasspy.intent.RasaIntentRecognizer` for details.
 
 ## Remote HTTP Server
+
+Uses a remote Rhasppy server to do intent recognition. POSTs the text to an HTTP endpoint and receives the intent as JSON.
 
 Add to your [profile](profiles.md):
 

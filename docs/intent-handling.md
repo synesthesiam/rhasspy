@@ -23,9 +23,78 @@ If you're running Rhasspy as an add-on inside [Hass.io](https://www.home-assista
 
 See `rhasspy.intent_handler.HomeAssistantIntentHandler` for details.
 
+### Events
+
+Rhasspy will send Home Assistant an event every time an intent is recognized through its [REST API](https://developers.home-assistant.io/docs/en/external_api_rest.html#post-api-events-lt-event-type). The type of the event is determined by the name of the intent, and the event data comes from the tagged words in your [sentences](training.md#sentencesini).
+
+For example, if you have an intent like:
+
+```
+[ChangeLightColor]
+set the (bedroom light){name} to (red | green | blue){color}
+```
+
+and you say something like *"set the bedroom light to blue"*, Rhasspy will POST to the `/api/events/rhasspy_ChangeLightColor` endpoint of your Home Assistant server with the following data:
+
+```json
+{
+  "name": "bedroom light",
+  "color": "blue"
+}
+```
+
+In order to do something with the `rhasspy_ChangeLightColor` event, create an automation with an [event trigger](https://www.home-assistant.io/docs/automation/trigger/#event-trigger). For example, add the following to your `automation.yaml` file:
+
+```yaml
+- alias: "Set bedroom light color (blue)"
+  trigger:
+    platform: event
+    event_type: rhasspy_ChangeLightColor
+    event_data:
+      name: 'bedroom light'
+      color: 'blue'
+  action:
+    ...
+```
+
+See the documentation on [actions](https://www.home-assistant.io/docs/automation/action/) for the different things you can do with Home Assistant.
+
+### MQTT
+
+In addition to events, Rhasspy can also publish intents through MQTT ([Hermes protocol](https://docs.snips.ai/reference/dialogue#intent)).
+
+Add to your [profile](profiles.md):
+
+```json
+"mqtt": {
+    "enabled": true,
+    "host": "localhost",
+    "username": "",
+    "password": "",
+    "port": 1883,
+    "reconnect_sec": 5,
+    "site_id": "default",
+    "publish_intents": true
+}
+```
+
+Adjust the `mqtt` configuration to connect to your MQTT broker.
+Set `mqtt.site_id` to match your Snips.AI siteId.
+
+Add to your Home Assistant's `configuration.yaml` file:
+
+```yaml
+snips:
+
+intent_script:
+  ...
+```
+
+See the [intent script](https://www.home-assistant.io/components/intent_script/) documentation for details on how to handle the intents.
+
 ## Command
 
-Once an intent is successfully recognized, Rhasspy will send an event to Home Assistant with the details (as well as [publish it over MQTT](https://docs.snips.ai/reference/dialogue#intent)). You can call a custom program instead *or in addition* to this behavior.
+Once an intent is successfully recognized, Rhasspy will send an event to Home Assistant with the details. You can call a custom program instead *or in addition* to this behavior.
     
 Add to your [profile](profiles.md):
 
