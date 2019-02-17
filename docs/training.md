@@ -182,10 +182,10 @@ If you're using the English (`en`) profile, for example, create the file `profil
     Timecrimes
     Mullholand Drive
     
-This list of movie can now be referenced as `$movies` in your your `sentences.ini` file! Something like:
+This list of movie can now be referenced as `$movies$` in your your `sentences.ini` file! Something like:
 
     [PlayMovie]
-    play ($movie){movie_name}
+    play ($movie$){movie_name}
     
 will generate `rhasspy_PlayMovie` events like:
 
