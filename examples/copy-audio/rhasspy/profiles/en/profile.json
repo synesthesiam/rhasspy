@@ -1,0 +1,43 @@
+{
+    "language": "en",
+
+    "rhasspy": {
+        "listen_on_start": true
+    },
+
+    "wake": {
+        "pocketsphinx": {
+            "keyphrase": "okay rhasspy"
+        },
+        "system": "pocketsphinx"
+    },
+
+    "speech_to_text": {
+        "system": "command",
+        "command": {
+            "program": "$RHASSPY_PROFILE_DIR/copy-audio.sh"
+        }
+    },
+
+    "microphone": {
+        "system": "pyaudio",
+        "pyaudio": {
+            "device": ""
+        },
+        "arecord": {
+            "device": ""
+        }
+    },
+
+    "sounds": {
+        "system": "aplay"
+    },
+
+    "intent": {
+        "system": "dummy"
+    },
+
+    "handle": {
+        "system": "dummy"
+    }
+}
