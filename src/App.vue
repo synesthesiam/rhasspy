@@ -2,7 +2,7 @@
     <div id="app">
         <!-- Top Bar -->
         <nav class="navbar navbar-expand-sm navbar-dark bg-dark fixed-top">
-            <img class="navbar-brand" v-bind:class="spinnerClass" src="/img/microphone.png">
+            <img class="navbar-brand" v-bind:class="spinnerClass" src="/img/logo.png">
 
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
