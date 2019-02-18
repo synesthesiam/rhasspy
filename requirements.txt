@@ -9,3 +9,4 @@ PyAudio
 webrtcvad
 fuzzywuzzy[speedup]
 adapt-parser
+precise-runner

@@ -31,7 +31,6 @@ RUN dpkg -i /*.deb && rm -f /*.deb
 
 # Install Python dependencies
 RUN python3 -m pip install wheel
-RUN if [ "$BUILD_ARCH" = "amd64" ]; then python3 -m pip install --no-cache-dir mycroft-precise==0.2.0; fi
 COPY requirements.txt /requirements.txt
 RUN python3 -m pip install -r /requirements.txt
 
@@ -50,6 +49,11 @@ RUN cd / && tar -xvf /jsgf-gen.tar.gz && \
 # Install snowboy
 COPY etc/snowboy-1.3.0.tar.gz /
 RUN if [ "$BUILD_ARCH" != "aarch64" ]; then pip3 install --no-cache-dir /snowboy-1.3.0.tar.gz; fi
+
+# Install Mycroft Precise
+COPY etc/precise-engine_0.2.0_${BUILD_ARCH}.tar.gz /
+RUN cd / && tar -xzf /precise-engine_0.2.0_${BUILD_ARCH}.tar.gz && \
+    ln -s /precise-engine/precise-engine /usr/bin/precise-engine
 
 RUN ldconfig
 
