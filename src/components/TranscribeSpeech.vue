@@ -20,7 +20,7 @@
                                 v-bind:class="{ 'btn-danger': tapRecording, 'btn-success': !tapRecording }"
                                 @click="toggleRecording"
                                 title="Record a voice command while held, interpret when released"
-                                :disabled="interpreting || holdRecording">{{ tapRecording ? 'Tap to Stop' : 'Tap to Record' }}</button>
+                                :disabled="interpreting || (holdRecording && !tapRecording)">{{ tapRecording ? 'Tap to Stop' : 'Tap to Record' }}</button>
                     </div>
                 </div>
             </div>

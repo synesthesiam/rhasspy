@@ -312,6 +312,9 @@ class ARecordAudioRecorder(RhasspyActor):
                 if len(data) > 0:
                     # Send to this actor to avoid threading issues
                     self.send(self.myAddress, AudioData(data))
+                else:
+                    # Avoid 100% CPU usage
+                    time.sleep(0.01)
 
         # Start recording
         self.is_recording = True
