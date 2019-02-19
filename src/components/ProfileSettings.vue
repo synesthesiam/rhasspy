@@ -141,6 +141,35 @@
                             </div>
                         </div>
                     </div>
+                    <hr>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <p class="font-weight-bold">For Self-Signed Certificates:</p>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="col-auto">
+                                <label for="pemPath" class="col-form-label col">PEM path</label>
+                            </div>
+                            <div class="col">
+                                <input id="pemPath" ref="pemPath" type="text" v-model="pemPath" class="form-control">
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-danger"
+                                        @click="pemPath = ''"
+                                        title="Clear the PEM path (no self-signed certificate)">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <p class="muted">Full path to your <a href="http://docs.python-requests.org/en/latest/user/advanced/#ssl-cert-verification">CA_BUNDLE file or a directory with certificates of trusted CAs.</a></p>
+                        </div>
+                        <div class="form-row">
+                            <p class="muted">Use <tt>$RHASSPY_PROFILE_DIR</tt> environment variable for the directory of this profile.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -564,6 +593,7 @@
              hassURL: '',
              hassToken: '',
              hassPassword: '',
+             pemPath: '',
 
              rhasspySTT: '',
              sttURL: '',
@@ -616,6 +646,10 @@
                                this.hassToken = this._.get(this.profileSettings,
                                                            'home_assistant.access_token',
                                                            this.defaultSettings.home_assistant.access_token)
+
+                               this.pemPath = this._.get(this.profileSettings,
+                                                         'home_assistant.pem_file',
+                                                         this.defaultSettings.home_assistant.pem_file)
 
                                // Wake
                                this.wakeOnStart = this._.get(this.profileSettings,
@@ -736,6 +770,10 @@
              this._.set(this.profileSettings,
                         'home_assistant.access_token',
                         this.hassToken)
+
+             this._.set(this.profileSettings,
+                        'home_assistant.pem_file',
+                        this.pemPath)
 
              // Speech recognition
              this._.set(this.profileSettings,

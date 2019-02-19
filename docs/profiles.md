@@ -48,6 +48,7 @@ All available profile sections and settings are listed below:
     * `url` - Base URL of Home Assistant server (no `/api`)
     * `access_token` -  long-lived access token for Home Assistant (Hass.io token is used automatically)
     * `api_password` - Password, if you have that enabled (deprecated)
+    * `pem_file` - Full path to your <a href="http://docs.python-requests.org/en/latest/user/advanced/#ssl-cert-verification">CA_BUNDLE file or a directory with certificates of trusted CAs</a>
     * `event_type_format` - Python format string used to create event type from intent type (`{0}`)
 * `speech_to_text` - transcribing [voice commands to text](speech-to-text.md)
     * `system` - name of speech to text system (`pocketsphinx`, `remote`, `command`, or `dummy`)

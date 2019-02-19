@@ -60,8 +60,15 @@ class HomeAssistantIntentHandler(RhasspyActor):
         self.hass_config = self.profile.get('home_assistant', {})
 
         # Python format string for generating event type name
-        self.event_type_format = self.hass_config['event_type_format']
+        self.event_type_format = self.hass_config.get('event_type_format', 'rhasspy_{0}')
 
+        # PEM file for self-signed HA certificates
+        self.pem_file = self.hass_config.get('pem_file', '')
+        if (self.pem_file is not None) and (len(self.pem_file) > 0):
+            self.pem_file = os.path.expandvars(self.pem_file)
+            self._logger.debug(f'Using PEM file at {self.pem_file}')
+        else:
+            self.pem_file = None  # disabled
 
     def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, HandleIntent):
@@ -134,7 +141,15 @@ class HomeAssistantIntentHandler(RhasspyActor):
             headers['Authorization'] = 'Bearer %s' % os.environ['HASSIO_TOKEN']
 
         # Send to Home Assistant
-        response = requests.post(post_url, headers=headers, json=slots)
+        kwargs = {
+            'headers': headers,
+            'json': slots
+        }
+
+        if self.pem_file is not None:
+            kwargs['verify'] = self.pem_file
+
+        response = requests.post(post_url, **kwargs)
         self._logger.debug('POSTed intent to %s with headers=%s' % (post_url, headers))
         response.raise_for_status()
 

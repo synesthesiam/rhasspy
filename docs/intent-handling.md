@@ -92,6 +92,23 @@ intent_script:
 
 See the [intent script](https://www.home-assistant.io/components/intent_script/) documentation for details on how to handle the intents.
 
+### Self-Signed Certificate
+
+If your Home Assistant uses a self-signed certificate, you'll need to give Rhasspy some extra information.
+
+Add to your [profile](profiles.md):
+
+```json
+"home_assistant": {
+  ...
+  "pem_file": "/path/to/certfile"
+}
+```
+
+Set `home_assistant.pem_file` to the full path to your <a href="http://docs.python-requests.org/en/latest/user/advanced/#ssl-cert-verification">CA_BUNDLE file or a directory with certificates of trusted CAs</a>.
+
+Use the environment variable `RHASSPY_PROFILE_DIR` to reference your current profile's directory. For example, `$RHASSPY_PROFILE_DIR/my.pem` will tell Rhasspy to use a file named `my.pem` in your profile directory when verifying your self-signed certificate.
+
 ## Command
 
 Once an intent is successfully recognized, Rhasspy will send an event to Home Assistant with the details. You can call a custom program instead *or in addition* to this behavior.
