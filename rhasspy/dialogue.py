@@ -2,7 +2,7 @@ import json
 from datetime import timedelta
 from typing import Dict, Any, Optional, List, Type
 
-from thespian.actors import ActorAddress, ActorExitRequest, WakeupMessage
+from thespian.actors import ActorAddress, ActorExitRequest, WakeupMessage, ChildActorExited
 
 from .actor import RhasspyActor, ConfigureEvent, Configured, StateTransition
 from .wake import ListenForWakeWord, StopListeningForWakeWord, WakeWordDetected, WakeWordNotDetected
@@ -125,7 +125,8 @@ class DialogueManager(RhasspyActor):
                 if self.send_ready:
                     self.send(self._parent, Ready())
         elif isinstance(message, WakeupMessage):
-            self._logger.warning('Actor timeout! Loading anyway...')
+            wait_names = list(self.wait_actors.keys())
+            self._logger.warning(f'Actor timeout! Still waiting on {wait_names} Loading anyway...')
             self.transition('ready')
 
             # Inform all actors that we're ready
@@ -443,7 +444,8 @@ class DialogueManager(RhasspyActor):
         elif isinstance(message, AudioData):
             # Forward to audio recorder
             self.send(self.recorder, message)
-        else:
+        elif not (isinstance(message, StateTransition)
+                  or isinstance(message, ChildActorExited)):
             self._logger.warning('Unhandled message: %s' % message)
 
     # -------------------------------------------------------------------------

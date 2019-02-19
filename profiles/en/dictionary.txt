@@ -19,6 +19,9 @@ okay OW K EY
 on AA N
 on(2) AO N
 open OW P AH N
+orange AO R AH N JH
+orange(2) AO R IH N JH
+purple P ER P AH L
 red R EH D
 rhasspy R AE S P IY
 room R UW M
@@ -37,3 +40,4 @@ what W AH T
 what(2) HH W AH T
 whats W AH T S
 whats(2) HH W AH T S
+yellow Y EH L OW
