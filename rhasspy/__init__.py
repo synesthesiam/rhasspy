@@ -126,7 +126,7 @@ def main() -> None:
     wav2mqtt_parser = sub_parsers.add_parser('wav2mqtt', help='Push WAV file(s) to MQTT')
     wav2mqtt_parser.add_argument('wav_files', nargs='*', help='Paths to WAV files')
     wav2mqtt_parser.add_argument('--frames', type=int,
-                                 default=0, help='WAV frames per MQTT message (default=0 for all)')
+                                 default=480, help='WAV frames per MQTT message (default=0 for all)')
     wav2mqtt_parser.add_argument('--site-id', type=str,
                                  default='default', help='Hermes siteId (default=default)')
     wav2mqtt_parser.add_argument('--silence-before', type=float,

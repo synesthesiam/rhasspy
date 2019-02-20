@@ -1,56 +1,28 @@
 {
     "language": "en",
-    "training": {
-        "regex": {
-            "replace": [
-                {
-                    "'s": "s"
-                },
-                {
-                    "[^\\w ]+": " "
-                }
-            ]
-        },
-        "sentence_casing": "lower"
-    },
     "home_assistant": {
         "url": "http://hass:8123",
         "api_password": "secret",
         "access_token": ""
     },
     "wake": {
-        "system": "hermes",
-        "snowboy": {
-            "model": "snowboy.umdl"
-        },
-        "precise": {
-            "model": "okay-rhasspy.pb"
-        },
-        "pocketsphinx": {
-            "keyphrase": "okay rhasspy"
-        },
-        "hermes": {
-            "wakeword_id": "default"
-        }
+        "system": "dummy"
     },
     "microphone": {
-        "system": "hermes",
-        "hermes": {
-            "device": ""
-        }
+        "system": "hermes"
     },
     "command": {
-        "system": "oneshot"
+        "system": "hermes"
     },
     "rhasspy": {
-        "listen_on_start": true
+        "listen_on_start": false
     },
     "sounds": {
         "system": "aplay"
     },
     "mqtt": {
         "enabled": true,
-        "host": "mosquitto",
+        "host": "localhost",
         "port": 1883,
         "password": "",
         "username": "",
@@ -58,18 +30,9 @@
         "publish_intents": true
     },
     "speech_to_text": {
-        "system": "pocketsphinx",
-        "remote": {
-            "url": "http://my-server:12101/api/speech-to-text"
-        }
+        "system": "pocketsphinx"
     },
     "intent": {
-        "system": "fuzzywuzzy",
-        "rasa": {
-            "url": "http://localhost:5000/"
-        },
-        "remote": {
-            "url": "http://my-server:12101/api/text-to-intent"
-        }
+        "system": "fuzzywuzzy"
     }
 }

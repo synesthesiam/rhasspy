@@ -5,6 +5,7 @@ import uuid
 import wave
 import time
 import threading
+from queue import Queue
 from typing import Dict, Any, Optional, List
 from collections import defaultdict
 
@@ -41,6 +42,9 @@ class MqttMessage:
         self.topic = topic
         self.payload = payload
 
+class MessageReady:
+    pass
+
 # -----------------------------------------------------------------------------
 # Interoperability with Snips.AI Hermes protocol
 # https://docs.snips.ai/ressources/hermes-protocol
@@ -53,6 +57,7 @@ class HermesMqtt(RhasspyActor):
         self.connected = False
         self.subscriptions:Dict[str, List[ActorAddress]] = defaultdict(list)
         self.publications:Dict[str, List[bytes]] = defaultdict(list)
+        self.message_queue:Queue = Queue()
 
     # -------------------------------------------------------------------------
 
@@ -144,9 +149,11 @@ class HermesMqtt(RhasspyActor):
                 self.transition('started')
             else:
                 self.transition('connecting')
-        elif isinstance(message, MqttMessage):
-            for receiver in self.subscriptions[message.topic]:
-                self.send(receiver, message)
+        elif isinstance(message, MessageReady):
+            while not self.message_queue.empty():
+                mqtt_message = self.message_queue.get()
+                for receiver in self.subscriptions[mqtt_message.topic]:
+                    self.send(receiver, mqtt_message)
         elif self.connected:
             assert self.client is not None
             if isinstance(message, MqttSubscribe):
@@ -181,16 +188,26 @@ class HermesMqtt(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def on_connect(self, client, userdata, flags, rc):
-        self._logger.info('Connected to %s:%s' % (self.host, self.port))
-        self.send(self.myAddress, MqttConnected())
+        try:
+            self._logger.info('Connected to %s:%s' % (self.host, self.port))
+            self.send(self.myAddress, MqttConnected())
+        except:
+            self._logger.exception('on_connect')
 
     def on_disconnect(self, client, userdata, flags, rc):
-        self._logger.warn('Disconnected')
-        self.connected = False
-        self.send(self.myAddress, MqttDisconnected())
+        try:
+            self._logger.warn('Disconnected')
+            self.connected = False
+            self.send(self.myAddress, MqttDisconnected())
+        except:
+            self._logger.exception('on_disconnect')
 
     def on_message(self, client, userdata, msg):
-        self.send(self.myAddress, MqttMessage(msg.topic, msg.payload))
+        try:
+            self.message_queue.put(MqttMessage(msg.topic, msg.payload))
+            self.send(self.myAddress, MessageReady())
+        except:
+            self._logger.exception('on_message')
 
     # -------------------------------------------------------------------------
 
