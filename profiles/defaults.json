@@ -133,6 +133,10 @@
         "sentence_casing": "lower",
         "tagged_sentences": "tagged_sentences.md",
         "tokenizer": "regex",
+        "unknown_words": {
+            "guess_pronunciations": true,
+            "fail_when_present": true
+        },
         "speech_to_text": {
             "system": "auto",
             "command": {

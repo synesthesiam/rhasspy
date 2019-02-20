@@ -24,7 +24,8 @@ from uuid import uuid4
 from collections import defaultdict
 from typing import Any, Union, Tuple
 
-from flask import Flask, request, Response, jsonify, send_file, send_from_directory
+from flask import (Flask, request, Response, jsonify,
+                   safe_join, send_file, send_from_directory)
 from flask_cors import CORS
 import requests
 import pydash
@@ -533,6 +534,59 @@ def api_actor_states() -> Response:
     '''Get the states of all actors'''
     assert core is not None
     return jsonify(core.get_actor_states())
+
+# -----------------------------------------------------------------------------
+
+@app.route('/api/slots', methods=['GET'])
+def api_slots() -> Response:
+    '''Get the values of all slots'''
+    assert core is not None
+
+    # Load slots values
+    slots_dirs = core.profile.read_paths(
+        core.profile.get('speech_to_text.slots_dir'))
+
+    from rhasspy.train import JsgfSentenceGenerator
+    return jsonify(JsgfSentenceGenerator.load_slots(slots_dirs))
+
+@app.route('/api/slots/<name>', methods=['GET', 'POST'])
+def api_slots_by_name(name:str) -> Response:
+    '''Get or sets the values of a slot list'''
+    assert core is not None
+    overwrite_all = request.args.get('overwrite_all', 'false').lower() == 'true'
+
+    slots_dirs = core.profile.read_paths(
+        core.profile.get('speech_to_text.slots_dir', 'slots'))
+
+    if request.method == 'POST':
+        if overwrite_all:
+            # Remote existing values first
+            for slots_dir in slots_dirs:
+                slots_path = safe_join(slots_dir, f'{name}.txt')
+                if os.path.exists(slots_path):
+                    try:
+                        os.unlink(slots_path)
+                    except:
+                        logger.exception('api_slots_by_name')
+
+        slots_path = core.profile.write_path(
+            core.profile.get('speech_to_text.slots_dir', 'slots'),
+            f'{name}.txt')
+
+        # Create directories
+        os.makedirs(os.path.split(slots_path)[0], exist_ok=True)
+
+        # Write data
+        with open(slots_path, 'wb') as slots_file:
+            slots_file.write(request.data)
+
+        return f'Wrote {len(request.data)} byte(s) to {slots_path}'
+
+    # Load slots values
+    from rhasspy.train import JsgfSentenceGenerator
+    slot_values = JsgfSentenceGenerator.load_slots(slots_dirs)
+
+    return '\n'.join(slot_values.get(name, []))
 
 # -----------------------------------------------------------------------------
 

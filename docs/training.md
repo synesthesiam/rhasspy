@@ -17,7 +17,7 @@ For step (1), Rhasspy uses [pocketsphinx](https://github.com/cmusphinx/pocketsph
 2. Balance sentences by intent, ensuring all intents have equal probability
 3. Use the [opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary) toolkit to create a custom language model
 
-Additionally, a custom CMU dictionary is generated with *only* the words in your voice commands (and wake word, if you're using a [pocketsphinx keyphrase](wake-word.md#pocketsphinx)). If the pronunciation of a word is not known, Rhasspy calls out to [phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) to get a guess, and then halts training. Once you've confirmed the pronunciations by adding them to your [custom words](#custom-words), training can continue.
+Additionally, a custom [CMU phonetic dictionary](https://cmusphinx.github.io/wiki/tutorialdict/) is generated with *only* the words in your voice commands (and wake word, if you're using a [pocketsphinx keyphrase](wake-word.md#pocketsphinx)). If the pronunciation of a word is not known, Rhasspy calls out to [phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) to get a guess, and then halts training. Once you've confirmed the pronunciations by adding them to your [custom words](#custom-words), training can continue.
 
 For step (2), Rhasspy can use a [variety of intent recognition systems](intent-recognition.md). However, they are all trained from the **tagged sentences** generated from [sentences.ini](#sentencesini), e.g., `turn [on](state) the [living room lamp](name)`. These sentences are transformed into JSON, like:
 
@@ -62,7 +62,7 @@ Compared to JSON, YAML, etc., there is minimal syntactic overhead for the purpos
 3. You cannot share commonly *repeated phrases* across sentences or intents.
 4. There is no way to *tag phrases* so the intent recognizer knows the values for an intent's slots (e.g., color).
 
-Each of these shortcomings are addressed by considering the space between intent headings (`[Intent 1]`, etc.) as a **grammar** that will *generate* tagged sentences in [rasaNLU's training data format](https://rasa.com/docs/nlu/dataformat/#markdown-format). The generated sentences, stripped of their tags, are used as input to the [opengrm toolchain](www.opengrm.org/twiki/bin/view/GRM/NGramQuickTour) to produce a language model for [pocketsphinx](https://github.com/cmusphinx/pocketsphinx). The tagged sentences are then used to train an intent recognizer.
+Each of these shortcomings are addressed by considering the space between intent headings (`[Intent 1]`, etc.) as a **grammar** that will *generate* tagged sentences in [rasaNLU's training data format](https://rasa.com/docs/nlu/dataformat/#markdown-format). The generated sentences, stripped of their tags, are used as input to [mitlm](https://github.com/mitlm/mitlm) to produce a language model for [pocketsphinx](https://github.com/cmusphinx/pocketsphinx). The tagged sentences are then used to train an intent recognizer.
 
 ### Optional Words
 
@@ -185,7 +185,7 @@ If you're using the English (`en`) profile, for example, create the file `profil
 This list of movie can now be referenced as `-movies-` in your your `sentences.ini` file! Something like:
 
     [PlayMovie]
-    play (-movie-){movie_name}
+    play (-movies-){movie_name}
     
 will generate `rhasspy_PlayMovie` events like:
 
@@ -193,15 +193,36 @@ will generate `rhasspy_PlayMovie` events like:
       "movie_name": "Primer"
     }
     
-If you update `movies.txt`, make sure to re-train Rhasspy in order to pick up the new movies.
+If you update `movies.txt**, make sure to re-train Rhasspy in order to pick up the new movies.
+
+**NOTE**: Rhasspy will look for `slots` in *all* of your [profile directories](profiles.md#profile-directories), merging together all of the same named text files it finds.
+
+### Special Cases
+
+If one of your sentences happens to start with an optional word (e.g., `[the]`), this can lead to a problem:
+
+    [SomeIntent]
+    [the] problem sentence
     
+Python's [configparser](https://docs.python.org/3/library/configparser.html) will interpret `[the]` as a new section header, which will produce a new intent, grammar, etc. Rhasspy handles this special case by using a backslash escape sequence (`\[`):
+    
+    [SomeIntent]
+    \[the] problem sentence
+    
+Now `[the]` will be properly interpreted as a sentence under `[SomeIntent]`. You only need to escape a `[` if it's the **very first** character in your sentence.
+
 ## Custom Words
 
-TODO
+Rhasspy looks for words you've defined outside of your profile's base dictionary (typically `base_dictionary.txt`) in a custom words file (typically `custom_words.txt`). This is just a [CMU phonetic dictionary](https://cmusphinx.github.io/wiki/tutorialdict/) with words/pronunciations separated by newlines:
+
+    hello H EH L OW
+    world W ER L D
+    
+You can use the [Words tab](usage.md#words-tab) in Rhasspy's web interface to generate this dictionary. During training, Rhasspy will merge `custom_words.txt` into your `dictionary.txt` file so the [speech to text](speech-to-text.md) system knows the words in your voice commands are pronounced.
 
 ## Speech to Text
 
-Rhasspy generates training sentences from your [sentences.ini](#sentencesini) file, and then trains a custom language model using [opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary). You can call a custom program instead if you want to use a different language modeling toolkit or your custom speech to text system needs special training.
+Rhasspy generates training sentences from your [sentences.ini](#sentencesini) file, and then trains a custom language model using [mitlm](https://github.com/mitlm/mitlm). You can call a custom program instead if you want to use a different language modeling toolkit or your custom speech to text system needs special training.
 
 Add to your [profile](profiles.md):
 

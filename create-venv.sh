@@ -7,15 +7,11 @@ DIR="$( cd "$( dirname "$0" )" && pwd )"
 echo "Installing system dependencies"
 sudo apt-get update
 sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
+     build-essential autoconf libtool automake bison \
      sox espeak swig portaudio19-dev \
      libatlas-base-dev \
      sphinxbase-utils sphinxtrain pocketsphinx \
-     jq
-
-if [[ -z "$(which java)" ]]; then
-    echo "Installing Java"
-    sudo apt-get install -y ca-certificates-java
-fi
+     jq checkinstall
 
 VENV_PATH=$DIR/.venv
 echo $VENV_PATH
@@ -31,7 +27,6 @@ python3 -m pip install wheel
 python3 -m pip install -r requirements.txt
 python3 -m pip install etc/pocketsphinx-python.tar.gz
 python3 -m pip install etc/snowboy-1.3.0.tar.gz
-python3 -m pip install mycroft-precise==0.2.0
 
 if [[ -z "$RHASSPY_DOCKER" ]]; then
     echo "Installing pre-compiled binaries"
@@ -48,6 +43,10 @@ if [[ -z "$RHASSPY_DOCKER" ]]; then
 	    armv7l)
 		    CPU_ARCH=armhf
 		    ;;
+
+	    arm64v8)
+		    CPU_ARCH=aarch64
+		    ;;
     esac
 
     PKG_DIR=$(mktemp -d)
@@ -58,15 +57,27 @@ if [[ -z "$RHASSPY_DOCKER" ]]; then
 
     trap cleanup EXIT
 
-    wget -O "$PKG_DIR/jsgf-gen.deb" https://github.com/synesthesiam/jsgf-gen/releases/download/v1.0/jsgf-gen-1.0_all.deb
-
-    wget -O "$PKG_DIR/openfst.deb" https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${CPU_ARCH}/openfst_1.6.9-1_${CPU_ARCH}.deb
-
-    wget -O "$PKG_DIR/opengrm.deb" https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${CPU_ARCH}/opengrm_1.3.4-1_${CPU_ARCH}.deb
-
     wget -O "$PKG_DIR/phonetisaurus.deb" https://github.com/synesthesiam/phonetisaurus-2013/releases/download/v1.0-${CPU_ARCH}/phonetisaurus_2013-1_${CPU_ARCH}.deb
 
     sudo dpkg -i ${PKG_DIR}/*.deb
+
+    # Install mitlm
+    pushd "$DIR/etc"
+    tar -xf mitlm-0.4.2.tar.xz && \
+        cd mitlm-0.4.2 && \
+        ./configure && \
+        make -j 4 && \
+        sudo checkinstall --pkgname=mitlm --default
+    popd
+
+    precise_path="$DIR/etc/precise-engine_0.2.0_${CPU_ARCH}.tar.gz"
+    echo "$precise_path"
+    if [[ -f "$precise_path" ]]; then
+        pushd "$DIR/etc"
+        tar -xf "$precise_path"
+        sudo ln -s "$DIR/etc/precise-engine/precise-engine" /usr/local/bin/precise-engine
+        popd
+    fi
 fi
 
 # Add /usr/local/lib to LD_LIBRARY_PATH

@@ -10,3 +10,4 @@ webrtcvad
 fuzzywuzzy[speedup]
 adapt-parser
 precise-runner
+pyjsgf

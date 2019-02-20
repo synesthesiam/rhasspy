@@ -29,7 +29,8 @@ class PlayWavData:
 
 class DummyAudioPlayer(RhasspyActor):
     '''Does nothing'''
-    pass
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
+        pass
 
 # -----------------------------------------------------------------------------
 # APlay based audio player

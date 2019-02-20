@@ -14,25 +14,9 @@ RUN apt-get update && \
         build-essential portaudio19-dev swig \
         libatlas-base-dev \
         sox espeak alsa-utils \
-        openjdk-8-jre-headless \
         cmake git \
         autoconf libtool automake bison \
         sphinxbase-utils sphinxtrain
-
-# Install opengrm (with openfst 1.6.9)
-COPY etc/openfst-1.6.9.tar.gz /
-RUN cd / && tar -xf openfst-1.6.9.tar.gz && cd openfst-1.6.9/ && \
-    ./configure --enable-far && \
-    make -j $MAKE_THREADS && \
-    make install && \
-    rm -rf /openfst-1.6.9*
-
-COPY etc/opengrm-ngram-1.3.4.tar.gz /
-RUN cd / && tar -xf opengrm-ngram-1.3.4.tar.gz && cd opengrm-ngram-1.3.4/ && \
-    ./configure && \
-    make -j $MAKE_THREADS && \
-    make install && \
-    rm -rf /opengrm*
 
 # Install phonetisaurus (with openfst 1.3.4)
 COPY etc/openfst-1.3.4.tar.gz /
@@ -53,6 +37,14 @@ RUN cd / && tar -xvf phonetisaurus-2013.tar.gz && \
     rm -rf /openfst-1.3.4* && \
     rm -rf /phonetisaurus-2013*
 
+# Install mitlm
+COPY etc/mitlm-0.4.2.tar.xz /
+RUN cd / && tar -xf mitlm-0.4.2.tar.xz && cd mitlm-0.4.2/ && \
+    ./configure && \
+    make -j $MAKE_THREADS && \
+    make install && \
+    rm -rf /mitlm-0.4.2*
+
 # Install Python dependencies
 RUN python3 -m pip install --no-cache-dir wheel
 COPY requirements.txt /requirements.txt
@@ -63,20 +55,13 @@ COPY etc/pocketsphinx-python.tar.gz /
 RUN python3 -m pip install --no-cache-dir /pocketsphinx-python.tar.gz && \
     rm -rf /pocketsphinx-python*
 
-# Install JSGF sentence generator
-COPY etc/jsgf-gen.tar.gz /
-RUN cd / && tar -xvf /jsgf-gen.tar.gz && \
-    mv /jsgf-gen/bin/* /usr/bin/ && \
-    mv /jsgf-gen/lib/* /usr/lib/ && \
-    rm -rf /jsgf-gen*
-
 # Install snowboy
 COPY etc/snowboy-1.3.0.tar.gz /
 RUN if [ "$BUILD_ARCH" != "aarch64" ]; then pip3 install --no-cache-dir /snowboy-1.3.0.tar.gz; fi
 
 # Install Mycroft Precise
-RUN if [ "$BUILD_ARCH" = "amd64" ]; then wget -O /precise-engine.tar.gz https://github.com/MycroftAI/mycroft-precise/releases/download/v0.2.0/precise-engine_0.2.0_x86_64.tar.gz fi
-RUN if [ "$BUILD_ARCH" = "armhf" ]; then wget -O /precise-engine.tar.gz https://github.com/MycroftAI/mycroft-precise/releases/download/v0.2.0/precise-engine_0.2.0_armv7l.tar.gz fi
+RUN if [ "$BUILD_ARCH" = "amd64" ]; then wget -q -O /precise-engine.tar.gz https://github.com/MycroftAI/mycroft-precise/releases/download/v0.2.0/precise-engine_0.2.0_x86_64.tar.gz fi
+RUN if [ "$BUILD_ARCH" = "armhf" ]; then wget -q -O /precise-engine.tar.gz https://github.com/MycroftAI/mycroft-precise/releases/download/v0.2.0/precise-engine_0.2.0_armv7l.tar.gz fi
 RUN if [ -f /precise-engine.tar.gz ]; then cd / && tar -xzf /precise-engine.tar.gz && ln -s /precise-engine/precise-engine /usr/bin/precise-engine fi
 
 RUN ldconfig

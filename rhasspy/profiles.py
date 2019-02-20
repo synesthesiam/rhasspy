@@ -75,6 +75,18 @@ class Profile:
         # Use base dir
         return os.path.join('profiles', self.name, path_parts[-1])
 
+    def read_paths(self, *path_parts: str) -> List[str]:
+        return_paths:List[str] = []
+
+        for profiles_dir in self.profiles_dirs:
+            # Try to find in the runtime profile first
+            full_path = os.path.join(profiles_dir, self.name, *path_parts)
+
+            if os.path.exists(full_path):
+                return_paths.append(full_path)
+
+        return return_paths
+
     def write_path(self, *path_parts: str) -> str:
         # Try to find in the runtime profile first
         for profiles_dir in self.profiles_dirs:

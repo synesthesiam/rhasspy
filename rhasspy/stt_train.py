@@ -62,7 +62,7 @@ class DummySpeechTrainer(RhasspyActor):
 
 # -----------------------------------------------------------------------------
 # Speech system trainer for Pocketsphinx.
-# Uses opengrm (ARPA model) and phonetisaurus (pronunciations).
+# Uses mitlm (ARPA model) and phonetisaurus (pronunciations).
 # -----------------------------------------------------------------------------
 
 class PocketsphinxSpeechTrainer(RhasspyActor):
@@ -81,6 +81,12 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         regex_config = self.profile.get(f'training.{tokenizer}', {})
         self.replace_patterns = regex_config.get('replace', [])
         self.split_pattern = regex_config.get('split', r'\s+')
+
+        # Unknown words
+        self.guess_unknown = self.profile.get(
+            'training.unknown_words.guess_pronunciations', True)
+        self.fail_on_unknown = self.profile.get(
+            'training.unknown_words.fail_when_present', True)
 
     def in_started(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, TrainSpeech):
@@ -101,18 +107,23 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
                                               self.sentences_by_intent)
         }
 
-        if len(self.unknown_words) > 0:
-            self._logger.warn('There are %s unknown word(s)' % len(self.unknown_words))
-            self.transition('unknown_words')
-        else:
-            self.transition('writing_sentences')
+        has_unknown_words = len(self.unknown_words) > 0
 
+        if has_unknown_words:
+            self._logger.warn('There are %s unknown word(s)' % len(self.unknown_words))
+        else:
             # Remove unknown dictionary
             unknown_path = self.profile.read_path(
                 self.profile.get('speech_to_text.pocketsphinx.unknown_words'))
 
             if os.path.exists(unknown_path):
                 os.unlink(unknown_path)
+
+        # Proceed or guess pronunciations
+        if self.guess_unknown and has_unknown_words:
+            self.transition('unknown_words')
+        else:
+            self.transition('writing_sentences')
 
     def to_unknown_words(self, from_state:str) -> None:
         self.waiting_words = list(self.unknown_words.keys())
@@ -126,8 +137,14 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
             self.unknown_words[message.word] = message
             if len(self.waiting_words) == 0:
                 self.write_unknown_words(self.unknown_words)
-                self.send(self.receiver, SpeechTrainingFailed())
-                self.transition('started')
+
+                if self.fail_on_unknown:
+                    # Fail when unknown words are present
+                    self.send(self.receiver, SpeechTrainingFailed())
+                    self.transition('started')
+                else:
+                    # Proceed with training
+                    self.transition('writing_sentences')
 
     def to_writing_sentences(self, from_state:str) -> None:
         self.write_sentences(self.sentences_by_intent)
@@ -269,56 +286,21 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def write_language_model(self) -> None:
-        '''Generates an ARPA language model using opengrm'''
+        '''Generates an ARPA language model using mitlm'''
         sentences_text_path = self.profile.read_path(
             self.profile.get('speech_to_text.sentences_text'))
 
         # Extract file name only (will be made relative to container path)
-        sentences_text_path = os.path.split(sentences_text_path)[1]
+        sentences_text_path = sentences_text_path
         working_dir = self.profile.write_dir()
-
-        # Use opengrm
-        subprocess.check_call(['ngramsymbols',
-                               sentences_text_path,
-                               'sentences.syms'],
-                              cwd=working_dir)
-
-        # Convert to archive (FAR)
-        subprocess.check_call(['farcompilestrings',
-                                '-symbols=sentences.syms',
-                                '-keep_symbols=1',
-                                sentences_text_path,
-                                'sentences.far'],
-                              cwd=working_dir)
-
-        # Generate trigram counts
-        subprocess.check_call(['ngramcount',
-                                '-order=3',
-                                'sentences.far',
-                                'sentences.cnts'],
-                              cwd=working_dir)
-
-        # Create trigram model
-        subprocess.check_call(['ngrammake',
-                                'sentences.cnts',
-                                'sentences.mod'],
-                              cwd=working_dir)
-
-        # Convert to ARPA format
-        subprocess.check_call(['ngramprint',
-                                '--ARPA',
-                                'sentences.mod',
-                                'sentences.arpa'],
-                              cwd=working_dir)
-
-        lm_source_path = os.path.join(working_dir, 'sentences.arpa')
-
-        # Save to profile
         lm_dest_path = self.profile.write_path(
             self.profile.get('speech_to_text.pocketsphinx.language_model'))
 
-        if lm_source_path != lm_dest_path:
-            shutil.copy(lm_source_path, lm_dest_path)
+        # Use mitlm
+        subprocess.check_call(['estimate-ngram',
+                               '-o', '3',
+                               '-text', sentences_text_path,
+                               '-wl', lm_dest_path])
 
         self._logger.debug('Wrote language model to %s' % lm_dest_path)
 

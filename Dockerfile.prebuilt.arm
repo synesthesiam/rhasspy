@@ -13,25 +13,8 @@ WORKDIR /
 COPY etc/qemu-arm-static /usr/bin/
 COPY etc/qemu-aarch64-static /usr/bin/
 
-# Install Python 3.6
 RUN apt-get update && \
-    apt-get install -y wget \
-        build-essential tk-dev libncurses5-dev \
-        libncursesw5-dev libreadline6-dev libdb5.3-dev \
-        libgdbm-dev libsqlite3-dev libssl-dev libbz2-dev \
-        libexpat1-dev liblzma-dev zlib1g-dev
-
-RUN cd / && \
-    wget https://www.python.org/ftp/python/3.6.8/Python-3.6.8.tgz && \
-    tar -xvf /Python-3.6.8.tgz && \
-    cd /Python-3.6.8 && \
-    ./configure && \
-    make -j 4 && \
-    make install && \
-    rm -rf /Python*
-
-# Install other dependencies
-RUN apt-get install -y bash jq wget \
+    apt-get install -y bash jq wget \
         build-essential portaudio19-dev swig \
         libatlas-base-dev \
         sox espeak alsa-utils \
@@ -41,16 +24,18 @@ RUN apt-get install -y bash jq wget \
 
 # Install phoentisaurus (prebuilt)
 RUN cd / && wget -q https://github.com/synesthesiam/phonetisaurus-2013/releases/download/v1.0-${BUILD_ARCH}/phonetisaurus_2013-1_${BUILD_ARCH}.deb
-
-# Install opengrm (prebuilt)
-RUN cd / && wget -q https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${BUILD_ARCH}/openfst_1.6.9-1_${BUILD_ARCH}.deb
-RUN cd / && wget -q https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${BUILD_ARCH}/opengrm_1.3.4-1_${BUILD_ARCH}.deb
-
 RUN dpkg -i /*.deb && rm -f /*.deb
+
+# Install mitlm
+COPY etc/mitlm-0.4.2.tar.xz /
+RUN cd / && tar -xf mitlm-0.4.2.tar.xz && cd mitlm-0.4.2/ && \
+    ./configure && \
+    make -j $MAKE_THREADS && \
+    make install && \
+    rm -rf /mitlm-0.4.2*
 
 # Install Python dependencies
 RUN python3 -m pip install wheel
-RUN if [ "$BUILD_ARCH" = "amd64" ]; then python3 -m pip install --no-cache-dir mycroft-precise==0.2.0; fi
 COPY requirements.txt /requirements.txt
 RUN python3 -m pip install -r /requirements.txt
 
@@ -59,20 +44,16 @@ COPY etc/pocketsphinx-python.tar.gz /
 RUN python3 -m pip install /pocketsphinx-python.tar.gz && \
     rm -rf /pocketsphinx-python*
 
-# Install JSGF sentence generator
-COPY etc/jsgf-gen.tar.gz /
-RUN cd / && tar -xvf /jsgf-gen.tar.gz && \
-    mv /jsgf-gen/bin/* /usr/bin/ && \
-    mv /jsgf-gen/lib/* /usr/lib/ && \
-    rm -rf /jsgf-gen*
-
 # Install snowboy
 COPY etc/snowboy-1.3.0.tar.gz /
 RUN if [ "$BUILD_ARCH" != "aarch64" ]; then pip3 install --no-cache-dir /snowboy-1.3.0.tar.gz; fi
 
 # Install Mycroft Precise
-RUN if [ "$BUILD_ARCH" = "armhf" ]; then wget -O /precise-engine.tar.gz https://github.com/MycroftAI/mycroft-precise/releases/download/v0.2.0/precise-engine_0.2.0_armv7l.tar.gz; fi
-RUN if [ -f /precise-engine.tar.gz ]; then cd / && tar -xzf /precise-engine.tar.gz && ln -s /precise-engine/precise-engine /usr/bin/precise-engine; fi
+# TODO: Look for aarch64 version
+COPY etc/precise-engine_0.2.0_armhf.tar.gz /precise-engine.tar.gz
+RUN cd / && tar -xzf /precise-engine.tar.gz && \
+    ln -s /precise-engine/precise-engine /usr/bin/precise-engine && \
+    rm /precise-engine.tar.gz
 
 RUN ldconfig
 

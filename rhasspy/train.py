@@ -58,24 +58,13 @@ class JsgfSentenceGenerator(RhasspyActor):
         tagged_sentences: Dict[str, List[str]] = defaultdict(list)
 
         # Ready slots values
-        slots_dir = self.profile.write_dir(
+        slots_dirs = self.profile.read_paths(
             self.profile.get('speech_to_text.slots_dir'))
 
-        # colors -> [red, green, blue]
-        slot_values = {}
-        if os.path.exists(slots_dir):
-            for slot_file_name in os.listdir(slots_dir):
-                slot_path = os.path.join(slots_dir, slot_file_name)
-                if os.path.isfile(slot_path):
-                    slot_name = os.path.splitext(slot_file_name)[0]
-                    values = []
-                    with open(slot_path, 'r') as slot_file:
-                        for line in slot_file:
-                            line = line.strip()
-                            if len(line) > 0:
-                                values.append(line)
+        self._logger.debug(f'Loading slot values from {slots_dirs}')
 
-                    slot_values[slot_name] = values
+        # colors -> [red, green, blue]
+        slot_values = JsgfSentenceGenerator.load_slots(slots_dirs)
 
         # Load all grammars
         grammars = {}
@@ -102,6 +91,30 @@ class JsgfSentenceGenerator(RhasspyActor):
         self._logger.debug('Generated %s sentence(s) in %s intent(s)' % (num_sentences, len(tagged_sentences)))
 
         return tagged_sentences
+
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def load_slots(cls, slots_dirs):
+        # colors -> [red, green, blue]
+        slot_values = defaultdict(set)
+        for slots_dir in slots_dirs:
+            if os.path.exists(slots_dir):
+                for slot_file_name in os.listdir(slots_dir):
+                    slot_path = os.path.join(slots_dir, slot_file_name)
+                    if os.path.isfile(slot_path):
+                        slot_name = os.path.splitext(slot_file_name)[0]
+                        with open(slot_path, 'r') as slot_file:
+                            for line in slot_file:
+                                line = line.strip()
+                                if len(line) > 0:
+                                    slot_values[slot_name].add(line)
+
+        # Convert sets to lists for easier JSON serialization
+        return {
+            name: list(values)
+            for name, values in slot_values.items()
+        }
 
     # -------------------------------------------------------------------------
 
@@ -155,6 +168,11 @@ class JsgfSentenceGenerator(RhasspyActor):
 
                     # Grammar rules
                     for rule in rules:
+                        # Handle special case where sentence starts with ini
+                        # reserved character '['. In this case, use '\[' to pass
+                        # it through to the JSGF grammar, where we deal with it
+                        # here.
+                        rule = re.sub(r'\\\[', '[', rule)
                         print(rule, file=grammar_file)
 
             grammar_paths[name] = grammar_path
@@ -176,7 +194,7 @@ def _jsgf_generate(grammar_name, grammars, global_rule_map, slot_values) -> List
     for sentence, tag in _make_tagged_sentences(top_rule, rule_map):
         # Check for template replacements ($name$)
         if '-' in sentence:
-            chunks = re.split(r'-([^$]+)-', sentence)
+            chunks = re.split(r'-([^-]+)-', sentence)
             replacements = []
             for i, chunk in enumerate(chunks):
                 if ((i % 2) != 0) and (chunk in slot_values):
