@@ -1,5 +1,10 @@
 # Command Listener
 
+Once Rhasspy has been [woken up](wake-word.md), it needs to record your voice command.
+The default system uses [webrtcvad](#webrtcvad) to detect when you start and stop speaking.
+
+If you're not using a physical microphone connected to wherever Rhasspy is running, you may consider using one of the other systems. The [oneshot](#oneshot) and [hermes](#mqtthermes) systems, for example, work well with [audio input coming in via MQTT](audio-input.md#mqtthermes).
+
 ## WebRTCVAD
 
 Listens for a voice commands using [webrtcvad](https://github.com/wiseman/py-webrtcvad) to detect speech and silence.
