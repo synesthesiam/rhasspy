@@ -182,37 +182,43 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
 
         # Load base and custom dictionaries
         base_dictionary_path = self.profile.read_path(
-            self.profile.get('speech_to_text.pocketsphinx.base_dictionary'))
+            self.profile.get('speech_to_text.pocketsphinx.base_dictionary',
+                             'base_dictionary.txt'))
 
         custom_path = self.profile.read_path(
-            self.profile.get('speech_to_text.pocketsphinx.custom_words'))
+            self.profile.get('speech_to_text.pocketsphinx.custom_words',
+                             'custom_words.txt'))
 
         word_dict: Dict[str, List[str]] = {}
         for word_dict_path in [base_dictionary_path, custom_path]:
             if os.path.exists(word_dict_path):
+                self._logger.debug(f'Loading dictionary from {word_dict_path}')
                 with open(word_dict_path, 'r') as dictionary_file:
                     read_dict(dictionary_file, word_dict)
 
         # Add words from wake word if using pocketsphinx
         if self.profile.get('wake.system') == 'pocketsphinx':
-            wake_keyphrase = self.profile.get('wake.pocketsphinx.keyphrase')
-            _, wake_tokens = sanitize_sentence(wake_keyphrase,
-                                               self.sentence_casing,
-                                               self.replace_patterns,
-                                               self.split_pattern)
+            wake_keyphrase = self.profile.get('wake.pocketsphinx.keyphrase', '')
+            if len(wake_keyphrase) > 0:
+                self._logger.debug(f'Adding words from keyphrase: {wake_keyphrase}')
+                _, wake_tokens = sanitize_sentence(wake_keyphrase,
+                                                  self.sentence_casing,
+                                                  self.replace_patterns,
+                                                  self.split_pattern)
 
-            for word in wake_tokens:
-                # Dictionary uses upper-case letters
-                if self.dictionary_upper:
-                    word = word.upper()
-                else:
-                    word = word.lower()
+                for word in wake_tokens:
+                    # Dictionary uses upper-case letters
+                    if self.dictionary_upper:
+                        word = word.upper()
+                    else:
+                        word = word.lower()
 
-                words_needed.add(word)
+                    words_needed.add(word)
 
         # Write out dictionary with only the necessary words (speeds up loading)
         dictionary_path = self.profile.write_path(
-            self.profile.get('speech_to_text.pocketsphinx.dictionary'))
+            self.profile.get('speech_to_text.pocketsphinx.dictionary',
+                             'dictionary.txt'))
 
         words_written = 0
         with open(dictionary_path, 'w') as dictionary_file:
@@ -236,8 +242,8 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def write_unknown_words(self, unknown_words: Dict[str, Optional[WordPronunciation]]) -> None:
-        unknown_path = self.profile.read_path(
-            self.profile.get('speech_to_text.pocketsphinx.unknown_words'))
+        unknown_path = self.profile.write_path(
+            self.profile.get('speech_to_text.pocketsphinx.unknown_words', 'unknown_words.txt'))
 
         with open(unknown_path, 'w') as unknown_file:
             for word, word_pron in unknown_words.items():

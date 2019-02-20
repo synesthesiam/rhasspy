@@ -53,16 +53,26 @@ class PocketsphinxDecoder(RhasspyActor):
     def to_started(self, from_state:str) -> None:
         self.preload = self.config.get('preload', False)
         if self.preload:
-            self.load_decoder()
+            try:
+                self.load_decoder()
+            except:
+                self._logger.exception('loading decoder')
 
         self.transition('loaded')
 
     def in_loaded(self, message: Any, sender: ActorAddress) -> None:
         if isinstance(message, TranscribeWav):
-            self.load_decoder()
-            text = self.transcribe_wav(message.wav_data)
-            self.send(message.receiver or sender,
-                      WavTranscription(text, handle=message.handle))
+            try:
+                self.load_decoder()
+                text = self.transcribe_wav(message.wav_data)
+                self.send(message.receiver or sender,
+                          WavTranscription(text, handle=message.handle))
+            except:
+                self._logger.exception('transcribing wav')
+
+                # Send empty transcription back
+                self.send(message.receiver or sender,
+                          WavTranscription('', handle=message.handle))
 
     # -------------------------------------------------------------------------
 

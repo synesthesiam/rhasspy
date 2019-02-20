@@ -284,7 +284,7 @@ def api_phonemes():
     '''Get phonemes and example words for a profile'''
     assert core is not None
     examples_path = core.profile.read_path(
-        core.profile.get('text_to_speech.phoneme_examples'))
+        core.profile.get('text_to_speech.phoneme_examples', 'phoneme_examples.txt'))
 
     # phoneme -> { word, phonemes }
     logger.debug('Loading phoneme examples from %s' % examples_path)
@@ -537,10 +537,44 @@ def api_actor_states() -> Response:
 
 # -----------------------------------------------------------------------------
 
-@app.route('/api/slots', methods=['GET'])
+@app.route('/api/slots', methods=['GET', 'POST'])
 def api_slots() -> Response:
     '''Get the values of all slots'''
     assert core is not None
+    overwrite_all = request.args.get('overwrite_all', 'false').lower() == 'true'
+    new_slot_values = json.loads(request.data)
+
+    slots_dirs = core.profile.read_paths(
+        core.profile.get('speech_to_text.slots_dir', 'slots'))
+
+    if request.method == 'POST':
+        if overwrite_all:
+            # Remote existing values first
+            for slots_dir in slots_dirs:
+                for name in new_slot_values.keys():
+                    slots_path = safe_join(slots_dir, f'{name}.txt')
+                    if os.path.exists(slots_path):
+                        try:
+                            os.unlink(slots_path)
+                        except:
+                            logger.exception('api_slots')
+
+        for name, values in new_slot_values.items():
+            slots_path = core.profile.write_path(
+                core.profile.get('speech_to_text.slots_dir', 'slots'),
+                f'{name}.txt')
+
+            # Create directories
+            os.makedirs(os.path.split(slots_path)[0], exist_ok=True)
+
+            # Write data
+            with open(slots_path, 'w') as slots_file:
+                for value in values:
+                    value = value.strip()
+                    if len(value) > 0:
+                        print(value, file=slots_file)
+
+        return 'OK'
 
     # Load slots values
     slots_dirs = core.profile.read_paths(

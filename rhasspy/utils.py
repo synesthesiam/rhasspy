@@ -8,6 +8,7 @@ import itertools
 import json
 import collections
 from collections import defaultdict
+import concurrent.futures
 import threading
 import tempfile
 import subprocess
@@ -273,19 +274,33 @@ def sanitize_sentence(sentence:str,
 
     return sentence, tokens
 
+# -----------------------------------------------------------------------------
+
 def group_sentences_by_intent(tagged_sentences: Dict[str, List[str]],
                               *sanitize_args) -> Dict[str, List[TrainingSentence]]:
     sentences_by_intent:Dict[str, List[TrainingSentence]] = defaultdict(list)
 
     # Extract entities from tagged sentences
-    for intent_name, intent_sents in tagged_sentences.items():
-        for intent_sent in intent_sents:
-            # Template -> untagged sentence + entities
-            sentence, entities = extract_entities(intent_sent)
-
-            # Split sentence into words (tokens)
-            sentence, tokens = sanitize_sentence(sentence, *sanitize_args)
-            sentences_by_intent[intent_name].append(
-                TrainingSentence(sentence, entities, tokens))
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        future_to_name = { executor.submit(_process_intent_sentences, intent_sents,
+                                           sanitize_args) : intent_name
+                            for intent_name, intent_sents in tagged_sentences.items() }
+        # Add to the list as they get done
+        for future in concurrent.futures.as_completed(future_to_name):
+            intent_name = future_to_name[future]
+            sentences_by_intent[intent_name] = future.result()
 
     return sentences_by_intent
+
+def _process_intent_sentences(intent_sents, sanitize_args):
+    training_sents = []
+    for intent_sent in intent_sents:
+        # Template -> untagged sentence + entities
+        sentence, entities = extract_entities(intent_sent)
+
+        # Split sentence into words (tokens)
+        sentence, tokens = sanitize_sentence(sentence, *sanitize_args)
+        training_sents.append(
+            TrainingSentence(sentence, entities, tokens))
+
+    return training_sents

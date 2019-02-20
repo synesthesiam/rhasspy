@@ -53,6 +53,11 @@ class StopRecordingToBuffer:
 
 class DummyAudioRecorder(RhasspyActor):
     '''Does nothing'''
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, StopRecordingToBuffer):
+            # Return empty buffer
+            self._logger.warn('Dummy microphone system only returns empty buffers!')
+            self.send(message.receiver or sender, AudioData(bytes()))
 
     @classmethod
     def get_microphones(self) -> Dict[Any, Any]:
