@@ -49,6 +49,46 @@ Add to your [profile](profiles.md):
     
 See `rhasspy.command_listener.OneShotCommandListener` for details.
 
+## MQTT/Hermes
+
+Subscribes to the `hermes/asr/startListening` and `hermes/asr/stopListening` topics ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)). Wakes up Rhasspy when `startListening` is received and starts recording. Stops recording when `stopListening` is received and processes the voice command. 
+
+Add to your [profile](profiles.md):
+
+```json
+"command": {
+  "system": "hermes",
+  "hermes": {
+    "timeout_sec": 30
+  }
+},
+
+
+"mqtt": {
+  "enabled": true,
+  "host": "localhost",
+  "username": "",
+  "port": 1883,
+  "password": "",
+  "site_id": "default"
+}
+```
+
+Adjust the `mqtt` configuration to connect to your MQTT broker.
+Set `mqtt.site_id` to match your Snips.AI siteId.
+
+Using [mosquitto_pub](https://mosquitto.org/man/mosquitto_pub-1.html), wake up Rhasspy with:
+
+    mosquitto_pub -t 'hermes/asr/startListening' -m '{ "siteId": "default" }'
+    
+Say your voice command, then stop recording with:
+
+    mosquitto_pub -t 'hermes/asr/stopListening' -m '{ "siteId": "default" }'
+    
+Rhasspy should process your voice command.
+
+See `rhasspy.command.HermesCommandListener` for details.
+
 ## Command
 
 Calls a custom external program to record a voice command.

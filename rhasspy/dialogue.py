@@ -617,7 +617,7 @@ class DialogueManager(RhasspyActor):
 
     @classmethod
     def get_command_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ['dummy', 'webrtcvad', 'command', 'oneshot'], \
+        assert system in ['dummy', 'webrtcvad', 'command', 'oneshot', 'hermes'], \
             'Unknown voice command system: %s' % system
 
         if system == 'webrtcvad':
@@ -629,6 +629,9 @@ class DialogueManager(RhasspyActor):
         elif system == 'oneshot':
             from .command_listener import OneShotCommandListener
             return OneShotCommandListener
+        elif system == 'hermes':
+            from .command_listener import HermesCommandListener
+            return HermesCommandListener
         else:
             from .command_listener import DummyCommandListener
             return DummyCommandListener

@@ -147,7 +147,7 @@ All available profile sections and settings are listed below:
         * WAV data published to `hermes/audioServer/<SITE_ID>/playBytes/<REQUEST_ID>`
         * Requires MQTT to be enabled
 * `command`
-    * `system` - which voice command listener system to use (`webrtcvad`, `oneshot`, or `dummy`)
+    * `system` - which voice command listener system to use (`webrtcvad`, `oneshot`, `hermes`, or `dummy`)
     * `webrtcvad` - configuration for [webrtcvad](https://github.com/wiseman/py-webrtcvad) system
         * `sample_rate` - sample rate of input audio
         * `chunk_size` - bytes per buffer (must be 10,20,30 ms)
@@ -162,6 +162,8 @@ All available profile sections and settings are listed below:
     * `command` - configuration for external voice command program
         * `program` - path to executable
         * `arguments` - list of arguments to pass to program
+    * `hermes` - configuration for MQTT-based voice command system that listens betweens `startListening` and `stopListening` commands ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
+        * `timeout_sec` - maximum number of seconds before stopping
 * `handle`
     * `system` - which intent handling system to use (`hass`, `command`, or `dummy`)
     * `forward_to_hass` - true if intents are always forwarded to Home Assistant (even if `system` is `command`)

@@ -5,6 +5,8 @@ import logging
 import threading
 import wave
 import queue
+import json
+import uuid
 import subprocess
 from datetime import timedelta
 from typing import Optional, Any, Tuple, Dict
@@ -13,6 +15,7 @@ from thespian.actors import WakeupMessage, ActorAddress
 
 from .actor import RhasspyActor
 from .audio_recorder import StartStreaming, StopStreaming, AudioData
+from .mqtt import MqttSubscribe, MqttMessage
 from .utils import convert_wav
 
 # -----------------------------------------------------------------------------
@@ -306,3 +309,78 @@ class OneShotCommandListener(RhasspyActor):
                                    handle=self.handle))
 
             self.transition('started')
+
+# -----------------------------------------------------------------------------
+# MQTT-Based Command Listener (Hermes Protocol)
+# https://docs.snips.ai/ressources/hermes-protocol
+# -----------------------------------------------------------------------------
+
+class HermesCommandListener(RhasspyActor):
+    '''Records between startListening/stopListening messages.'''
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.receiver:Optional[ActorAddress] = None
+        self.handle:bool = False
+        self.buffer:bytes = bytes()
+        self.timeout_id:str = ''
+
+    def to_started(self, from_state:str) -> None:
+        self.recorder = self.config['recorder']
+        self.mqtt = self.config['mqtt']
+        self.timeout_sec = self.profile.get('command.hermes.timeout_sec', 30)
+
+        # Subscribe to MQTT topics
+        self.site_id:str = self.profile.get('mqtt.site_id', 'default')
+        self.start_topic = 'hermes/asr/startListening'
+        self.stop_topic = 'hermes/asr/stopListening'
+        self.send(self.mqtt, MqttSubscribe(self.start_topic))
+        self.send(self.mqtt, MqttSubscribe(self.stop_topic))
+
+    def in_started(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, ListenForCommand):
+            self.buffer = bytes()
+            self.receiver = message.receiver or sender
+            self.handle = message.handle
+            self.transition('listening')
+
+            if message.timeout is not None:
+                # Use message timeout
+                timeout_sec = message.timeout
+            else:
+                # Use default timeout
+                timeout_sec = self.timeout_sec
+
+            self.send(self.recorder, StartStreaming(self.myAddress))
+            self.timeout_id = str(uuid.uuid4())
+            self.wakeupAfter(timedelta(seconds=timeout_sec),
+                             payload=self.timeout_id)
+        elif isinstance(message, MqttMessage):
+            # startListening
+            if message.topic == self.start_topic:
+                payload_json = json.loads(message.payload)
+                if payload_json.get('siteId', 'default') == self.site_id:
+                    # Wake up Rhasspy
+                    self._logger.debug('Received startListening')
+                    self.send(self._parent, ListenForCommand())
+
+    def in_listening(self, message: Any, sender: ActorAddress) -> None:
+        if isinstance(message, AudioData):
+            self.buffer += message.data
+        elif isinstance(message, WakeupMessage):
+            if message.payload == self.timeout_id:
+                # Timeout
+                self._logger.warn('Timeout')
+                self.send(self.recorder, StopStreaming(self.myAddress))
+                self.send(self.receiver,
+                          VoiceCommand(self.buffer, timeout=True, handle=self.handle))
+                self.transition('started')
+        elif isinstance(message, MqttMessage):
+            if message.topic == self.stop_topic:
+                # stopListening
+                payload_json = json.loads(message.payload)
+                if payload_json.get('siteId', 'default') == self.site_id:
+                    self._logger.debug('Received stopListening')
+                    self.send(self.recorder, StopStreaming(self.myAddress))
+                    self.send(self.receiver,
+                              VoiceCommand(self.buffer, handle=self.handle))
+                    self.transition('started')

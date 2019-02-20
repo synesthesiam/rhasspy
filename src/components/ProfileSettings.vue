@@ -276,6 +276,56 @@
             <button class="btn btn-primary mt-3">Save Settings</button>
 
             <div class="card mt-3">
+                <div class="card-header"><i class="fas fa-microphone-alt-slash"></i>Voice Detection</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="command-system" id="dummy-command" value="dummy" v-model="rhasspyCommand">
+                                <label class="form-check-label" for="local-command">
+                                    No voice commands on this device
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="command-system" id="webrtcvad-command" value="webrtcvad" v-model="rhasspyCommand">
+                                <label class="form-check-label" for="webrtcvad-command">
+                                    Use <a href="https://github.com/wiseman/py-webrtcvad">webrtcvad</a> and listen for silence
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="command-system" id="mqtt-command" value="hermes" v-model="rhasspyCommand">
+                                <label class="form-check-label" for="mqtt-command">
+                                    Use MQTT (<a href="https://docs.snips.ai/ressources/hermes-protocol">Hermes protocol</a>)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col text-muted">
+                                Rhasspy will listen for:
+                                <ul>
+                                    <li><tt>hermes/asr/startListening</tt></li>
+                                    <li><tt>hermes/asr/stopListening</tt></li>
+                                </ul>
+                                <div class="alert alert-danger" v-if="rhasspyCommand == 'hermes' && !mqttEnabled">
+                                    MQTT is not enabled
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary mt-3">Save Settings</button>
+
+            <div class="card mt-3">
                 <div class="card-header"><i class="fas fa-phone-volume"></i>Speech Recognition</div>
                 <div class="card-body">
                     <div class="form-group">
@@ -595,6 +645,8 @@
              hassPassword: '',
              pemPath: '',
 
+             rhasspyCommand: '',
+
              rhasspySTT: '',
              sttURL: '',
 
@@ -675,6 +727,11 @@
                                this.wakewordId = this._.get(this.profileSettings,
                                                             'wake.hermes.wakeword_id',
                                                             this.defaultSettings.wake.hermes.wakeword_id)
+
+                               // Command
+                               this.rhasspyCommand = this._.get(this.profileSettings,
+                                                                'command.system',
+                                                                this.defaultSettings.command.system)
 
                                // Speech
                                this.rhasspySTT = this._.get(this.profileSettings,
@@ -774,6 +831,11 @@
              this._.set(this.profileSettings,
                         'home_assistant.pem_file',
                         this.pemPath)
+
+             // Command
+             this._.set(this.profileSettings,
+                        'command.system',
+                        this.rhasspyCommand)
 
              // Speech recognition
              this._.set(this.profileSettings,

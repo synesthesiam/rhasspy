@@ -17,6 +17,9 @@
         },
         "oneshot": {
             "timeout_sec": 30
+        },
+        "hermes": {
+            "timeout_sec": 30
         }
     },
     "home_assistant": {
