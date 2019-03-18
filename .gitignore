@@ -1,41 +1,32 @@
+# Caches and virtual environment
 __pycache__/
 .mypy_cache/
 .venv/
-node_modules/
-sentences.cnts
-sentences.far
-sentences.syms
-sentences.mod
-sentences.arpa
-grammars/
-etc/homeassistant/config/.storage/
-etc/homeassistant/config/deps/
-etc/homeassistant/config/tts/
-etc/homeassistant/config/*.log
-etc/homeassistant/config/.HA_VERSION
-rhasspy-hassio-addon*.tar.gz
+.ipynb_checkpoints/
+download/
+
+# QEMU
 etc/qemu-arm-static
 etc/qemu-aarch64-static
-profiles/en/record/
+
+# npm
+node_modules/
+
+# Profiles
+acoustic_model/
+base_dictionary.txt
+base_language_model.txt
+g2p.fst
+
+grammars/
+sentences/
+
+# Examples
+.storage/
+deps/
+tts/
+*.log
+.HA_VERSION
+
+# Misc
 workbench.xmi
-etc/*.deb
-examples/typical/home-assistant/config/.storage/
-examples/typical/home-assistant/config/deps/
-examples/typical/home-assistant/config/tts/
-examples/typical/home-assistant/config/*.log
-examples/typical/home-assistant/config/.HA_VERSION
-examples/typical-intent/home-assistant/config/.storage/
-examples/typical-intent/home-assistant/config/deps/
-examples/typical-intent/home-assistant/config/tts/
-examples/typical-intent/home-assistant/config/*.log
-examples/typical-intent/home-assistant/config/.HA_VERSION
-examples/client-server/home-assistant/config/.storage/
-examples/client-server/home-assistant/config/deps/
-examples/client-server/home-assistant/config/tts/
-examples/client-server/home-assistant/config/*.log
-examples/client-server/home-assistant/config/.HA_VERSION
-examples/mqtt-hermes/home-assistant/config/.storage/
-examples/mqtt-hermes/home-assistant/config/deps/
-examples/mqtt-hermes/home-assistant/config/tts/
-examples/mqtt-hermes/home-assistant/config/*.log
-examples/mqtt-hermes/home-assistant/config/.HA_VERSION

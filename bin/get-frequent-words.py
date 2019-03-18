@@ -19,23 +19,38 @@ def main():
         'spa': 'es',
         'ita': 'it',
         'nld': 'nl',
-        'rus': 'ru' }
+        'rus': 'ru'
+    }
 
     for language in languages:
-        url = 'https://www.ezglot.com/most-frequently-used-words.php?l={0}&submit=Select'.format(language)
+        profile_language = languages[language]
+        html_path = os.path.join(profiles_dir, profile_language, 'frequent_words.html')
 
-        # Download frequently used words in the given language
-        page = requests.get(url).text
-        soup = BeautifulSoup(page, 'html.parser')
+        if not os.path.exists(html_path):
+            # Download
+            url = 'https://www.ezglot.com/most-frequently-used-words.php?l={0}&submit=Select'.format(language)
+            print(f'Downloading from {url}')
 
-        file_path = os.path.join(profiles_dir, languages[language], 'frequent_words.txt')
+            with open(html_path, 'w') as html_file:
+                # Download frequently used words in the given language
+                page = requests.get(url).text
+                html_file.write(page)
+        else:
+            # Load cached file
+            with open(html_path, 'r') as html_file:
+                page = html_file.read()
+
+        # Process
+        soup = BeautifulSoup(page, 'html5lib')
+        file_path = os.path.join(profiles_dir, profile_language, 'frequent_words.txt')
         with open(file_path, 'w') as freq_file:
-            for word_li in soup.find(attrs={'class': 'topwords'}).findAll('li'):
-                word = word_li.text.strip().upper()
-                if len(word) < 3:
-                    continue
+            for word_ul in soup.find_all(attrs={'class': 'topwords'}):
+                for word_li in word_ul.findAll('li'):
+                    word = word_li.text.strip().upper()
+                    if len(word) < 3:
+                        continue
 
-                print(word, file=freq_file)
+                    print(word, file=freq_file)
 
         print(language)
 

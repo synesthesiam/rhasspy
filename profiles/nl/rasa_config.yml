@@ -1,3 +1,0 @@
-language: "nl"
-
-pipeline: "spacy_sklearn"

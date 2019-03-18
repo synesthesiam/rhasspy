@@ -50,5 +50,15 @@ export default {
 
         return Api().get('/api/test-microphones',
                          { 'params': params })
+    },
+
+    getSpeakers(system) {
+        var params = {}
+        if (system) {
+            params['system'] = system
+        }
+
+        return Api().get('/api/speakers',
+                         { 'params': params })
     }
 }

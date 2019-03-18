@@ -4,37 +4,57 @@ import logging
 from typing import List, Dict, Optional, Any, Callable, Tuple, Union
 
 import pydash
-from thespian.actors import ActorSystem, ActorAddress
 
 # Internal imports
-from .actor import ConfigureEvent
+from .actor import ConfigureEvent, ActorSystem
 from .profiles import Profile
 from .audio_recorder import AudioData, StartRecordingToBuffer, StopRecordingToBuffer
 from .stt import WavTranscription
 from .intent import IntentRecognized
 from .intent_handler import IntentHandled
-from .pronounce import WordPronunciation, WordPhonemes, WordSpoken
-from .dialogue import (DialogueManager, GetMicrophones, TestMicrophones,
-                       ListenForCommand, ListenForWakeWord,
-                       WakeWordDetected, WakeWordNotDetected,
-                       TrainProfile, ProfileTrainingFailed,
-                       GetWordPhonemes, SpeakWord, GetWordPronunciations,
-                       TranscribeWav, PlayWavData, PlayWavFile,
-                       RecognizeIntent, HandleIntent,
-                       ProfileTrainingComplete, ProfileTrainingFailed,
-                       MqttPublish, GetVoiceCommand, VoiceCommand,
-                       GetActorStates)
+from .pronounce import WordPronunciations, WordPhonemes, WordSpoken
+from .tts import SentenceSpoken
+from .dialogue import (
+    DialogueManager,
+    GetMicrophones,
+    TestMicrophones,
+    ListenForCommand,
+    ListenForWakeWord,
+    WakeWordDetected,
+    WakeWordNotDetected,
+    TrainProfile,
+    ProfileTrainingFailed,
+    GetWordPhonemes,
+    SpeakWord,
+    GetWordPronunciations,
+    TranscribeWav,
+    PlayWavData,
+    PlayWavFile,
+    RecognizeIntent,
+    HandleIntent,
+    ProfileTrainingComplete,
+    ProfileTrainingFailed,
+    MqttPublish,
+    GetVoiceCommand,
+    VoiceCommand,
+    GetActorStates,
+    GetSpeakers,
+    SpeakSentence,
+)
 
 # -----------------------------------------------------------------------------
 
-class RhasspyCore:
-    '''Core class for Rhasspy functionality.'''
 
-    def __init__(self,
-                 profile_name: str,
-                 profiles_dirs: List[str],
-                 actor_system: Optional[ActorSystem] = None,
-                 do_logging:bool=True) -> None:
+class RhasspyCore:
+    """Core class for Rhasspy functionality."""
+
+    def __init__(
+        self,
+        profile_name: str,
+        profiles_dirs: List[str],
+        actor_system: Optional[ActorSystem] = None,
+        do_logging: bool = True,
+    ) -> None:
 
         self._logger = logging.getLogger(self.__class__.__name__)
         self.profiles_dirs = profiles_dirs
@@ -42,33 +62,39 @@ class RhasspyCore:
         self.actor_system = actor_system
 
         self.profile = Profile(profile_name, profiles_dirs)
-        self._logger.debug('Loaded profile from %s' % self.profile.json_path)
+        self._logger.debug("Loaded profile from %s" % self.profile.json_path)
 
         self.defaults = Profile.load_defaults(profiles_dirs)
         self.do_logging = do_logging
 
     # -------------------------------------------------------------------------
 
-    def start(self,
-              preload:Optional[bool]=None,
-              block:bool=True,
-              timeout:float=60) -> None:
-        '''Start Rhasspy'''
+    def start(
+        self, preload: Optional[bool] = None, block: bool = True, timeout: float = 60
+    ) -> None:
+        """Start Rhasspy"""
 
         if self.actor_system is None:
             kwargs = {}
             if not self.do_logging:
-                kwargs['logDefs'] = { 'version': 1, 'loggers': { '': {}} }
+                kwargs["logDefs"] = {"version": 1, "loggers": {"": {}}}
 
-            self.actor_system = ActorSystem('multiprocTCPBase', **kwargs)
+            self.actor_system = ActorSystem("multiprocTCPBase", **kwargs)
 
-        preload = preload or self.profile.get('rhasspy.preload_profile', False)
+        preload = preload or self.profile.get("rhasspy.preload_profile", False)
         assert self.actor_system is not None
         self.dialogue_manager = self.actor_system.createActor(DialogueManager)
         with self.actor_system.private() as sys:
-            sys.ask(self.dialogue_manager,
-                    ConfigureEvent(self.profile, preload=preload, ready=block,
-                                   transitions=False, load_timeout_sec=30))
+            sys.ask(
+                self.dialogue_manager,
+                ConfigureEvent(
+                    self.profile,
+                    preload=preload,
+                    ready=block,
+                    transitions=False,
+                    load_timeout_sec=30,
+                ),
+            )
 
             # Block until ready
             if block:
@@ -76,17 +102,24 @@ class RhasspyCore:
 
     # -------------------------------------------------------------------------
 
-    def get_microphones(self, system:Optional[str]=None) -> Dict[Any, Any]:
+    def get_microphones(self, system: Optional[str] = None) -> Dict[Any, Any]:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, GetMicrophones(system))
             assert isinstance(result, dict)
             return result
 
-    def test_microphones(self, system:Optional[str]=None) -> Dict[Any, Any]:
+    def test_microphones(self, system: Optional[str] = None) -> Dict[Any, Any]:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, TestMicrophones(system))
+            assert isinstance(result, dict)
+            return result
+
+    def get_speakers(self, system: Optional[str] = None) -> Dict[Any, Any]:
+        assert self.actor_system is not None
+        with self.actor_system.private() as sys:
+            result = sys.ask(self.dialogue_manager, GetSpeakers(system))
             assert isinstance(result, dict)
             return result
 
@@ -96,18 +129,17 @@ class RhasspyCore:
         assert self.actor_system is not None
         self.actor_system.tell(self.dialogue_manager, ListenForWakeWord())
 
-    def listen_for_command(self, handle:bool=True) -> Dict[str, Any]:
+    def listen_for_command(self, handle: bool = True) -> Dict[str, Any]:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, ListenForCommand(handle=handle))
             assert isinstance(result, dict)
             return result
 
-    def record_command(self, timeout:Optional[float]=None) -> VoiceCommand:
+    def record_command(self, timeout: Optional[float] = None) -> VoiceCommand:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager,
-                             GetVoiceCommand(timeout=timeout))
+            result = sys.ask(self.dialogue_manager, GetVoiceCommand(timeout=timeout))
             assert isinstance(result, VoiceCommand)
             return result
 
@@ -116,7 +148,9 @@ class RhasspyCore:
     def transcribe_wav(self, wav_data: bytes) -> WavTranscription:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, TranscribeWav(wav_data, handle=False))
+            result = sys.ask(
+                self.dialogue_manager, TranscribeWav(wav_data, handle=False)
+            )
             assert isinstance(result, WavTranscription)
             return result
 
@@ -136,16 +170,18 @@ class RhasspyCore:
 
     # -------------------------------------------------------------------------
 
-    def start_recording_wav(self, buffer_name:str = '') -> None:
+    def start_recording_wav(self, buffer_name: str = "") -> None:
         assert self.actor_system is not None
-        self.actor_system.tell(self.dialogue_manager,
-                               StartRecordingToBuffer(buffer_name))
+        self.actor_system.tell(
+            self.dialogue_manager, StartRecordingToBuffer(buffer_name)
+        )
 
-    def stop_recording_wav(self, buffer_name:str = '') -> AudioData:
+    def stop_recording_wav(self, buffer_name: str = "") -> AudioData:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = self.actor_system.ask(self.dialogue_manager,
-                                           StopRecordingToBuffer(buffer_name))
+            result = self.actor_system.ask(
+                self.dialogue_manager, StopRecordingToBuffer(buffer_name)
+            )
             assert isinstance(result, AudioData)
             return result
 
@@ -161,11 +197,13 @@ class RhasspyCore:
 
     # -------------------------------------------------------------------------
 
-    def get_word_pronunciations(self, word: str, n: int = 5) -> WordPronunciation:
+    def get_word_pronunciations(
+        self, words: List[str], n: int = 5
+    ) -> WordPronunciations:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, GetWordPronunciations(word, n))
-            assert isinstance(result, WordPronunciation)
+            result = sys.ask(self.dialogue_manager, GetWordPronunciations(words, n))
+            assert isinstance(result, WordPronunciations)
             return result
 
     def get_word_phonemes(self, word: str) -> WordPhonemes:
@@ -182,14 +220,26 @@ class RhasspyCore:
             assert isinstance(result, WordSpoken)
             return result
 
-    # -------------------------------------------------------------------------
-
-    def train(self) -> Union[ProfileTrainingComplete, ProfileTrainingFailed]:
+    def speak_sentence(self, sentence: str) -> SentenceSpoken:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, TrainProfile())
-            assert isinstance(result, ProfileTrainingComplete) \
-                or isinstance(result, ProfileTrainingFailed)
+            result = sys.ask(self.dialogue_manager, SpeakSentence(sentence))
+            assert isinstance(result, SentenceSpoken)
+            return result
+
+    # -------------------------------------------------------------------------
+
+    def train(
+        self, reload_actors: bool = True
+    ) -> Union[ProfileTrainingComplete, ProfileTrainingFailed]:
+        assert self.actor_system is not None
+        with self.actor_system.private() as sys:
+            result = sys.ask(
+                self.dialogue_manager, TrainProfile(reload_actors=reload_actors)
+            )
+            assert isinstance(result, ProfileTrainingComplete) or isinstance(
+                result, ProfileTrainingFailed
+            )
             return result
 
     # -------------------------------------------------------------------------
@@ -205,8 +255,9 @@ class RhasspyCore:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, ListenForWakeWord())
-            assert isinstance(result, WakeWordDetected) \
-                or isinstance(result, WakeWordNotDetected)
+            assert isinstance(result, WakeWordDetected) or isinstance(
+                result, WakeWordNotDetected
+            )
 
             return result
 
@@ -221,7 +272,7 @@ class RhasspyCore:
 
     # -------------------------------------------------------------------------
 
-    def send_audio_data(self, data:AudioData) -> None:
+    def send_audio_data(self, data: AudioData) -> None:
         assert self.actor_system is not None
         self.actor_system.tell(self.dialogue_manager, data)
 

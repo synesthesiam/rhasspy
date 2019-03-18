@@ -3,34 +3,20 @@ import sys
 import re
 from collections import defaultdict
 
-from bs4 import BeautifulSoup
-import requests
-
 # This script downloads frequently used words in a language, looks up their
 # pronunciations in a CMU dictionary, then prints an example word +
 # pronunciation for each phoneme.
 
-# Languages: eng, deu, fra, spa, ita, nld, rus
-
 def main():
-    # fra, deu, etc.
-    language = sys.argv[1]
+    # frequent words file
+    freq_words_path = sys.argv[1]
 
     # path to CMU dictionary
     dict_path = sys.argv[2]
 
-    url = 'https://www.ezglot.com/most-frequently-used-words.php?l={0}&submit=Select'.format(language)
-
     # Download frequently used words in the given language
-    page = requests.get(url).text
-    soup = BeautifulSoup(page, 'html.parser')
-    words = set()
-    for word_li in soup.find(attrs={'class': 'topwords'}).findAll('li'):
-        word = word_li.text.strip().upper()
-        if len(word) == 0:
-            continue
-
-        words.add(word)
+    with open(freq_words_path, 'r') as word_file:
+        words = set([w.strip().upper() for w in word_file.read().splitlines()])
 
     # phoneme -> [(word, pronunciation), ...]
     examples = defaultdict(list)
@@ -60,7 +46,7 @@ def main():
     for phoneme in sorted(examples.keys()):
         # Choose the shortest, unused example word for this phoneme
         for word, pron in sorted(examples[phoneme], key=lambda kv: len(kv[0])):
-            if len(word) > 2 and (not word in used_words):
+            if len(word) > 3 and (not word in used_words):
                 # Output format is:
                 # phoneme word pronunciation
                 print(phoneme, word, ' '.join(pron))

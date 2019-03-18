@@ -1,0 +1,1 @@
+ENV RHASSPY_APP /usr/share/rhasspy

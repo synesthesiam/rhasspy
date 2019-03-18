@@ -302,7 +302,7 @@ See [train-stt.sh](https://github.com/synesthesiam/rhasspy/blob/master/bin/mock-
 
 ## Intent Recognition
 
-During training, Rhasspy uses the sentences generated from [sentences.ini](#sentencesini) as training material for the selected intent recognition system. These sentences are typically available in Markdown format in your profile directory as `tagged_sentences.md`. If your intent recognition system requires some special training, you can call a custom program here.
+During training, Rhasspy uses the sentences generated from [sentences.ini](#sentencesini) as training material for the selected intent recognition system. If your intent recognition system requires some special training, you can call a custom program here.
 
 Add to your [profile](profiles.md):
 

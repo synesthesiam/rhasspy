@@ -1,0 +1,427 @@
+{
+    "name": { "type": "string" },
+    "language": { "type": "string", "required": true },
+
+    "rhasspy": {
+        "type": "dict",
+        "schema": {
+            "default_profile": { "type": "string" },
+            "listen_on_start": { "type": "boolean" },
+            "load_timeout_sec": { "type": "integer", "min": 0 },
+            "preload_profile": { "type": "boolean" }
+        }
+    },
+
+    "microphone": {
+        "type": "dict",
+        "schema": {
+            "system": { "type": "string", "required": true, "allowed": ["dummy", "pyaudio", "arecord", "hermes"] },
+
+            "pyaudio": {
+                "type": "dict",
+                "schema": {
+                    "device": { "type": "string" },
+                    "frames_per_buffer": { "type": "integer", "min": 0 }
+                }
+            },
+
+            "arecord": {
+                "type": "dict",
+                "schema": {
+                    "device": { "type": "string" },
+                    "chunk_size": { "type": "integer", "min": 0 }
+                }
+            },
+
+            "stdin": {
+                "type": "dict",
+                "schema": {
+                    "auto_start": { "type": "boolean" },
+                    "chunk_size": { "type": "integer", "min": 0 }
+                }
+            }
+        }
+    },
+
+    "wake": {
+        "type": "dict",
+        "schema": {
+            "system": { "type": "string", "required": true,
+                        "allowed": ["dummy", "command", "pocketsphinx", "snowboy", "precise", "hermes"] },
+
+            "pocketsphinx": {
+                "type": "dict",
+                "schema": {
+                    "keyphrase": { "type": "string" },
+                    "mllr_matrix": { "type": "string" },
+                    "threshold": { "type": "float", "min": 0, "max": 1 },
+                    "chunk_size": { "type": "integer", "min": 0 }
+                }
+            },
+
+            "hermes": {
+                "type": "dict",
+                "schema": {
+                    "wakeword_id": { "type": "string" }
+                }
+            },
+
+            "precise": {
+                "type": "dict",
+                "schema": {
+                    "model": { "type": "string" },
+                    "sensitivity": { "type": "float", "min": 0, "max": 1 },
+                    "trigger_level": { "type": "integer", "min": 1 },
+                    "chunk_size": { "type": "integer" },
+                    "engine_path": { "type": "string" },
+                    "chunk_delay": { "type": "float", "min": 0 }
+                }
+            },
+
+            "snowboy": {
+                "type": "dict",
+                "schema": {
+                    "audio_gain": { "type": "float", "min": 0 },
+                    "model": { "type": "string" },
+                    "sensitivity": { "type": "float", "min": 0, "max": 1 },
+                    "chunk_size": { "type": "integer", "min": 0 }
+                }
+            },
+
+            "command": {
+                "type": "dict",
+                "schema": {
+                    "program": { "type": "string" },
+                    "arguments": { "type": "list", "schema": { "type": "string" } }
+                }
+            }
+        }
+    },
+
+    "command": {
+        "type": "dict",
+        "schema": {
+            "system": { "type": "string", "required": true,
+                        "allowed": ["dummy", "command", "webrtcvad", "oneshot", "hermes"]},
+
+            "webrtcvad": {
+                "type": "dict",
+                "schema": {
+                    "chunk_size": { "type": "integer", "min": 0 },
+                    "min_sec": { "type": "float", "min": 0 },
+                    "sample_rate": { "type": "integer", "min": 0 },
+                    "silence_sec": { "type": "float", "min": 0 },
+                    "speech_buffers": { "type": "integer", "min": 0 },
+                    "throwaway_buffers": { "type": "integer", "min": 0 },
+                    "timeout_sec": { "type": "float", "min": 0 },
+                    "vad_mode": { "type": "integer", "min": 0, "max": 3 }
+                }
+            },
+
+            "oneshot": {
+                "type": "dict",
+                "schema": {
+                    "timeout_sec": { "type": "float", "min": 0 }
+                }
+            },
+
+            "hermes": {
+                "type": "dict",
+                "schema": {
+                    "timeout_sec": { "type": "float", "min": 0 }
+                }
+            },
+
+            "command": {
+                "type": "dict",
+                "schema": {
+                    "program": { "type": "string" },
+                    "arguments": { "type": "list", "schema": { "type": "string" } }
+                }
+            }
+        }
+    },
+
+    "speech_to_text": {
+        "type": "dict",
+        "schema": {
+            "system": { "type": "string", "required": true,
+                        "allowed": ["dummy", "command", "pocketsphinx", "remote" ] },
+
+            "g2p_model": { "type": "string" },
+            "g2p_casing": { "type": "string", "allowed": ["lower", "upper", ""] },
+            "grammars_dir": { "type": "string" },
+            "slots_dir": { "type": "string" },
+            "pocketsphinx": {
+                "type": "dict",
+                "schema": {
+                "acoustic_model": { "type": "string" },
+                    "base_dictionary": { "type": "string" },
+                    "custom_words": { "type": "string" },
+                    "dictionary": { "type": "string" },
+                    "language_model": { "type": "string" },
+                    "mllr_matrix": { "type": "string" },
+                    "unknown_words": { "type": "string" },
+                    "min_confidence": { "type": "float", "min": 0, "max": 1 }
+                }
+            },
+
+            "remote": {
+                "type": "dict",
+                "schema": {
+                    "url": { "type": "string" }
+                }
+            },
+
+            "command": {
+                "type": "dict",
+                "schema": {
+                    "program": { "type": "string" },
+                    "arguments": { "type": "list", "schema": { "type": "string" } }
+                }
+            },
+
+            "sentences_ini": { "type": "string" },
+            "sentences_text": { "type": "string" },
+            "dictionary_casing": { "type": "string", "allowed": ["lower", "upper", ""] }
+        }
+    },
+
+    "intent": {
+        "type": "dict",
+        "schema": {
+            "system": { "type": "string", "required": true,
+                        "allowed": ["dummy", "command", "fuzzywuzzy", "adapt", "rasa", "remote"] },
+
+            "fuzzywuzzy": {
+                "type": "dict",
+                "schema": {
+                    "examples_json": { "type": "string" },
+                    "min_confidence": { "type": "float", "min": 0, "max": 1 }
+                }
+            },
+
+            "adapt": {
+                "type": "dict",
+                "schema": {
+                    "stop_words": { "type": "string" }
+                }
+            },
+
+            "rasa": {
+                "type": "dict",
+                "schema": {
+                    "examples_markdown": { "type": "string" },
+                    "project_name": { "type": "string" },
+                    "url": { "type": "string" }
+                }
+            },
+
+            "remote": {
+                "type": "dict",
+                "schema": {
+                    "url": { "type": "string" }
+                }
+            },
+
+            "command": {
+                "type": "dict",
+                "schema": {
+                    "program": { "type": "string" },
+                    "arguments": { "type": "list", "schema": { "type": "string" } }
+                }
+            }
+        }
+    },
+
+    "handle": {
+        "type": "dict",
+        "schema": {
+            "system": { "type": "string", "required": true,
+                        "allowed": ["dummy", "command", "hass"] },
+
+            "forward_to_hass": { "type": "boolean" },
+
+            "command": {
+                "type": "dict",
+                "schema": {
+                    "program": { "type": "string" },
+                    "arguments": { "type": "list", "schema": { "type": "string" } }
+                }
+            }
+        }
+    },
+
+    "training": {
+        "type": "dict",
+        "schema": {
+            "sentences_by_intent": { "type": "string" },
+            "sentences": {
+                "type": "dict",
+                "schema": {
+                    "balance_by_intent": { "type": "boolean" },
+                    "casing": { "type": "string", "allowed": ["lower", "upper", "any"] },
+                    "write_weights": { "type": "boolean" },
+                    "write_sorted": { "type": "boolean" }
+                }
+            },
+
+            "tokenizer": { "type": "string", "allowed": ["regex"] },
+            "regex": {
+                "type": "dict",
+                "schema": {
+                    "replace": { "type": "list", "schema": { "type": "dict",
+                                                             "keyschema": { "type": "string" },
+                                                             "valueschema": { "type": "string" }}},
+
+                    "split": { "type": "string" }
+                }
+            },
+
+            "unknown_words": {
+                "type": "dict",
+                "schema": {
+                    "guess_pronunciations": { "type": "boolean" },
+                    "fail_when_present": { "type": "boolean" }
+                }
+            },
+
+            "grammars": {
+                "type": "dict",
+                "schema": {
+                    "delete_before_training": { "type": "boolean" }
+                }
+            },
+
+            "speech_to_text": {
+                "type": "dict",
+                "schema": {
+                    "system": { "type": "string", "required": true,
+                                "allowed": ["dummy", "command", "auto", "pocketsphinx"] },
+
+                    "command": {
+                        "type": "dict",
+                        "schema": {
+                            "program": { "type": "string" },
+                            "arguments": { "type": "list", "schema": { "type": "string" } }
+                        }
+                    }
+                }
+            },
+
+            "intent": {
+                "type": "dict",
+                "schema": {
+                    "system": { "type": "string", "required": true,
+                                "allowed": ["dummy", "command", "auto", "fuzzywuzzy", "adapt", "rasa"] },
+
+                    "command": {
+                        "type": "dict",
+                        "schema": {
+                            "program": { "type": "string" },
+                            "arguments": { "type": "list", "schema": { "type": "string" } }
+                        }
+                    }
+                }
+            }
+        }
+    },
+
+    "text_to_speech": {
+        "type": "dict",
+        "schema": {
+            "system": { "type": "string", "required": true,
+                        "allowed": ["dummy", "espeak", "marytts", "flite", "picotts", "command"] },
+
+            "phoneme_examples": { "type": "string" },
+            "espeak": {
+                "type": "dict",
+                "schema": {
+                    "phoneme_map": { "type": "string" }
+                }
+            },
+
+            "marytts": {
+                "type": "dict",
+                "schema": {
+                    "url": { "type": "string", "required": true },
+                    "voice": { "type": "string" },
+                    "locale": { "type": "string" }
+                }
+            },
+
+            "flite": {
+                "type": "dict",
+                "schema": {
+                    "voice": { "type": "string" }
+                }
+            },
+
+            "picotts": {
+                "type": "dict",
+                "schema": {
+                    "language": { "type": "string" }
+                }
+            },
+
+            "command": {
+                "type": "dict",
+                "schema": {
+                    "program": { "type": "string" },
+                    "arguments": { "type": "list", "schema": { "type": "string" } }
+                }
+            }
+        }
+    },
+
+    "sounds": {
+        "type": "dict",
+        "schema": {
+            "system": { "type": "string", "required": true,
+                        "allowed": ["dummy", "aplay", "hermes"] },
+
+            "wake": { "type": "string" },
+            "recorded": { "type": "string" }
+        }
+    },
+
+    "home_assistant": {
+        "type": "dict",
+        "schema": {
+            "access_token": { "type": "string" },
+            "api_password": { "type": "string" },
+            "event_type_format": { "type": "string" },
+            "url": { "type": "string" },
+            "pem_file": { "type": "string" }
+        }
+    },
+
+    "mqtt": {
+        "type": "dict",
+        "schema": {
+            "enabled": { "type": "boolean" },
+            "host": { "type": "string" },
+            "password": { "type": "string" },
+            "port": { "type": "integer" },
+            "reconnect_sec": { "type": "integer", "min": 0 },
+            "site_id": { "type": "string" },
+            "username": { "type": "string" },
+            "publish_intents": { "type": "boolean" }
+        }
+    },
+
+    "tuning": {
+        "type": "dict",
+        "schema": {
+            "system": { "type": "string", "required": true,
+                        "allowed": ["dummy", "sphinxtrain"] },
+
+            "sphinxtrain": {
+                "type": "dict",
+                "schema": {
+                    "mllr_matrix": { "type": "string" }
+                }
+            }
+        }
+    }
+}

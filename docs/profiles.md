@@ -68,6 +68,7 @@ All available profile sections and settings are listed below:
     * `sentences_ini` - Ini file with example [sentences/JSGF templates](training.md#sentencesini) grouped by intent
     * `sentences_text` - text file with all example sentences expanded and repeated
     * `g2p_model` - finite-state transducer for phonetisaurus to guess word pronunciations
+    * `g2p_casing` - casing to force for g2p model (`upper`, `lower`, or blank)
     * `grammars_dir` - directory to write generated JSGF grammars from sentences ini file
 * `intent` - transforming text commands to intents
     * `system` - intent recognition system (`fuzzywuzzy`, `rasa`, `remote`, `adapt`, `command`, or `dummy`)
@@ -90,8 +91,11 @@ All available profile sections and settings are listed below:
         * `phoneme_map` - text file mapping CMU phonemes to eSpeak phonemes
     * `phoneme_examples` - text file with examples for each CMU phoneme
 * `training` - training speech/intent recognizers
-    * `balance_sentences` - true if example sentences should be repeated to make all intents equally likely
-    * `sentence_casing` - make all sentences `lower` or `upper` case (do nothing if not present)
+    * `sentences`
+        * `balance_by_intent` - true if example sentences should be repeated to make all intents equally likely
+        * `casing` - make all sentences `lower` or `upper` case (do nothing if not present)
+        * `write_weights` - `true` if sentence weights should be written in the first column instead of repeating them (default: `false`)
+        * `write_sorted` - `true` if sentences should be sorted before writing out (default: `false`)
     * `tokenizer` - system used to break sentences into words (`regex` only for now)
     * `regex` - configuration for regex tokenizer
         * `replace` - list of dictionaries with patterns/replacements used on each example sentence

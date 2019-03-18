@@ -1,0 +1,48 @@
+ARG BUILD_FROM
+FROM $BUILD_FROM
+LABEL maintainer="Michael Hansen <hansen.mike@gmail.com>"
+
+ARG BUILD_ARCH
+ENV LANG C.UTF-8
+
+ARG MAKE_THREADS=4
+
+WORKDIR /
+
+SYSTEM_DEPENDENCIES
+
+PHONETISAURUS
+
+MITLM
+
+PYTHON_REQUIREMENTS
+
+PYTHON_POCKETSPHINX
+
+PYJSGF
+
+SNOWBOY
+
+MYCROFT_PRECISE
+
+RUN ldconfig
+
+# Copy bw and mllr_solve to /usr/bin
+RUN find / -name bw -exec cp '{}' /usr/bin/ \;
+RUN find / -name mllr_solve -exec cp '{}' /usr/bin/ \;
+
+PULSEAUDIO
+
+# Copy script to run
+COPY docker/run.sh /run.sh
+RUN chmod +x /run.sh
+
+RHASSPY_USER
+
+PROFILES
+
+RHASSPY_CODE
+
+ENV CONFIG_PATH /data/options.json
+
+ENTRYPOINT ["/run.sh"]

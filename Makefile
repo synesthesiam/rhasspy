@@ -1,38 +1,26 @@
-.PHONY: web-dist docker release update-addon manifest docs-uml
+.PHONY: web-dist docker manifest docs-uml g2p
 SHELL := bash
-RELEASE_FILES := Dockerfile \
-                 *.py \
-                 requirements.txt \
-                 bin/install-profiles.sh \
-                 bin/rhasspy \
-                 rhasspy/ \
-                 dist/ \
-                 docker/run.sh \
-                 docker/rhasspy \
-                 profiles/defaults.json \
-                 etc/wav/
 
-ADDON_DIR := ../hassio-addons/rhasspy
-
-DOCS_UML_FILES := $(wildcard docs/img/*.uml.txt)
-DOCS_PNG_FILES := $(patsubst %.uml.txt,%.png,$(DOCS_UML_FILES))
+# -----------------------------------------------------------------------------
+# Docker
+# -----------------------------------------------------------------------------
 
 docker: docker-amd64 docker-armhf docker-aarch64 docker-push manifest
 
 docker-amd64:
-	docker build . -f Dockerfile.prebuilt \
+	docker build . -f docker/templates/dockerfiles/Dockerfile.prebuilt.alsa.all \
     --build-arg BUILD_ARCH=amd64 \
     --build-arg BUILD_FROM=python:3.6-stretch \
     -t synesthesiam/rhasspy-server:amd64
 
 docker-armhf:
-	docker build . -f Dockerfile.prebuilt.arm \
+	docker build . -f docker/templates/dockerfiles/Dockerfile.prebuilt.alsa.all \
      --build-arg BUILD_ARCH=armhf \
      --build-arg BUILD_FROM=arm32v7/python:3.6-stretch \
      -t synesthesiam/rhasspy-server:armhf
 
 docker-aarch64:
-	docker build . -f Dockerfile.prebuilt.arm \
+	docker build . -f docker/templates/dockerfiles/Dockerfile.prebuilt.alsa.all \
      --build-arg BUILD_ARCH=aarch64 \
      --build-arg BUILD_FROM=arm64v8/python:3.6-stretch \
      -t synesthesiam/rhasspy-server:aarch64
@@ -41,22 +29,6 @@ docker-push:
 	docker push synesthesiam/rhasspy-server:amd64
 	docker push synesthesiam/rhasspy-server:armhf
 	docker push synesthesiam/rhasspy-server:aarch64
-
-web-dist:
-	yarn build
-
-release:
-	tar -czf rhasspy-release.tar.gz ${RELEASE_FILES}
-
-update-addon:
-	rm -rf ${ADDON_DIR}/dist
-	cp Dockerfile *.py requirements.txt ${ADDON_DIR}/
-	cp bin/install-profiles.sh ${ADDON_DIR}/bin/
-	cp -R rhasspy/ ${ADDON_DIR}/
-	cp -R dist/ ${ADDON_DIR}/
-	cp -R etc/wav/ ${ADDON_DIR}/etc/
-	cp docker/run.sh docker/rhasspy ${ADDON_DIR}/docker/
-	cp profiles/defaults.json ${ADDON_DIR}/profiles/
 
 manifest:
 	docker manifest push --purge synesthesiam/rhasspy-server:latest
@@ -68,7 +40,33 @@ manifest:
 	docker manifest annotate synesthesiam/rhasspy-server:latest synesthesiam/rhasspy-server:aarch64 --os linux --arch arm64
 	docker manifest push synesthesiam/rhasspy-server:latest
 
+# -----------------------------------------------------------------------------
+# Yarn (Vue)
+# -----------------------------------------------------------------------------
+
+web-dist:
+	yarn build
+
+# -----------------------------------------------------------------------------
+# Documentation
+# -----------------------------------------------------------------------------
+
+DOCS_UML_FILES := $(wildcard docs/img/*.uml.txt)
+DOCS_PNG_FILES := $(patsubst %.uml.txt,%.png,$(DOCS_UML_FILES))
+
 %.png: %.uml.txt
 	plantuml -p -tsvg < $< | inkscape --export-dpi=300 --export-png=$@ /dev/stdin
 
 docs-uml: $(DOCS_PNG_FILES)
+
+# -----------------------------------------------------------------------------
+# Grapheme-to-Phoneme
+# -----------------------------------------------------------------------------
+
+G2P_LANGUAGES := de en es fr it nl ru
+G2P_MODELS := $(foreach lang,$(G2P_LANGUAGES),profiles/$(lang)/g2p.fst)
+
+g2p: $(G2P_MODELS)
+
+%/g2p.fst: %/base_dictionary.txt
+	./make-g2p.sh $< $@

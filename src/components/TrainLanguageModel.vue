@@ -37,7 +37,6 @@
 
  export default {
      name: 'TrainLangaugeModel',
-     props: { profile : String },
      data: function () {
          return {
              sentences: '',
@@ -68,12 +67,6 @@
 
      mounted: function() {
          this.sentences = this.getSentences()
-     },
-
-     watch: {
-         profile() {
-             this.sentences = this.getSentences()
-         }
      }
  }
 </script>

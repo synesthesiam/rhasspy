@@ -1,45 +1,40 @@
 import Api from '@/services/Api'
 
 export default {
-    lookupWord(profile, word) {
+    lookupWord(word) {
         return Api().post('/api/lookup', word,
-                          { params: { 'profile': profile },
+                          { headers: { 'Content-Type': 'text/plain' } })
+    },
+
+    pronounce(pronounceString, pronounceType) {
+        return Api().post('/api/pronounce', pronounceString,
+                          { params: { 'type': pronounceType },
                             headers: { 'Content-Type': 'text/plain' } })
     },
 
-    pronounce(profile, pronounceString, pronounceType) {
+    download(pronounceString, pronounceType) {
         return Api().post('/api/pronounce', pronounceString,
-                          { params: { 'profile': profile, 'type': pronounceType },
-                            headers: { 'Content-Type': 'text/plain' } })
-    },
-
-    download(profile, pronounceString, pronounceType) {
-        return Api().post('/api/pronounce', pronounceString,
-                          { params: { 'profile': profile,
-                                      'type': pronounceType,
+                          { params: { 'type': pronounceType,
                                       'download': true },
 
                             headers: { 'Content-Type': 'text/plain' },
                             responseType: 'arraybuffer' })
     },
 
-    getPhonemeExamples(profile) {
-        return Api().get('/api/phonemes',
-                         { params: { 'profile': profile } })
+    getPhonemeExamples() {
+        return Api().get('/api/phonemes')
     },
 
-    getUnknownWords(profile) {
-        return Api().get('/api/unknown_words',
-                         { params: { 'profile': profile } })
+    getUnknownWords() {
+        return Api().get('/api/unknown_words')
     },
 
-    updateCustomWords(profile, custom_words) {
+    updateCustomWords(custom_words) {
         return Api().post('/api/custom-words', custom_words,
-                          { params: { 'profile': profile },
-                            headers: { 'Content-Type': 'text/plain' } })
+                          { headers: { 'Content-Type': 'text/plain' } })
     },
 
-    getCustomWords(profile) {
-        return Api().get('/api/custom-words', { params: { 'profile': profile } })
+    getCustomWords() {
+        return Api().get('/api/custom-words')
     },
 }
