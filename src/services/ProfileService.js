@@ -60,5 +60,9 @@ export default {
 
         return Api().get('/api/speakers',
                          { 'params': params })
+    },
+
+    downloadProfile() {
+        return Api().post('/api/download-profile', '')
     }
 }

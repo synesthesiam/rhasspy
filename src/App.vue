@@ -70,6 +70,33 @@
             {{ this.alertText }}
         </div>
 
+        <!-- Profile download modal -->
+        <div class="modal fade" id="download-modal" tabindex="-1" role="dialog" aria-labelledby="downloadModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="downloadModalLabel">Download Profile</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            Some files must be <a href="https://github.com/synesthesiam/rhasspy-profiles/releases">downloaded</a>
+                            for your selected profile ({{ this.profile.name }}).
+                        </p>
+                        <p>
+                            Rhasspy will not work correctly until these files are downloaded.
+                            If you want to use a different profile, select it from the Settings page and click Restart.
+                        </p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" @click="downloadProfile" :disabled="this.downloading">Download Now</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -111,6 +138,7 @@
 
              training: false,
              restarting: false,
+             downloading: false,
 
              unknownWords: []
          }
@@ -164,6 +192,9 @@
              ProfileService.getProfiles()
                            .then(request => {
                                this.profiles = request.data.profiles
+                               if (!request.data.downloaded) {
+                                   $("#download-modal").modal()
+                               }
                            })
                            .catch(err => this.error(err))
          },
@@ -214,6 +245,20 @@
 
          wakeup: function() {
              TranscribeService.wakeup()
+         },
+
+         downloadProfile: function() {
+             this.beginAsync()
+             this.downloading = true
+             ProfileService.downloadProfile()
+                 .then(request => {
+                     this.restart()
+                 })
+                 .catch(err => this.error(err))
+                 .then(() => {
+                     this.downloading = false
+                     this.endAsync()
+                 })
          }
      },
 

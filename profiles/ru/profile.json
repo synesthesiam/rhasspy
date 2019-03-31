@@ -1,5 +1,6 @@
 {
     "language": "ru",
+    "name": "ru",
 
     "wake": {
         "pocketsphinx": {

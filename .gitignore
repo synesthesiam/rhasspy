@@ -16,6 +16,7 @@ node_modules/
 dist/
 
 # Profiles
+.downloaded
 acoustic_model/
 base_dictionary.txt
 base_language_model.txt

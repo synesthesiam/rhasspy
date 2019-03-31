@@ -157,10 +157,36 @@ def api_profiles() -> Response:
             if os.path.isdir(profile_dir):
                 profile_names.add(name)
 
+    downloaded_path = core.profile.read_path(".downloaded")
+
     return jsonify(
-        {"default_profile": core.profile.name, "profiles": sorted(list(profile_names))}
+        {"default_profile": core.profile.name, "profiles": sorted(list(profile_names)),
+         "downloaded": os.path.exists(downloaded_path)}
     )
 
+
+# -----------------------------------------------------------------------------
+
+
+@app.route("/api/download-profile", methods=["POST"])
+def api_download_profile() -> str:
+    """Downloads the current profile."""
+    assert core is not None
+    download_script = os.path.abspath(core.profile.read_path("download-profile.sh"))
+    logger.debug(download_script)
+    assert os.path.exists(download_script), "Profile download script is missing."
+
+    output = subprocess.check_output([
+        "bash",
+        download_script,
+    ], cwd=core.profile.read_path())
+
+    # Create downloaded file
+    downloaded_path = core.profile.read_path(".downloaded")
+    with open(downloaded_path, "wb") as downloaded_file:
+        downloaded_file.write(output)
+
+    return output
 
 # -----------------------------------------------------------------------------
 

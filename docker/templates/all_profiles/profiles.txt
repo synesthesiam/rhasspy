@@ -1,3 +1,6 @@
+COPY profiles/de/ ${RHASSPY_APP}/profiles/zh/
+COPY profiles/de/ ${RHASSPY_APP}/profiles/hi/
+COPY profiles/de/ ${RHASSPY_APP}/profiles/el/
 COPY profiles/de/ ${RHASSPY_APP}/profiles/de/
 COPY profiles/it/ ${RHASSPY_APP}/profiles/it/
 COPY profiles/es/ ${RHASSPY_APP}/profiles/es/
