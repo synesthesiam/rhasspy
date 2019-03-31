@@ -1,0 +1,7 @@
+COPY profiles/defaults.json /home/rhasspy/profiles/
+COPY docker/rhasspy /home/rhasspy/bin/
+COPY dist/ /home/rhasspy/dist/
+COPY etc/wav/* /home/rhasspy/etc/wav/
+COPY rhasspy/profile_schema.json /home/rhasspy/rhasspy/
+COPY *.py /home/rhasspy/
+COPY rhasspy/*.py /home/rhasspy/rhasspy/

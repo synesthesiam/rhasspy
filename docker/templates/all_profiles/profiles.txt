@@ -1,0 +1,7 @@
+COPY profiles/de/ ${RHASSPY_APP}/profiles/de/
+COPY profiles/it/ ${RHASSPY_APP}/profiles/it/
+COPY profiles/es/ ${RHASSPY_APP}/profiles/es/
+COPY profiles/fr/ ${RHASSPY_APP}/profiles/fr/
+COPY profiles/it/ ${RHASSPY_APP}/profiles/it/
+COPY profiles/nl/ ${RHASSPY_APP}/profiles/nl/
+COPY profiles/en/ ${RHASSPY_APP}/profiles/en/

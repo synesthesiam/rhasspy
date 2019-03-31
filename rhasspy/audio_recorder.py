@@ -13,8 +13,6 @@ from queue import Queue
 from typing import Dict, Any, Callable, Optional, List
 from collections import defaultdict
 
-from thespian.actors import ActorAddress
-
 from .actor import RhasspyActor
 from .utils import convert_wav
 from .mqtt import MqttSubscribe, MqttMessage
@@ -23,40 +21,48 @@ from .mqtt import MqttSubscribe, MqttMessage
 # Events
 # -----------------------------------------------------------------------------
 
+
 class AudioData:
     def __init__(self, data: bytes, **kwargs: Any) -> None:
         self.data = data
         self.info = kwargs
 
+
 class StartStreaming:
-    def __init__(self, receiver:Optional[ActorAddress]=None) -> None:
+    def __init__(self, receiver: Optional[RhasspyActor] = None) -> None:
         self.receiver = receiver
+
 
 class StopStreaming:
-    def __init__(self, receiver:Optional[ActorAddress]=None) -> None:
+    def __init__(self, receiver: Optional[RhasspyActor] = None) -> None:
         self.receiver = receiver
+
 
 class StartRecordingToBuffer:
-    def __init__(self, buffer_name:str) -> None:
+    def __init__(self, buffer_name: str) -> None:
         self.buffer_name = buffer_name
 
+
 class StopRecordingToBuffer:
-    def __init__(self,
-                 buffer_name:str,
-                 receiver:Optional[ActorAddress]=None) -> None:
+    def __init__(
+        self, buffer_name: str, receiver: Optional[RhasspyActor] = None
+    ) -> None:
         self.buffer_name = buffer_name
         self.receiver = receiver
+
 
 # -----------------------------------------------------------------------------
 # Dummy audio recorder
 # -----------------------------------------------------------------------------
 
+
 class DummyAudioRecorder(RhasspyActor):
-    '''Does nothing'''
-    def in_started(self, message: Any, sender: ActorAddress) -> None:
+    """Does nothing"""
+
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, StopRecordingToBuffer):
             # Return empty buffer
-            self._logger.warn('Dummy microphone system only returns empty buffers!')
+            self._logger.warn("Dummy microphone system only returns empty buffers!")
             self.send(message.receiver or sender, AudioData(bytes()))
 
     @classmethod
@@ -64,26 +70,30 @@ class DummyAudioRecorder(RhasspyActor):
         return {}
 
     @classmethod
-    def test_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+    def test_microphones(self, chunk_size: int) -> Dict[Any, Any]:
         return {}
+
 
 # -----------------------------------------------------------------------------
 # PyAudio based audio recorder
 # https://people.csail.mit.edu/hubert/pyaudio/
 # -----------------------------------------------------------------------------
 
+
 class PyAudioRecorder(RhasspyActor):
-    '''Records from microphone using pyaudio'''
+    """Records from microphone using pyaudio"""
+
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.mic = None
         self.audio = None
-        self.receivers:List[ActorAddress] = []
-        self.buffers:Dict[str, bytes] = defaultdict(bytes)
+        self.receivers: List[RhasspyActor] = []
+        self.buffers: Dict[str, bytes] = defaultdict(bytes)
 
-    def to_started(self, from_state:str) -> None:
-        self.device_index = self.config.get('device') \
-            or self.profile.get('microphone.pyaudio.device')
+    def to_started(self, from_state: str) -> None:
+        self.device_index = self.config.get("device") or self.profile.get(
+            "microphone.pyaudio.device"
+        )
 
         if self.device_index is not None:
             try:
@@ -95,18 +105,19 @@ class PyAudioRecorder(RhasspyActor):
                 # Default device
                 self.device_index = None
 
-        self.frames_per_buffer = int(self.profile.get(
-            'microphone.pyaudio.frames_per_buffer', 480))
+        self.frames_per_buffer = int(
+            self.profile.get("microphone.pyaudio.frames_per_buffer", 480)
+        )
 
-    def in_started(self, message: Any, sender: ActorAddress) -> None:
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, StartStreaming):
-            self.receivers.append(message.receiver)
-            self.transition('recording')
+            self.receivers.append(message.receiver or sender)
+            self.transition("recording")
         elif isinstance(message, StartRecordingToBuffer):
             self.buffers[message.buffer_name] = bytes()
-            self.transition('recording')
+            self.transition("recording")
 
-    def to_recording(self, from_state:str) -> None:
+    def to_recording(self, from_state: str) -> None:
         import pyaudio
 
         # Start audio system
@@ -120,29 +131,33 @@ class PyAudioRecorder(RhasspyActor):
         self.audio = pyaudio.PyAudio()
         assert self.audio is not None
         data_format = self.audio.get_format_from_width(2)  # 16-bit
-        self.mic = self.audio.open(format=data_format,
-                                    channels=1,
-                                    rate=16000,
-                                    input_device_index=self.device_index,
-                                    input=True,
-                                    stream_callback=stream_callback,
-                                    frames_per_buffer=self.frames_per_buffer)
+        self.mic = self.audio.open(
+            format=data_format,
+            channels=1,
+            rate=16000,
+            input_device_index=self.device_index,
+            input=True,
+            stream_callback=stream_callback,
+            frames_per_buffer=self.frames_per_buffer,
+        )
 
         assert self.mic is not None
         self.mic.start_stream()
-        self._logger.debug('Recording from microphone (PyAudio, device=%s)' % self.device_index)
+        self._logger.debug(
+            "Recording from microphone (PyAudio, device=%s)" % self.device_index
+        )
 
     # -------------------------------------------------------------------------
 
-    def in_recording(self, message: Any, sender: ActorAddress) -> None:
+    def in_recording(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, AudioData):
             # Forward to subscribers
             for receiver in self.receivers:
                 self.send(receiver, message)
 
             # Append to buffers
-            for receiver in self.buffers:
-                self.buffers[receiver] += message.data
+            for buffer_name in self.buffers:
+                self.buffers[buffer_name] += message.data
         elif isinstance(message, StartStreaming):
             self.receivers.append(message.receiver or sender)
         elif isinstance(message, StartRecordingToBuffer):
@@ -173,14 +188,14 @@ class PyAudioRecorder(RhasspyActor):
                 self.audio.terminate()
                 self.audio = None
 
-            self.transition('started')
-            self._logger.debug('Stopped recording from microphone (PyAudio)')
+            self.transition("started")
+            self._logger.debug("Stopped recording from microphone (PyAudio)")
 
-    def to_stopped(self, from_state:str) -> None:
+    def to_stopped(self, from_state: str) -> None:
         if self.mic is not None:
             self.mic.stop_stream()
             self.mic = None
-            self._logger.debug('Stopped recording from microphone (PyAudio)')
+            self._logger.debug("Stopped recording from microphone (PyAudio)")
 
         if self.audio is not None:
             self.audio.terminate()
@@ -194,13 +209,13 @@ class PyAudioRecorder(RhasspyActor):
 
         mics: Dict[Any, Any] = {}
         audio = pyaudio.PyAudio()
-        default_name = audio.get_default_input_device_info().get('name')
+        default_name = audio.get_default_input_device_info().get("name")
         for i in range(audio.get_device_count()):
             info = audio.get_device_info_by_index(i)
-            mics[i] = info['name']
+            mics[i] = info["name"]
 
             if mics[i] == default_name:
-                mics[i] = mics[i] + '*'
+                mics[i] = mics[i] + "*"
 
         audio.terminate()
 
@@ -209,7 +224,7 @@ class PyAudioRecorder(RhasspyActor):
     # -------------------------------------------------------------------------
 
     @classmethod
-    def test_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+    def test_microphones(self, chunk_size: int) -> Dict[Any, Any]:
         import pyaudio
 
         # Thanks to the speech_recognition library!
@@ -217,12 +232,12 @@ class PyAudioRecorder(RhasspyActor):
         result = {}
         audio = pyaudio.PyAudio()
         try:
-            default_name = audio.get_default_input_device_info().get('name')
+            default_name = audio.get_default_input_device_info().get("name")
             for device_index in range(audio.get_device_count()):
                 device_info = audio.get_device_info_by_index(device_index)
                 device_name = device_info.get("name")
                 if device_name == default_name:
-                    device_name = device_name + '*'
+                    device_name = device_name + "*"
 
                 try:
                     # read audio
@@ -232,7 +247,8 @@ class PyAudioRecorder(RhasspyActor):
                         channels=1,
                         format=pyaudio.paInt16,
                         rate=16000,
-                        input=True)
+                        input=True,
+                    )
                     try:
                         buffer = pyaudio_stream.read(chunk_size)
                         if not pyaudio_stream.is_stopped():
@@ -240,71 +256,83 @@ class PyAudioRecorder(RhasspyActor):
                     finally:
                         pyaudio_stream.close()
                 except:
-                    result[device_index] = '%s (error)' % device_name
+                    result[device_index] = "%s (error)" % device_name
                     continue
 
                 # compute RMS of debiased audio
                 energy = -audioop.rms(buffer, 2)
                 energy_bytes = bytes([energy & 0xFF, (energy >> 8) & 0xFF])
                 debiased_energy = audioop.rms(
-                    audioop.add(buffer, energy_bytes * (len(buffer) // 2), 2), 2)
+                    audioop.add(buffer, energy_bytes * (len(buffer) // 2), 2), 2
+                )
 
                 if debiased_energy > 30:  # probably actually audio
-                    result[device_index] = '%s (working!)' % device_name
+                    result[device_index] = "%s (working!)" % device_name
                 else:
-                    result[device_index] = '%s (no sound)' % device_name
+                    result[device_index] = "%s (no sound)" % device_name
         finally:
             audio.terminate()
 
         return result
 
+
 # -----------------------------------------------------------------------------
 # ARecord based audio recorder
 # -----------------------------------------------------------------------------
 
+
 class ARecordAudioRecorder(RhasspyActor):
-    '''Records from microphone using arecord'''
+    """Records from microphone using arecord"""
+
     def __init__(self) -> None:
         # Chunk size is set to 30 ms for webrtcvad
         RhasspyActor.__init__(self)
-        self.record_proc:Any = None
-        self.receivers: List[ActorAddress] = []
-        self.buffers:Dict[str, bytes] = {}
-        self.recording_thread:Any = None
+        self.record_proc: Any = None
+        self.receivers: List[RhasspyActor] = []
+        self.buffers: Dict[str, bytes] = {}
+        self.recording_thread: Any = None
         self.is_recording = True
 
-    def to_started(self, from_state:str) -> None:
-        self.device_name = self.config.get('device') \
-            or self.profile.get('microphone.arecord.device')
+    def to_started(self, from_state: str) -> None:
+        self.device_name = self.config.get("device") or self.profile.get(
+            "microphone.arecord.device"
+        )
 
         if self.device_name is not None:
             self.device_name = str(self.device_name)
             if len(self.device_name) == 0:
                 self.device_name = None
 
-        self.chunk_size = int(self.profile.get(
-            'microphone.arecord.chunk_size', 480*2))
+        self.chunk_size = int(
+            self.profile.get("microphone.arecord.chunk_size", 480 * 2)
+        )
 
-    def in_started(self, message: Any, sender: ActorAddress) -> None:
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, StartStreaming):
             self.receivers.append(message.receiver or sender)
-            self.transition('recording')
+            self.transition("recording")
         elif isinstance(message, StartRecordingToBuffer):
             self.buffers[message.buffer_name] = bytes()
-            self.transition('recording')
+            self.transition("recording")
 
-    def to_recording(self, from_state:str) -> None:
+    def to_recording(self, from_state: str) -> None:
         # 16-bit 16Khz mono WAV
-        arecord_cmd = ['arecord',
-                      '-q',
-                      '-r', '16000',
-                      '-f', 'S16_LE',
-                      '-c', '1',
-                      '-t', 'raw']
+        arecord_cmd = [
+            "arecord",
+            "-q",
+            "-r",
+            "16000",
+            "-f",
+            "S16_LE",
+            "-c",
+            "1",
+            "-t",
+            "raw",
+        ]
 
         if self.device_name is not None:
             # Use specific ALSA device
-            arecord_cmd.extend(['-D', self.device_name])
+            arecord_cmd.extend(["-D", self.device_name])
 
         self._logger.debug(arecord_cmd)
 
@@ -327,17 +355,17 @@ class ARecordAudioRecorder(RhasspyActor):
         assert self.recording_thread is not None
         self.recording_thread.start()
 
-        self._logger.debug('Recording from microphone (arecord)')
+        self._logger.debug("Recording from microphone (arecord)")
 
-    def in_recording(self, message: Any, sender: ActorAddress) -> None:
+    def in_recording(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, AudioData):
             # Forward to subscribers
             for receiver in self.receivers:
                 self.send(receiver, message)
 
             # Append to buffers
-            for receiver in self.buffers:
-                self.buffers[receiver] += message.data
+            for buffer_name in self.buffers:
+                self.buffers[buffer_name] += message.data
         elif isinstance(message, StartStreaming):
             self.receivers.append(message.receiver or sender)
         elif isinstance(message, StartRecordingToBuffer):
@@ -363,22 +391,21 @@ class ARecordAudioRecorder(RhasspyActor):
             self.is_recording = False
             self.record_proc.terminate()
             self.record_proc = None
-            self.transition('started')
-            self._logger.debug('Stopped recording from microphone (arecord)')
+            self.transition("started")
+            self._logger.debug("Stopped recording from microphone (arecord)")
 
-    def to_stopped(self, from_state:str) -> None:
+    def to_stopped(self, from_state: str) -> None:
         if self.is_recording:
             self.is_recording = False
             if self.record_proc is not None:
                 self.record_proc.terminate()
-            self._logger.debug('Stopped recording from microphone (arecord)')
+            self._logger.debug("Stopped recording from microphone (arecord)")
 
     # -------------------------------------------------------------------------
 
     @classmethod
     def get_microphones(cls) -> Dict[Any, Any]:
-        output = subprocess.check_output(['arecord', '-L'])\
-                           .decode().splitlines()
+        output = subprocess.check_output(["arecord", "-L"]).decode().splitlines()
 
         mics: Dict[Any, Any] = {}
         name, description = None, None
@@ -387,10 +414,10 @@ class ARecordAudioRecorder(RhasspyActor):
         first_mic = True
         for line in output:
             line = line.rstrip()
-            if re.match(r'^\s', line):
+            if re.match(r"^\s", line):
                 description = line.strip()
                 if first_mic:
-                    description = description + '*'
+                    description = description + "*"
                     first_mic = False
             else:
                 if name is not None:
@@ -403,7 +430,7 @@ class ARecordAudioRecorder(RhasspyActor):
     # -------------------------------------------------------------------------
 
     @classmethod
-    def test_microphones(cls, chunk_size:int) -> Dict[Any, Any]:
+    def test_microphones(cls, chunk_size: int) -> Dict[Any, Any]:
         # Thanks to the speech_recognition library!
         # https://github.com/Uberi/speech_recognition/blob/master/speech_recognition/__init__.py
         mics = ARecordAudioRecorder.get_microphones()
@@ -411,164 +438,85 @@ class ARecordAudioRecorder(RhasspyActor):
         for device_id, device_name in mics.items():
             try:
                 # read audio
-                arecord_cmd = ['arecord',
-                              '-q',
-                              '-D', device_id,
-                              '-r', '16000',
-                              '-f', 'S16_LE',
-                              '-c', '1',
-                              '-t', 'raw']
+                arecord_cmd = [
+                    "arecord",
+                    "-q",
+                    "-D",
+                    device_id,
+                    "-r",
+                    "16000",
+                    "-f",
+                    "S16_LE",
+                    "-c",
+                    "1",
+                    "-t",
+                    "raw",
+                ]
 
                 proc = subprocess.Popen(arecord_cmd, stdout=subprocess.PIPE)
                 buffer = proc.stdout.read(chunk_size * 2)
                 proc.terminate()
             except:
-                result[device_id] = '%s (error)' % device_name
+                result[device_id] = "%s (error)" % device_name
                 continue
 
             # compute RMS of debiased audio
             energy = -audioop.rms(buffer, 2)
             energy_bytes = bytes([energy & 0xFF, (energy >> 8) & 0xFF])
             debiased_energy = audioop.rms(
-                audioop.add(buffer, energy_bytes * (len(buffer) // 2), 2), 2)
+                audioop.add(buffer, energy_bytes * (len(buffer) // 2), 2), 2
+            )
 
             if debiased_energy > 30:  # probably actually audio
-                result[device_id] = '%s (working!)' % device_name
+                result[device_id] = "%s (working!)" % device_name
             else:
-                result[device_id] = '%s (no sound)' % device_name
+                result[device_id] = "%s (no sound)" % device_name
 
         return result
 
-# -----------------------------------------------------------------------------
-# WAV based audio "recorder"
-# -----------------------------------------------------------------------------
-
-class WavAudioRecorder(RhasspyActor):
-    '''Pushes WAV data out instead of data from a microphone.'''
-    def __init__(self) -> None:
-        RhasspyActor.__init__(self)
-        self.receivers:List[ActorAddress] = []
-        self.buffers:Dict[str,bytes] = {}
-        self.is_recording:bool = False
-
-    def to_started(self, from_state:str) -> None:
-        self.wav_path = self.profile.get('microphone.wav.path')
-        self.chunk_size:int = self.config.get('microphone.wav.chunk_size', 480*2)
-
-    def in_started(self, message: Any, sender: ActorAddress) -> None:
-        if isinstance(message, StartStreaming):
-            self.receivers.append(message.receiver or sender)
-            self.transition('recording')
-        elif isinstance(message, StartRecordingToBuffer):
-            self.buffers[message.buffer_name] = bytes()
-            self.transition('recording')
-
-    def to_recording(self, from_state:str) -> None:
-        assert self.wav_path is not None
-        def process_data() -> None:
-            with wave.open(self.wav_path, 'rb') as wav_file:
-                rate, width, channels = wav_file.getframerate(), wav_file.getsampwidth(), wav_file.getnchannels()
-                if (rate != 16000) or (width != 2) or (channels != 1):
-                    audio_data = convert_wav(wav_file.read())
-                else:
-                    # Use original data
-                    audio_data = wav_file.readframes(wav_file.getnframes())
-
-            i = 0
-            while (self.is_recording) and ((i+self.chunk_size) < len(audio_data)):
-                data = audio_data[i:i+self.chunk_size]
-                i += self.chunk_size
-
-                # Send to this actor to avoid threading issues
-                self.send(self.myAddress, AudioData(data))
-
-        self.is_recording = True
-        threading.Thread(target=process_data, daemon=True).start()
-        self.transition('recording')
-
-    def in_recording(self, message: Any, sender: ActorAddress) -> None:
-        if isinstance(message, AudioData):
-            # Forward to subscribers
-            for receiver in self.receivers:
-                self.send(receiver, message)
-
-            # Append to buffers
-            for receiver in self.buffers:
-                self.buffers[receiver] += message.data
-        elif isinstance(message, StartStreaming):
-            self.receivers.append(message.receiver or sender)
-        elif isinstance(message, StartRecordingToBuffer):
-            self.buffers[message.buffer_name] = bytes()
-        elif isinstance(message, StopStreaming):
-            if message.receiver is None:
-                # Clear all receivers
-                self.receivers.clear()
-            else:
-                self.receivers.remove(message.receiver)
-        elif isinstance(message, StopRecordingToBuffer):
-            if message.buffer_name is None:
-                # Clear all buffers
-                self.buffers.clear()
-            else:
-                # Respond with buffer
-                buffer = self.buffers.pop(message.buffer_name, bytes())
-                self.send(message.receiver or sender, AudioData(buffer))
-
-        # Check to see if anyone is still listening
-        if (len(self.receivers) == 0) and (len(self.buffers) == 0):
-            # Terminate audio recording
-            self.is_recording = False
-            self.transition('started')
-
-    def to_stopped(self, from_state:str) -> None:
-        self.is_recording = False
-
-    # -----------------------------------------------------------------------------
-
-    @classmethod
-    def get_microphones(self) -> Dict[Any, Any]:
-        return {}
-
-    @classmethod
-    def test_microphones(self, chunk_size:int) -> Dict[Any, Any]:
-        return {}
 
 # -----------------------------------------------------------------------------
 # MQTT based audio "recorder" for Snips.AI Hermes Protocol
 # https://docs.snips.ai/ressources/hermes-protocol
 # -----------------------------------------------------------------------------
 
+
 class HermesAudioRecorder(RhasspyActor):
-    '''Receives audio data from MQTT via Hermes protocol.'''
+    """Receives audio data from MQTT via Hermes protocol."""
+
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
-        self.receivers:List[ActorAddress] = []
-        self.buffers:Dict[str, bytes] = {}
+        self.receivers: List[RhasspyActor] = []
+        self.buffers: Dict[str, bytes] = {}
 
-    def to_started(self, from_state:str) -> None:
-        self.mqtt = self.config['mqtt']
-        self.site_id = self.profile.get('mqtt.site_id')
-        self.topic_audio_frame = 'hermes/audioServer/%s/audioFrame' % self.site_id
+    def to_started(self, from_state: str) -> None:
+        self.mqtt = self.config["mqtt"]
+        self.site_id = self.profile.get("mqtt.site_id")
+        self.topic_audio_frame = "hermes/audioServer/%s/audioFrame" % self.site_id
         self.send(self.mqtt, MqttSubscribe(self.topic_audio_frame))
 
-    def in_started(self, message: Any, sender: ActorAddress) -> None:
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, StartStreaming):
             self.receivers.append(message.receiver or sender)
-            self.transition('recording')
+            self.transition("recording")
         elif isinstance(message, StartRecordingToBuffer):
             self.buffers[message.buffer_name] = bytes()
-            self.transition('recording')
+            self.transition("recording")
 
-    def to_recording(self, from_state:str) -> None:
-        self._logger.debug('Recording from microphone (hermes)')
+    def to_recording(self, from_state: str) -> None:
+        self._logger.debug("Recording from microphone (hermes)")
 
-    def in_recording(self, message: Any, sender: ActorAddress) -> None:
+    def in_recording(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, MqttMessage):
             if message.topic == self.topic_audio_frame:
                 # Extract audio data
                 with io.BytesIO(message.payload) as wav_buffer:
-                    with wave.open(wav_buffer, mode='rb') as wav_file:
-                        rate, width, channels = wav_file.getframerate(), wav_file.getsampwidth(), wav_file.getnchannels()
+                    with wave.open(wav_buffer, mode="rb") as wav_file:
+                        rate, width, channels = (
+                            wav_file.getframerate(),
+                            wav_file.getsampwidth(),
+                            wav_file.getnchannels(),
+                        )
                         if (rate != 16000) or (width != 2) or (channels != 1):
                             audio_data = convert_wav(message.payload)
                         else:
@@ -582,8 +530,8 @@ class HermesAudioRecorder(RhasspyActor):
                     self.send(receiver, data_message)
 
                 # Append to buffers
-                for receiver in self.buffers:
-                    self.buffers[receiver] += audio_data
+                for buffer_name in self.buffers:
+                    self.buffers[buffer_name] += audio_data
         elif isinstance(message, StartStreaming):
             self.receivers.append(message.receiver or sender)
         elif isinstance(message, StartRecordingToBuffer):
@@ -610,50 +558,51 @@ class HermesAudioRecorder(RhasspyActor):
         return {}
 
     @classmethod
-    def test_microphones(self, chunk_size:int) -> Dict[Any, Any]:
+    def test_microphones(self, chunk_size: int) -> Dict[Any, Any]:
         return {}
+
 
 # -----------------------------------------------------------------------------
 # STDIN Microphone Recorder
 # -----------------------------------------------------------------------------
 
+
 class StdinAudioRecorder(RhasspyActor):
-    '''Records from audio input from standard in'''
+    """Records from audio input from standard in"""
+
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
-        self.receivers: List[ActorAddress] = []
-        self.buffers:Dict[str, bytes] = {}
-        self.is_recording:bool = False
+        self.receivers: List[RhasspyActor] = []
+        self.buffers: Dict[str, bytes] = {}
+        self.is_recording: bool = False
 
-    def to_started(self, from_state:str) -> None:
-        self.chunk_size = int(self.profile.get(
-            'microphone.stdin.chunk_size', 480*2))
+    def to_started(self, from_state: str) -> None:
+        self.chunk_size = int(self.profile.get("microphone.stdin.chunk_size", 480 * 2))
 
-        if self.profile.get('microphone.stdin.auto_start', True):
-            threading.Thread(target=self.process_data,
-                             daemon=True).start()
+        if self.profile.get("microphone.stdin.auto_start", True):
+            threading.Thread(target=self.process_data, daemon=True).start()
 
-    def in_started(self, message: Any, sender: ActorAddress) -> None:
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, StartStreaming):
             self.receivers.append(message.receiver or sender)
-            self.transition('recording')
+            self.transition("recording")
         elif isinstance(message, StartRecordingToBuffer):
             self.buffers[message.buffer_name] = bytes()
-            self.transition('recording')
+            self.transition("recording")
 
-    def to_recording(self, from_state:str) -> None:
+    def to_recording(self, from_state: str) -> None:
         self.is_recording = True
-        self._logger.debug('Recording from microphone (stdin)')
+        self._logger.debug("Recording from microphone (stdin)")
 
-    def in_recording(self, message: Any, sender: ActorAddress) -> None:
+    def in_recording(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, AudioData):
             # Forward to subscribers
             for receiver in self.receivers:
                 self.send(receiver, message)
 
             # Append to buffers
-            for receiver in self.buffers:
-                self.buffers[receiver] += message.data
+            for buffer_name in self.buffers:
+                self.buffers[buffer_name] += message.data
         elif isinstance(message, StartStreaming):
             self.receivers.append(message.receiver or sender)
         elif isinstance(message, StartRecordingToBuffer):
@@ -677,13 +626,13 @@ class StdinAudioRecorder(RhasspyActor):
         if (len(self.receivers) == 0) and (len(self.buffers) == 0):
             # Terminate audio recording
             self.is_recording = False
-            self.transition('started')
-            self._logger.debug('Stopped recording from microphone (stdin)')
+            self.transition("started")
+            self._logger.debug("Stopped recording from microphone (stdin)")
 
-    def to_stopped(self, from_state:str) -> None:
+    def to_stopped(self, from_state: str) -> None:
         if self.is_recording:
             self.is_recording = False
-            self._logger.debug('Stopped recording from microphone (stdin)')
+            self._logger.debug("Stopped recording from microphone (stdin)")
 
     # -------------------------------------------------------------------------
 
@@ -703,5 +652,5 @@ class StdinAudioRecorder(RhasspyActor):
     # -------------------------------------------------------------------------
 
     @classmethod
-    def test_microphones(cls, chunk_size:int) -> Dict[Any, Any]:
+    def test_microphones(cls, chunk_size: int) -> Dict[Any, Any]:
         return {}

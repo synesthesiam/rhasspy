@@ -10,7 +10,7 @@
         </div>
 
         <form class="form" v-on:submit.prevent="saveProfile">
-            <h2>{{ this.profile }}</h2>
+            <h2>{{ this.profile.name }}</h2>
 
             <div class="form-group">
                 <div class="form-row">
@@ -69,7 +69,8 @@
  export default {
      name: 'AdvancedSettings',
      props: {
-         profile : String
+         profile : Object,
+         defaults: Object
      },
      data: function () {
          return {
@@ -82,22 +83,6 @@
      },
 
      methods: {
-         refreshSettings: function() {
-             ProfileService.getProfileSettings('profile')
-                           .then(request => {
-                               this.profileSettings = JSON.stringify(request.data, null, 4)
-                           })
-                           .catch(err => this.$parent.error(err))
-         },
-
-         refreshDefaults: function() {
-             ProfileService.getProfileSettings('defaults')
-                           .then(request => {
-                               this.defaultSettings = JSON.stringify(request.data, null, 4)
-                           })
-                           .catch(err => this.$parent.error(err))
-         },
-
          saveProfile: function() {
              this.$parent.beginAsync()
              ProfileService.updateProfileSettings(this.profileSettings)
@@ -121,15 +106,13 @@
          }
      },
 
-     mounted: function() {
-         this.refreshSettings()
-         this.refreshDefaults()
-     },
-
      watch: {
-         profile() {
-             this.refreshSettings()
-             this.refreshDefaults()
+         profile: function() {
+             this.profileSettings = JSON.stringify(this.profile, null, 4)
+         },
+
+         defaults: function() {
+             this.defaultSettings = JSON.stringify(this.defaults, null, 4)
          }
      }
  }

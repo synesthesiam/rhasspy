@@ -103,6 +103,16 @@ paths:
           description: Available microphone names, descriptions
           schema:
             type: object
+  /api/speakers:
+    get:
+      summary: 'Get list of available speakers'
+      produces: 
+        - application/json
+      responses:
+        '200':
+          description: Available speakers names, descriptions
+          schema:
+            type: object
   /api/pronounce:
     post:
       summary: 'Pronounce a word or set of phonemes'
@@ -291,7 +301,7 @@ paths:
                 type: object
   /api/text-to-speech:
     post:
-      summary: 'Speak a message using eSpeak'
+      summary: 'Speak a message using configured text to speech system'
       requestBody:
         description: 'Text to speak'
         required: true
@@ -299,13 +309,24 @@ paths:
           text/plain:
             schema:
               type: string
-      parameters:
-      - in: query
-        name: voice
-        description: 'eSpeak voice to use'
-        schema:
-          type: string
-          default: ''
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/play-wav:
+    post:
+      summary: 'Play WAV data using configured audio output'
+      requestBody:
+        description: 'WAV data'
+        required: true
+        content:
+          audio/wav:
+            schema:
+              type: string
+              format: binary
       responses:
         '200':
           description: OK

@@ -6,6 +6,7 @@ import logging
 import math
 import itertools
 import json
+import gzip
 import collections
 from collections import defaultdict
 import concurrent.futures
@@ -16,11 +17,16 @@ from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple
 
 # -----------------------------------------------------------------------------
 
+
 class SentenceEntity:
-    def __init__(self, entity:str, value:str,
-                 text:Optional[str]=None,
-                 start:Optional[int]=None,
-                 end:Optional[int]=None) -> None:
+    def __init__(
+        self,
+        entity: str,
+        value: str,
+        text: Optional[str] = None,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+    ) -> None:
         self.entity = entity
         self.value = value
         self.text = text or value
@@ -29,35 +35,23 @@ class SentenceEntity:
 
     def json(self):
         return {
-            'entity': self.entity,
-            'value': self.value,
-            'text': self.text,
-            'start': self.start,
-            'end': self.end
+            "entity": self.entity,
+            "value": self.value,
+            "text": self.text,
+            "start": self.start,
+            "end": self.end,
         }
 
-class TrainingSentence:
-    def __init__(self, sentence: str,
-                 entities: List[SentenceEntity],
-                 tokens: List[str]) -> None:
-        self.sentence = sentence
-        self.entities = entities
-        self.tokens = tokens
-
-    def json(self):
-        return {
-            'sentence': self.sentence,
-            'entities': [e.__dict__ for e in self.entities],
-            'tokens': self.tokens
-        }
 
 # -----------------------------------------------------------------------------
 
-def read_dict(dict_file: Iterable[str],
-              word_dict: Optional[Dict[str, List[str]]] = None) -> Dict[str, List[str]]:
-    '''
+
+def read_dict(
+    dict_file: Iterable[str], word_dict: Optional[Dict[str, List[str]]] = None
+) -> Dict[str, List[str]]:
+    """
     Loads a CMU word dictionary, optionally into an existing Python dictionary.
-    '''
+    """
     if word_dict is None:
         word_dict = {}
 
@@ -66,8 +60,8 @@ def read_dict(dict_file: Iterable[str],
         if len(line) == 0:
             continue
 
-        word, pronounce = re.split(r'\s+', line, maxsplit=1)
-        idx = word.find('(')
+        word, pronounce = re.split(r"\s+", line, maxsplit=1)
+        idx = word.find("(")
         if idx > 0:
             word = word[:idx]
 
@@ -79,41 +73,46 @@ def read_dict(dict_file: Iterable[str],
 
     return word_dict
 
+
 # -----------------------------------------------------------------------------
 
-def lcm(*nums:int) -> int:
-    '''Returns the least common multiple of the given integers'''
+
+def lcm(*nums: int) -> int:
+    """Returns the least common multiple of the given integers"""
     if len(nums) == 0:
         return 1
 
     nums_lcm = nums[0]
     for n in nums[1:]:
-        nums_lcm = (nums_lcm*n) // math.gcd(nums_lcm, n)
+        nums_lcm = (nums_lcm * n) // math.gcd(nums_lcm, n)
 
     return nums_lcm
 
+
 # -----------------------------------------------------------------------------
 
-def recursive_update(base_dict: Dict[Any, Any],
-                     new_dict: Mapping[Any, Any]) -> None:
-    '''Recursively overwrites values in base dictionary with values from new dictionary'''
+
+def recursive_update(base_dict: Dict[Any, Any], new_dict: Mapping[Any, Any]) -> None:
+    """Recursively overwrites values in base dictionary with values from new dictionary"""
     for k, v in new_dict.items():
         if isinstance(v, collections.Mapping) and (k in base_dict):
             recursive_update(base_dict[k], v)
         else:
             base_dict[k] = v
 
+
 # -----------------------------------------------------------------------------
 
+
 def extract_entities(phrase: str) -> Tuple[str, List[SentenceEntity]]:
-    '''Extracts embedded entity markings from a phrase.
+    """Extracts embedded entity markings from a phrase.
     Returns the phrase with entities removed and a list of entities.
 
     The format [some text](entity name) is used to mark entities in a training phrase.
 
     If the synonym format [some text](entity name:something else) is used, then
     "something else" will be substituted for "some text".
-    '''
+    """
     entities = []
     removed_chars = 0
 
@@ -125,7 +124,7 @@ def extract_entities(phrase: str) -> Tuple[str, List[SentenceEntity]]:
         removed_chars += 1 + len(entity) + 3  # 1 for [, 3 for ], (, and )
 
         # Replace value with entity synonym, if present.
-        entity_parts = entity.split(':', maxsplit=1)
+        entity_parts = entity.split(":", maxsplit=1)
         if len(entity_parts) > 1:
             entity = entity_parts[0]
             value = entity_parts[1]
@@ -135,16 +134,18 @@ def extract_entities(phrase: str) -> Tuple[str, List[SentenceEntity]]:
         return replacement
 
     # [text](entity label) => text
-    phrase = re.sub(r'\[([^]]+)\]\(([^)]+)\)', match, phrase)
+    phrase = re.sub(r"\[([^]]+)\]\(([^)]+)\)", match, phrase)
 
     return phrase, entities
 
+
 # -----------------------------------------------------------------------------
 
+
 def buffer_to_wav(buffer: bytes) -> bytes:
-    '''Wraps a buffer of raw audio data (16-bit, 16Khz mono) in a WAV'''
+    """Wraps a buffer of raw audio data (16-bit, 16Khz mono) in a WAV"""
     with io.BytesIO() as wav_buffer:
-        with wave.open(wav_buffer, mode='wb') as wav_file:
+        with wave.open(wav_buffer, mode="wb") as wav_file:
             wav_file.setframerate(16000)
             wav_file.setsampwidth(2)
             wav_file.setnchannels(1)
@@ -152,74 +153,94 @@ def buffer_to_wav(buffer: bytes) -> bytes:
 
         return wav_buffer.getvalue()
 
+
 def convert_wav(wav_data: bytes) -> bytes:
-    '''Converts WAV data to 16-bit, 16Khz mono with sox.'''
-    return subprocess.run(['sox', '-t', 'wav', '-',
-                           '-r', '16000',
-                           '-e', 'signed-integer',
-                           '-b', '16',
-                           '-c', '1',
-                           '-t', 'wav',
-                           '-'],
-                          check=True, stdout=subprocess.PIPE,
-                          input=wav_data).stdout
+    """Converts WAV data to 16-bit, 16Khz mono with sox."""
+    return subprocess.run(
+        [
+            "sox",
+            "-t",
+            "wav",
+            "-",
+            "-r",
+            "16000",
+            "-e",
+            "signed-integer",
+            "-b",
+            "16",
+            "-c",
+            "1",
+            "-t",
+            "wav",
+            "-",
+        ],
+        check=True,
+        stdout=subprocess.PIPE,
+        input=wav_data,
+    ).stdout
+
 
 def maybe_convert_wav(wav_data: bytes) -> bytes:
-    '''Converts WAV data to 16-bit, 16Khz mono if necessary.'''
+    """Converts WAV data to 16-bit, 16Khz mono if necessary."""
     with io.BytesIO(wav_data) as wav_io:
-        with wave.open(wav_io, 'rb') as wav_file:
-            rate, width, channels = wav_file.getframerate(), wav_file.getsampwidth(), wav_file.getnchannels()
+        with wave.open(wav_io, "rb") as wav_file:
+            rate, width, channels = (
+                wav_file.getframerate(),
+                wav_file.getsampwidth(),
+                wav_file.getnchannels(),
+            )
             if (rate != 16000) or (width != 2) or (channels != 1):
                 return convert_wav(wav_data)
             else:
                 return wav_file.readframes(wav_file.getnframes())
 
+
 # -----------------------------------------------------------------------------
 
+
 def load_phoneme_examples(path: str) -> Dict[str, Dict[str, str]]:
-    '''Loads example words and pronunciations for each phoneme.'''
+    """Loads example words and pronunciations for each phoneme."""
     examples = {}
-    with open(path, 'r') as example_file:
+    with open(path, "r") as example_file:
         for line in example_file:
             line = line.strip()
-            if (len(line) == 0) or line.startswith('#'):
+            if (len(line) == 0) or line.startswith("#"):
                 continue  # skip blanks and comments
 
-            parts = re.split('\s+', line)
-            examples[parts[0]] = {
-                'word': parts[1],
-                'phonemes': ' '.join(parts[2:])
-            }
+            parts = re.split("\s+", line)
+            examples[parts[0]] = {"word": parts[1], "phonemes": " ".join(parts[2:])}
 
     return examples
 
+
 def load_phoneme_map(path: str) -> Dict[str, str]:
-    '''Load phoneme map from CMU (Sphinx) phonemes to eSpeak phonemes.'''
+    """Load phoneme map from CMU (Sphinx) phonemes to eSpeak phonemes."""
     phonemes = {}
-    with open(path, 'r') as phoneme_file:
+    with open(path, "r") as phoneme_file:
         for line in phoneme_file:
             line = line.strip()
-            if (len(line) == 0) or line.startswith('#'):
+            if (len(line) == 0) or line.startswith("#"):
                 continue  # skip blanks and comments
 
-            parts = re.split('\s+', line, maxsplit=1)
+            parts = re.split("\s+", line, maxsplit=1)
             phonemes[parts[0]] = parts[1]
 
     return phonemes
 
+
 # -----------------------------------------------------------------------------
+
 
 def empty_intent() -> Dict[str, Any]:
-    return {
-        'text': '',
-        'intent': { 'name': '', 'confidence': 0 },
-        'entities': {}
-    }
+    return {"text": "", "intent": {"name": "", "confidence": 0}, "entities": {}}
+
 
 # -----------------------------------------------------------------------------
 
+
 class ByteStream:
-    '''Read/write file-like interface to a buffer.'''
+    """Read/write file-like interface to a buffer."""
+
     def __init__(self) -> None:
         self.buffer = bytes()
         self.read_event = threading.Event()
@@ -238,7 +259,7 @@ class ByteStream:
 
         return chunk
 
-    def write(self, data:bytes) -> None:
+    def write(self, data: bytes) -> None:
         if self.closed:
             return
 
@@ -249,18 +270,19 @@ class ByteStream:
         self.closed = True
         self.read_event.set()
 
+
 # -----------------------------------------------------------------------------
 
-def sanitize_sentence(sentence:str,
-                      sentence_casing:str,
-                      replace_patterns:List[Any],
-                      split_pattern:Any) -> Tuple[str, List[str]]:
-    '''Applies profile-specific casing and tokenization to a sentence.
-    Returns the sanitized sentence and tokens.'''
 
-    if sentence_casing == 'lower':
+def sanitize_sentence(
+    sentence: str, sentence_casing: str, replace_patterns: List[Any], split_pattern: Any
+) -> Tuple[str, List[str]]:
+    """Applies profile-specific casing and tokenization to a sentence.
+    Returns the sanitized sentence and tokens."""
+
+    if sentence_casing == "lower":
         sentence = sentence.lower()
-    elif sentence_casing == 'upper':
+    elif sentence_casing == "upper":
         sentence = sentence.upper()
 
     # Process replacement patterns
@@ -269,38 +291,33 @@ def sanitize_sentence(sentence:str,
             sentence = re.sub(pattern, repl, sentence)
 
     # Tokenize
-    tokens = [t for t in re.split(split_pattern, sentence)
-              if len(t.strip()) > 0]
+    tokens = [t for t in re.split(split_pattern, sentence) if len(t.strip()) > 0]
 
     return sentence, tokens
 
+
 # -----------------------------------------------------------------------------
 
-def group_sentences_by_intent(tagged_sentences: Dict[str, List[str]],
-                              *sanitize_args) -> Dict[str, List[TrainingSentence]]:
-    sentences_by_intent:Dict[str, List[TrainingSentence]] = defaultdict(list)
 
-    # Extract entities from tagged sentences
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        future_to_name = { executor.submit(_process_intent_sentences, intent_sents,
-                                           sanitize_args) : intent_name
-                            for intent_name, intent_sents in tagged_sentences.items() }
-        # Add to the list as they get done
-        for future in concurrent.futures.as_completed(future_to_name):
-            intent_name = future_to_name[future]
-            sentences_by_intent[intent_name] = future.result()
+def open_maybe_gzip(path, mode_normal="r", mode_gzip=None):
+    """Opens a file with gzip.open if it ends in .gz, otherwise normally with open"""
+    if path.endswith(".gz"):
+        if mode_gzip is None:
+            if mode_normal == "r":
+                mode_gzip = "rt"
+            elif mode_normal == "w":
+                mode_gzip = "wt"
+            elif mode_normal == "a":
+                mode_gzip = "at"
 
-    return sentences_by_intent
+        return gzip.open(path, mode_gzip)
 
-def _process_intent_sentences(intent_sents, sanitize_args):
-    training_sents = []
-    for intent_sent in intent_sents:
-        # Template -> untagged sentence + entities
-        sentence, entities = extract_entities(intent_sent)
+    return open(path, mode_normal)
 
-        # Split sentence into words (tokens)
-        sentence, tokens = sanitize_sentence(sentence, *sanitize_args)
-        training_sents.append(
-            TrainingSentence(sentence, entities, tokens))
 
-    return training_sents
+# -----------------------------------------------------------------------------
+
+
+def grouper(iterable, n, fillvalue=None):
+    args = [iter(iterable)] * n
+    return itertools.zip_longest(*args, fillvalue=fillvalue)

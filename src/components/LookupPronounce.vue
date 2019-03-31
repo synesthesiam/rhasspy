@@ -43,7 +43,7 @@
                     <input id="espeak-phonemes" title="eSpeak Phonemes" class="form-control" type="text" v-model="espeakPhonemes" readonly>
                 </div>
                 <div class="col-xs-auto">
-                    <button type="button" class="btn btn-secondary" @click="pronouncePhonemes"
+                    <button type="button" class="btn btn-secondary" @click="pronouncePhonemes(phonemes)"
                             title="Speak the selected pronunciation">Pronounce</button>
                 </div>
                 <div class="col-xs-auto">
@@ -117,12 +117,17 @@
                         <th scope="col">Phoneme</th>
                         <th scope="col">Example</th>
                         <th scope="col">Translation</th>
+                        <th scope="col"></th>
                     </thead>
                     <tbody>
                         <tr v-for="pair in examples" v-bind:key="pair[0]">
                             <td>{{ pair[0] }}</td>
                             <td>{{ pair[1].word }}</td>
                             <td>{{ pair[1].phonemes }}</td>
+                            <td>
+                                <button type="button" class="btn btn-success" @click="pronouncePhonemes(pair[1].phonemes)"
+                                        title="Say word"><i class="fas fa-play"></i></button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -138,7 +143,6 @@
  export default {
      name: 'LookupPronounce',
      props: {
-         profile : String,
          unknownWords: Array
      },
      data: function () {
@@ -159,7 +163,7 @@
          // Look up word in dictionary or guess pronunciation
          lookupWord: function() {
              this.$parent.beginAsync()
-             PronounceService.lookupWord(this.profile, this.dictWord)
+             PronounceService.lookupWord(this.dictWord)
                  .then(request => {
                      if (!request.data.in_dictionary) {
                          // Warn user that this word is a guess
@@ -172,7 +176,7 @@
                          this.phonemes = this.pronunciations[0];
                      }
 
-                     this.espeakPhonemes = request.data.espeak_phonemes
+                     this.espeakPhonemes = request.data.phonemes
                  })
                  .then(() => this.$parent.endAsync())
                  .catch(err => this.$parent.error(err))
@@ -185,12 +189,12 @@
          },
 
          // Pronounce word using speakers
-         pronouncePhonemes: function() {
+         pronouncePhonemes: function(phonemes) {
              this.$parent.beginAsync()
              var pronounceString = (this.pronounceType == 'word')
-                                 ? this.dictWord : this.phonemes
+                                 ? this.dictWord : phonemes
 
-             PronounceService.pronounce(this.profile, pronounceString, this.pronounceType)
+             PronounceService.pronounce(pronounceString, this.pronounceType)
                  .then(() => this.$parent.endAsync())
                  .catch(err => this.$parent.error(err))
          },
@@ -201,7 +205,7 @@
              var pronounceString = (this.pronounceType == 'word')
                                  ? this.dictWord : this.phonemes
 
-             PronounceService.download(this.profile, pronounceString, this.pronounceType)
+             PronounceService.download(pronounceString, this.pronounceType)
                  .then(request => {
                      var byteArray = new Uint8Array(request.data)
                      var link = window.document.createElement('a')
@@ -219,7 +223,7 @@
          },
 
          refreshExamples: function() {
-             PronounceService.getPhonemeExamples(this.profile)
+             PronounceService.getPhonemeExamples()
                              .then(request => {
                                  this.examples = Object.entries(request.data)
                                  this.examples.sort()
@@ -229,7 +233,7 @@
 
          saveCustomWords: function() {
              this.$parent.beginAsync()
-             PronounceService.updateCustomWords(this.profile, this.customWords)
+             PronounceService.updateCustomWords(this.customWords)
                  .then(request => this.$parent.alert(request.data, 'success'))
                  .then(() => {
                      this.$parent.endAsync()
@@ -239,7 +243,7 @@
          },
 
          getCustomWords: function() {
-             PronounceService.getCustomWords(this.profile)
+             PronounceService.getCustomWords()
                              .then(request => {
                                  this.customWords = request.data
                              })
@@ -257,13 +261,6 @@
      mounted: function() {
          this.refreshExamples()
          this.customWords = this.getCustomWords()
-     },
-
-     watch: {
-         profile() {
-             this.refreshExamples()
-             this.customWords = this.getCustomWords()
-         }
      }
  }
 </script>

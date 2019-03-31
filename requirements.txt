@@ -1,4 +1,3 @@
-thespian
 Flask
 flask-swagger-ui
 flask_cors
@@ -10,4 +9,4 @@ webrtcvad
 fuzzywuzzy[speedup]
 adapt-parser
 precise-runner
-pyjsgf
+cerberus

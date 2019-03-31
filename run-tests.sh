@@ -13,4 +13,4 @@ fi
 cd "$DIR"
 source .venv/bin/activate
 export RHASSPY_PROFILES="$DIR/profiles:$HOME/.rhasspy-test/profiles"
-python3 test.py
+python3 test.py "$@"

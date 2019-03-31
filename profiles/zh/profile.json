@@ -1,0 +1,8 @@
+{
+    "name": "zh",
+    "language": "zh",
+    "speech_to_text": {
+        "g2p_casing": "n/a",
+        "dictionary_casing": "n/a"
+    }
+}

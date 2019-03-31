@@ -1,0 +1,8 @@
+RUN apt-get update && \
+    apt-get install -y bash jq unzip \
+                       build-essential portaudio19-dev swig \
+                       libatlas-base-dev \
+                       sox espeak flite alsa-utils \
+                       cmake git \
+                       autoconf libtool automake bison \
+                       sphinxbase-utils sphinxtrain
