@@ -155,7 +155,7 @@
             "pocketsphinx": {
                 "type": "dict",
                 "schema": {
-                "acoustic_model": { "type": "string" },
+                    "acoustic_model": { "type": "string" },
                     "base_dictionary": { "type": "string" },
                     "custom_words": { "type": "string" },
                     "dictionary": { "type": "string" },

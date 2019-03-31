@@ -210,6 +210,75 @@ class RemoteDecoder(RhasspyActor):
 
 
 # -----------------------------------------------------------------------------
+# Kaldi Decoder
+# http://kaldi-asr.org
+# -----------------------------------------------------------------------------
+
+
+class KaldiDecoder(RhasspyActor):
+    """Kaldi based decoder"""
+
+    def to_started(self, from_state: str) -> None:
+        self.kaldi_dir = os.path.expandvars(
+            self.profile.get("speech_to_text.kaldi.kaldi_dir", "/opt/kaldi")
+        )
+        self.model_dir = self.profile.read_path(
+            "speech_to_text.kaldi.model_dir", "model"
+        )
+        self.graph_dir = os.path.join(
+            self.model_dir, self.profile.get("speech_to_text.kaldi.graph_dir", "graph")
+        )
+        self.decode_command = [
+            os.path.join(self.model_dir, "decode.sh"),
+            self.kaldi_dir,
+            self.model_dir,
+            self.graph_dir,
+        ]
+
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        if isinstance(message, TranscribeWav):
+            text = self.transcribe_wav(message.wav_data)
+            self.send(message.receiver or sender, WavTranscription(text))
+
+    def transcribe_wav(self, wav_data: bytes) -> str:
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb+") as wav_file:
+                # Ensure 16-bit 16Khz mono
+                subprocess.run(
+                    [
+                        "sox",
+                        "-t",
+                        "wav",
+                        "-",
+                        "-r",
+                        "16000",
+                        "-e",
+                        "signed-integer",
+                        "-b",
+                        "16",
+                        "-c",
+                        "1",
+                        "-t",
+                        "wav",
+                        wav_file.name,
+                    ],
+                    check=True,
+                    input=wav_data,
+                )
+
+                wav_file.seek(0)
+
+                command = self.decode_command + [wav_file.name]
+                self._logger.debug(command)
+
+                return subprocess.check_output(command).decode()
+
+        except Exception as e:
+            self._logger.exception("transcribe_wav")
+            return ""
+
+
+# -----------------------------------------------------------------------------
 # Command Decoder
 # -----------------------------------------------------------------------------
 

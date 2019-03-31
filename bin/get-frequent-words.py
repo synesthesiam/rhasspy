@@ -10,8 +10,6 @@ import requests
 
 def main():
     profiles_dir = sys.argv[1]
-
-    # Languages: eng, deu, fra, spa, ita, nld, rus
     languages = {
         'eng': 'en',
         'deu': 'de',
@@ -19,7 +17,11 @@ def main():
         'spa': 'es',
         'ita': 'it',
         'nld': 'nl',
-        'rus': 'ru'
+        'rus': 'ru',
+        'vie': 'vi',
+        'cmn': 'zh',
+        'hin': 'hi',
+        'ell': 'el'
     }
 
     for language in languages:

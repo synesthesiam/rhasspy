@@ -12,14 +12,33 @@ etc/qemu-aarch64-static
 # npm
 node_modules/
 
+# Web interface
+dist/
+
 # Profiles
 acoustic_model/
 base_dictionary.txt
 base_language_model.txt
 g2p.fst
 
+adapt_config.json
+tagged_sentences.md
+unknown_words.txt
+frequent_words.html
+intent_examples.json
+sentences.txt
+
+en-kaldi/
+en-zamia/
+
 grammars/
 sentences/
+record/
+
+# Third party
+etc/*.tar.gz
+etc/*.tar.xz
+etc/*.deb
 
 # Examples
 .storage/

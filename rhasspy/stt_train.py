@@ -77,7 +77,11 @@ class DummySpeechTrainer(RhasspyActor):
 
 
 class PocketsphinxSpeechTrainer(RhasspyActor):
-    """Trains an ARPA language model using opengrm."""
+    """Trains an ARPA language model using mitlm."""
+
+    def __init__(self, system: str = "pocketsphinx") -> None:
+        RhasspyActor.__init__(self)
+        self.system = system
 
     def to_started(self, from_state: str) -> None:
         self.word_pronouncer: RhasspyActor = self.config["word_pronouncer"]
@@ -122,7 +126,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         else:
             # Remove unknown dictionary
             unknown_path = self.profile.read_path(
-                self.profile.get("speech_to_text.pocketsphinx.unknown_words")
+                self.profile.get(f"speech_to_text.{self.system}.unknown_words")
             )
 
             if os.path.exists(unknown_path):
@@ -150,13 +154,13 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
                 else:
                     # Add guessed pronunciations to main dictionary
                     unknown_path = self.profile.read_path(
-                        self.profile.get("speech_to_text.pocketsphinx.unknown_words")
+                        self.profile.get(f"speech_to_text.{self.system}.unknown_words")
                     )
 
                     if os.path.exists(unknown_path):
                         dictionary_path = self.profile.write_path(
                             self.profile.get(
-                                "speech_to_text.pocketsphinx.dictionary",
+                                f"speech_to_text.{self.system}.dictionary",
                                 "dictionary.txt",
                             )
                         )
@@ -193,12 +197,15 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
     def to_writing_language_model(self, from_state: str) -> None:
         try:
             self.write_language_model()
-            self.send(self.receiver, SpeechTrainingComplete(self.sentences_by_intent))
-            self.transition("started")
+            self.transition("finished")
         except Exception as e:
             self._logger.exception("writing language model")
             self.send(self.receiver, SpeechTrainingFailed(repr(e)))
             self.transition("started")
+
+    def to_finished(self, from_state: str) -> None:
+        self.send(self.receiver, SpeechTrainingComplete(self.sentences_by_intent))
+        self.transition("started")
 
     # -------------------------------------------------------------------------
 
@@ -226,13 +233,13 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         # Load base and custom dictionaries
         base_dictionary_path = self.profile.read_path(
             self.profile.get(
-                "speech_to_text.pocketsphinx.base_dictionary", "base_dictionary.txt"
+                f"speech_to_text.{self.system}.base_dictionary", "base_dictionary.txt"
             )
         )
 
         custom_path = self.profile.read_path(
             self.profile.get(
-                "speech_to_text.pocketsphinx.custom_words", "custom_words.txt"
+                f"speech_to_text.{self.system}.custom_words", "custom_words.txt"
             )
         )
 
@@ -266,17 +273,22 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
 
         # Write out dictionary with only the necessary words (speeds up loading)
         dictionary_path = self.profile.write_path(
-            self.profile.get("speech_to_text.pocketsphinx.dictionary", "dictionary.txt")
+            self.profile.get(
+                f"speech_to_text.{self.system}.dictionary", "dictionary.txt"
+            )
         )
 
         words_written = 0
+        number_duplicates = self.profile.get(
+            "training.dictionary_number_duplicates", True
+        )
         with open(dictionary_path, "w") as dictionary_file:
             for word in sorted(words_needed):
                 if not word in word_dict:
                     continue
 
                 for i, pronounce in enumerate(word_dict[word]):
-                    if i < 1:
+                    if (i < 1) or (not number_duplicates):
                         print(word, pronounce, file=dictionary_file)
                     else:
                         print("%s(%s)" % (word, i + 1), pronounce, file=dictionary_file)
@@ -296,7 +308,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
     def write_unknown_words(self, unknown_words: Dict[str, Dict[str, Any]]) -> None:
         unknown_path = self.profile.write_path(
             self.profile.get(
-                "speech_to_text.pocketsphinx.unknown_words", "unknown_words.txt"
+                f"speech_to_text.{self.system}.unknown_words", "unknown_words.txt"
             )
         )
 
@@ -336,7 +348,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
 
         num_sentences = 0
         write_sorted = self.profile.get("training.sentences.write_sorted", False)
-        write_weights = self.profile.get("training.sentences.write_weights", True)
+        write_weights = self.profile.get("training.sentences.write_weights", False)
 
         with open_maybe_gzip(sentences_text_path, "w") as sentences_text_file:
             if write_sorted:
@@ -355,20 +367,22 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
                     if write_weights:
                         print(num_repeats, sentence, file=sentences_text_file)
                     else:
-                        print(sentence, file=sentences_text_file)
+                        for i in range(num_repeats):
+                            print(sentence, file=sentences_text_file)
             else:
                 # Unsorted
                 for intent_name, intent_sents in sentences_by_intent.items():
                     for intent_sent in intent_sents:
+                        num_repeats = max(1, lcm_sentences // len(intent_sents))
                         if write_weights:
-                            num_repeats = max(1, lcm_sentences // len(intent_sents))
                             print(
                                 num_repeats,
                                 intent_sent["sentence"],
                                 file=sentences_text_file,
                             )
                         else:
-                            print(intent_sent["sentence"], file=sentences_text_file)
+                            for i in range(num_repeats):
+                                print(intent_sent["sentence"], file=sentences_text_file)
 
                         num_sentences = num_sentences + 1
 
@@ -388,7 +402,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         sentences_text_path = sentences_text_path
         lm_dest_path = self.profile.write_path(
             self.profile.get(
-                "speech_to_text.pocketsphinx.language_model", "language_model.txt"
+                f"speech_to_text.{self.system}.language_model", "language_model.txt"
             )
         )
 
@@ -410,6 +424,67 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         self._logger.debug(
             f"Wrote language model to {lm_dest_path} in {lm_time} seconds(s)"
         )
+
+
+# -----------------------------------------------------------------------------
+# Kaldi based speed trainer.
+# http://kaldi-asr.org
+# -----------------------------------------------------------------------------
+
+
+class KaldiSpeechTrainer(PocketsphinxSpeechTrainer):
+    """Trains a speech to text system via Kaldi scripts."""
+
+    def __init__(self):
+        PocketsphinxSpeechTrainer.__init__(self, system="kaldi")
+
+    def to_started(self, from_state: str) -> None:
+        self.kaldi_dir = os.path.expandvars(
+            self.profile.get(
+                "training.speech_to_text.kaldi.kaldi_dir",
+                self.profile.get("speech_to_text.kaldi.kaldi_dir", "/opt/kaldi"),
+            )
+        )
+        self.model_dir = self.profile.read_path(
+            "training.speech_to_text.kaldi.model_dir",
+            self.profile.get("speech_to_text.kaldi.model_dir", "model"),
+        )
+        self.train_command = [
+            os.path.join(self.model_dir, "train.sh"),
+            self.kaldi_dir,
+            self.model_dir,
+        ]
+
+        PocketsphinxSpeechTrainer.to_started(self, from_state)
+
+    def to_finished(self, from_state: str) -> None:
+        try:
+            self.train()
+            self.send(self.receiver, SpeechTrainingComplete(self.sentences_by_intent))
+        except:
+            self._logger.exception("train")
+            self.send(self.receiver, SpeechTrainingFailed(repr(e)))
+
+        self.transition("started")
+
+    # -------------------------------------------------------------------------
+
+    def train(self):
+        dictionary_path = self.profile.write_path(
+            self.profile.get(
+                f"speech_to_text.{self.system}.dictionary", "dictionary.txt"
+            )
+        )
+
+        lm_path = self.profile.write_path(
+            self.profile.get(
+                f"speech_to_text.{self.system}.language_model", "language_model.txt"
+            )
+        )
+
+        command = self.train_command + [dictionary_path, lm_path]
+        self._logger.debug(command)
+        subprocess.check_call(command)
 
 
 # -----------------------------------------------------------------------------

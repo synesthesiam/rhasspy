@@ -19,7 +19,7 @@ from .wake import (
 )
 from .command_listener import ListenForCommand, VoiceCommand
 from .audio_recorder import StartRecordingToBuffer, StopRecordingToBuffer, AudioData
-from .audio_player import PlayWavFile, PlayWavData
+from .audio_player import PlayWavFile, PlayWavData, WavPlayed
 from .stt import TranscribeWav, WavTranscription
 from .stt_train import TrainSpeech, SpeechTrainingComplete, SpeechTrainingFailed
 from .intent import RecognizeIntent, IntentRecognized
@@ -459,6 +459,8 @@ class DialogueManager(RhasspyActor):
             self.send(sender, self.actor_states)
         elif isinstance(message, WakeupMessage):
             pass
+        elif isinstance(message, WavPlayed):
+            pass
         else:
             self.handle_forward(message, sender)
 
@@ -747,7 +749,7 @@ class DialogueManager(RhasspyActor):
 
     @classmethod
     def get_decoder_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ["dummy", "pocketsphinx", "remote", "command"], (
+        assert system in ["dummy", "pocketsphinx", "kaldi", "remote", "command"], (
             "Invalid speech to text system: %s" % system
         )
 
@@ -755,6 +757,10 @@ class DialogueManager(RhasspyActor):
             from .stt import PocketsphinxDecoder
 
             return PocketsphinxDecoder
+        elif system == "kaldi":
+            from .stt import KaldiDecoder
+
+            return KaldiDecoder
         elif system == "remote":
             from .stt import RemoteDecoder
 
@@ -877,9 +883,13 @@ class DialogueManager(RhasspyActor):
         cls, trainer_system: str, decoder_system: str = "dummy"
     ) -> Type[RhasspyActor]:
 
-        assert trainer_system in ["dummy", "pocketsphinx", "auto", "command"], (
-            "Invalid speech training system: %s" % trainer_system
-        )
+        assert trainer_system in [
+            "dummy",
+            "pocketsphinx",
+            "kaldi",
+            "auto",
+            "command",
+        ], ("Invalid speech training system: %s" % trainer_system)
 
         if trainer_system == "auto":
             # Use speech decoder system
@@ -888,16 +898,26 @@ class DialogueManager(RhasspyActor):
                 from .stt_train import PocketsphinxSpeechTrainer
 
                 return PocketsphinxSpeechTrainer
+            elif decoder_system == "kaldi":
+                # Use opengrm/phonetisaurus
+                from .stt_train import KaldiSpeechTrainer
+
+                return KaldiSpeechTrainer
             elif decoder_system == "command":
                 # Use command-line speech trainer
                 from .stt_train import CommandSpeechTrainer
 
                 return CommandSpeechTrainer
         elif trainer_system == "pocketsphinx":
-            # Use opengrm/phonetisaurus
+            # Use mitlm/phonetisaurus
             from .stt_train import PocketsphinxSpeechTrainer
 
             return PocketsphinxSpeechTrainer
+        elif trainer_system == "kaldi":
+            # Use mitlm/phonetisaurus/kaldi
+            from .stt_train import KaldiSpeechTrainer
+
+            return KaldiSpeechTrainer
         elif trainer_system == "command":
             # Use command-line speech trainer
             from .stt_train import CommandSpeechTrainer

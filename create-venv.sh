@@ -84,7 +84,7 @@ python3 -m pip install "${pocketsphinx_file}"
 case $CPU_ARCH in
     x86_64|armv7l)
         snowboy_file="${download_dir}/snowboy-1.3.0.tar.gz"
-        if [[ ! -f "${pocketsphinx_file}" ]]; then
+        if [[ ! -f "${snowboy_file}" ]]; then
             snowboy_url='https://github.com/Kitt-AI/snowboy/archive/v1.3.0.tar.gz'
             echo "Downloading snowboy (${snowboy_url})"
             wget -q -O "${snowboy_file}" "${snowboy_url}"
