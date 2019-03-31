@@ -1,23 +1,29 @@
-AUS qq au s
-DAS d a s
-DIE d i:
-EIN qq ai n
-ES qq ee z
-GARAGENLICHT g aa: r a g ee n l ii cc t
-GARAGENTOR g aa: r a g ee n t o: r
-GESCHLOSSEN g @ ss l oo s @ n
-HEISS h e: qq i: s
-IST qq ii s t
-KALT k a l t
-MIR m i: r
-OFFEN qq oo f @ n
-OKAY qq o: k e:
-RASPELIG qq r a s p e: l ii cc
-SAG z aa: k
-SCHALTEN ss a l t @ n
-SIE z i:
-SPÄT ss p qq ee t e:
-TEMPERATUR t ee m p e: r a t u: r
-UHRZEIT qq u: r t s ai t
-WIE v i:
-WOHNZIMMERLAMPE v o: n t s ii m ei l a m p e:
+aus Q AW S
+das D AH S
+die D IIH
+ein Q AY N
+es Q EH S
+garagenlicht g aa: r a g ee n l ii cc t
+garagentor G AH RR AAH ZH AX N T OOH EX
+garagentor(2) g aa: r a g ee n t o: r
+geschlossen G AX SH L OO S AX N
+heiß HH AY S
+ist Q IH S T
+kalt K AH L T
+kalt(2) k a l t
+mir M IIH EX
+offen Q OO F AX N
+okay Q OO K EE IH
+okay(2) qq o: k e:
+raspelig qq r a s p e: l ii cc
+sag Z AAH K
+schalten SH AH L T AX N
+sie Z IIH
+spät SH P EHH T
+spät(2) ss p qq ee t e:
+temperatur T EH M P AX RR AH T UUH EX
+temperatur(2) t ee m p e: r a t u: r
+uhrzeit Q UUH RR TS AY T
+uhrzeit(2) qq u: r t s ai t
+wie V IIH
+wohnzimmerlampe v o: n t s ii m ei l a m p e:

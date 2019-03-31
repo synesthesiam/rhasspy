@@ -5,114 +5,114 @@ ngram 2=39
 ngram 3=43
 
 \1-grams:
--99	<s>	-2.86811
--0.7201592	</s>
--1.146128	wie	-2.916639
--1.623249	spät	-2.944952
--0.9242792	ist	-2.908222
--1.255272	es	-2.90823
--1.623249	sag	-2.989535
--1.623249	mir	-2.971511
--1.19728	die	-2.960321
--1.623249	uhrzeit	-2.90823
--1.146128	das	-2.956524
--1.322219	garagentor	-2.9788
--1.623249	offen	-2.90823
--1.623249	geschlossen	-2.90823
--1.79934	temperatur	-2.90823
--1.79934	heiß	-2.944952
--1.79934	kalt	-2.944952
--1.322219	schalten	-2.978811
--1.322219	sie	-2.937045
--1.623249	wohnzimmerlampe	-2.9788
--1.623249	ein	-2.90823
--1.623249	aus	-2.90823
--1.623249	garagenlicht	-2.9788
+-0.878810	</s>
+-99	<s>	-0.903090
+-1.413441	aus	-0.083546
+-1.413441	das	-0.154902
+-1.528369	die	-0.154902
+-1.413441	ein	-0.083546
+-1.394620	es	-0.154902
+-1.413441	garagenlicht	-0.083546
+-1.394620	garagentor	-0.154902
+-1.394620	geschlossen	-0.154902
+-1.394620	heiß	-0.154902
+-1.092024	ist	-0.055517
+-1.394620	kalt	-0.154902
+-1.394620	mir	-0.154902
+-1.394620	offen	-0.154902
+-1.394620	sag	-0.154902
+-1.394620	schalten	-0.154902
+-1.394620	sie	-0.154902
+-1.394620	spät	-0.154902
+-1.394620	temperatur	-0.154902
+-1.394620	uhrzeit	-0.154902
+-1.394620	wie	-0.154902
+-1.413441	wohnzimmerlampe	-0.083546
 
 \2-grams:
--0.4264032	<s> wie	-0
--0.6024945	<s> ist	-2.778441
--0.9035245	<s> sag	-0
--0.6024945	<s> schalten	-0
--0.4775558	wie spät	-0
--0.6536471	wie ist	-2.937919
--0.6536471	wie heiß	-0
--0.6536471	wie kalt	-0
--0.0004345118	spät ist	-2.727379
--0.3314277	ist es	-0
--0.8754958	ist die	-2.875206
--0.3983745	ist das	-2.523746
--0.0004345118	es </s>
--0.0004345118	sag mir	-0
--0.0004345118	mir die	-2.796141
--0.4264032	die uhrzeit	-0
--0.6024945	die temperatur	-0
--0.7274332	die wohnzimmerlampe	-0
--0.7274332	die garagenlicht	-0
--0.0004345118	uhrzeit </s>
--0.1765258	das garagentor	-0
--0.7785858	das wohnzimmerlampe	-0
--0.7785858	das garagenlicht	-0
--0.3014645	garagentor offen	-0
--0.3014645	garagentor geschlossen	-0
--0.0004345118	offen </s>
--0.0004345118	geschlossen </s>
--0.0004345118	temperatur </s>
--0.0004345118	heiß ist	-2.727379
--0.0004345118	kalt ist	-2.727379
--0.0004345118	schalten sie	-0
--0.3014645	sie die	-2.79613
--0.3014645	sie das	-2.824115
--0.3014645	wohnzimmerlampe ein	-0
--0.3014645	wohnzimmerlampe aus	-0
--0.0004345118	ein </s>
--0.0004345118	aus </s>
--0.3014645	garagenlicht ein	-0
--0.3014645	garagenlicht aus	-0
+-0.640424	<s> ist	-0.903090
+-1.005294	<s> sag	-0.602060
+-0.650162	<s> schalten	-0.903090
+-0.457438	<s> wie	-0.477121
+-0.546598	aus </s>
+-0.896134	das garagenlicht
+-0.892062	das garagentor	-0.602060
+-0.896134	das wohnzimmerlampe
+-0.991322	die garagenlicht
+-0.986258	die temperatur	-0.425969
+-0.986258	die uhrzeit	-0.602060
+-0.991322	die wohnzimmerlampe
+-0.546598	ein </s>
+-0.406126	es </s>
+-0.923203	garagenlicht aus	-0.301030
+-0.923203	garagenlicht ein	-0.301030
+-0.749056	garagentor geschlossen	-0.602060
+-0.749056	garagentor offen	-0.602060
+-0.406126	geschlossen </s>
+-0.447778	heiß ist	-0.425969
+-1.027030	ist das	-0.903090
+-1.065156	ist die	-0.425969
+-1.450138	ist es	-0.970037
+-0.447778	kalt ist	-0.425969
+-0.493852	mir die	-0.602060
+-0.406126	offen </s>
+-0.483842	sag mir	-0.602060
+-0.483842	schalten sie	-0.602060
+-0.751982	sie das	-0.301030
+-0.767674	sie die	-0.301030
+-0.447778	spät ist	-0.602060
+-0.406126	temperatur </s>
+-0.406126	uhrzeit </s>
+-0.986258	wie heiß	-0.425969
+-0.880633	wie ist	-0.425969
+-0.986258	wie kalt	-0.425969
+-0.986258	wie spät	-0.602060
+-0.923203	wohnzimmerlampe aus	-0.301030
+-0.923203	wohnzimmerlampe ein	-0.301030
 
 \3-grams:
--0.4775558	<s> wie spät
--0.6536471	<s> wie ist
--0.6536471	<s> wie heiß
--0.6536471	<s> wie kalt
--0.0004345118	<s> ist das
--0.0004345118	<s> sag mir
--0.0004345118	<s> schalten sie
--0.0004345118	wie spät ist
--0.0004345118	wie ist die
--0.0004345118	wie heiß ist
--0.0004345118	wie kalt ist
--0.0004345118	spät ist es
--0.0004345118	ist es </s>
--0.0004345118	ist die temperatur
--0.0004345118	ist das garagentor
--0.0004345118	sag mir die
--0.0004345118	mir die uhrzeit
--0.0004345118	die uhrzeit </s>
--0.0004345118	die temperatur </s>
--0.3014645	die wohnzimmerlampe ein
--0.3014645	die wohnzimmerlampe aus
--0.3014645	die garagenlicht ein
--0.3014645	die garagenlicht aus
--0.3014645	das garagentor offen
--0.3014645	das garagentor geschlossen
--0.3014645	das wohnzimmerlampe ein
--0.3014645	das wohnzimmerlampe aus
--0.3014645	das garagenlicht ein
--0.3014645	das garagenlicht aus
--0.0004345118	garagentor offen </s>
--0.0004345118	garagentor geschlossen </s>
--0.0004345118	heiß ist es
--0.0004345118	kalt ist es
--0.3014645	schalten sie die
--0.3014645	schalten sie das
--0.3014645	sie die wohnzimmerlampe
--0.3014645	sie die garagenlicht
--0.3014645	sie das wohnzimmerlampe
--0.3014645	sie das garagenlicht
--0.0004345118	wohnzimmerlampe ein </s>
--0.0004345118	wohnzimmerlampe aus </s>
--0.0004345118	garagenlicht ein </s>
--0.0004345118	garagenlicht aus </s>
+-0.052201	<s> ist das
+-0.079849	<s> sag mir
+-0.038092	<s> schalten sie
+-0.761217	<s> wie heiß
+-0.738103	<s> wie ist
+-0.761217	<s> wie kalt
+-0.546063	<s> wie spät
+-0.923203	das garagenlicht aus
+-0.923203	das garagenlicht ein
+-0.377212	das garagentor geschlossen
+-0.377212	das garagentor offen
+-0.923203	das wohnzimmerlampe aus
+-0.923203	das wohnzimmerlampe ein
+-0.923203	die garagenlicht aus
+-0.923203	die garagenlicht ein
+-0.112271	die temperatur </s>
+-0.071536	die uhrzeit </s>
+-0.923203	die wohnzimmerlampe aus
+-0.923203	die wohnzimmerlampe ein
+-0.192447	garagenlicht aus </s>
+-0.192447	garagenlicht ein </s>
+-0.071536	garagentor geschlossen </s>
+-0.071536	garagentor offen </s>
+-0.194974	heiß ist es
+-0.050109	ist das garagentor
+-0.178025	ist die temperatur
+-0.029228	ist es </s>
+-0.194974	kalt ist es
+-0.110248	mir die uhrzeit
+-0.080826	sag mir die
+-0.377522	schalten sie das
+-0.379152	schalten sie die
+-0.503750	sie das garagenlicht
+-0.503750	sie das wohnzimmerlampe
+-0.521420	sie die garagenlicht
+-0.521420	sie die wohnzimmerlampe
+-0.119834	spät ist es
+-0.119908	wie heiß ist
+-0.182252	wie ist die
+-0.119908	wie kalt ist
+-0.076156	wie spät ist
+-0.192447	wohnzimmerlampe aus </s>
+-0.192447	wohnzimmerlampe ein </s>
 
 \end\
