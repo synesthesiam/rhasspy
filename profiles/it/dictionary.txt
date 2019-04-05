@@ -10,10 +10,13 @@ garage g a r a dZZ e
 la l a1
 lampada l a1 m p a d a
 luce l u1 tSS e
+okay o a
 ore o1 r e
+ore(2) o1 r e
 porta p OO r t a
 quale k w a1 l e
 quanto k w a1 n t o
+rhasspy r a s s p
 soggiorno s OO dZZ dZZ o1 r n o
 sono s OO n o
 spegnere s p e JJ JJ e r e

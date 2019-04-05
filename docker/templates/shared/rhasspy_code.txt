@@ -1,7 +1,7 @@
-COPY profiles/defaults.json /home/rhasspy/profiles/
-COPY docker/rhasspy /home/rhasspy/bin/
-COPY dist/ /home/rhasspy/dist/
-COPY etc/wav/* /home/rhasspy/etc/wav/
-COPY rhasspy/profile_schema.json /home/rhasspy/rhasspy/
-COPY *.py /home/rhasspy/
-COPY rhasspy/*.py /home/rhasspy/rhasspy/
+COPY profiles/defaults.json /${RHASSPY_APP}/profiles/
+COPY docker/rhasspy /${RHASSPY_APP}/bin/
+COPY dist/ /${RHASSPY_APP}/dist/
+COPY etc/wav/* /${RHASSPY_APP}/etc/wav/
+COPY rhasspy/profile_schema.json /${RHASSPY_APP}/rhasspy/
+COPY *.py /${RHASSPY_APP}/
+COPY rhasspy/*.py /${RHASSPY_APP}/rhasspy/

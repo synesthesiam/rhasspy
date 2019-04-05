@@ -17,13 +17,26 @@ RUN apt-get update && \
                        build-essential portaudio19-dev swig \
                        libatlas-base-dev \
                        sox espeak flite alsa-utils \
-                       git \
+                       cmake git \
                        autoconf libtool automake bison \
                        sphinxbase-utils sphinxtrain
 
-COPY download/phonetisaurus_20190304-1_${BUILD_ARCH}.deb /phonetisaurus.deb
-RUN dpkg -i /phonetisaurus.deb && \
-    rm /phonetisaurus.deb
+# Install phonetisaurus (with openfst 1.6.2)
+COPY download/openfst-1.6.9.tar.gz /
+RUN cd / && tar -xzf openfst-1.6.9.tar.gz && \
+    cd /openfst-1.6.9 && \
+    ./configure --enable-static --enable-shared --enable-far --enable-ngram-fsts && \
+    make -j $MAKE_THREADS && \
+    make install && \
+    rm -rf /openfst*
+
+COPY download/phonetisaurus-2019.zip /phonetisaurus.zip
+RUN cd / && unzip phonetisaurus.zip
+RUN cd /phonetisaurus && \
+    ./configure && \
+    make -j $MAKE_THREADS && \
+    make install && \
+    rm -rf /phonetisaurus*
 
 # Install mitlm
 RUN apt-get install -y gfortran

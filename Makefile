@@ -8,19 +8,19 @@ SHELL := bash
 docker: docker-amd64 docker-armhf docker-aarch64 docker-push manifest
 
 docker-amd64:
-	docker build . -f docker/templates/dockerfiles/Dockerfile.prebuilt.alsa.all \
+	docker build . -f docker/templates/dockerfiles/Dockerfile.from-source.alsa.all \
     --build-arg BUILD_ARCH=amd64 \
     --build-arg BUILD_FROM=python:3.6-stretch \
     -t synesthesiam/rhasspy-server:amd64
 
 docker-armhf:
-	docker build . -f docker/templates/dockerfiles/Dockerfile.prebuilt.alsa.all \
+	docker build . -f docker/templates/dockerfiles/Dockerfile.from-source.alsa.all \
      --build-arg BUILD_ARCH=armhf \
      --build-arg BUILD_FROM=arm32v7/python:3.6-stretch \
      -t synesthesiam/rhasspy-server:armhf
 
 docker-aarch64:
-	docker build . -f docker/templates/dockerfiles/Dockerfile.prebuilt.alsa.all \
+	docker build . -f docker/templates/dockerfiles/Dockerfile.from-source.alsa.all \
      --build-arg BUILD_ARCH=aarch64 \
      --build-arg BUILD_FROM=arm64v8/python:3.6-stretch \
      -t synesthesiam/rhasspy-server:aarch64

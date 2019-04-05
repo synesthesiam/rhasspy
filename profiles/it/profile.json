@@ -1,10 +1,218 @@
 {
-    "language": "it",
-    "name": "it",
-
-    "wake": {
-        "pocketsphinx": {
-            "keyphrase": "ok rauco"
+    "command": {
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/listen.sh"
+        },
+        "hermes": {
+            "timeout_sec": 30
+        },
+        "oneshot": {
+            "timeout_sec": 30
+        },
+        "system": "webrtcvad",
+        "webrtcvad": {
+            "chunk_size": 960,
+            "min_sec": 2,
+            "sample_rate": 16000,
+            "silence_sec": 0.5,
+            "speech_buffers": 5,
+            "throwaway_buffers": 10,
+            "timeout_sec": 30,
+            "vad_mode": 0
         }
+    },
+    "handle": {
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/handle.sh"
+        },
+        "forward_to_hass": true,
+        "system": "hass"
+    },
+    "home_assistant": {
+        "access_token": "",
+        "api_password": "",
+        "event_type_format": "rhasspy_{0}",
+        "pem_file": "",
+        "url": "http://hassio/homeassistant/"
+    },
+    "intent": {
+        "adapt": {
+            "stop_words": "stop_words.txt"
+        },
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/text2intent.sh"
+        },
+        "fuzzywuzzy": {
+            "examples_json": "intent_examples.json"
+        },
+        "rasa": {
+            "examples_markdown": "intent_examples.md",
+            "project_name": "rhasspy",
+            "url": "http://localhost:5000/"
+        },
+        "remote": {
+            "url": "http://my-server:12101/api/text-to-intent"
+        },
+        "system": "fuzzywuzzy"
+    },
+    "language": "it",
+    "microphone": {
+        "pyaudio": {
+            "frames_per_buffer": 480
+        },
+        "system": "pyaudio"
+    },
+    "mqtt": {
+        "enabled": false,
+        "host": "localhost",
+        "password": "",
+        "port": 1883,
+        "publish_intents": true,
+        "reconnect_sec": 5,
+        "site_id": "default",
+        "username": ""
+    },
+    "name": "it",
+    "rhasspy": {
+        "default_profile": "en",
+        "listen_on_start": true,
+        "load_timeout_sec": 15,
+        "preload_profile": true
+    },
+    "sounds": {
+        "recorded": "etc/wav/beep_lo.wav",
+        "system": "aplay",
+        "wake": "etc/wav/beep_hi.wav"
+    },
+    "speech_to_text": {
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/speech2text.sh"
+        },
+        "g2p_model": "g2p.fst",
+        "grammars_dir": "grammars",
+        "kaldi": {
+            "base_dictionary": "base_dictionary.txt",
+            "custom_words": "custom_words.txt",
+            "dictionary": "dictionary.txt",
+            "graph": "graph",
+            "kaldi_dir": "/opt/kaldi",
+            "language_model": "language_model.txt",
+            "model_dir": "model",
+            "unknown_words": "unknown_words.txt"
+        },
+        "pocketsphinx": {
+            "acoustic_model": "acoustic_model",
+            "base_dictionary": "base_dictionary.txt",
+            "custom_words": "custom_words.txt",
+            "dictionary": "dictionary.txt",
+            "language_model": "language_model.txt",
+            "mllr_matrix": "acoustic_model_mllr",
+            "unknown_words": "unknown_words.txt"
+        },
+        "remote": {
+            "url": "http://my-server:12101/api/speech-to-text"
+        },
+        "sentences_ini": "sentences.ini",
+        "sentences_text": "sentences.txt",
+        "slots_dir": "slots",
+        "system": "pocketsphinx"
+    },
+    "text_to_speech": {
+        "espeak": {
+            "phoneme_map": "espeak_phonemes.txt"
+        },
+        "flite": {
+            "voice": "kal16"
+        },
+        "marytts": {
+            "url": "http://localhost:59125"
+        },
+        "phoneme_examples": "phoneme_examples.txt",
+        "picotts": {},
+        "system": "espeak"
+    },
+    "training": {
+        "dictionary_number_duplicates": true,
+        "grammars": {
+            "delete_before_training": true
+        },
+        "intent": {
+            "command": {
+                "arguments": [],
+                "program": "$RHASSPY_BASE_DIR/bin/mock-commands/train-intent.sh"
+            },
+            "system": "auto"
+        },
+        "regex": {
+            "replace": [
+                {
+                    "'s": "s"
+                },
+                {
+                    "[^\\w ]+": " "
+                }
+            ],
+            "split": "\\s+"
+        },
+        "sentence_casing": "lower",
+        "sentences": {
+            "balance_by_intent": true,
+            "casing": "lower",
+            "write_sorted": false,
+            "write_weights": false
+        },
+        "speech_to_text": {
+            "command": {
+                "arguments": [],
+                "program": "$RHASSPY_BASE_DIR/bin/mock-commands/train-stt.sh"
+            },
+            "system": "auto"
+        },
+        "tagged_sentences": "tagged_sentences.md",
+        "tokenizer": "regex",
+        "unknown_words": {
+            "fail_when_present": true,
+            "guess_pronunciations": true
+        }
+    },
+    "tuning": {
+        "sphinxtrain": {
+            "mllr_matrix": "acoustic_model_mllr"
+        },
+        "system": "sphinxtrain"
+    },
+    "wake": {
+        "command": {
+            "arguments": [],
+            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/sleep.sh"
+        },
+        "hermes": {
+            "wakeword_id": "default"
+        },
+        "pocketsphinx": {
+            "chunk_size": 960,
+            "keyphrase": "okay rhasspy",
+            "mllr_matrix": "wake_mllr",
+            "threshold": 1e-30
+        },
+        "precise": {
+            "chunk_delay": 0.005,
+            "chunk_size": 2048,
+            "engine_path": "precise-engine",
+            "model": "okay-rhasspy.pb",
+            "sensitivity": 0.5,
+            "trigger_level": 3
+        },
+        "snowboy": {
+            "audio_gain": 1,
+            "chunk_size": 960,
+            "model": "snowboy.umdl",
+            "sensitivity": 0.5
+        },
+        "system": "pocketsphinx"
     }
 }

@@ -52,4 +52,4 @@ tar --to-stdout -xzf "${acoustic_file}" 'cmusphinx-ru-5.2/ru.dic' > "${dict_outp
 
 lm_output="${DIR}/base_language_model.txt"
 echo "Extracting language model (${acoustic_file})"
-tar --to-stdout -xzf "${acoustic_file}" 'cmusphinx-ru-5.2/ru.lm' > "${lm_output}" || exit 1
+mv "${acoustic_output}/ru.lm" "${lm_output}" || exit 1

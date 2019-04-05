@@ -36,6 +36,21 @@ function set_variables {
 
 # -----------------------------------------------------------------------------
 
+#------------
+# From source
+#------------
+set_variables "$DIR/shared/" "$DIR/from-source/" \
+              "$DIR/alsa/" "$DIR/en_profile/" \
+    | cat - "$template" | m4 > "$out/Dockerfile.from-source.alsa.en"
+
+set_variables "$DIR/shared/" "$DIR/from-source/" \
+              "$DIR/pulseaudio/" "$DIR/en_profile/" \
+    | cat - "$template" | m4 > "$out/Dockerfile.from-source.pulseaudio.en"
+
+set_variables "$DIR/shared/" "$DIR/from-source/" \
+              "$DIR/alsa/" "$DIR/all_profiles/" \
+    | cat - "$template" | m4 > "$out/Dockerfile.from-source.alsa.all"
+
 #-----------
 # Pre-built
 #-----------
