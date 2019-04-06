@@ -147,7 +147,7 @@ fi
 
 if [[ -z "$(which phonetisaurus-apply)" ]]; then
     case $CPU_ARCH in
-        x86_64)
+        x86_64|armv7l|arm64v8)
             # Install pre-built package
             phonetisaurus_file="${download_dir}/phonetisaurus-2019_${FRIENDLY_ARCH}.deb"
             if [[ ! -f "${phonetisaurus_file}" ]]; then

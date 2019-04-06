@@ -2,6 +2,7 @@ COPY profiles/zh/profile.json ${RHASSPY_APP}/profiles/zh/
 COPY profiles/zh/custom_words.txt ${RHASSPY_APP}/profiles/zh/
 COPY profiles/zh/download-profile.sh ${RHASSPY_APP}/profiles/zh/
 COPY profiles/zh/espeak_phonemes.txt ${RHASSPY_APP}/profiles/zh/
+COPY profiles/zh/phoneme_examples.txt ${RHASSPY_APP}/profiles/zh/
 COPY profiles/zh/frequent_words.txt ${RHASSPY_APP}/profiles/zh/
 COPY profiles/zh/sentences.ini ${RHASSPY_APP}/profiles/zh/
 COPY profiles/zh/stop_words.txt ${RHASSPY_APP}/profiles/zh/
@@ -11,6 +12,7 @@ COPY profiles/hi/profile.json ${RHASSPY_APP}/profiles/hi/
 COPY profiles/hi/custom_words.txt ${RHASSPY_APP}/profiles/hi/
 COPY profiles/hi/download-profile.sh ${RHASSPY_APP}/profiles/hi/
 COPY profiles/hi/espeak_phonemes.txt ${RHASSPY_APP}/profiles/hi/
+COPY profiles/hi/phoneme_examples.txt ${RHASSPY_APP}/profiles/hi/
 COPY profiles/hi/frequent_words.txt ${RHASSPY_APP}/profiles/hi/
 COPY profiles/hi/sentences.ini ${RHASSPY_APP}/profiles/hi/
 COPY profiles/hi/stop_words.txt ${RHASSPY_APP}/profiles/hi/
@@ -19,6 +21,7 @@ COPY profiles/el/profile.json ${RHASSPY_APP}/profiles/el/
 COPY profiles/el/custom_words.txt ${RHASSPY_APP}/profiles/el/
 COPY profiles/el/download-profile.sh ${RHASSPY_APP}/profiles/el/
 COPY profiles/el/espeak_phonemes.txt ${RHASSPY_APP}/profiles/el/
+COPY profiles/el/phoneme_examples.txt ${RHASSPY_APP}/profiles/el/
 COPY profiles/el/frequent_words.txt ${RHASSPY_APP}/profiles/el/
 COPY profiles/el/sentences.ini ${RHASSPY_APP}/profiles/el/
 COPY profiles/el/stop_words.txt ${RHASSPY_APP}/profiles/el/
@@ -27,6 +30,7 @@ COPY profiles/de/profile.json ${RHASSPY_APP}/profiles/de/
 COPY profiles/de/custom_words.txt ${RHASSPY_APP}/profiles/de/
 COPY profiles/de/download-profile.sh ${RHASSPY_APP}/profiles/de/
 COPY profiles/de/espeak_phonemes.txt ${RHASSPY_APP}/profiles/de/
+COPY profiles/de/phoneme_examples.txt ${RHASSPY_APP}/profiles/de/
 COPY profiles/de/frequent_words.txt ${RHASSPY_APP}/profiles/de/
 COPY profiles/de/sentences.ini ${RHASSPY_APP}/profiles/de/
 COPY profiles/de/stop_words.txt ${RHASSPY_APP}/profiles/de/
@@ -35,6 +39,7 @@ COPY profiles/it/profile.json ${RHASSPY_APP}/profiles/it/
 COPY profiles/it/custom_words.txt ${RHASSPY_APP}/profiles/it/
 COPY profiles/it/download-profile.sh ${RHASSPY_APP}/profiles/it/
 COPY profiles/it/espeak_phonemes.txt ${RHASSPY_APP}/profiles/it/
+COPY profiles/it/phoneme_examples.txt ${RHASSPY_APP}/profiles/it/
 COPY profiles/it/frequent_words.txt ${RHASSPY_APP}/profiles/it/
 COPY profiles/it/sentences.ini ${RHASSPY_APP}/profiles/it/
 COPY profiles/it/stop_words.txt ${RHASSPY_APP}/profiles/it/
@@ -43,30 +48,34 @@ COPY profiles/es/profile.json ${RHASSPY_APP}/profiles/es/
 COPY profiles/es/custom_words.txt ${RHASSPY_APP}/profiles/es/
 COPY profiles/es/download-profile.sh ${RHASSPY_APP}/profiles/es/
 COPY profiles/es/espeak_phonemes.txt ${RHASSPY_APP}/profiles/es/
+COPY profiles/es/phoneme_examples.txt ${RHASSPY_APP}/profiles/es/
 COPY profiles/es/frequent_words.txt ${RHASSPY_APP}/profiles/es/
 COPY profiles/es/sentences.ini ${RHASSPY_APP}/profiles/es/
 COPY profiles/es/stop_words.txt ${RHASSPY_APP}/profiles/es/
 
-COPY profiles/zh/profile.json ${RHASSPY_APP}/profiles/zh/
-COPY profiles/zh/custom_words.txt ${RHASSPY_APP}/profiles/zh/
-COPY profiles/zh/download-profile.sh ${RHASSPY_APP}/profiles/zh/
-COPY profiles/zh/espeak_phonemes.txt ${RHASSPY_APP}/profiles/zh/
-COPY profiles/zh/frequent_words.txt ${RHASSPY_APP}/profiles/zh/
-COPY profiles/zh/sentences.ini ${RHASSPY_APP}/profiles/zh/
-COPY profiles/zh/stop_words.txt ${RHASSPY_APP}/profiles/zh/
+COPY profiles/fr/profile.json ${RHASSPY_APP}/profiles/fr/
+COPY profiles/fr/custom_words.txt ${RHASSPY_APP}/profiles/fr/
+COPY profiles/fr/download-profile.sh ${RHASSPY_APP}/profiles/fr/
+COPY profiles/fr/espeak_phonemes.txt ${RHASSPY_APP}/profiles/fr/
+COPY profiles/fr/phoneme_examples.txt ${RHASSPY_APP}/profiles/fr/
+COPY profiles/fr/frequent_words.txt ${RHASSPY_APP}/profiles/fr/
+COPY profiles/fr/sentences.ini ${RHASSPY_APP}/profiles/fr/
+COPY profiles/fr/stop_words.txt ${RHASSPY_APP}/profiles/fr/
 
-COPY profiles/zh/profile.json ${RHASSPY_APP}/profiles/zh/
-COPY profiles/zh/custom_words.txt ${RHASSPY_APP}/profiles/zh/
-COPY profiles/zh/download-profile.sh ${RHASSPY_APP}/profiles/zh/
-COPY profiles/zh/espeak_phonemes.txt ${RHASSPY_APP}/profiles/zh/
-COPY profiles/zh/frequent_words.txt ${RHASSPY_APP}/profiles/zh/
-COPY profiles/zh/sentences.ini ${RHASSPY_APP}/profiles/zh/
-COPY profiles/zh/stop_words.txt ${RHASSPY_APP}/profiles/zh/
+COPY profiles/ru/profile.json ${RHASSPY_APP}/profiles/ru/
+COPY profiles/ru/custom_words.txt ${RHASSPY_APP}/profiles/ru/
+COPY profiles/ru/download-profile.sh ${RHASSPY_APP}/profiles/ru/
+COPY profiles/ru/espeak_phonemes.txt ${RHASSPY_APP}/profiles/ru/
+COPY profiles/ru/phoneme_examples.txt ${RHASSPY_APP}/profiles/ru/
+COPY profiles/ru/frequent_words.txt ${RHASSPY_APP}/profiles/ru/
+COPY profiles/ru/sentences.ini ${RHASSPY_APP}/profiles/ru/
+COPY profiles/ru/stop_words.txt ${RHASSPY_APP}/profiles/ru/
 
 COPY profiles/nl/profile.json ${RHASSPY_APP}/profiles/nl/
 COPY profiles/nl/custom_words.txt ${RHASSPY_APP}/profiles/nl/
 COPY profiles/nl/download-profile.sh ${RHASSPY_APP}/profiles/nl/
 COPY profiles/nl/espeak_phonemes.txt ${RHASSPY_APP}/profiles/nl/
+COPY profiles/nl/phoneme_examples.txt ${RHASSPY_APP}/profiles/nl/
 COPY profiles/nl/frequent_words.txt ${RHASSPY_APP}/profiles/nl/
 COPY profiles/nl/sentences.ini ${RHASSPY_APP}/profiles/nl/
 COPY profiles/nl/stop_words.txt ${RHASSPY_APP}/profiles/nl/
@@ -75,6 +84,7 @@ COPY profiles/en/profile.json ${RHASSPY_APP}/profiles/en/
 COPY profiles/en/custom_words.txt ${RHASSPY_APP}/profiles/en/
 COPY profiles/en/download-profile.sh ${RHASSPY_APP}/profiles/en/
 COPY profiles/en/espeak_phonemes.txt ${RHASSPY_APP}/profiles/en/
+COPY profiles/en/phoneme_examples.txt ${RHASSPY_APP}/profiles/en/
 COPY profiles/en/frequent_words.txt ${RHASSPY_APP}/profiles/en/
 COPY profiles/en/sentences.ini ${RHASSPY_APP}/profiles/en/
 COPY profiles/en/stop_words.txt ${RHASSPY_APP}/profiles/en/

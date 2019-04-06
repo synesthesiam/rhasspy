@@ -315,6 +315,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         with open(unknown_path, "w") as unknown_file:
             for word, word_pron in unknown_words.items():
                 pronunciations = word_pron["pronunciations"]
+                assert len(pronunciations) > 0, f"No pronunciations for unknown word {word}"
                 phonemes = pronunciations[0]
 
                 # Dictionary uses upper-case letters

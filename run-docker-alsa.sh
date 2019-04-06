@@ -17,4 +17,4 @@ docker run -it -p 12101:12101 \
        -e RHASSPY_PROFILES="/usr/share/rhasspy/profiles:$profile_dir$RHASSPY_PROFILES" \
        -v "$profile_dir":"$profile_dir" \
        -v /etc/localtime:/etc/localtime \
-       synesthesiam/rhasspy-server:armhf
+       synesthesiam/rhasspy-server:latest

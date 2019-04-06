@@ -21,7 +21,7 @@ RUN apt-get update && \
                        autoconf libtool automake bison \
                        sphinxbase-utils sphinxtrain
 
-COPY download/phonetisaurus_20190304-1_${BUILD_ARCH}.deb /phonetisaurus.deb
+COPY download/phonetisaurus-2019_${BUILD_ARCH}.deb /phonetisaurus.deb
 RUN dpkg -i /phonetisaurus.deb && \
     rm /phonetisaurus.deb
 
