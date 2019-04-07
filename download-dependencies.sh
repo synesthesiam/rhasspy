@@ -48,7 +48,7 @@ fi
 # Mycroft Precise
 # -----------------------------------------------------------------------------
 
-for CPU_ARCH in CPU_ARCHES;
+for CPU_ARCH in ${CPU_ARCHES};
 do
     precise_file="${download_dir}/precise-engine_0.2.0_${CPU_ARCH}.tar.gz"
     if [[ ! -f "${precise_file}" ]]; then
@@ -73,7 +73,7 @@ fi
 # Phonetisaurus
 # -----------------------------------------------------------------------------
 
-for CPU_ARCH in CPU_ARCHES;
+for CPU_ARCH in ${CPU_ARCHES};
 do
     # Install pre-built package
     phonetisaurus_file="${download_dir}/phonetisaurus-2019_${FRIENDLY_ARCH}.deb"
