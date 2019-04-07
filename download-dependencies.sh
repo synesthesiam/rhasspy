@@ -8,8 +8,13 @@ download_dir="${DIR}/download"
 mkdir -p "${download_dir}"
 
 # CPU architecture
-CPU_ARCHS="x86_64 armv7l arm64v8"
-FRIENDLY_ARCHS="amd64 armhf aarch64"
+CPU_ARCHS=("x86_64" "armv7l" "arm64v8")
+FRIENDLY_ARCHS=("amd64" "armhf" "aarch64")
+
+declare -A CPU_TO_FRIENDLY
+CPU_TO_FRIENDLY["x86_64"]="amd64"
+CPU_TO_FRIENDLY["armv7l"]="armhf"
+CPU_TO_FRIENDLY["arm64v8"]="aarch64"
 
 # -----------------------------------------------------------------------------
 # Pocketsphinx for Python
@@ -48,7 +53,7 @@ fi
 # Mycroft Precise
 # -----------------------------------------------------------------------------
 
-for CPU_ARCH in ${CPU_ARCHES};
+for CPU_ARCH in "${CPU_ARCHS[@]}"
 do
     precise_file="${download_dir}/precise-engine_0.2.0_${CPU_ARCH}.tar.gz"
     if [[ ! -f "${precise_file}" ]]; then
@@ -73,7 +78,7 @@ fi
 # Phonetisaurus
 # -----------------------------------------------------------------------------
 
-for CPU_ARCH in ${CPU_ARCHES};
+for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"
 do
     # Install pre-built package
     phonetisaurus_file="${download_dir}/phonetisaurus-2019_${FRIENDLY_ARCH}.deb"

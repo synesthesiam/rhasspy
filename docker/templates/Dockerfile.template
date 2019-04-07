@@ -3,6 +3,7 @@ FROM $BUILD_FROM
 LABEL maintainer="Michael Hansen <hansen.mike@gmail.com>"
 
 ARG BUILD_ARCH
+ARG CPU_ARCH
 ENV LANG C.UTF-8
 
 ARG MAKE_THREADS=4
