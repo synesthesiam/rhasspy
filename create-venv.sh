@@ -126,7 +126,7 @@ fi
 # -----------------------------------------------------------------------------
 
 if [[ -z "$(which estimate-ngram)" ]]; then
-    mitlm_file="${download_dir}]/mitlm-0.4.2.tar.gz"
+    mitlm_file="${download_dir}/mitlm-0.4.2.tar.gz"
     if [[ ! -f "${mitlm_file}" ]]; then
         mitlm_url='https://github.com/mitlm/mitlm/releases/download/v0.4.2/mitlm-0.4.2.tar.xz'
         echo "Download MITLM (${mitlm_url})"
