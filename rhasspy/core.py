@@ -279,6 +279,14 @@ class RhasspyCore:
     # -------------------------------------------------------------------------
 
     def shutdown(self) -> None:
+        # Clear environment variables
+        rhasspy_vars = [v for v in os.environ
+                        if v.startswith("RHASSPY")]
+
+        for v in rhasspy_vars:
+            del os.environ[v]
+
+        # Stop actor system
         if self.actor_system is not None:
             self.actor_system.shutdown()
             self.actor_system = None

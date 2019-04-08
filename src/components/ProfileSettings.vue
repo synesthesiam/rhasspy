@@ -17,7 +17,7 @@
             <Overview :profile="profile" />
 
             <button class="btn btn-primary mt-3">Save Settings</button>
-            <Rhasspy id="profile-rhasspy" :profile="profile" :profiles="profiles" />
+            <Rhasspy id="profile-rhasspy" :profile="profile" :defaults="defaults" :profiles="profiles" />
 
             <HomeAssistant id="profile-handle" :profile="profile" />
             <button class="btn btn-primary mt-3">Save Settings</button>
@@ -91,7 +91,6 @@
          saveSettings: function() {
              // POST to server
              this.$parent.beginAsync()
-             this.defaults.rhasspy.default_profile = this.profile.rhasspy.default_profile
              ProfileService.updateDefaultSettings(this.defaults)
                  .then(() => {
                      ProfileService.updateProfileSettings(this.profile)

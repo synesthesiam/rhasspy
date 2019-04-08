@@ -6,7 +6,7 @@
                 <div class="form-row">
                     <label for="default-profile" class="col-form-label">Default Profile</label>
                     <div class="col">
-                        <select id="rhasspy-profiles" v-model="profile.rhasspy.default_profile">
+                        <select id="rhasspy-profiles" v-model="defaults.rhasspy.default_profile">
                             <option disabled value="">Select Profile</option>
                             <option v-for="name in profiles" v-bind:key="name">{{ name }}</option>
                         </select>
@@ -94,6 +94,7 @@
      name: 'Rhasspy',
      props: {
          profile : Object,
+         defaults : Object,
          profiles: Array
      }
  }
