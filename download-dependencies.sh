@@ -53,7 +53,7 @@ fi
 # Mycroft Precise
 # -----------------------------------------------------------------------------
 
-for CPU_ARCH in "${CPU_ARCHS[@]}"
+for CPU_ARCH in "x86_64" "armv7l"
 do
     precise_file="${download_dir}/precise-engine_0.2.0_${CPU_ARCH}.tar.gz"
     if [[ ! -f "${precise_file}" ]]; then

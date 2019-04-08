@@ -1,5 +1,7 @@
 # Install Mycroft Precise
 COPY download/precise-engine_0.2.0_${CPU_ARCH}.tar.gz /precise-engine.tar.gz
-RUN cd / && tar -xzf /precise-engine.tar.gz && \
+RUN if [ "$BUILD_ARCH" != "aarch64" ]; then \
+    cd / && tar -xzf /precise-engine.tar.gz && \
     ln -s /precise-engine/precise-engine /usr/bin/precise-engine && \
-    rm /precise-engine.tar.gz
+    rm /precise-engine.tar.gz; \
+    fi

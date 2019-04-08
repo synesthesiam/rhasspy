@@ -34,13 +34,14 @@ docker-push:
 	docker push synesthesiam/rhasspy-server:aarch64
 
 manifest:
-	docker manifest create synesthesiam/rhasspy-server:beta \
+	docker manifest push --purge synesthesiam/rhasspy-server:latest
+	docker manifest create --amend synesthesiam/rhasspy-server:latest \
         synesthesiam/rhasspy-server:amd64 \
         synesthesiam/rhasspy-server:armhf \
         synesthesiam/rhasspy-server:aarch64
-	docker manifest annotate synesthesiam/rhasspy-server:beta synesthesiam/rhasspy-server:armhf --os linux --arch arm
-	docker manifest annotate synesthesiam/rhasspy-server:beta synesthesiam/rhasspy-server:aarch64 --os linux --arch arm64
-	docker manifest push synesthesiam/rhasspy-server:beta
+	docker manifest annotate synesthesiam/rhasspy-server:latest synesthesiam/rhasspy-server:armhf --os linux --arch arm
+	docker manifest annotate synesthesiam/rhasspy-server:latest synesthesiam/rhasspy-server:aarch64 --os linux --arch arm64
+	docker manifest push synesthesiam/rhasspy-server:latest
 
 # -----------------------------------------------------------------------------
 # Yarn (Vue)
