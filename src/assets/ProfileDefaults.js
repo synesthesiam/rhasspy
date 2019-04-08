@@ -209,7 +209,8 @@ const profileDefaults = {
             "audio_gain": 1,
             "model": "snowboy.umdl",
             "sensitivity": 0.5,
-            "chunk_size": 960
+            "chunk_size": 960,
+            "apply_frontend": false
         },
         "command": {
             "program": "$RHASSPY_BASE_DIR/bin/mock-commands/sleep.sh",

@@ -239,6 +239,9 @@ class SnowboyWakeListener(RhasspyActor):
         self.preload = self.config.get("preload", False)
         self.not_detected: bool = self.config.get("not_detected", False)
         self.chunk_size: int = self.profile.get("wake.snowboy.chunk_size", 960)
+        self.apply_frontend: bool = self.profile.get(
+            "wake.snowboy.apply_frontend", False
+        )
         if self.preload:
             self.load_detector()
 
@@ -325,6 +328,7 @@ class SnowboyWakeListener(RhasspyActor):
             sensitivity_str = str(sensitivity).encode()
             self.detector.SetSensitivity(sensitivity_str)
             self.detector.SetAudioGain(audio_gain)
+            self.detector.ApplyFrontend(self.apply_frontend)
 
             self._logger.debug(
                 "Loaded snowboy (model=%s, sensitivity=%s, audio_gain=%s)"

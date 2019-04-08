@@ -208,11 +208,12 @@
             "trigger_level": 3
         },
         "snowboy": {
+            "apply_frontend": true,
             "audio_gain": 1,
             "chunk_size": 960,
-            "model": "snowboy.umdl",
-            "sensitivity": 0.5
+            "model": "computer.umdl",
+            "sensitivity": "0.6"
         },
-        "system": "pocketsphinx"
+        "system": "snowboy"
     }
 }

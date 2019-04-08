@@ -34,6 +34,7 @@
                     </div>
                 </div>
             </div>
+            <hr>
             <div class="form-group">
                 <div class="form-row">
                     <div class="form-check">
@@ -55,6 +56,21 @@
                     </div>
                 </div>
             </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="wake-snowboy-sensitivity" class="col-form-label">Sensitivity</label>
+                    <div class="col-sm-auto">
+                        <input id="wake-snowboy-sensitivity" type="number" min="0" max="1" step="0.1" class="form-control" v-model="profile.wake.snowboy.sensitivity" :disabled="profile.wake.system != 'snowboy'">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <input type="checkbox" id="wake-snowboy-applyfrontend" v-model="profile.wake.snowboy.apply_frontend" :disabled="profile.wake.system != 'snowboy'">
+                    <label for="wake-snowboy-applyfrontend" class="col-form-label">Apply Frontend (<a href="https://github.com/kitt-ai/snowboy#pretrained-universal-models" title="Parameters for pre-trained models">more info</a>)</label>
+                </div>
+            </div>
+            <hr>
             <div class="form-group">
                 <div class="form-row">
                     <div class="form-check">

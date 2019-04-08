@@ -76,7 +76,7 @@
         "username": ""
     },
     "rhasspy": {
-        "default_profile": "en",
+        "default_profile": "de",
         "listen_on_start": true,
         "load_timeout_sec": 15,
         "preload_profile": true
@@ -93,6 +93,16 @@
         },
         "g2p_model": "g2p.fst",
         "grammars_dir": "grammars",
+        "kaldi": {
+            "base_dictionary": "base_dictionary.txt",
+            "custom_words": "custom_words.txt",
+            "dictionary": "dictionary.txt",
+            "graph": "graph",
+            "kaldi_dir": "/opt/kaldi",
+            "language_model": "language_model.txt",
+            "model_dir": "model",
+            "unknown_words": "unknown_words.txt"
+        },
         "pocketsphinx": {
             "acoustic_model": "acoustic_model",
             "base_dictionary": "base_dictionary.txt",
@@ -101,16 +111,6 @@
             "language_model": "language_model.txt",
             "mllr_matrix": "acoustic_model_mllr",
             "unknown_words": "unknown_words.txt"
-        },
-        "kaldi": {
-            "kaldi_dir": "/opt/kaldi",
-            "model_dir": "model",
-            "base_dictionary": "base_dictionary.txt",
-            "custom_words": "custom_words.txt",
-            "dictionary": "dictionary.txt",
-            "language_model": "language_model.txt",
-            "unknown_words": "unknown_words.txt",
-            "graph": "graph"
         },
         "remote": {
             "url": "http://my-server:12101/api/speech-to-text"
@@ -124,24 +124,18 @@
         "espeak": {
             "phoneme_map": "espeak_phonemes.txt"
         },
-        "phoneme_examples": "phoneme_examples.txt",
-        "system": "espeak",
-        "marytts": {
-            "url": "http://localhost:59125"
-        },
         "flite": {
             "voice": "kal16"
         },
-        "picotts": {
-        }
+        "marytts": {
+            "url": "http://localhost:59125"
+        },
+        "phoneme_examples": "phoneme_examples.txt",
+        "picotts": {},
+        "system": "espeak"
     },
     "training": {
-        "sentences": {
-            "balance_by_intent": true,
-            "casing": "lower",
-            "write_weights": false,
-            "write_sorted": false
-        },
+        "dictionary_number_duplicates": true,
         "grammars": {
             "delete_before_training": true
         },
@@ -164,7 +158,12 @@
             "split": "\\s+"
         },
         "sentence_casing": "lower",
-        "dictionary_number_duplicates": true,
+        "sentences": {
+            "balance_by_intent": true,
+            "casing": "lower",
+            "write_sorted": false,
+            "write_weights": false
+        },
         "speech_to_text": {
             "command": {
                 "arguments": [],
