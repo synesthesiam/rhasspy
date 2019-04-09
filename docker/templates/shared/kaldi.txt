@@ -1,0 +1,4 @@
+COPY download/kaldi_${BUILD_ARCH}.tar.gz /kaldi.tar.gz
+RUN cd / && \
+    tar -xzf -C /opt kaldi.tar.gz && \
+    rm /kaldi.tar.gz

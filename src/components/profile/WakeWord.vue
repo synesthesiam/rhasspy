@@ -16,11 +16,14 @@
             <div class="form-group">
                 <div class="form-row">
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="wake-system" id="wake-system-pocketsphinx" value="pocketsphinx" v-model="profile.wake.system">
+                        <input class="form-check-input" type="radio" name="wake-system" id="wake-system-pocketsphinx" value="pocketsphinx" v-model="profile.wake.system" :disabled="!profile.wake.pocketsphinx.compatible">
                         <label class="form-check-label" for="wake-system-pocketsphinx">
                             Use <a href="https://github.com/cmusphinx/pocketsphinx">Pocketsphinx</a> on this device
                         </label>
                     </div>
+                </div>
+                <div class="alert alert-warning" v-if="!profile.wake.pocketsphinx.compatible">
+                    Not compatible with this profile
                 </div>
             </div>
             <div class="form-group">

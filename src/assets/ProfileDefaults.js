@@ -109,7 +109,19 @@ const profileDefaults = {
             "language_model": "language_model.txt",
             "mllr_matrix": "acoustic_model_mllr",
             "unknown_words": "unknown_words.txt",
-            "min_confidence": 0.0
+            "min_confidence": 0.0,
+            "compatible": true
+        },
+        "kaldi": {
+            "base_dictionary": "base_dictionary.txt",
+            "custom_words": "custom_words.txt",
+            "dictionary": "dictionary.txt",
+            "graph": "graph",
+            "kaldi_dir": "/opt/kaldi",
+            "language_model": "language_model.txt",
+            "model_dir": "model",
+            "unknown_words": "unknown_words.txt",
+            "compatible": false
         },
         "remote": {
             "url": "http://my-server:12101/api/speech-to-text"

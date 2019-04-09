@@ -21,6 +21,9 @@ acoustic_model/
 base_dictionary.txt
 base_language_model.txt
 g2p.fst
+profiles/*/model/data
+profiles/*/model/model
+profiles/*/model/graph
 
 adapt_config.json
 tagged_sentences.md

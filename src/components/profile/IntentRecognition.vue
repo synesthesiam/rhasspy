@@ -43,7 +43,7 @@
             </div>
             <div class="form-group">
                 <div class="form-row">
-                    <p class="text-muted">Expecting stop words in <tt>{{ this.profile.intent.adapt.stop_words }}</tt></p>
+                    <p class="text-muted">Expecting words to ignore in <tt>{{ this.profile.intent.adapt.stop_words }}</tt></p>
                 </div>
             </div>
             <hr>
