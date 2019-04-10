@@ -23,6 +23,7 @@
                     </div>
                 </div>
             </div>
+            <hr>
             <div class="form-group">
                 <div class="form-row">
                     <div class="form-check">

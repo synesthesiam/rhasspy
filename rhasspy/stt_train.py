@@ -462,7 +462,7 @@ class KaldiSpeechTrainer(PocketsphinxSpeechTrainer):
         try:
             self.train()
             self.send(self.receiver, SpeechTrainingComplete(self.sentences_by_intent))
-        except:
+        except Exception as e:
             self._logger.exception("train")
             self.send(self.receiver, SpeechTrainingFailed(repr(e)))
 

@@ -16,11 +16,14 @@
             <div class="form-group">
                 <div class="form-row">
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="stt-system" id="stt-system-pocketsphinx" value="pocketsphinx" v-model="profile.speech_to_text.system">
+                        <input class="form-check-input" type="radio" name="stt-system" id="stt-system-pocketsphinx" value="pocketsphinx" v-model="profile.speech_to_text.system" :disabled="!profile.speech_to_text.pocketsphinx.compatible">
                         <label class="form-check-label" for="stt-system-pocketsphinx">
                             Do speech recognition with <a href="https://github.com/cmusphinx/pocketsphinx">pocketsphinx</a> on this device
                         </label>
                     </div>
+                </div>
+                <div class="alert alert-warning" v-if="!profile.speech_to_text.pocketsphinx.compatible">
+                    Not compatible with this profile
                 </div>
             </div>
             <div class="form-group">
@@ -28,6 +31,28 @@
                     <label for="pocketsphinx-min-confidence" class="col-form-label">Minimum Confidence</label>
                     <div class="col">
                         <input id="pocketsphinx-min-confidence" type="number" step="0.01" min="0" max="1" class="form-control" v-model.number="profile.speech_to_text.pocketsphinx.min_confidence" :disabled="profile.speech_to_text.system != 'pocketsphinx'">
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="stt-system" id="stt-system-kaldi" value="kaldi" v-model="profile.speech_to_text.system" :disabled="!profile.speech_to_text.kaldi.compatible">
+                        <label class="form-check-label" for="stt-system-kaldi">
+                            Do speech recognition with <a href="http://kaldi-asr.org">kaldi</a> on this device
+                        </label>
+                    </div>
+                </div>
+                <div class="alert alert-warning" v-if="!profile.speech_to_text.kaldi.compatible">
+                    Not compatible with this profile
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="kaldi-kaldi-dir" class="col-form-label">Kaldi Directory</label>
+                    <div class="col">
+                        <input id="kaldi-kaldi-dir" type="text" class="form-control" v-model="profile.speech_to_text.kaldi.kaldi_dir" :disabled="profile.speech_to_text.system != 'kaldi'">
                     </div>
                 </div>
             </div>

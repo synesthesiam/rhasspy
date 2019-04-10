@@ -75,7 +75,12 @@ RUN if [ "$BUILD_ARCH" != "aarch64" ]; then \
     rm /precise-engine.tar.gz; \
     fi
 
-RUN apt-get install flite libttspico-utils
+RUN apt-get install -y flite libttspico-utils
+
+COPY download/kaldi_${BUILD_ARCH}.tar.gz /kaldi.tar.gz
+RUN cd / && \
+    tar -xzf -C /opt kaldi.tar.gz && \
+    rm /kaldi.tar.gz
 
 RUN ldconfig
 
@@ -172,6 +177,19 @@ COPY profiles/nl/phoneme_examples.txt ${RHASSPY_APP}/profiles/nl/
 COPY profiles/nl/frequent_words.txt ${RHASSPY_APP}/profiles/nl/
 COPY profiles/nl/sentences.ini ${RHASSPY_APP}/profiles/nl/
 COPY profiles/nl/stop_words.txt ${RHASSPY_APP}/profiles/nl/
+
+COPY profiles/vi/profile.json ${RHASSPY_APP}/profiles/vi/
+COPY profiles/vi/custom_words.txt ${RHASSPY_APP}/profiles/vi/
+COPY profiles/vi/download-profile.sh ${RHASSPY_APP}/profiles/vi/
+COPY profiles/vi/espeak_phonemes.txt ${RHASSPY_APP}/profiles/vi/
+COPY profiles/vi/phoneme_examples.txt ${RHASSPY_APP}/profiles/vi/
+COPY profiles/vi/frequent_words.txt ${RHASSPY_APP}/profiles/vi/
+COPY profiles/vi/sentences.ini ${RHASSPY_APP}/profiles/vi/
+COPY profiles/vi/stop_words.txt ${RHASSPY_APP}/profiles/vi/
+COPY profiles/vi/model/conf ${RHASSPY_APP}/profiles/vi/model/conf
+COPY profiles/vi/model/phones ${RHASSPY_APP}/profiles/vi/model/phones
+COPY profiles/vi/model/model ${RHASSPY_APP}/profiles/vi/model/model
+COPY profiles/vi/model/*.sh ${RHASSPY_APP}/profiles/vi/model/
 
 COPY profiles/en/profile.json ${RHASSPY_APP}/profiles/en/
 COPY profiles/en/custom_words.txt ${RHASSPY_APP}/profiles/en/
