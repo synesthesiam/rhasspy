@@ -207,7 +207,8 @@ const profileDefaults = {
             "keyphrase": "okay rhasspy",
             "mllr_matrix": "wake_mllr",
             "threshold": 1e-30,
-            "chunk_size": 960
+            "chunk_size": 960,
+            "compatible": true
         },
         "precise": {
             "model": "okay-rhasspy.pb",

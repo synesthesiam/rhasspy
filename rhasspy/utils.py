@@ -101,6 +101,18 @@ def recursive_update(base_dict: Dict[Any, Any], new_dict: Mapping[Any, Any]) -> 
             base_dict[k] = v
 
 
+def recursive_remove(base_dict: Dict[Any, Any], new_dict: Mapping[Any, Any]) -> None:
+    """Recursively removes values from new dictionary that are already in base dictionary"""
+    for k, v in list(new_dict.items()):
+        if k in base_dict:
+            if isinstance(v, collections.Mapping):
+                recursive_remove(base_dict[k], v)
+                if len(v) == 0:
+                    del new_dict[k]
+            elif (v == base_dict[k]):
+                del new_dict[k]
+
+
 # -----------------------------------------------------------------------------
 
 

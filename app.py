@@ -41,7 +41,12 @@ import pydash
 from rhasspy.profiles import Profile
 from rhasspy.core import RhasspyCore
 from rhasspy.dialogue import ProfileTrainingFailed
-from rhasspy.utils import recursive_update, buffer_to_wav, load_phoneme_examples
+from rhasspy.utils import (
+    recursive_update,
+    recursive_remove,
+    buffer_to_wav,
+    load_phoneme_examples,
+)
 
 # -----------------------------------------------------------------------------
 # Flask Web App Setup
@@ -90,12 +95,13 @@ def shutdown(*args: Any, **kwargs: Any) -> None:
 
 # Like PATH, searched in reverse order
 profiles_dirs = [
-    path
+    os.path.abspath(path)
     for path in os.environ.get("RHASSPY_PROFILES", "profiles").split(":")
     if len(path.strip()) > 0
 ]
 
 profiles_dirs.reverse()
+logger.debug(profiles_dirs)
 
 
 def start_rhasspy() -> None:
@@ -160,8 +166,11 @@ def api_profiles() -> Response:
     downloaded_path = core.profile.read_path(".downloaded")
 
     return jsonify(
-        {"default_profile": core.profile.name, "profiles": sorted(list(profile_names)),
-         "downloaded": os.path.exists(downloaded_path)}
+        {
+            "default_profile": core.profile.name,
+            "profiles": sorted(list(profile_names)),
+            "downloaded": os.path.exists(downloaded_path),
+        }
     )
 
 
@@ -176,10 +185,9 @@ def api_download_profile() -> str:
     logger.debug(download_script)
     assert os.path.exists(download_script), "Profile download script is missing."
 
-    output = subprocess.check_output([
-        "bash",
-        download_script,
-    ], cwd=core.profile.read_path())
+    output = subprocess.check_output(
+        ["bash", download_script], cwd=core.profile.read_path()
+    )
 
     # Create downloaded file
     downloaded_path = core.profile.read_path(".downloaded")
@@ -187,6 +195,7 @@ def api_download_profile() -> str:
         downloaded_file.write(output)
 
     return output
+
 
 # -----------------------------------------------------------------------------
 
@@ -254,6 +263,7 @@ def api_profile() -> Response:
 
     if request.method == "POST":
         # Ensure that JSON is valid
+        profile_json = json.loads(request.data)
         # from cerberus import Validator
 
         # schema_path = os.path.join(
@@ -279,11 +289,12 @@ def api_profile() -> Response:
                     pass
         else:
             # Write local profile settings
-            profile_path = core.profile.write_path("profile.json")
-            with open(profile_path, "wb") as profile_file:
-                profile_file.write(request.data)
+            recursive_remove(core.defaults, profile_json)
+            profile_path = os.path.abspath(core.profile.write_path("profile.json"))
+            with open(profile_path, "w") as profile_file:
+                json.dump(profile_json, profile_file, indent=4)
 
-        msg = "Wrote %d byte(s) to %s" % (len(request.data), profile_path)
+        msg = "Wrote profile to %s" % profile_path
         logger.debug(msg)
         return msg
 

@@ -77,7 +77,7 @@
         },
         "system": "fuzzywuzzy"
     },
-    "language": "en",
+    "language": "",
     "microphone": {
         "arecord": {
             "chunk_size": 960,
@@ -232,6 +232,7 @@
         },
         "pocketsphinx": {
             "chunk_size": 960,
+            "compatible": true,
             "keyphrase": "okay rhasspy",
             "mllr_matrix": "wake_mllr",
             "threshold": 1e-30
@@ -245,6 +246,7 @@
             "trigger_level": 3
         },
         "snowboy": {
+            "apply_frontend": false,
             "audio_gain": 1,
             "chunk_size": 960,
             "model": "snowboy.umdl",
