@@ -34,6 +34,14 @@
                     </div>
                 </div>
             </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="wake-pocketsphinx-sensitivity" class="col-form-label">Sensitivity</label>
+                    <div class="col-sm-auto">
+                        <input id="wake-pocketsphinx-sensitivity" type="number" min="0" max="1" step="0.1" class="form-control" v-model="psSensitivity" :disabled="profile.wake.system != 'pocketsphinx'">
+                    </div>
+                </div>
+            </div>
             <hr>
             <div class="form-group">
                 <div class="form-row">
@@ -120,6 +128,28 @@
      name: 'WakeWord',
      props: {
          profile : Object
+     },
+     computed: {
+         psSensitivity: {
+             get: function() {
+                 var high = 50
+                 var low = 5
+
+                 var t = this.profile.wake.pocketsphinx.threshold
+                 var exp = -Math.log10(t)
+                 var s = (exp - low) / (high - low)
+                 return Math.min(1, Math.max(0, s)).toFixed(1)
+             },
+
+             set: function(sensitivity) {
+                 var high = 50
+                 var low = 5
+
+                 var exp = (sensitivity * (high - low)) + low
+                 var t = Math.pow(10, -exp)
+                 this.profile.wake.pocketsphinx.threshold = t
+             }
+         }
      }
  }
 </script>

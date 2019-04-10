@@ -76,7 +76,7 @@
         "username": ""
     },
     "rhasspy": {
-        "default_profile": "de",
+        "default_profile": "en",
         "listen_on_start": true,
         "load_timeout_sec": 15,
         "preload_profile": true

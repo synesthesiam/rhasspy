@@ -214,6 +214,6 @@
             "model": "computer.umdl",
             "sensitivity": "0.6"
         },
-        "system": "snowboy"
+        "system": "pocketsphinx"
     }
 }
