@@ -31,7 +31,6 @@ trap finish EXIT
 i=1
 while [[ ! -z "$1" ]]; do
     echo "utt_${i} $(realpath "$1")" >> "${temp_dir}/wav.scp"
-    echo "$1" $(soxi "$1") >> "${log_file}"
     shift
     ((i++))
 done

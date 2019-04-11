@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -e
+
 if [[ -z "$(which phonetisaurus-train)" ]]; then
     echo "Phonetisaurus not installed!"
     exit 1
@@ -9,23 +11,22 @@ if [[ -z "$2" ]]; then
     exit 1
 fi
 
-dict_path=$(realpath "$1")
-model_path=$(realpath "$2")
+dict_path="$(realpath "$1")"
+model_path="$(realpath "$2")"
 
 temp_dir="$(mktemp -d)"
 function finish {
-    rm -rf "$temp_dir"
+    rm -rf "${temp_dir}"
 }
 
 trap finish EXIT
 
-cd "$temp_dir"
-cat "$dict_path" | \
-    perl -pe 's/\([0-9]+\)//;
-              s/\s+/ /g; s/^\s+//;
-              s/\s+$//; @_ = split (/\s+/);
-              $w = shift (@_);
-              $_ = $w."\t".join (" ", @_)."\n";' | sed -e '/_/d' > formatted.dict
+cd "${temp_dir}"
+perl -pe 's/\([0-9]+\)//;
+            s/\s+/ /g; s/^\s+//;
+            s/\s+$//; @_ = split (/\s+/);
+            $w = shift (@_);
+            $_ = $w."\t".join (" ", @_)."\n";' < "${dict_path}" | sed -e '/_/d' > formatted.dict
 
 phonetisaurus-train --lexicon formatted.dict --seq2_del --verbose
-cp train/model.fst "$model_path"
+cp train/model.fst "${model_path}"

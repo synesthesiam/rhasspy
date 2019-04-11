@@ -51,16 +51,18 @@ sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
 # Virtual environment
 # -----------------------------------------------------------------------------
 
-VENV_PATH=$DIR/.venv
-echo $VENV_PATH
+VENV_PATH="$DIR/.venv"
+echo "${VENV_PATH}"
 
 echo "Removing existing virtual environment"
-rm -rf "$VENV_PATH"
+rm -rf "${VENV_PATH}"
 
 echo "Creating new virtual environment"
-mkdir -p "$VENV_PATH"
-python3 -m venv "$VENV_PATH"
-source "$VENV_PATH"/bin/activate
+mkdir -p "${VENV_PATH}"
+python3 -m venv "${VENV_PATH}"
+
+# shellcheck source=/dev/null
+source "${VENV_PATH}/bin/activate"
 python3 -m pip install wheel
 python3 -m pip install -r requirements.txt
 

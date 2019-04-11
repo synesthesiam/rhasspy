@@ -289,7 +289,12 @@ def api_profile() -> Response:
                     pass
         else:
             # Write local profile settings
+            if "rhasspy" in profile_json:
+                if "default_profile" in profile_json["rhasspy"]:
+                    del profile_json["rhasspy"]["default_profile"]
+
             recursive_remove(core.defaults, profile_json)
+
             profile_path = os.path.abspath(core.profile.write_path("profile.json"))
             with open(profile_path, "w") as profile_file:
                 json.dump(profile_json, profile_file, indent=4)
