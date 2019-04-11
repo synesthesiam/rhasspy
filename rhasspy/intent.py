@@ -19,9 +19,14 @@ from .utils import empty_intent
 
 class RecognizeIntent:
     def __init__(
-        self, text: str, receiver: Optional[RhasspyActor] = None, handle: bool = True
+        self,
+        text: str,
+        receiver: Optional[RhasspyActor] = None,
+        handle: bool = True,
+        confidence: float = 1,
     ) -> None:
         self.text = text
+        self.confidence = confidence
         self.receiver = receiver
         self.handle = handle
 
@@ -42,6 +47,7 @@ class DummyIntentRecognizer(RhasspyActor):
         if isinstance(message, RecognizeIntent):
             intent = empty_intent()
             intent["text"] = message.text
+            intent["speech_confidence"] = message.confidence
             self.send(message.receiver or sender, IntentRecognized(intent))
 
 
@@ -65,6 +71,7 @@ class RemoteRecognizer(RhasspyActor):
                 intent = empty_intent()
                 intent["text"] = message.text
 
+            intent["speech_confidence"] = message.confidence
             self.send(
                 message.receiver or sender,
                 IntentRecognized(intent, handle=message.handle),
@@ -96,7 +103,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
         self.examples: Optional[Dict[str, Any]] = None
 
     def to_started(self, from_state: str) -> None:
-        self.min_confidence = self.profile.get('intent.fuzzywuzzy.min_confidence', 0)
+        self.min_confidence = self.profile.get("intent.fuzzywuzzy.min_confidence", 0)
         self.load_examples()
         self.transition("loaded")
 
@@ -109,6 +116,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                 self._logger.exception("in_loaded")
                 intent = empty_intent()
 
+            intent["speech_confidence"] = message.confidence
             self.send(
                 message.receiver or sender,
                 IntentRecognized(intent, handle=message.handle),
@@ -164,7 +172,9 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                         ],
                     }
                 else:
-                    self._logger.warning(f'Intent did not meet confidence threshold: {confidence} < {self.min_confidence}')
+                    self._logger.warning(
+                        f"Intent did not meet confidence threshold: {confidence} < {self.min_confidence}"
+                    )
 
         # Empty intent
         intent = empty_intent()
@@ -269,6 +279,7 @@ class AdaptIntentRecognizer(RhasspyActor):
                 self._logger.exception("in_loaded")
                 intent = empty_intent()
 
+            intent["speech_confidence"] = message.confidence
             self.send(
                 message.receiver or sender,
                 IntentRecognized(intent, handle=message.handle),
@@ -378,6 +389,7 @@ class CommandRecognizer(RhasspyActor):
                 intent = empty_intent()
                 intent["text"] = message.text
 
+            intent["speech_confidence"] = message.confidence
             self.send(
                 message.receiver or sender,
                 IntentRecognized(intent, handle=message.handle),

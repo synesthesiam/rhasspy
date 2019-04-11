@@ -235,7 +235,8 @@
             "compatible": true,
             "keyphrase": "okay rhasspy",
             "mllr_matrix": "wake_mllr",
-            "threshold": 1e-30
+            "threshold": 1e-30,
+            "compatible": true
         },
         "precise": {
             "chunk_delay": 0.005,
