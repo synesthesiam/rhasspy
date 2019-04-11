@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -e
+
 DIR="$( cd "$( dirname "$0" )" && pwd )"
 download_dir="${DIR}/download"
 mkdir -p "${download_dir}"
@@ -12,6 +14,7 @@ echo "Downloading English (en) profile (sphinx)"
 acoustic_url='https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/cmusphinx-en-us-5.2.tar.gz'
 
 acoustic_file="${download_dir}/cmusphinx-en-us-5.2.tar.gz"
+echo "${acoustic_file}"
 acoustic_output="${DIR}/acoustic_model"
 
 if [[ ! -f "${acoustic_file}" ]]; then
@@ -63,3 +66,17 @@ fi
 
 echo "Extracting language model (${lm_file})"
 zcat "${lm_file}" > "${lm_output}" || exit 1
+
+#------------------------------------------------------------------------------
+# Snowboy
+#------------------------------------------------------------------------------
+
+snowboy_models=("snowboy.umdl" "computer.umdl")
+for model_name in "${snowboy_models[@]}"; do
+    model_output="${DIR}/${model_name}"
+    if [[ ! -f "${model_output}" ]]; then
+        model_url= "https://github.com/Kitt-AI/snowboy/raw/master/resources/models/${model_name}"
+        echo "Downloading ${model_output} (${model_url})"
+        wget -q -O "${model_output}" "${model_url}"
+    fi
+done

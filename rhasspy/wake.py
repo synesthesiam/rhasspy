@@ -314,10 +314,13 @@ class SnowboyWakeListener(RhasspyActor):
             from snowboy import snowboydetect, snowboydecoder
 
             self.model_name = self.profile.get("wake.snowboy.model")
-            model_path = self.profile.read_path(self.model_name)
+            model_path = os.path.realpath(self.profile.read_path(self.model_name))
+            assert os.path.exists(model_path), f"Can't find snowboy model file (expected at {model_path})"
 
             sensitivity = float(self.profile.get("wake.snowboy.sensitivity", 0.5))
             audio_gain = float(self.profile.get("wake.snowboy.audio_gain", 1.0))
+
+            self._logger.debug(f"Loading snowboy model from {model_path}")
 
             self.detector = snowboydetect.SnowboyDetect(
                 snowboydecoder.RESOURCE_FILE.encode(), model_path.encode()

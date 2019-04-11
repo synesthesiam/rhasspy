@@ -24,6 +24,7 @@ g2p.fst
 profiles/*/model/data
 profiles/*/model/model
 profiles/*/model/graph
+profiles/*/*.umdl
 
 adapt_config.json
 tagged_sentences.md

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -e
+
 DIR="$( cd "$( dirname "$0" )" && pwd )"
 rhasspy_dir="${DIR}/../../"
 download_dir="${DIR}/download"
@@ -54,3 +56,17 @@ tar --to-stdout -xzf "${acoustic_file}" 'cmusphinx-el-gr-5.2/el-gr.dic' > "${dic
 lm_output="${DIR}/base_language_model.txt"
 echo "Extracting language model (${acoustic_file})"
 tar --to-stdout -xzf "${acoustic_file}" 'cmusphinx-el-gr-5.2/el-gr.lm.gz' | zcat > "${lm_output}" || exit 1
+
+#------------------------------------------------------------------------------
+# Snowboy
+#------------------------------------------------------------------------------
+
+snowboy_models=("snowboy.umdl" "computer.umdl")
+for model_name in "${snowboy_models[@]}"; do
+    model_output="${DIR}/${model_name}"
+    if [[ ! -f "${model_output}" ]]; then
+        model_url= "https://github.com/Kitt-AI/snowboy/raw/master/resources/models/${model_name}"
+        echo "Downloading ${model_output} (${model_url})"
+        wget -q -O "${model_output}" "${model_url}"
+    fi
+done
