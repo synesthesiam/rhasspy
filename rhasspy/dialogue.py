@@ -246,7 +246,7 @@ class DialogueManager(RhasspyActor):
     def in_decoding(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, WavTranscription):
             # text -> intent
-            self._logger.debug(message.text)
+            self._logger.debug(f"{message.text} (confidence={message.confidence})")
 
             # Send to MQTT
             payload = json.dumps(
@@ -266,7 +266,10 @@ class DialogueManager(RhasspyActor):
 
             # Pass to intent recognizer
             self.send(
-                self.recognizer, RecognizeIntent(message.text, handle=message.handle)
+                self.recognizer,
+                RecognizeIntent(
+                    message.text, confidence=message.confidence, handle=message.handle
+                ),
             )
             self.transition("recognizing")
         else:
@@ -411,7 +414,13 @@ class DialogueManager(RhasspyActor):
         elif isinstance(message, RecognizeIntent):
             # text -> intent
             self.send(
-                self.recognizer, RecognizeIntent(message.text, sender, message.handle)
+                self.recognizer,
+                RecognizeIntent(
+                    message.text,
+                    confidence=message.confidence,
+                    receiver=sender,
+                    handle=message.handle,
+                ),
             )
         elif isinstance(message, HandleIntent):
             # intent -> action

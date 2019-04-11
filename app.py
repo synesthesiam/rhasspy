@@ -185,9 +185,17 @@ def api_download_profile() -> str:
     logger.debug(download_script)
     assert os.path.exists(download_script), "Profile download script is missing."
 
-    output = subprocess.check_output(
-        ["bash", download_script], cwd=core.profile.read_path()
-    )
+    try:
+        output = subprocess.check_output(
+            ["bash", download_script],
+            cwd=core.profile.read_path(),
+            stderr=subprocess.STDOUT,
+        )
+    except subprocess.CalledProcessError as e:
+        logging.exception("download profile")
+        output = e.output.decode()
+        logging.debug(output)
+        raise Exception(output)
 
     # Create downloaded file
     downloaded_path = core.profile.read_path(".downloaded")
@@ -289,6 +297,10 @@ def api_profile() -> Response:
                     pass
         else:
             # Write local profile settings
+            if "rhasspy" in profile_json:
+                if "default_profile" in profile_json["rhasspy"]:
+                    del profile_json["rhasspy"]["default_profile"]
+
             recursive_remove(core.defaults, profile_json)
             profile_path = os.path.abspath(core.profile.write_path("profile.json"))
             with open(profile_path, "w") as profile_file:
@@ -523,6 +535,7 @@ def api_text_to_intent():
     # Convert text to intent
     start_time = time.time()
     intent = core.recognize_intent(text).intent
+    intent["speech_confidence"] = 1
 
     intent_sec = time.time() - start_time
     intent["time_sec"] = intent_sec
@@ -548,11 +561,13 @@ def api_speech_to_intent() -> Response:
 
     # speech -> text
     start_time = time.time()
-    text = core.transcribe_wav(wav_data).text
+    transcription = core.transcribe_wav(wav_data)
+    text = transcription.text
     logger.debug(text)
 
     # text -> intent
     intent = core.recognize_intent(text).intent
+    intent["speech_confidence"] = transcription.confidence
 
     intent_sec = time.time() - start_time
     intent["time_sec"] = intent_sec
@@ -592,10 +607,12 @@ def api_stop_recording() -> Response:
     wav_data = buffer_to_wav(audio_data)
     logger.debug("Recorded %s byte(s) of audio data" % len(wav_data))
 
-    text = core.transcribe_wav(wav_data).text
+    transcription = core.transcribe_wav(wav_data)
+    text = transcription.text
     logger.debug(text)
 
     intent = core.recognize_intent(text).intent
+    intent["speech_confidence"] = transcription.confidence
     logger.debug(intent)
 
     if not no_hass:

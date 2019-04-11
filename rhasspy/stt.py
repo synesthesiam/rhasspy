@@ -5,7 +5,7 @@ import wave
 import logging
 import tempfile
 import subprocess
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -27,8 +27,9 @@ class TranscribeWav:
 
 
 class WavTranscription:
-    def __init__(self, text: str, handle: bool = True) -> None:
+    def __init__(self, text: str, handle: bool = True, confidence: float = 1) -> None:
         self.text = text
+        self.confidence = confidence
         self.handle = handle
 
 
@@ -74,10 +75,12 @@ class PocketsphinxDecoder(RhasspyActor):
         if isinstance(message, TranscribeWav):
             try:
                 self.load_decoder()
-                text = self.transcribe_wav(message.wav_data)
+                text, confidence = self.transcribe_wav(message.wav_data)
                 self.send(
                     message.receiver or sender,
-                    WavTranscription(text, handle=message.handle),
+                    WavTranscription(
+                        text, confidence=confidence, handle=message.handle
+                    ),
                 )
             except:
                 self._logger.exception("transcribing wav")
@@ -122,7 +125,7 @@ class PocketsphinxDecoder(RhasspyActor):
 
             self.decoder = pocketsphinx.Decoder(decoder_config)
 
-    def transcribe_wav(self, wav_data: bytes) -> str:
+    def transcribe_wav(self, wav_data: bytes) -> Tuple[str, float]:
         # Ensure 16-bit 16Khz mono
         assert self.decoder is not None
         data_size = len(wav_data)
@@ -161,14 +164,14 @@ class PocketsphinxDecoder(RhasspyActor):
             if confidence >= self.min_confidence:
                 # Return best transcription
                 self._logger.debug(hyp.hypstr)
-                return hyp.hypstr
+                return hyp.hypstr, confidence
             else:
                 self._logger.warning(
                     f"Transcription did not meet confidence threshold: {confidence} < {self.min_confidence}"
                 )
 
         # No transcription
-        return ""
+        return "", 0
 
 
 # -----------------------------------------------------------------------------

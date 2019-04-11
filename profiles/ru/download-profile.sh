@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 DIR="$( cd "$( dirname "$0" )" && pwd )"
 download_dir="${DIR}/download"
 mkdir -p "${download_dir}"
@@ -20,7 +21,7 @@ fi
 
 echo "Extracting acoustic model (${acoustic_file})"
 rm -rf "${acoustic_output}"
-tar -xzf "${acoustic_file}" && mv "${DIR}/cmusphinx-ru-5.2" "${acoustic_output}" && rm -f "${acoustic_output}/ru.dic" "${acoustic_output}/rm.lm" || exit 1
+tar -xzf "${acoustic_file}" && mv "${DIR}/cmusphinx-ru-5.2" "${acoustic_output}" && rm -f "${acoustic_output}/ru.dic" "${acoustic_output}/rm.lm"
 
 #------------------------------------------------------------------------------
 # G2P
@@ -36,7 +37,7 @@ if [[ ! -f "${g2p_file}" ]]; then
 fi
 
 echo "Extracting g2p model (${g2p_file})"
-tar --to-stdout -xzf "${g2p_file}" 'g2p.fst' > "${g2p_output}" || exit 1
+tar --to-stdout -xzf "${g2p_file}" 'g2p.fst' > "${g2p_output}"
 
 #------------------------------------------------------------------------------
 # Dictionary
@@ -44,7 +45,7 @@ tar --to-stdout -xzf "${g2p_file}" 'g2p.fst' > "${g2p_output}" || exit 1
 
 dict_output="${DIR}/base_dictionary.txt"
 echo "Extracting dictionary (${acoustic_file})"
-tar --to-stdout -xzf "${acoustic_file}" 'cmusphinx-ru-5.2/ru.dic' > "${dict_output}" || exit 1
+tar --to-stdout -xzf "${acoustic_file}" 'cmusphinx-ru-5.2/ru.dic' > "${dict_output}"
 
 #------------------------------------------------------------------------------
 # Language Model
@@ -52,4 +53,4 @@ tar --to-stdout -xzf "${acoustic_file}" 'cmusphinx-ru-5.2/ru.dic' > "${dict_outp
 
 lm_output="${DIR}/base_language_model.txt"
 echo "Extracting language model (${acoustic_file})"
-mv "${acoustic_output}/ru.lm" "${lm_output}" || exit 1
+mv "${acoustic_output}/ru.lm" "${lm_output}"
