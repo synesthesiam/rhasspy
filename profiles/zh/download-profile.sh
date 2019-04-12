@@ -64,7 +64,7 @@ snowboy_models=("snowboy.umdl" "computer.umdl")
 for model_name in "${snowboy_models[@]}"; do
     model_output="${DIR}/${model_name}"
     if [[ ! -f "${model_output}" ]]; then
-        model_url= "https://github.com/Kitt-AI/snowboy/raw/master/resources/models/${model_name}"
+        model_url="https://github.com/Kitt-AI/snowboy/raw/master/resources/models/${model_name}"
         echo "Downloading ${model_output} (${model_url})"
         wget -q -O "${model_output}" "${model_url}"
     fi
