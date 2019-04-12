@@ -77,11 +77,6 @@ RUN if [ "$BUILD_ARCH" != "aarch64" ]; then \
 
 RUN apt-get install -y flite
 
-COPY download/kaldi_${BUILD_ARCH}.tar.gz /kaldi.tar.gz
-RUN cd / && \
-    tar -xzf -C /opt kaldi.tar.gz && \
-    rm /kaldi.tar.gz
-
 RUN ldconfig
 
 # Copy bw and mllr_solve to /usr/bin

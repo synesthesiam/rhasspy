@@ -30,8 +30,6 @@ MYCROFT_PRECISE
 
 TTS
 
-KALDI
-
 RUN ldconfig
 
 # Copy bw and mllr_solve to /usr/bin
