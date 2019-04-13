@@ -163,13 +163,22 @@ def api_profiles() -> Response:
             if os.path.isdir(profile_dir):
                 profile_names.add(name)
 
-    downloaded_path = core.profile.read_path(".downloaded")
+    check_path = core.profile.read_path("check-profile.sh")
+    assert os.path.exists(check_path), "Missing profile check script"
+    check_cmd = ["bash", check_path]
+    logger.debug(check_cmd)
+
+    downloaded = True
+    try:
+        subprocess.check_call(check_cmd)
+    except:
+        downloaded = False
 
     return jsonify(
         {
             "default_profile": core.profile.name,
             "profiles": sorted(list(profile_names)),
-            "downloaded": os.path.exists(downloaded_path),
+            "downloaded": downloaded,
         }
     )
 
@@ -195,7 +204,7 @@ def api_download_profile() -> str:
 
     try:
         output = subprocess.check_output(
-            download_cmd, cwd=core.profile.read_path(), stderr=subprocess.STDOUT
+            download_cmd, cwd=core.profile.write_path(), stderr=subprocess.STDOUT
         )
     except subprocess.CalledProcessError as e:
         logging.exception("download profile")
@@ -204,7 +213,7 @@ def api_download_profile() -> str:
         raise Exception(output)
 
     # Create downloaded file
-    downloaded_path = core.profile.read_path(".downloaded")
+    downloaded_path = core.profile.write_path(".downloaded")
     with open(downloaded_path, "wb") as downloaded_file:
         downloaded_file.write(output)
 
