@@ -80,13 +80,13 @@ RUN chmod +x /run.sh
 
 COPY profiles/en/ ${RHASSPY_APP}/profiles/en/
 
-COPY profiles/defaults.json /${RHASSPY_APP}/profiles/
-COPY docker/rhasspy /${RHASSPY_APP}/bin/
-COPY dist/ /${RHASSPY_APP}/dist/
-COPY etc/wav/* /${RHASSPY_APP}/etc/wav/
-COPY rhasspy/profile_schema.json /${RHASSPY_APP}/rhasspy/
-COPY *.py /${RHASSPY_APP}/
-COPY rhasspy/*.py /${RHASSPY_APP}/rhasspy/
+COPY profiles/defaults.json ${RHASSPY_APP}/profiles/
+COPY docker/rhasspy ${RHASSPY_APP}/bin/
+COPY dist/ ${RHASSPY_APP}/dist/
+COPY etc/wav/* ${RHASSPY_APP}/etc/wav/
+COPY rhasspy/profile_schema.json ${RHASSPY_APP}/rhasspy/
+COPY *.py ${RHASSPY_APP}/
+COPY rhasspy/*.py ${RHASSPY_APP}/rhasspy/
 
 ENV CONFIG_PATH /data/options.json
 
