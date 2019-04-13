@@ -53,6 +53,7 @@
                     <ProfileSettings :profile="profile" :profiles="profiles" :defaults="defaults"
                                      v-on:begin-async="beginAsync"
                                      v-on:end-async="endAsync"
+                                     v-on:restart="restart"
                                      v-on:alert="alert($event.text, $event.level)"
                                      v-on:error="error($event)" />
                 </div>

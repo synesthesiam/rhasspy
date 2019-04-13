@@ -62,7 +62,13 @@ export default {
                          { 'params': params })
     },
 
-    downloadProfile() {
-        return Api().post('/api/download-profile', '')
+    downloadProfile(delete_first) {
+        var params = {}
+        if (delete_first) {
+            params['delete'] = 'true'
+        }
+
+        return Api().post('/api/download-profile', '',
+                          { 'params': params })
     }
 }

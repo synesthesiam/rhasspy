@@ -16,7 +16,7 @@ acoustic_url='https://github.com/synesthesiam/rhasspy-profiles/releases/download
 acoustic_file="${download_dir}/vietnamese.zip"
 acoustic_output="${DIR}/model/model"
 
-if [[ ! -f "${acoustic_file}" ]]; then
+if [[ ! -s "${acoustic_file}" ]]; then
     echo "Downloading acoustic model"
     wget -q -O "${acoustic_file}" "${acoustic_url}"
 fi
@@ -33,7 +33,7 @@ g2p_url='https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0
 g2p_file="${download_dir}/vietnamese_g2p.zip"
 g2p_output="${DIR}/g2p.fst"
 
-if [[ ! -f "${g2p_file}" ]]; then
+if [[ ! -s "${g2p_file}" ]]; then
     echo "Downloading g2p model"
     wget -q -O "${g2p_file}" "${g2p_url}"
 fi
@@ -58,7 +58,7 @@ lm_url='https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-
 lm_file="${download_dir}/VN.3gram.lm.gz"
 lm_output="${DIR}/base_language_model.txt"
 
-if [[ ! -f "${lm_file}" ]]; then
+if [[ ! -s "${lm_file}" ]]; then
     echo "Downloading language model"
     wget -q -O "${lm_file}" "${lm_url}"
 fi
@@ -73,7 +73,7 @@ zcat "${lm_file}" > "${lm_output}" || exit 1
 snowboy_models=("snowboy.umdl" "computer.umdl")
 for model_name in "${snowboy_models[@]}"; do
     model_output="${DIR}/${model_name}"
-    if [[ ! -f "${model_output}" ]]; then
+    if [[ ! -s "${model_output}" ]]; then
         model_url="https://github.com/Kitt-AI/snowboy/raw/master/resources/models/${model_name}"
         echo "Downloading ${model_output} (${model_url})"
         wget -q -O "${model_output}" "${model_url}"

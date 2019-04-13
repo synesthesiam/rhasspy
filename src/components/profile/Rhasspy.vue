@@ -4,6 +4,17 @@
         <div class="card-body">
             <div class="form-group">
                 <div class="form-row">
+                    <button class="btn btn-danger" @click="downloadProfile" :disabled="this.downloading">Re-Download Profile</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <p class="text-muted">Force Rhasspy to re-download files for the &quot;{{ this.profile.name }}&quot; profile. This will require an internet connection.</p>
+                </div>
+            </div>
+            <hr>
+            <div class="form-group">
+                <div class="form-row">
                     <label for="default-profile" class="col-form-label">Default Profile</label>
                     <div class="col">
                         <select id="rhasspy-profiles" v-model="defaults.rhasspy.default_profile">
@@ -90,12 +101,36 @@
 </template>
 
 <script>
+ import ProfileService from '@/services/ProfileService'
+
  export default {
      name: 'Rhasspy',
      props: {
          profile : Object,
          defaults : Object,
          profiles: Array
+     },
+     data: function() {
+         return {
+             downloading: false
+         }
+     },
+     methods: {
+         downloadProfile: function(event) {
+             event.preventDefault()
+             this.$emit('begin-async')
+             this.downloading = true
+             ProfileService.downloadProfile(true)
+                           .then(request => {
+                               this.$emit('restart')
+                           })
+                           .catch(err => this.error(err))
+                           .then(() => {
+                               this.downloading = false
+                               this.$parent.endAsync()
+                               this.$emit('end-async')
+                           })
+         }
      }
  }
 </script>

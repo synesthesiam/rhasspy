@@ -181,15 +181,21 @@ def api_profiles() -> Response:
 def api_download_profile() -> str:
     """Downloads the current profile."""
     assert core is not None
+    delete = request.args.get("delete", "false").lower() == "true"
+
     download_script = os.path.abspath(core.profile.read_path("download-profile.sh"))
     logger.debug(download_script)
     assert os.path.exists(download_script), "Profile download script is missing."
+    download_cmd = ["bash", download_script]
+
+    if delete:
+        download_cmd.append("--delete")
+
+    logger.debug(download_cmd)
 
     try:
         output = subprocess.check_output(
-            ["bash", download_script],
-            cwd=core.profile.read_path(),
-            stderr=subprocess.STDOUT,
+            download_cmd, cwd=core.profile.read_path(), stderr=subprocess.STDOUT
         )
     except subprocess.CalledProcessError as e:
         logging.exception("download profile")

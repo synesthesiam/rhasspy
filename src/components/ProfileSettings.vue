@@ -17,7 +17,14 @@
             <Overview :profile="profile" />
 
             <button class="btn btn-primary mt-3">Save Settings</button>
-            <Rhasspy id="profile-rhasspy" :profile="profile" :defaults="defaults" :profiles="profiles" />
+            <Rhasspy id="profile-rhasspy"
+                     :profile="profile"
+                     :defaults="defaults"
+                     :profiles="profiles"
+                     v-on:begin-async="$emit('begin-async')"
+                     v-on:end-async="$emit('end-async')"
+                     v-on:restart="$emit('restart')"
+            />
 
             <HomeAssistant id="profile-handle" :profile="profile" />
             <button class="btn btn-primary mt-3">Save Settings</button>
