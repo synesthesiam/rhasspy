@@ -197,4 +197,30 @@ fi
 # Add /usr/local/lib to LD_LIBRARY_PATH
 sudo ldconfig
 
+# -----------------------------------------------------------------------------
+# NodeJS / Yarn
+# -----------------------------------------------------------------------------
+
+if [[ -z "$(which node)" ]]; then
+    echo "Installing nodejs"
+    sudo apt-get install -y nodejs
+fi
+
+if [[ -z "$(which yarn)" ]]; then
+    echo "Installing yarn"
+    curl -o- -L https://yarnpkg.com/install.sh | bash
+
+    # Need to re-source .bashrc so yarn is in the path
+    source "${HOME}/.bashrc"
+fi
+
+# -----------------------------------------------------------------------------
+# Web Interface
+# -----------------------------------------------------------------------------
+
+echo "Building web interface"
+yarn && yarn build
+
+# -----------------------------------------------------------------------------
+
 echo "Done"
