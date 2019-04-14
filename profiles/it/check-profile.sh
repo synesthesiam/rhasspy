@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
-DIR="$( cd "$( dirname "$0" )" && pwd )"
-download_dir="${DIR}/download"
+if [[ -z "$1" ]]; then
+    echo "Directory required as first argument"
+    exit 1
+fi
+
+DIR="$1"
 
 echo "Checking Italian (it) profile (sphinx)"
 

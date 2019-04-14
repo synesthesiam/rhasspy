@@ -165,7 +165,7 @@ def api_profiles() -> Response:
 
     check_path = core.profile.read_path("check-profile.sh")
     assert os.path.exists(check_path), "Missing profile check script"
-    check_cmd = ["bash", check_path]
+    check_cmd = ["bash", check_path, core.profile.write_path()]
     logger.debug(check_cmd)
 
     downloaded = True
@@ -195,7 +195,7 @@ def api_download_profile() -> str:
     download_script = os.path.abspath(core.profile.read_path("download-profile.sh"))
     logger.debug(download_script)
     assert os.path.exists(download_script), "Profile download script is missing."
-    download_cmd = ["bash", download_script]
+    download_cmd = ["bash", download_script, core.profile.write_path()]
 
     if delete:
         download_cmd.append("--delete")
@@ -203,19 +203,12 @@ def api_download_profile() -> str:
     logger.debug(download_cmd)
 
     try:
-        output = subprocess.check_output(
-            download_cmd, cwd=core.profile.write_path(), stderr=subprocess.STDOUT
-        )
+        output = subprocess.check_output(download_cmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         logging.exception("download profile")
         output = e.output.decode()
         logging.debug(output)
         raise Exception(output)
-
-    # Create downloaded file
-    downloaded_path = core.profile.write_path(".downloaded")
-    with open(downloaded_path, "wb") as downloaded_file:
-        downloaded_file.write(output)
 
     return output
 

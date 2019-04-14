@@ -1,9 +1,18 @@
 #!/usr/bin/env bash
 set -e
 
-DIR="$( cd "$( dirname "$0" )" && pwd )"
-rhasspy_dir="${DIR}/../../"
+if [[ -z "$1" ]]; then
+    echo "Directory required as first argument"
+    exit 1
+fi
+
+DIR="$1"
 download_dir="${DIR}/download"
+
+if [[ "$2" = "--delete" ]]; then
+    rm -rf "${download_dir}"
+fi
+
 mkdir -p "${download_dir}"
 
 echo "Downloading Greek (el) profile (sphinx)"
