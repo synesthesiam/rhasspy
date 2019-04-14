@@ -75,8 +75,10 @@ fi
 # Virtual environment
 # -----------------------------------------------------------------------------
 
+cd "${DIR}"
+
 PYTHON="python3.6"
-VENV_PATH="$DIR/.venv"
+VENV_PATH="${DIR}/.venv"
 echo "${VENV_PATH}"
 
 echo "Removing existing virtual environment"
