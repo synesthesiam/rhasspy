@@ -32,7 +32,7 @@ fi
 
 echo "Extracting acoustic model (${acoustic_file})"
 rm -rf "${acoustic_output}"
-tar -xf "${acoustic_file}" "cmusphinx-it-5.2/model_parameters/voxforge_it_sphinx.cd_cont_2000/" && mv "${DIR}/cmusphinx-it-5.2/model_parameters/voxforge_it_sphinx.cd_cont_2000/" "${acoustic_output}" && rm -rf "${DIR}/cmusphinx-it-5.2" || exit 1
+tar -C "${DIR}" -xf "${acoustic_file}" "cmusphinx-it-5.2/model_parameters/voxforge_it_sphinx.cd_cont_2000/" && mv "${DIR}/cmusphinx-it-5.2/model_parameters/voxforge_it_sphinx.cd_cont_2000/" "${acoustic_output}" && rm -rf "${DIR}/cmusphinx-it-5.2" || exit 1
 
 #------------------------------------------------------------------------------
 # G2P

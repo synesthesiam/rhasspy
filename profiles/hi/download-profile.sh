@@ -32,7 +32,7 @@ fi
 
 echo "Extracting acoustic model (${acoustic_file})"
 rm -rf "${acoustic_output}"
-tar -xf "${acoustic_file}" "cmusphinx-hi-5.2/hindi.cd_cont_1000/" && mv "${DIR}/cmusphinx-hi-5.2/hindi.cd_cont_1000" "${acoustic_output}" && rm -rf "${DIR}/cmusphinx-hi-5.2" || exit 1
+tar -C "${DIR}" -xf "${acoustic_file}" "cmusphinx-hi-5.2/hindi.cd_cont_1000/" && mv "${DIR}/cmusphinx-hi-5.2/hindi.cd_cont_1000" "${acoustic_output}" && rm -rf "${DIR}/cmusphinx-hi-5.2" || exit 1
 
 #------------------------------------------------------------------------------
 # G2P

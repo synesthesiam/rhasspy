@@ -32,7 +32,7 @@ fi
 
 echo "Extracting acoustic model (${acoustic_file})"
 rm -rf "${acoustic_output}"
-tar -xf "${acoustic_file}" "cmusphinx-es-5.2/model_parameters/voxforge_es_sphinx.cd_ptm_4000/" && mv "${DIR}/cmusphinx-es-5.2/model_parameters/voxforge_es_sphinx.cd_ptm_4000/" "${acoustic_output}" && rm -rf "${DIR}/cmusphinx-es-5.2" || exit 1
+tar -C "${DIR}" -xf "${acoustic_file}" "cmusphinx-es-5.2/model_parameters/voxforge_es_sphinx.cd_ptm_4000/" && mv "${DIR}/cmusphinx-es-5.2/model_parameters/voxforge_es_sphinx.cd_ptm_4000/" "${acoustic_output}" && rm -rf "${DIR}/cmusphinx-es-5.2"
 
 #------------------------------------------------------------------------------
 # G2P
@@ -48,7 +48,7 @@ if [[ ! -s "${g2p_file}" ]]; then
 fi
 
 echo "Extracting g2p model (${g2p_file})"
-tar --to-stdout -xzf "${g2p_file}" 'g2p.fst' > "${g2p_output}" || exit 1
+tar --to-stdout -xzf "${g2p_file}" 'g2p.fst' > "${g2p_output}"
 
 #------------------------------------------------------------------------------
 # Dictionary
@@ -56,7 +56,7 @@ tar --to-stdout -xzf "${g2p_file}" 'g2p.fst' > "${g2p_output}" || exit 1
 
 dict_output="${DIR}/base_dictionary.txt"
 echo "Extracting dictionary (${acoustic_file})"
-tar --to-stdout -xf "${acoustic_file}" "cmusphinx-es-5.2/etc/voxforge_es_sphinx.dic" > "${dict_output}" || exit 1
+tar --to-stdout -xf "${acoustic_file}" "cmusphinx-es-5.2/etc/voxforge_es_sphinx.dic" > "${dict_output}"
 
 #------------------------------------------------------------------------------
 # Language Model
@@ -64,7 +64,7 @@ tar --to-stdout -xf "${acoustic_file}" "cmusphinx-es-5.2/etc/voxforge_es_sphinx.
 
 lm_output="${DIR}/base_language_model.txt"
 echo "Extracting language model (${acoustic_file})"
-tar --to-stdout -xf "${acoustic_file}" "cmusphinx-es-5.2/etc/es-20k.lm.gz" | zcat > "${lm_output}" || exit 1
+tar --to-stdout -xf "${acoustic_file}" "cmusphinx-es-5.2/etc/es-20k.lm.gz" | zcat > "${lm_output}"
 
 #------------------------------------------------------------------------------
 # Snowboy

@@ -34,7 +34,7 @@ fi
 
 echo "Extracting acoustic model (${acoustic_file})"
 rm -rf "${acoustic_output}"
-tar -xzf "${acoustic_file}" -C "${DIR}" && mv "${DIR}/cmusphinx-en-us-5.2" "${acoustic_output}" || exit 1
+tar -C "${DIR}" -xzf "${acoustic_file}" && mv "${DIR}/cmusphinx-en-us-5.2" "${acoustic_output}"
 
 #------------------------------------------------------------------------------
 # G2P
@@ -50,7 +50,7 @@ if [[ ! -s "${g2p_file}" ]]; then
 fi
 
 echo "Extracting g2p model (${g2p_file})"
-tar --to-stdout -xzf "${g2p_file}" 'g2p.fst' > "${g2p_output}" || exit 1
+tar --to-stdout -xzf "${g2p_file}" 'g2p.fst' > "${g2p_output}"
 
 #------------------------------------------------------------------------------
 # Dictionary
@@ -59,7 +59,7 @@ tar --to-stdout -xzf "${g2p_file}" 'g2p.fst' > "${g2p_output}" || exit 1
 dict_output="${DIR}/base_dictionary.txt"
 
 echo "Extracting dictionary (${g2p_file})"
-tar --to-stdout -xzf "${g2p_file}" 'base_dictionary.txt' > "${dict_output}" || exit 1
+tar --to-stdout -xzf "${g2p_file}" 'base_dictionary.txt' > "${dict_output}"
 
 #------------------------------------------------------------------------------
 # Language Model
@@ -75,7 +75,7 @@ if [[ ! -s "${lm_file}" ]]; then
 fi
 
 echo "Extracting language model (${lm_file})"
-zcat "${lm_file}" > "${lm_output}" || exit 1
+zcat "${lm_file}" > "${lm_output}"
 
 #------------------------------------------------------------------------------
 # Snowboy
