@@ -24,7 +24,7 @@ case $CPU_ARCH in
 esac
 
 # Create a temporary directory for building stuff
-temp_dir=$(mktemp -d)
+temp_dir="$(mktemp -d)"
 
 function cleanup {
     rm -rf "${temp_dir}"
@@ -48,9 +48,34 @@ sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
      jq checkinstall unzip xz-utils
 
 # -----------------------------------------------------------------------------
+# Python 3.6
+# -----------------------------------------------------------------------------
+
+if [[ -z "$(which python3.6)" ]]; then
+    echo "Installing Python 3.6 from source. This is going to take a LONG time."
+    sudo apt-get install -y tk-dev libncurses5-dev libncursesw5-dev \
+         libreadline6-dev libdb5.3-dev libgdbm-dev \
+         libsqlite3-dev libssl-dev libbz2-dev \
+         libexpat1-dev liblzma-dev zlib1g-dev
+
+    python_file="${download_dir}/Python-3.6.8.tar.xz"
+    if [[ ! -f "${python_file}" ]]; then
+        python_url='https://www.python.org/ftp/python/3.6.8/Python-3.6.8.tar.xz'
+        wget -O "${python_file}" -q "${python_url}"
+    fi
+
+    tar -C "${temp_dir}" -xf "${python_file}"
+    cd "${temp_dir}/Python-3.6.8" && \
+        ./configure && \
+        make -j 4 && \
+        sudo make altinstall
+fi
+
+# -----------------------------------------------------------------------------
 # Virtual environment
 # -----------------------------------------------------------------------------
 
+PYTHON="python3.6"
 VENV_PATH="$DIR/.venv"
 echo "${VENV_PATH}"
 
@@ -59,12 +84,12 @@ rm -rf "${VENV_PATH}"
 
 echo "Creating new virtual environment"
 mkdir -p "${VENV_PATH}"
-python3 -m venv "${VENV_PATH}"
+"${PYTHON}" -m venv "${VENV_PATH}"
 
 # shellcheck source=/dev/null
 source "${VENV_PATH}/bin/activate"
-python3 -m pip install wheel
-python3 -m pip install -r requirements.txt
+"${PYTHON}" -m pip install wheel
+"${PYTHON}" -m pip install -r requirements.txt
 
 # -----------------------------------------------------------------------------
 # Pocketsphinx for Python
@@ -77,7 +102,7 @@ if [[ ! -f "${pocketsphinx_file}" ]]; then
     wget -q -O "${pocketsphinx_file}" "${pocketsphinx_url}"
 fi
 
-python3 -m pip install "${pocketsphinx_file}"
+"${PYTHON}" -m pip install "${pocketsphinx_file}"
 
 # -----------------------------------------------------------------------------
 # Snowboy
@@ -92,7 +117,7 @@ case $CPU_ARCH in
             wget -q -O "${snowboy_file}" "${snowboy_url}"
         fi
 
-        python3 -m pip install "${snowboy_file}"
+        "${PYTHON}" -m pip install "${snowboy_file}"
         ;;
 
     *)
