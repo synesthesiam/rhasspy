@@ -24,7 +24,7 @@ echo "Downloading Vietnamese (vi) profile (kaldi)"
 acoustic_url='https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-vi/vietnamese.zip'
 
 acoustic_file="${download_dir}/vietnamese.zip"
-acoustic_output="${DIR}/model/model"
+acoustic_output="${DIR}/model"
 
 if [[ ! -s "${acoustic_file}" ]]; then
     echo "Downloading acoustic model"
@@ -33,6 +33,7 @@ fi
 
 echo "Extracting acoustic model (${acoustic_file})"
 rm -rf "${acoustic_output}"
+mkdir -p "${acoustic_output}"
 unzip -d "${DIR}" "${acoustic_file}" && mv "${DIR}/vietnamese" "${acoustic_output}" || exit 1
 
 #------------------------------------------------------------------------------

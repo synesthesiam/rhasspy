@@ -99,10 +99,6 @@ COPY profiles/vi/profile.json \
      profiles/vi/sentences.ini \
      profiles/vi/stop_words.txt ${RHASSPY_APP}/profiles/vi/
 
-COPY profiles/vi/model/conf/ \
-     profiles/vi/model/phones/ \
-     profiles/vi/model/*.sh ${RHASSPY_APP}/profiles/vi/model/
-
 COPY profiles/en/profile.json \
      profiles/en/custom_words.txt \
      profiles/en/download-profile.sh \
