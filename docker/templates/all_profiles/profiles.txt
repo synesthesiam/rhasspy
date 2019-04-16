@@ -89,19 +89,19 @@ COPY profiles/nl/profile.json \
      profiles/nl/sentences.ini \
      profiles/nl/stop_words.txt ${RHASSPY_APP}/profiles/nl/
 
-#COPY profiles/vi/profile.json \
-#     profiles/vi/custom_words.txt \
-#     profiles/vi/download-profile.sh \
-#     profiles/vi/check-profile.sh \
-#     profiles/vi/espeak_phonemes.txt \
-#     profiles/vi/phoneme_examples.txt \
-#     profiles/vi/frequent_words.txt \
-#     profiles/vi/sentences.ini \
-#     profiles/vi/stop_words.txt \
-#     profiles/vi/model/conf \
-#     profiles/vi/model/phones \
-#     profiles/vi/model/model \
-#     profiles/vi/model/*.sh ${RHASSPY_APP}/profiles/vi/model/
+COPY profiles/vi/profile.json \
+     profiles/vi/custom_words.txt \
+     profiles/vi/download-profile.sh \
+     profiles/vi/check-profile.sh \
+     profiles/vi/espeak_phonemes.txt \
+     profiles/vi/phoneme_examples.txt \
+     profiles/vi/frequent_words.txt \
+     profiles/vi/sentences.ini \
+     profiles/vi/stop_words.txt \
+     profiles/vi/model/conf \
+     profiles/vi/model/phones \
+     profiles/vi/model/model \
+     profiles/vi/model/*.sh ${RHASSPY_APP}/profiles/vi/model/
 
 COPY profiles/en/profile.json \
      profiles/en/custom_words.txt \

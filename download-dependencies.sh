@@ -105,3 +105,18 @@ if [[ ! -f "${phonetisaurus_file}" ]]; then
 fi
 
 echo "Done"
+
+# -----------------------------------------------------------------------------
+# Kaldi
+# -----------------------------------------------------------------------------
+
+for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"
+do
+    # Install pre-built package
+    kaldi_file="${download_dir}/kaldi_${FRIENDLY_ARCH}.deb"
+    if [[ ! -f "${kaldi_file}" ]]; then
+        kaldi_url="https://github.com/synesthesiam/kaldi-docker/releases/download/v1.0/kaldi_${FRIENDLY_ARCH}.tar.gz.deb"
+        echo "Downloading kaldi (${kaldi_url})"
+        wget -q -O "${kaldi_file}" "${kaldi_url}"
+    fi
+done
