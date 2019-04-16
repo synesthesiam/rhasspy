@@ -185,7 +185,6 @@ COPY profiles/vi/profile.json \
      profiles/vi/stop_words.txt \
      profiles/vi/model/conf \
      profiles/vi/model/phones \
-     profiles/vi/model/model \
      profiles/vi/model/*.sh ${RHASSPY_APP}/profiles/vi/model/
 
 COPY profiles/en/profile.json \
