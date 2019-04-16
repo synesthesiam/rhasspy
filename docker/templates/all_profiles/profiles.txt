@@ -97,9 +97,10 @@ COPY profiles/vi/profile.json \
      profiles/vi/phoneme_examples.txt \
      profiles/vi/frequent_words.txt \
      profiles/vi/sentences.ini \
-     profiles/vi/stop_words.txt \
-     profiles/vi/model/conf \
-     profiles/vi/model/phones \
+     profiles/vi/stop_words.txt ${RHASSPY_APP}/profiles/vi/
+
+COPY profiles/vi/model/conf/ \
+     profiles/vi/model/phones/ \
      profiles/vi/model/*.sh ${RHASSPY_APP}/profiles/vi/model/
 
 COPY profiles/en/profile.json \
