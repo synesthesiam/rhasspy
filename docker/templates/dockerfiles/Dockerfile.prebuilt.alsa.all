@@ -66,6 +66,7 @@ RUN apt-get install -y flite
 
 COPY download/kaldi_${BUILD_ARCH}.tar.gz /kaldi.tar.gz
 RUN cd / && \
+    mkdir -p /opt && \
     tar -xzf -C /opt kaldi.tar.gz && \
     rm /kaldi.tar.gz
 
