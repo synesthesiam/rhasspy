@@ -33,8 +33,9 @@ fi
 
 echo "Extracting acoustic model (${acoustic_file})"
 rm -rf "${acoustic_output}"
-mkdir -p "${acoustic_output}"
-unzip -d "${DIR}" "${acoustic_file}" && mv "${DIR}/vietnamese" "${acoustic_output}" || exit 1
+unzip -d "${DIR}" "${acoustic_file}" && \
+    mv "${DIR}/vietnamese" "${acoustic_output}" && \
+    chmod +x "${acoustic_output}"/*.sh
 
 #------------------------------------------------------------------------------
 # G2P

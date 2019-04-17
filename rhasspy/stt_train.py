@@ -315,7 +315,9 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         with open(unknown_path, "w") as unknown_file:
             for word, word_pron in unknown_words.items():
                 pronunciations = word_pron["pronunciations"]
-                assert len(pronunciations) > 0, f"No pronunciations for unknown word {word}"
+                assert (
+                    len(pronunciations) > 0
+                ), f"No pronunciations for unknown word {word}"
                 phonemes = pronunciations[0]
 
                 # Dictionary uses upper-case letters
@@ -447,8 +449,10 @@ class KaldiSpeechTrainer(PocketsphinxSpeechTrainer):
             )
         )
         self.model_dir = self.profile.read_path(
-            "training.speech_to_text.kaldi.model_dir",
-            self.profile.get("speech_to_text.kaldi.model_dir", "model"),
+            self.profile.get(
+                "training.speech_to_text.kaldi.model_dir",
+                self.profile.get("speech_to_text.kaldi.model_dir", "model"),
+            )
         )
         self.train_command = [
             os.path.join(self.model_dir, "train.sh"),

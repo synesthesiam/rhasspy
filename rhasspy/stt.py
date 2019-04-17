@@ -226,7 +226,7 @@ class KaldiDecoder(RhasspyActor):
             self.profile.get("speech_to_text.kaldi.kaldi_dir", "/opt/kaldi")
         )
         self.model_dir = self.profile.read_path(
-            "speech_to_text.kaldi.model_dir", "model"
+            self.profile.get("speech_to_text.kaldi.model_dir", "model")
         )
         self.graph_dir = os.path.join(
             self.model_dir, self.profile.get("speech_to_text.kaldi.graph_dir", "graph")
