@@ -1,0 +1,19 @@
+{
+    "language": "pt",
+    "name": "pt",
+    "speech_to_text": {
+        "kaldi": {
+            "compatible": true
+        },
+        "pocketsphinx": {
+            "compatible": false
+        },
+        "system": "kaldi"
+    },
+    "wake": {
+        "pocketsphinx": {
+            "compatible": false
+        },
+        "system": "dummy"
+    }
+}

@@ -184,6 +184,16 @@ COPY profiles/vi/profile.json \
      profiles/vi/sentences.ini \
      profiles/vi/stop_words.txt ${RHASSPY_APP}/profiles/vi/
 
+COPY profiles/pt/profile.json \
+     profiles/pt/custom_words.txt \
+     profiles/pt/download-profile.sh \
+     profiles/pt/check-profile.sh \
+     profiles/pt/espeak_phonemes.txt \
+     profiles/pt/phoneme_examples.txt \
+     profiles/pt/frequent_words.txt \
+     profiles/pt/sentences.ini \
+     profiles/pt/stop_words.txt ${RHASSPY_APP}/profiles/pt/
+
 COPY profiles/en/profile.json \
      profiles/en/custom_words.txt \
      profiles/en/download-profile.sh \
