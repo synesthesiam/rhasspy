@@ -113,9 +113,9 @@ echo "Done"
 for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"
 do
     # Install pre-built package
-    kaldi_file="${download_dir}/kaldi_${FRIENDLY_ARCH}.deb"
+    kaldi_file="${download_dir}/kaldi_${FRIENDLY_ARCH}.tar.gz"
     if [[ ! -f "${kaldi_file}" ]]; then
-        kaldi_url="https://github.com/synesthesiam/kaldi-docker/releases/download/v1.0/kaldi_${FRIENDLY_ARCH}.tar.gz.deb"
+        kaldi_url="https://github.com/synesthesiam/kaldi-docker/releases/download/v1.0/kaldi_${FRIENDLY_ARCH}.tar.gz"
         echo "Downloading kaldi (${kaldi_url})"
         wget -q -O "${kaldi_file}" "${kaldi_url}"
     fi
