@@ -10,4 +10,4 @@ fuzzywuzzy[speedup]
 adapt-parser
 precise-runner
 cerberus
-https://github.com/Danesprite/pyjsgf/archive/v1.6.0.tar.gz
+https://github.com/Danesprite/pyjsgf/archive/v1.5.1.tar.gz
