@@ -31,7 +31,7 @@ fi
 # PyJSGF
 # -----------------------------------------------------------------------------
 
-pyjsgf_file="${download_dir}/pyjsgf-1.6.0.tar.gz"
+pyjsgf_file="${download_dir}/pyjsgf-1.5.1.tar.gz"
 if [[ ! -f "${pyjsgf_file}" ]]; then
     pyjsgf_url='https://github.com/Danesprite/pyjsgf/archive/v1.5.1.tar.gz'
     echo "Downloading pyjsgf (${pyjsgf_url})"
