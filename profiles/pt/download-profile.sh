@@ -41,7 +41,7 @@ unzip -d "${DIR}" "${acoustic_file}" && \
 # G2P
 #------------------------------------------------------------------------------
 
-g2p_url='https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-vi/vietnamese_g2p.zip'
+g2p_url='https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-pt/portuguese_g2p.zip'
 g2p_file="${download_dir}/portuguese_g2p.zip"
 g2p_output="${DIR}/g2p.fst"
 
