@@ -2,7 +2,7 @@
     "command": {
         "command": {
             "arguments": [],
-            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/listen.sh"
+            "program": ""
         },
         "hermes": {
             "timeout_sec": 30
@@ -22,28 +22,10 @@
             "vad_mode": 0
         }
     },
-    "dialogue": {
-        "states": {
-            "start": {
-                "intents": [
-                    ".+"
-                ]
-            }
-        },
-        "transitions": {
-            "default": {
-                "from": "start",
-                "on": [
-                    ".+"
-                ],
-                "to": "start"
-            }
-        }
-    },
     "handle": {
         "command": {
             "arguments": [],
-            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/handle.sh"
+            "program": ""
         },
         "forward_to_hass": true,
         "system": "hass"
@@ -61,11 +43,14 @@
         },
         "command": {
             "arguments": [],
-            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/text2intent.sh"
+            "program": ""
         },
         "fuzzywuzzy": {
             "examples_json": "intent_examples.json",
             "min_confidence": 0
+        },
+        "fsticuffs": {
+            "intent_fst": "intent.fst"
         },
         "rasa": {
             "examples_markdown": "intent_examples.md",
@@ -75,7 +60,7 @@
         "remote": {
             "url": "http://my-server:12101/api/text-to-intent"
         },
-        "system": "fuzzywuzzy"
+        "system": "fsticuffs"
     },
     "language": "",
     "microphone": {
@@ -117,12 +102,13 @@
     "speech_to_text": {
         "command": {
             "arguments": [],
-            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/speech2text.sh"
+            "program": ""
         },
         "dictionary_casing": "",
         "g2p_casing": "",
         "g2p_model": "g2p.fst",
         "grammars_dir": "grammars",
+        "fsts_dir": "fsts",
         "kaldi": {
             "base_dictionary": "base_dictionary.txt",
             "compatible": false,
@@ -179,53 +165,36 @@
         "intent": {
             "command": {
                 "arguments": [],
-                "program": "$RHASSPY_BASE_DIR/bin/mock-commands/train-intent.sh"
+                "program": ""
             },
             "system": "auto"
         },
         "regex": {
-            "replace": [
-                {
-                    "'s": "s"
-                },
-                {
-                    "[^\\w ]+": " "
-                }
-            ],
             "split": "\\s+"
         },
-        "sentence_casing": "lower",
         "sentences": {
             "balance_by_intent": true,
             "casing": "lower",
             "write_sorted": false,
             "write_weights": false
         },
-        "sentences_by_intent": "sentences_by_intent.json.gz",
         "speech_to_text": {
             "command": {
                 "arguments": [],
-                "program": "$RHASSPY_BASE_DIR/bin/mock-commands/train-stt.sh"
+                "program": ""
             },
             "system": "auto"
         },
-        "tagged_sentences": "tagged_sentences.md",
         "tokenizer": "regex",
         "unknown_words": {
             "fail_when_present": true,
             "guess_pronunciations": true
         }
     },
-    "tuning": {
-        "sphinxtrain": {
-            "mllr_matrix": "acoustic_model_mllr"
-        },
-        "system": "sphinxtrain"
-    },
     "wake": {
         "command": {
             "arguments": [],
-            "program": "$RHASSPY_BASE_DIR/bin/mock-commands/sleep.sh"
+            "program": ""
         },
         "hermes": {
             "wakeword_id": "default"

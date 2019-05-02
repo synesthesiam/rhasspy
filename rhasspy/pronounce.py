@@ -54,6 +54,11 @@ class WordPronunciations:
         self.pronunciations = pronunciations
 
 
+class PronunciationFailed:
+    def __init__(self, reason: str) -> None:
+        self.reason = reason
+
+
 # -----------------------------------------------------------------------------
 # Dummy word pronouncer
 # -----------------------------------------------------------------------------
@@ -84,9 +89,13 @@ class PhonetisaurusPronounce(RhasspyActor):
                 WordSpoken(message.word, wav_data, espeak_phonemes),
             )
         elif isinstance(message, GetWordPronunciations):
-            pronunciations = self.pronounce(message.words, message.n)
-
-            self.send(message.receiver or sender, WordPronunciations(pronunciations))
+            try:
+                pronunciations = self.pronounce(message.words, message.n)
+                self.send(
+                    message.receiver or sender, WordPronunciations(pronunciations)
+                )
+            except Exception as e:
+                self.send(message.receiver or sender, PronunciationFailed(repr(e)))
         elif isinstance(message, GetWordPhonemes):
             phonemes = self.translate_phonemes(message.word)
             self.send(message.receiver or sender, WordPhonemes(message.word, phonemes))

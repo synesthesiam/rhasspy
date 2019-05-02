@@ -90,6 +90,64 @@ class RemoteRecognizer(RhasspyActor):
 
 
 # -----------------------------------------------------------------------------
+# OpenFST Intent Recognizer
+# https://www.openfst.org
+# -----------------------------------------------------------------------------
+
+
+class FsticuffsRecognizer(RhasspyActor):
+    """Recognize intents using OpenFST"""
+
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.fst: Optional[Any] = None
+
+    def to_started(self, from_state: str) -> None:
+        self.fst_path = self.profile.read_path(
+            self.profile.get("intent.fsticuffs.intent_fst", "intent.fst")
+        )
+
+        try:
+            self.load_fst()
+        except Exception as e:
+            self._logger.exception("to_started")
+
+        self.transition("loaded")
+
+    def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
+        if isinstance(message, RecognizeIntent):
+            try:
+                self.load_fst()
+                intent = self.recognize(message.text)
+            except Exception as e:
+                self._logger.exception("in_loaded")
+                intent = empty_intent()
+
+            intent["speech_confidence"] = message.confidence
+            self.send(
+                message.receiver or sender,
+                IntentRecognized(intent, handle=message.handle),
+            )
+
+    # -------------------------------------------------------------------------
+
+    def recognize(self, text: str) -> Dict[str, Any]:
+        from jsgf2fst import fstaccept
+
+        intents = fstaccept(self.fst, text)
+        self._logger.debug(f"Got {len(intents)} intent(s)")
+        return intents[0]
+
+    # -------------------------------------------------------------------------
+
+    def load_fst(self):
+        if self.fst is None:
+            import pywrapfst as fst
+
+            self.fst = fst.Fst.read(self.fst_path)
+
+
+# -----------------------------------------------------------------------------
 # Fuzzywuzzy-based Intent Recognizer
 # https://github.com/seatgeek/fuzzywuzzy
 # -----------------------------------------------------------------------------

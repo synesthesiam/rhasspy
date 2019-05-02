@@ -24,17 +24,17 @@ class RhasspyTestCase(unittest.TestCase):
         """speech -> text"""
         with open("etc/test/turn_on_living_room_lamp.wav", "rb") as wav_file:
             text = self.core.transcribe_wav(wav_file.read()).text
-            assert text == "turn on the living room lamp"
+            assert text == "turn on the living room lamp", text
 
     # -------------------------------------------------------------------------
 
     def test_recognize(self):
         """text -> intent"""
         intent = self.core.recognize_intent("turn on the living room lamp").intent
-        assert intent["intent"]["name"] == "ChangeLightState"
+        assert intent["intent"]["name"] == "ChangeLightState", intent["intent"]["name"]
         entities = {e["entity"]: e["value"] for e in intent["entities"]}
-        assert entities["name"] == "living room lamp"
-        assert entities["state"] == "on"
+        assert entities["name"] == "living room lamp", entities["name"]
+        assert entities["state"] == "on", entities["state"]
 
     # -------------------------------------------------------------------------
 
@@ -60,7 +60,7 @@ class RhasspyTestCase(unittest.TestCase):
             core.train()
             with open("etc/test/what_time_is_it.wav", "rb") as wav_file:
                 text = core.transcribe_wav(wav_file.read()).text
-                assert text != "what time is it"
+                assert text != "what time is it", text
 
             # Add some more sentences
             with open(sentences_path, "a") as sentences_file:

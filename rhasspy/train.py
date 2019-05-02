@@ -10,7 +10,8 @@ import concurrent.futures
 from collections import defaultdict
 from typing import TextIO, Dict, List, Tuple, Any, Optional
 
-from jsgf import parser, expansions, rules
+from jsgf import parser
+from jsgf2fst import jsgf2fst, read_slots, make_intent_fst
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -54,8 +55,8 @@ class GenerateSentences:
 
 
 class SentencesGenerated:
-    def __init__(self, sentences_by_intent) -> None:
-        self.sentences_by_intent = sentences_by_intent
+    def __init__(self, intent_fst) -> None:
+        self.intent_fst = intent_fst
 
 
 class SentenceGenerationFailed:
@@ -64,13 +65,13 @@ class SentenceGenerationFailed:
 
 
 # -----------------------------------------------------------------------------
-# jsgf-gen based sentence generator
-# https://github.com/synesthesiam/jsgf-gen
+# OpenFST based sentence generator
+# https://github.com/synesthesiam/jsgf2fst
 # -----------------------------------------------------------------------------
 
 
 class JsgfSentenceGenerator(RhasspyActor):
-    """Uses jsgf-gen to generate sentences."""
+    """Uses jsgf2fst to generate sentences."""
 
     def to_started(self, from_state: str) -> None:
         self.language = self.profile.get("language", "en")
@@ -78,10 +79,8 @@ class JsgfSentenceGenerator(RhasspyActor):
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, GenerateSentences):
             try:
-                sentences_by_intent = self.generate_sentences()
-                self.send(
-                    message.receiver or sender, SentencesGenerated(sentences_by_intent)
-                )
+                intent_fst = self.generate_sentences()
+                self.send(message.receiver or sender, SentencesGenerated(intent_fst))
             except Exception as e:
                 self._logger.exception("generate")
                 self.send(message.receiver or sender, SentenceGenerationFailed(repr(e)))
@@ -97,6 +96,8 @@ class JsgfSentenceGenerator(RhasspyActor):
             self.profile.get("speech_to_text.grammars_dir")
         )
 
+        fsts_dir = self.profile.write_dir(self.profile.get("speech_to_text.fsts_dir"))
+
         start_time = time.time()
         with open(ini_path, "r") as ini_file:
             grammar_paths = self._make_grammars(ini_file, grammars_dir)
@@ -110,76 +111,40 @@ class JsgfSentenceGenerator(RhasspyActor):
         sentences_by_intent: Dict[str, List[Any]] = defaultdict(list)
 
         # Ready slots values
-        slots_dirs = self.profile.read_paths(
-            self.profile.get("speech_to_text.slots_dir")
-        )
+        slots_dir = self.profile.read_path(self.profile.get("speech_to_text.slots_dir"))
 
-        self._logger.debug(f"Loading slot values from {slots_dirs}")
+        self._logger.debug(f"Loading slot values from {slots_dir}")
 
-        # colors -> [red, green, blue]
-        slot_values = JsgfSentenceGenerator.load_slots(slots_dirs)
+        # $colors -> [red, green, blue, ...]
+        slots = read_slots(slots_dir)
 
         # Load all grammars
-        grammars = {}
+        grammars = []
         for f_name in os.listdir(grammars_dir):
             self._logger.debug(f"Parsing JSGF grammar {f_name}")
             grammar = parser.parse_grammar_file(os.path.join(grammars_dir, f_name))
-            grammars[grammar.name] = grammar
+            grammars.append(grammar)
 
-        global_rule_map = {
-            f"{grammar.name}.{rule.name}": rule
-            for grammar in grammars.values()
-            for rule in grammar.rules
-        }
-
-        # Generate sentences concurrently
+        # Generate FSTs
         start_time = time.time()
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            future_to_name = {
-                executor.submit(
-                    _jsgf_generate,
-                    self.profile,
-                    name,
-                    grammars,
-                    global_rule_map,
-                    slot_values,
-                ): name
-                for name, grammar in grammars.items()
-            }
+        grammar_fsts = jsgf2fst(grammars, slots=slots)
+        for grammar_name, grammar_fst in grammar_fsts.items():
+            fst_path = os.path.join(fsts_dir, grammar_name) + ".fst"
+            grammar_fst.write(fst_path)
 
-            # Add to the list as they get done
-            for future in concurrent.futures.as_completed(future_to_name):
-                name = future_to_name[future]
-                sentences_by_intent[name] = future.result()
-
-        num_sentences = sum(len(s) for s in sentences_by_intent.values())
-        sentence_time = time.time() - start_time
-        self._logger.debug(
-            f"Generated {num_sentences} sentence(s) for {len(sentences_by_intent)} intent(s) in {sentence_time} second(s)"
+        # Join into master intent FST
+        intent_fst_path = self.profile.write_path(
+            self.profile.get("intent.fsticuffs.intent_fst")
         )
 
-        return sentences_by_intent
+        intent_fst = make_intent_fst(grammar_fsts)
+        intent_fst.write(intent_fst_path)
+        self._logger.debug(f"Wrote intent FST to {intent_fst_path}")
 
-    # -------------------------------------------------------------------------
+        fst_time = time.time() - start_time
+        self._logger.debug(f"Generated FSTs in {fst_time} second(s)")
 
-    @classmethod
-    def load_slots(cls, slots_dirs):
-        # colors -> [red, green, blue]
-        slot_values = defaultdict(set)
-        for slots_dir in slots_dirs:
-            if os.path.exists(slots_dir):
-                for slot_file_name in os.listdir(slots_dir):
-                    slot_path = os.path.join(slots_dir, slot_file_name)
-                    if os.path.isfile(slot_path):
-                        slot_name = os.path.splitext(slot_file_name)[0]
-                        with open(slot_path, "r") as slot_file:
-                            for line in slot_file:
-                                line = line.strip()
-                                if len(line) > 0:
-                                    slot_values[slot_name].add(line)
-
-        # Convert sets to lists for easier JSON serialization
-        return {name: list(values) for name, values in slot_values.items()}
+        return intent_fst
 
     # -------------------------------------------------------------------------
 
@@ -255,140 +220,3 @@ class JsgfSentenceGenerator(RhasspyActor):
             grammar_paths[name] = grammar_path
 
         return grammar_paths
-
-
-# -----------------------------------------------------------------------------
-
-
-def _jsgf_generate(
-    profile, grammar_name, grammars, global_rule_map, slot_values
-) -> List[Any]:
-    # Sentence sanitize settings
-    sentence_casing = profile.get("training.sentences.casing", "")
-    tokenizer = profile.get("training.tokenizer", "regex")
-    regex_config = profile.get(f"training.{tokenizer}", {})
-    replace_patterns = regex_config.get("replace", [])
-    split_pattern = regex_config.get("split", r"\s+")
-
-    # Extract grammar/rules
-    grammar = grammars[grammar_name]
-    rule_map = {rule.name: rule for rule in grammar.rules}
-    for name, rule in global_rule_map.items():
-        rule_map[name] = rule
-
-    top_rule = rule_map[grammar_name]
-
-    # Generate sentences
-    training_sentences: List[Any] = []
-    for tagged_sentence, _ in _make_tagged_sentences(top_rule, rule_map):
-        tagged_sentences = []
-
-        # Check for template replacements ($name$)
-        if "-" in tagged_sentence:
-            chunks = re.split(r"-([^-]+)-", tagged_sentence)
-            replacements = []
-            for i, chunk in enumerate(chunks):
-                if ((i % 2) != 0) and (chunk in slot_values):
-                    replacements.append(slot_values[chunk])
-                else:
-                    replacements.append([chunk])
-
-            # Create all combinations of replacements
-            for replacement in itertools.product(*replacements):
-                tagged_sentences.append("".join(replacement))
-        else:
-            # No replacements
-            tagged_sentences.append(tagged_sentence)
-
-        for tagged_sentence in tagged_sentences:
-            # Template -> untagged sentence + entities
-            untagged_sentence, entities = extract_entities(tagged_sentence)
-
-            # Split sentence into words (tokens)
-            sanitized_sentence, tokens = sanitize_sentence(
-                untagged_sentence, sentence_casing, replace_patterns, split_pattern
-            )
-            training_sentences.append(
-                {
-                    "sentence": sanitized_sentence,
-                    "entities": [e.json() for e in entities],
-                    "tokens": tokens,
-                    "tagged_sentence": tagged_sentence,
-                }
-            )
-
-    # Save to JSON
-    json_path = profile.write_path("sentences", f"{grammar_name}.json")
-    os.makedirs(os.path.split(json_path)[0], exist_ok=True)
-    with open(json_path, "w") as json_file:
-        json.dump(training_sentences, json_file, indent=4)
-
-    return training_sentences
-
-
-# -----------------------------------------------------------------------------
-
-
-def _make_tagged_sentences(rule, rule_map):
-    if isinstance(rule, rules.Rule):
-        # Unpack
-        return _make_tagged_sentences(rule.expansion, rule_map)
-    elif isinstance(rule, expansions.AlternativeSet):
-        # (a | b | c)
-        alt_strs = []
-        for child in rule.children:
-            alt_strs.extend(_make_tagged_sentences(child, rule_map))
-        return alt_strs
-    elif isinstance(rule, expansions.RequiredGrouping):
-        # (abc)
-        group_strs = []
-        for child in rule.children:
-            group_strs.extend(_make_tagged_sentences(child, rule_map))
-
-        if rule.tag:
-            return [(s[0], rule.tag) for s in group_strs]
-        else:
-            return group_strs
-    elif isinstance(rule, expansions.Literal):
-        # a
-        return [(rule.text, rule.tag)]
-    elif isinstance(rule, expansions.OptionalGrouping):
-        # [a]
-        return [("", rule.tag)] + _make_tagged_sentences(rule.child, rule_map)
-    elif isinstance(rule, expansions.Sequence):
-        # a b c
-        seq_strs = []
-        for child in rule.children:
-            seq_strs.append(_make_tagged_sentences(child, rule_map))
-
-        # Do all combinations
-        sentences = []
-        for sent_tuple in itertools.product(*seq_strs):
-            sentence = []
-            for word, tag in sent_tuple:
-                word = word.strip()
-                if len(word) > 0:
-                    if tag:
-                        word = f"[{word}]({tag})"
-
-                    sentence.append(word)
-
-            if len(sentence) > 0:
-                sentences.append((" ".join(sentence), rule.tag))
-
-        return sentences
-
-    elif isinstance(rule, expansions.NamedRuleRef):
-        # <OtherGrammar.otherRule>
-        ref_rule = rule_map.get(rule.name, None)
-        if ref_rule is None:
-            grammar_name = rule.rule.grammar.name
-            ref_rule = rule_map[f"{grammar_name}.{rule.name}"]
-
-        return _make_tagged_sentences(ref_rule, rule_map)
-    else:
-        # Unsupported
-        assert False, rule.__class__
-
-
-# -----------------------------------------------------------------------------

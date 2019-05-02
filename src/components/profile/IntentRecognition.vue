@@ -16,6 +16,17 @@
             <div class="form-group">
                 <div class="form-row">
                     <div class="form-check">
+                        <input class="form-check-input" type="radio" name="intent-system" id="intent-system-fsticuffs" value="fsticuffs" v-model="profile.intent.system">
+                        <label class="form-check-label" for="intent-system-fsticuffs">
+                            Do intent recognition with <a href="https://www.openfst.org">OpenFST</a> on this device
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-check">
                         <input class="form-check-input" type="radio" name="intent-system" id="intent-system-fuzzywuzzy" value="fuzzywuzzy" v-model="profile.intent.system">
                         <label class="form-check-label" for="intent-system-fuzzywuzzy">
                             Do intent recognition with <a href="https://github.com/seatgeek/fuzzywuzzy">fuzzywuzzy</a> on this device
@@ -31,6 +42,7 @@
                     </div>
                 </div>
             </div>
+            <hr>
             <div class="form-group">
                 <div class="form-row">
                     <div class="form-check">

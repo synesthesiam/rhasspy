@@ -9,9 +9,11 @@ import time
 from collections import defaultdict
 from typing import Dict, List, Any, Tuple, Set, Optional
 
+from jsgf2fst import fst2arpa
+
 from .actor import RhasspyActor
 from .profiles import Profile
-from .pronounce import GetWordPronunciations, WordPronunciations
+from .pronounce import GetWordPronunciations, WordPronunciations, PronunciationFailed
 from .train import TrainingSentence
 from .utils import read_dict, lcm, sanitize_sentence, open_maybe_gzip
 
@@ -21,16 +23,14 @@ from .utils import read_dict, lcm, sanitize_sentence, open_maybe_gzip
 
 
 class TrainSpeech:
-    def __init__(
-        self, sentences_by_intent, receiver: Optional[RhasspyActor] = None
-    ) -> None:
-        self.sentences_by_intent = sentences_by_intent
+    def __init__(self, intent_fst, receiver: Optional[RhasspyActor] = None) -> None:
+        self.intent_fst = intent_fst
         self.receiver = receiver
 
 
 class SpeechTrainingComplete:
-    def __init__(self, sentences_by_intent) -> None:
-        self.sentences_by_intent = sentences_by_intent
+    def __init__(self, intent_fst) -> None:
+        self.intent_fst = intent_fst
 
 
 class SpeechTrainingFailed:
@@ -53,21 +53,9 @@ class UnknownWordsException(Exception):
 
 
 class DummySpeechTrainer(RhasspyActor):
-    """Passes sentences along"""
-
-    def to_started(self, from_state: str) -> None:
-        self.sentence_casing = self.profile.get("training.sentences.casing", "")
-        tokenizer = self.profile.get("training.tokenizer", "regex")
-        regex_config = self.profile.get(f"training.{tokenizer}", {})
-        self.replace_patterns = regex_config.get("replace", [])
-        self.split_pattern = regex_config.get("split", r"\s+")
-
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, TrainSpeech):
-            self.send(
-                message.receiver or sender,
-                SpeechTrainingComplete(message.sentences_by_intent),
-            )
+            self.send(message.receiver or sender, SpeechTrainingComplete())
 
 
 # -----------------------------------------------------------------------------
@@ -87,6 +75,11 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         self.word_pronouncer: RhasspyActor = self.config["word_pronouncer"]
         self.unknown_words: Dict[str, Dict[str, Any]] = {}
         self.receiver: Optional[RhasspyActor] = None
+
+        self.fst_path = self.profile.read_path(
+            self.profile.get("intent.fsticuffs.intent_fst")
+        )
+
         self.sentence_casing = self.profile.get("training.sentences.casing", "")
         self.dictionary_upper: bool = self.profile.get(
             "speech_to_text.dictionary_upper", False
@@ -108,35 +101,39 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, TrainSpeech):
             self.receiver = message.receiver or sender
-            self.sentences_by_intent = message.sentences_by_intent
+            self.intent_fst = message.intent_fst
             self.transition("writing_dictionary")
 
     def to_writing_dictionary(self, from_state: str) -> None:
-        unknown = self.write_dictionary(self.sentences_by_intent)
+        try:
+            unknown = self.write_dictionary(self.intent_fst)
 
-        self.unknown_words = {word: {} for word in unknown}
+            self.unknown_words = {word: {} for word in unknown}
 
-        has_unknown_words = len(self.unknown_words) > 0
+            has_unknown_words = len(self.unknown_words) > 0
 
-        if has_unknown_words:
-            unknown_words = list(self.unknown_words.keys())
-            self._logger.warning(
-                f"There are {len(unknown_words)} unknown word(s): {unknown_words}"
-            )
-        else:
-            # Remove unknown dictionary
-            unknown_path = self.profile.read_path(
-                self.profile.get(f"speech_to_text.{self.system}.unknown_words")
-            )
+            if has_unknown_words:
+                unknown_words = list(self.unknown_words.keys())
+                self._logger.warning(
+                    f"There are {len(unknown_words)} unknown word(s): {unknown_words}"
+                )
+            else:
+                # Remove unknown dictionary
+                unknown_path = self.profile.read_path(
+                    self.profile.get(f"speech_to_text.{self.system}.unknown_words")
+                )
 
-            if os.path.exists(unknown_path):
-                os.unlink(unknown_path)
+                if os.path.exists(unknown_path):
+                    os.unlink(unknown_path)
 
-        # Proceed or guess pronunciations
-        if self.guess_unknown and has_unknown_words:
-            self.transition("unknown_words")
-        else:
-            self.transition("writing_sentences")
+            # Proceed or guess pronunciations
+            if self.guess_unknown and has_unknown_words:
+                self.transition("unknown_words")
+            else:
+                self.transition("writing_sentences")
+        except Exception as e:
+            self.send(self.receiver, SpeechTrainingFailed(repr(e)))
+            self.transition("started")
 
     def to_unknown_words(self, from_state: str) -> None:
         words = list(self.unknown_words.keys())
@@ -184,10 +181,13 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
 
                 self.send(self.receiver, SpeechTrainingFailed(repr(e)))
                 self.transition("started")
+        elif isinstance(message, PronunciationFailed):
+            self.send(self.receiver, SpeechTrainingFailed(message.reason))
+            self.transition("started")
 
     def to_writing_sentences(self, from_state: str) -> None:
         try:
-            self.write_sentences(self.sentences_by_intent)
+            # self.write_sentences(self.intent_fst)
             self.transition("writing_language_model")
         except Exception as e:
             self._logger.exception("writing sentences")
@@ -204,12 +204,12 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
             self.transition("started")
 
     def to_finished(self, from_state: str) -> None:
-        self.send(self.receiver, SpeechTrainingComplete(self.sentences_by_intent))
+        self.send(self.receiver, SpeechTrainingComplete(self.intent_fst))
         self.transition("started")
 
     # -------------------------------------------------------------------------
 
-    def write_dictionary(self, sentences_by_intent: Dict[str, Any]) -> Set[str]:
+    def write_dictionary(self, intent_fst) -> Set[str]:
         """Writes all required words to a CMU dictionary.
         Unknown words have their pronunciations guessed and written to a separate dictionary.
         Fails if any unknown words are found."""
@@ -217,18 +217,21 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         start_time = time.time()
         words_needed: Set[str] = set()
 
-        # Extract entities from tagged sentences
-        for intent_name, intent_sents in sentences_by_intent.items():
-            for intent_sent in intent_sents:
-                # Collect all used words
-                for word in intent_sent["tokens"]:
-                    # Dictionary uses upper-case letters
-                    if self.dictionary_upper:
-                        word = word.upper()
-                    else:
-                        word = word.lower()
+        # Gather all words needed
+        out_symbols = intent_fst.output_symbols()
+        for i in range(out_symbols.num_symbols()):
+            word = out_symbols.find(i).decode()
 
-                    words_needed.add(word)
+            if word.startswith("__") or word.startswith("<"):
+                continue  # skip metadata
+
+            # Dictionary uses upper-case letters
+            if self.dictionary_upper:
+                word = word.upper()
+            else:
+                word = word.lower()
+
+            words_needed.add(word)
 
         # Load base and custom dictionaries
         base_dictionary_path = self.profile.read_path(
@@ -330,98 +333,82 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def write_sentences(self, sentences_by_intent: Dict[str, Any]) -> None:
-        """Writes all raw sentences to a text file.
-        Optionally balances (repeats) sentences so all intents have the same number."""
+    # def write_sentences(self, intent_fst) -> None:
+    #     """Writes all raw sentences to a text file.
+    #     Optionally balances (repeats) sentences so all intents have the same number."""
 
-        # Repeat sentences so that all intents will contain the same number
-        balance_sentences = self.profile.get(
-            "training.sentences.balance_by_intent", True
-        )
-        if balance_sentences:
-            # Use least common multiple
-            lcm_sentences = lcm(*(len(sents) for sents in sentences_by_intent.values()))
-        else:
-            lcm_sentences = 0  # no repeats
+    #     # Repeat sentences so that all intents will contain the same number
+    #     balance_sentences = self.profile.get(
+    #         "training.sentences.balance_by_intent", True
+    #     )
+    #     if balance_sentences:
+    #         # Use least common multiple
+    #         lcm_sentences = lcm(*(len(sents) for sents in sentences_by_intent.values()))
+    #     else:
+    #         lcm_sentences = 0  # no repeats
 
-        # Write sentences to text file
-        sentences_text_path = self.profile.write_path(
-            self.profile.get("speech_to_text.sentences_text", "sentences.txt.gz")
-        )
+    #     # Write sentences to text file
+    #     sentences_text_path = self.profile.write_path(
+    #         self.profile.get("speech_to_text.sentences_text", "sentences.txt.gz")
+    #     )
 
-        num_sentences = 0
-        write_sorted = self.profile.get("training.sentences.write_sorted", False)
-        write_weights = self.profile.get("training.sentences.write_weights", False)
+    #     num_sentences = 0
+    #     write_sorted = self.profile.get("training.sentences.write_sorted", False)
+    #     write_weights = self.profile.get("training.sentences.write_weights", False)
 
-        with open_maybe_gzip(sentences_text_path, "w") as sentences_text_file:
-            if write_sorted:
-                # Cache sentences and weights
-                sentences_to_write = []
-                for intent_name, intent_sents in sentences_by_intent.items():
-                    num_repeats = max(1, lcm_sentences // len(intent_sents))
-                    for intent_sent in intent_sents:
-                        sentences_to_write.append(
-                            (num_repeats, intent_sent["sentence"])
-                        )
+    #     with open_maybe_gzip(sentences_text_path, "w") as sentences_text_file:
+    #         if write_sorted:
+    #             # Cache sentences and weights
+    #             sentences_to_write = []
+    #             for intent_name, intent_sents in sentences_by_intent.items():
+    #                 num_repeats = max(1, lcm_sentences // len(intent_sents))
+    #                 for intent_sent in intent_sents:
+    #                     sentences_to_write.append(
+    #                         (num_repeats, intent_sent["sentence"])
+    #                     )
 
-                # Do sort
-                sentences_to_write = sorted(sentences_to_write, key=lambda x: x[1])
-                for num_repeats, sentence in sentences_to_write:
-                    if write_weights:
-                        print(num_repeats, sentence, file=sentences_text_file)
-                    else:
-                        for i in range(num_repeats):
-                            print(sentence, file=sentences_text_file)
-            else:
-                # Unsorted
-                for intent_name, intent_sents in sentences_by_intent.items():
-                    for intent_sent in intent_sents:
-                        num_repeats = max(1, lcm_sentences // len(intent_sents))
-                        if write_weights:
-                            print(
-                                num_repeats,
-                                intent_sent["sentence"],
-                                file=sentences_text_file,
-                            )
-                        else:
-                            for i in range(num_repeats):
-                                print(intent_sent["sentence"], file=sentences_text_file)
+    #             # Do sort
+    #             sentences_to_write = sorted(sentences_to_write, key=lambda x: x[1])
+    #             for num_repeats, sentence in sentences_to_write:
+    #                 if write_weights:
+    #                     print(num_repeats, sentence, file=sentences_text_file)
+    #                 else:
+    #                     for i in range(num_repeats):
+    #                         print(sentence, file=sentences_text_file)
+    #         else:
+    #             # Unsorted
+    #             for intent_name, intent_sents in sentences_by_intent.items():
+    #                 for intent_sent in intent_sents:
+    #                     num_repeats = max(1, lcm_sentences // len(intent_sents))
+    #                     if write_weights:
+    #                         print(
+    #                             num_repeats,
+    #                             intent_sent["sentence"],
+    #                             file=sentences_text_file,
+    #                         )
+    #                     else:
+    #                         for i in range(num_repeats):
+    #                             print(intent_sent["sentence"], file=sentences_text_file)
 
-                        num_sentences = num_sentences + 1
+    #                     num_sentences = num_sentences + 1
 
-        self._logger.debug(
-            "Wrote %s sentence(s) to %s" % (num_sentences, sentences_text_path)
-        )
+    #     self._logger.debug(
+    #         "Wrote %s sentence(s) to %s" % (num_sentences, sentences_text_path)
+    #     )
 
     # -------------------------------------------------------------------------
 
     def write_language_model(self) -> None:
-        """Generates an ARPA language model using mitlm"""
-        sentences_text_path = self.profile.read_path(
-            self.profile.get("speech_to_text.sentences_text", "sentences.txt.gz")
-        )
-
-        # Extract file name only (will be made relative to container path)
-        sentences_text_path = sentences_text_path
+        """Generates an ARPA language model using opengrm"""
         lm_dest_path = self.profile.write_path(
             self.profile.get(
                 f"speech_to_text.{self.system}.language_model", "language_model.txt"
             )
         )
 
-        # Use mitlm
+        # Use opengrm
         start_time = time.time()
-        subprocess.check_call(
-            [
-                "estimate-ngram",
-                "-o",
-                "3",
-                "-text",
-                sentences_text_path,
-                "-wl",
-                lm_dest_path,
-            ]
-        )
+        fst2arpa(self.fst_path, lm_dest_path)
 
         lm_time = time.time() - start_time
         self._logger.debug(
@@ -465,7 +452,7 @@ class KaldiSpeechTrainer(PocketsphinxSpeechTrainer):
     def to_finished(self, from_state: str) -> None:
         try:
             self.train()
-            self.send(self.receiver, SpeechTrainingComplete(self.sentences_by_intent))
+            self.send(self.receiver, SpeechTrainingComplete(self.intent_fst))
         except Exception as e:
             self._logger.exception("train")
             self.send(self.receiver, SpeechTrainingFailed(repr(e)))
@@ -520,10 +507,11 @@ class CommandSpeechTrainer(RhasspyActor):
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, TrainSpeech):
             try:
-                self.train(message.sentences_by_intent)
+                # TODO: FIXME
+                self.train(message.intent_fst)
                 self.send(
                     message.receiver or sender,
-                    SpeechTrainingComplete(message.sentences_by_intent),
+                    SpeechTrainingComplete(message.intent_fst),
                 )
             except Exception as e:
                 self._logger.exception("train")

@@ -312,7 +312,7 @@ class DialogueManager(RhasspyActor):
         if isinstance(message, SentencesGenerated):
             # Train speech system
             self.transition("training_speech")
-            self.send(self.speech_trainer, TrainSpeech(message.sentences_by_intent))
+            self.send(self.speech_trainer, TrainSpeech(message.intent_fst))
         elif isinstance(message, SentenceGenerationFailed):
             self.transition("ready")
             self.send(self.training_receiver, ProfileTrainingFailed(message.reason))
@@ -322,7 +322,7 @@ class DialogueManager(RhasspyActor):
     def in_training_speech(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, SpeechTrainingComplete):
             self.transition("training_intent")
-            self.send(self.intent_trainer, TrainIntent(message.sentences_by_intent))
+            self.send(self.intent_trainer, TrainIntent(message.intent_fst))
         elif isinstance(message, SpeechTrainingFailed):
             self.transition("ready")
             self.send(self.training_receiver, ProfileTrainingFailed(message.reason))
@@ -787,6 +787,7 @@ class DialogueManager(RhasspyActor):
     def get_recognizer_class(cls, system: str) -> Type[RhasspyActor]:
         assert system in [
             "dummy",
+            "fsticuffs",
             "fuzzywuzzy",
             "adapt",
             "rasa",
@@ -794,7 +795,12 @@ class DialogueManager(RhasspyActor):
             "command",
         ], ("Invalid intent system: %s" % system)
 
-        if system == "fuzzywuzzy":
+        if system == "fsticuffs":
+            # Use OpenFST locally
+            from .intent import FsticuffsRecognizer
+
+            return FsticuffsRecognizer
+        elif system == "fuzzywuzzy":
             # Use fuzzy string matching locally
             from .intent import FuzzyWuzzyRecognizer
 
@@ -832,6 +838,7 @@ class DialogueManager(RhasspyActor):
 
         assert trainer_system in [
             "dummy",
+            "fsticuffs",
             "fuzzywuzzy",
             "adapt",
             "rasa",
@@ -841,7 +848,12 @@ class DialogueManager(RhasspyActor):
 
         if trainer_system == "auto":
             # Use intent recognizer system
-            if recognizer_system == "fuzzywuzzy":
+            if recognizer_system == "fsticuffs":
+                # Use OpenFST acceptor locally
+                from .intent_train import FsticuffsIntentTrainer
+
+                return FsticuffsIntentTrainer
+            elif recognizer_system == "fuzzywuzzy":
                 # Use fuzzy string matching locally
                 from .intent_train import FuzzyWuzzyIntentTrainer
 
@@ -861,6 +873,11 @@ class DialogueManager(RhasspyActor):
                 from .intent_train import CommandIntentTrainer
 
                 return CommandIntentTrainer
+        elif trainer_system == "fsticuffs":
+            # Use OpenFST acceptor locally
+            from .intent_train import FsticuffsIntentTrainer
+
+            return FsticuffsIntentTrainer
         elif trainer_system == "fuzzywuzzy":
             # Use fuzzy string matching locally
             from .intent_train import FuzzyWuzzyIntentTrainer

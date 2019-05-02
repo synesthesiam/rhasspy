@@ -17,12 +17,8 @@ from .utils import open_maybe_gzip
 
 
 class TrainIntent:
-    def __init__(
-        self,
-        sentences_by_intent: Dict[str, Any],
-        receiver: Optional[RhasspyActor] = None,
-    ) -> None:
-        self.sentences_by_intent = sentences_by_intent
+    def __init__(self, intent_fst, receiver: Optional[RhasspyActor] = None) -> None:
+        self.intent_fst = intent_fst
         self.receiver = receiver
 
 
@@ -44,6 +40,18 @@ class DummyIntentTrainer(RhasspyActor):
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, TrainIntent):
             self.send(message.receiver or sender, IntentTrainingComplete())
+
+
+# -----------------------------------------------------------------------------
+# OpenFST-based intent recognizer
+# https://www.openfst.org
+# -----------------------------------------------------------------------------
+
+
+class FsticuffsIntentTrainer(DummyIntentTrainer):
+    """No training needed. Intent FST will be used directly during recognition."""
+
+    pass
 
 
 # -----------------------------------------------------------------------------
