@@ -136,6 +136,10 @@ class FsticuffsRecognizer(RhasspyActor):
 
         intents = fstaccept(self.fst, text)
         self._logger.debug(f"Got {len(intents)} intent(s)")
+
+        if len(intents) > 0:
+            self._logger.debug(intents)
+
         return intents[0]
 
     # -------------------------------------------------------------------------
@@ -197,7 +201,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                         choices[example_text] = (
                             example_text,
                             intent_name,
-                            example["slots"],
+                            example["entities"],
                         )
                         sentences.append(example_text)
 
@@ -218,16 +222,13 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                 confidence = (best_score / 100) if best_score else 1
                 if confidence >= self.min_confidence:
                     # (text, intent, slots)
-                    best_text, best_intent, best_slots = choices[best_text]
+                    best_text, best_intent, best_entities = choices[best_text]
 
                     # Try to match RasaNLU format for future compatibility
                     return {
                         "text": best_text,
                         "intent": {"name": best_intent, "confidence": confidence},
-                        "entities": [
-                            {"entity": name, "value": values[0]}
-                            for name, values in best_slots.items()
-                        ],
+                        "entities": best_entities,
                     }
                 else:
                     self._logger.warning(

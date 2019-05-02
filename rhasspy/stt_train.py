@@ -507,7 +507,6 @@ class CommandSpeechTrainer(RhasspyActor):
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, TrainSpeech):
             try:
-                # TODO: FIXME
                 self.train(message.intent_fst)
                 self.send(
                     message.receiver or sender,
@@ -520,16 +519,20 @@ class CommandSpeechTrainer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def train(self, sentences_by_intent):
+        from jsgf2fst import fstprintall
         self._logger.debug(self.command)
 
         try:
+            # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
+            sentences_by_intent: Dict[str, Any] = defaultdict(list)
+
+            for symbols in fstprintall(intent_fst, exclude_meta=False):
+                intent = symbols2intent(symbols)
+                intent_name = intent["intent"]["name"]
+                sentences_by_intent[intent_name].append(intent)
+
             # JSON -> STDIN
-            input = json.dumps(
-                {
-                    intent_name: [s.json() for s in sentences]
-                    for intent_name, sentences in sentences_by_intent.items()
-                }
-            ).encode()
+            input = json.dumps(sentences_by_intent).encode()
 
             subprocess.run(self.command, input=input, check=True)
         except:

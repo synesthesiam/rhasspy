@@ -66,18 +66,18 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, TrainIntent):
             try:
-                self.train(message.sentences_by_intent)
+                self.train(message.intent_fst)
                 self.send(message.receiver or sender, IntentTrainingComplete())
             except Exception as e:
                 self._logger.exception("train")
                 self.send(message.receiver or sender, IntentTrainingFailed(repr(e)))
 
-    def train(self, sentences_by_intent: Dict[str, Any]) -> None:
+    def train(self, intent_fst) -> None:
         examples_path = self.profile.write_path(
             self.profile.get("intent.fuzzywuzzy.examples_json")
         )
 
-        examples = self._make_examples(sentences_by_intent)
+        examples = self._make_examples(intent_fst)
         with open(examples_path, "w") as examples_file:
             json.dump(examples, examples_file, indent=4)
 
@@ -85,22 +85,17 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def _make_examples(self, sentences_by_intent: Dict[str, Any]) -> Dict[str, Any]:
+    def _make_examples(self, intent_fst) -> Dict[str, Any]:
         """Write intent examples to a JSON file."""
-        from fuzzywuzzy import process
+        from jsgf2fst import fstprintall, symbols2intent
 
-        # { intent: [ { 'text': ..., 'slots': { ... } }, ... ] }
+        # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
         examples: Dict[str, Any] = defaultdict(list)
 
-        for intent, intent_sents in sentences_by_intent.items():
-            for intent_sent in intent_sents:
-                slots: Dict[str, List[str]] = defaultdict(list)
-                for sent_ent in intent_sent["entities"]:
-                    slots[sent_ent["entity"]].append(sent_ent["value"])
-
-                examples[intent].append(
-                    {"text": intent_sent["sentence"], "slots": slots}
-                )
+        for symbols in fstprintall(intent_fst, exclude_meta=False):
+            intent = symbols2intent(symbols)
+            intent_name = intent["intent"]["name"]
+            examples[intent_name].append(intent)
 
         return examples
 
@@ -117,7 +112,7 @@ class RasaIntentTrainer(RhasspyActor):
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, TrainIntent):
             try:
-                self.train(message.sentences_by_intent)
+                self.train(message.intent_fst)
                 self.send(message.receiver or sender, IntentTrainingComplete())
             except Exception as e:
                 self._logger.exception("train")
@@ -125,7 +120,8 @@ class RasaIntentTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def train(self, sentences_by_intent: Dict[str, Any]) -> None:
+    def train(self, intent_fst) -> None:
+        from jsgf2fst import fstprintall
         import requests
 
         # Load settings
@@ -140,12 +136,36 @@ class RasaIntentTrainer(RhasspyActor):
             rasa_config.get("examples_markdown", "intent_examples.md")
         )
 
+        # Build Markdown sentences
+        sentences_by_intent: Dict[str, Any] = defaultdict(list)
+        for symbols in fstprintall(intent_fst, exclude_meta=False):
+            intent_name = ""
+            strings = []
+            for sym in symbols:
+                if sym.startswith("<"):
+                    continue  # <eps>
+                elif sym.startswith("__label__"):
+                    intent_name = sym[9:]
+                elif sym.startswith("__begin__"):
+                    strings.append("[")
+                elif sym.startswith("__end__"):
+                    tag = sym[7:]
+                    strings.append(f"]({tag})")
+                    strings.append(" ")
+                else:
+                    strings.append(sym)
+                    strings.append(" ")
+
+            sentence = "".join(strings).strip()
+            sentences_by_intent[intent_name].append(sentence)
+
+        # Write to YAML file
         with open(examples_md_path, "w") as examples_md_file:
             for intent_name, intent_sents in sentences_by_intent.items():
                 # Rasa Markdown training format
                 print("## intent:%s" % intent_name, file=examples_md_file)
                 for intent_sent in intent_sents:
-                    print("-", intent_sent["tagged_sentence"], file=examples_md_file)
+                    print("-", intent_sent, file=examples_md_file)
 
                 print("", file=examples_md_file)
 
@@ -201,7 +221,7 @@ class AdaptIntentTrainer(RhasspyActor):
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, TrainIntent):
             try:
-                self.train(message.sentences_by_intent)
+                self.train(message.intent_fst)
                 self.send(message.receiver or sender, IntentTrainingComplete())
             except Exception as e:
                 self._logger.exception("train")
@@ -209,7 +229,9 @@ class AdaptIntentTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def train(self, sentences_by_intent: Dict[str, Any]) -> None:
+    def train(self, intent_fst) -> None:
+        from jsgf2fst import fstprintall, symbols2intent
+
         # Load "stop" words (common words that are excluded from training)
         stop_words: Set[str] = set()
         stop_words_path = self.profile.read_path("stop_words.txt")
@@ -218,6 +240,14 @@ class AdaptIntentTrainer(RhasspyActor):
                 stop_words = set(
                     [line.strip() for line in stop_words_file if len(line.strip()) > 0]
                 )
+
+        # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
+        sentences_by_intent: Dict[str, Any] = defaultdict(list)
+
+        for symbols in fstprintall(intent_fst, exclude_meta=False):
+            intent = symbols2intent(symbols)
+            intent_name = intent["intent"]["name"]
+            sentences_by_intent[intent_name].append(intent)
 
         # Generate intent configuration
         entities: Dict[str, Set[str]] = {}
@@ -237,7 +267,7 @@ class AdaptIntentTrainer(RhasspyActor):
             # Process sentences for this intent
             for intent_sent in intent_sents:
                 sentence, slots, word_tokens = (
-                    intent_sent["sentence"],
+                    intent_sent["text"],
                     intent_sent["entities"],
                     intent_sent["tokens"],
                 )
@@ -345,23 +375,28 @@ class CommandIntentTrainer(RhasspyActor):
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, TrainIntent):
             try:
-                self.train(message.sentences_by_intent)
+                self.train(message.intent_fst)
                 self.send(message.receiver or sender, IntentTrainingComplete())
             except Exception as e:
                 self._logger.exception("train")
                 self.send(message.receiver or sender, IntentTrainingFailed(repr(e)))
 
-    def train(self, sentences_by_intent: Dict[str, Any]) -> None:
+    def train(self, intent_fst) -> None:
+        from jsgf2fst import fstprintall, symbols2intent
+
         try:
             self._logger.debug(self.command)
 
+            # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
+            sentences_by_intent: Dict[str, Any] = defaultdict(list)
+
+            for symbols in fstprintall(intent_fst, exclude_meta=False):
+                intent = symbols2intent(symbols)
+                intent_name = intent["intent"]["name"]
+                sentences_by_intent[intent_name].append(intent)
+
             # JSON -> STDIN
-            input = json.dumps(
-                {
-                    intent_name: [s.json() for s in sentences]
-                    for intent_name, sentences in sentences_by_intent.items()
-                }
-            ).encode()
+            input = json.dumps({sentences_by_intent}).encode()
 
             subprocess.run(self.command, input=input, check=True)
         except:
