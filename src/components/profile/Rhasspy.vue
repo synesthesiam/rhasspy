@@ -106,7 +106,7 @@
              this.$emit('begin-async')
              this.downloading = true
              ProfileService.downloadProfile(true)
-                           .then(request => {
+                           .then(() => {
                                this.$emit('restart')
                            })
                            .catch(err => this.error(err))

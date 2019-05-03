@@ -23,7 +23,7 @@ import time
 import atexit
 from uuid import uuid4
 from collections import defaultdict
-from typing import Any, Union, Tuple
+from typing import Any, Union, Tuple, Dict
 
 from flask import (
     Flask,
@@ -39,6 +39,8 @@ from flask_sockets import Sockets
 import requests
 import pydash
 from gevent import pywsgi
+from gevent.queue import Queue as GQueue
+from gevent.lock import RLock
 from geventwebsocket.handler import WebSocketHandler
 
 from jsgf2fst import read_slots
@@ -536,6 +538,10 @@ def api_text_to_intent():
     intent_sec = time.time() - start_time
     intent["time_sec"] = intent_sec
 
+    intent_json = json.dumps(intent)
+    logger.debug(intent_json)
+    add_ws_event(intent_json)
+
     if not no_hass:
         # Send intent to Home Assistant
         intent = core.handle_intent(intent).intent
@@ -568,7 +574,9 @@ def api_speech_to_intent() -> Response:
     intent_sec = time.time() - start_time
     intent["time_sec"] = intent_sec
 
-    logger.debug(intent)
+    intent_json = json.dumps(intent)
+    logger.debug(intent_json)
+    add_ws_event(intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
@@ -609,7 +617,10 @@ def api_stop_recording() -> Response:
 
     intent = core.recognize_intent(text).intent
     intent["speech_confidence"] = transcription.confidence
-    logger.debug(intent)
+
+    intent_json = json.dumps(intent)
+    logger.debug(intent_json)
+    add_ws_event(intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
@@ -817,10 +828,40 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 # -----------------------------------------------------------------------------
+# WebSocket API
+# -----------------------------------------------------------------------------
+
+ws_queues: Dict[Any, GQueue] = {}
+ws_lock: RLock = RLock()
+
+
+def add_ws_event(text: str):
+    with ws_lock:
+        for queue in ws_queues.values():
+            queue.put(text)
+
+
+@sockets.route("/events/intent")
+def api_events_intent(ws) -> None:
+    # Add new queue for websocket
+    q = GQueue()
+    with ws_lock:
+        ws_queues[ws] = q
+
+    while not ws.closed:
+        text = q.get()
+        ws.send(text)
+
+    # Remove queue
+    with ws_lock:
+        del ws_queues[ws]
+
+
+# -----------------------------------------------------------------------------
 
 # Start web server
 logging.debug(f"Starting web server at http://{args.host}:{args.port}")
-server = pywsgi.WSGIServer((args.host, args.port), app)
+server = pywsgi.WSGIServer((args.host, args.port), app, handler_class=WebSocketHandler)
 
 try:
     server.serve_forever()

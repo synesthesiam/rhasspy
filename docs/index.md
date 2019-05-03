@@ -1,8 +1,8 @@
 ![Rhasspy logo](img/rhasspy.svg)
 
-Rhasspy (pronounced RAH-SPEE) is an offline, [multilingual](#supported-languages) voice assistant toolkit inspired by [Jasper](https://jasperproject.github.io/) that works with [Home Assistant](https://www.home-assistant.io/) and [Hass.io](https://www.home-assistant.io/hassio/).
+Rhasspy (pronounced RAH-SPEE) is an offline, [multilingual](#supported-languages) voice assistant toolkit inspired by [Jasper](https://jasperproject.github.io/) that works well with [Home Assistant](https://www.home-assistant.io/), [Hass.io](https://www.home-assistant.io/hassio/), and [NodeRed](https://nodered.org) .
 
-Rhasspy transforms voice commands into [Home Assistant events](https://www.home-assistant.io/docs/configuration/events/) that [trigger automations](https://www.home-assistant.io/docs/automation/trigger/#event-trigger). You define these commands in a Rhasspy [profile](profiles.md) using a [specialized template syntax](training.md) that lets you control how Rhasspy creates the events it sends to Home Assistant.
+Rhasspy transforms voice commands into JSON events that can trigger actions in home automation software, [Home Assistant automations](https://www.home-assistant.io/docs/automation/trigger/#event-trigger). You define custom voice commands in a [profile](profiles.md) using a [specialized template syntax](training.md), and Rhasspy takes care of the rest.
 
 ## Motivation
 
@@ -24,16 +24,32 @@ Rhasspy provides **offline, private solutions** to problems 1-4 using off-the-sh
     * [webrtcvad](https://github.com/wiseman/py-webrtcvad)
 * **Speech to text**
     * [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx)
+    * [Kaldi](https://kaldi-asr.org)
 * **Intent recognition**
+    * [OpenFST](https://www.openfst.org)
     * [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy)
-    * [RasaNLU](https://rasa.com/)
     * [Mycroft Adapt](https://github.com/MycroftAI/adapt)
+    * [RasaNLU](https://rasa.com/)
 
-For problem 5 (fulfilling the speaker's intent), Rhasspy works with Home Assistant's built-in [automation capability](https://www.home-assistant.io/docs/automation/). For each intent you define, Rhasspy sends an event to Home Assistant that can be used to do anything Home Assistant can do (toggle switches, call REST services, etc.). This means that Rhasspy will do very little out of the box compared to other voice assistants, but there will also be *no limits* to what can be done.
+For problem 5 (fulfilling the speaker's intent), Rhasspy works with external home automation software, such as Home Assistant's built-in [automation capability](https://www.home-assistant.io/docs/automation/) or a [NodeRed flow](https://nodered.org). For each intent you define, Rhasspy sends an event to Home Assistant that can be used to do anything Home Assistant can do (toggle switches, call REST services, etc.). This means that Rhasspy will do very little out of the box compared to other voice assistants, but there will also be *no limits* to what can be done.
 
 ## Supported Languages
 
-Rhasspy currently supports English (`en`), German (`de`), Spanish (`es`), Italian (`it`), Dutch (`nl`), and Russian (`ru`). Support for these languages comes directly from existing [CMU Sphinx models](https://sourceforge.net/projects/cmusphinx/files/Acoustic%20and%20Language%20Models/).
+Rhasspy currently supports the following languages:
+
+* English (`en`)
+* German (`de`)
+* Spanish (`es`)
+* Italian (`it`)
+* Dutch (`nl`)
+* Russian (`ru`)
+* Greek (`el`)
+* Hindi (`hi`)
+* Mandarin (`zh`)
+* Vietnamese (`vi`)
+* Portuguese (`pt`)
+
+Support for these languages comes directly from existing [CMU Sphinx](https://sourceforge.net/projects/cmusphinx/files/Acoustic%20and%20Language%20Models/) and [Kaldi](https://montreal-forced-aligner.readthedocs.io/en/latest/pretrained_models.html) acoustic models.
 
 It is possible to extend Rhasspy to new languages with only:
 

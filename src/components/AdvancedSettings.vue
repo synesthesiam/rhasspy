@@ -44,21 +44,7 @@
                 </p>
             </div>
 
-            <div class="form-group">
-                <div class="form-row">
-                    <button type="submit" class="btn btn-primary"
-                            v-bind:class="{ 'btn-danger': defaultSettingsDirty }">Save Defaults</button>
-                </div>
-            </div>
-
             <textarea id="default-settings" class="form-control" type="text" rows="15" v-model="defaultSettings"></textarea>
-
-            <div class="form-group">
-                <div class="form-row pt-3">
-                    <button type="submit" class="btn btn-primary"
-                            v-bind:class="{ 'btn-danger': defaultSettingsDirty }">Save Defaults</button>
-                </div>
-            </div>
         </form>
     </div> <!-- container -->
 </template>
@@ -77,8 +63,7 @@
              profileSettings: '',
              profileSettingsDirty: false,
 
-             defaultSettings: '',
-             defaultSettingsDirty: false
+             defaultSettings: ''
          }
      },
 
@@ -92,27 +77,12 @@
                      this.$parent.endAsync()
                      this.profileSettingsDirty = false
                  })
-         },
-
-         saveDefaults: function() {
-             this.$parent.beginAsync()
-             ProfileService.updateDefaultSettings(this.defaultSettings)
-                 .then(request => this.$parent.alert(request.data, 'success'))
-                 .catch(err => this.$parent.error(err))
-                 .then(() => {
-                     this.$parent.endAsync()
-                     this.defaultSettingsDirty = false
-                 })
          }
      },
 
      watch: {
          profile: function() {
              this.profileSettings = JSON.stringify(this.profile, null, 4)
-         },
-
-         defaults: function() {
-             this.defaultSettings = JSON.stringify(this.defaults, null, 4)
          }
      }
  }

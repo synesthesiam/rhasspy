@@ -205,7 +205,7 @@
                            .then(request => {
                                this.defaults = request.data
                            })
-                           .catch(err => this.$parent.error(err))
+                           .catch(err => this.error(err))
          },
 
          train: function() {
@@ -252,7 +252,7 @@
              this.beginAsync()
              this.downloading = true
              ProfileService.downloadProfile()
-                 .then(request => {
+                 .then(() => {
                      this.restart()
                  })
                  .catch(err => this.error(err))
