@@ -32,7 +32,7 @@ fi
 
 echo "Extracting acoustic model (${acoustic_file})"
 rm -rf "${acoustic_output}"
-tar -C "${DIR}" -xzf "${acoustic_file}" && mv "${DIR}/cmusphinx-ru-5.2" "${acoustic_output}" && rm -s "${acoustic_output}/ru.dic" "${acoustic_output}/rm.lm"
+tar -C "${DIR}" -xzf "${acoustic_file}" && mv "${DIR}/cmusphinx-ru-5.2" "${acoustic_output}" && rm -f "${acoustic_output}/ru.dic" "${acoustic_output}/rm.lm"
 
 #------------------------------------------------------------------------------
 # G2P
