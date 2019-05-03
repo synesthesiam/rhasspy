@@ -103,14 +103,10 @@ class FsticuffsRecognizer(RhasspyActor):
         self.fst: Optional[Any] = None
 
     def to_started(self, from_state: str) -> None:
-        self.fst_path = self.profile.read_path(
-            self.profile.get("intent.fsticuffs.intent_fst", "intent.fst")
-        )
-
         try:
             self.load_fst()
-        except Exception as e:
-            self._logger.exception("to_started")
+        except:
+            self._logger.warning("to_started")
 
         self.transition("loaded")
 
@@ -148,7 +144,11 @@ class FsticuffsRecognizer(RhasspyActor):
         if self.fst is None:
             import pywrapfst as fst
 
-            self.fst = fst.Fst.read(self.fst_path)
+            fst_path = self.profile.read_path(
+                self.profile.get("intent.fsticuffs.intent_fst", "intent.fst")
+            )
+
+            self.fst = fst.Fst.read(fst_path)
 
 
 # -----------------------------------------------------------------------------

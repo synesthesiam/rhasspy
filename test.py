@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 import logging
@@ -10,10 +11,17 @@ from rhasspy.core import RhasspyCore
 class RhasspyTestCase(unittest.TestCase):
     def setUp(self):
         profile_name = "en"
-        profiles_dirs = ["profiles"]
-        self.core = RhasspyCore(profile_name, profiles_dirs, do_logging=False)
+        self.system_profiles_dir = os.path.join(os.getcwd(), "profiles")
+        self.user_profiles_dir = tempfile.TemporaryDirectory()
+        self.core = RhasspyCore(
+            profile_name,
+            self.system_profiles_dir,
+            self.user_profiles_dir.name,
+            do_logging=False,
+        )
         self.core.profile.set("wake.system", "dummy")
         self.core.start()
+        self.core.train()
 
     def tearDown(self):
         self.core.shutdown()
@@ -24,26 +32,27 @@ class RhasspyTestCase(unittest.TestCase):
         """speech -> text"""
         with open("etc/test/turn_on_living_room_lamp.wav", "rb") as wav_file:
             text = self.core.transcribe_wav(wav_file.read()).text
-            assert text == "turn on the living room lamp", text
+            self.assertEqual(text, "turn on the living room lamp")
 
     # -------------------------------------------------------------------------
 
     def test_recognize(self):
         """text -> intent"""
         intent = self.core.recognize_intent("turn on the living room lamp").intent
-        assert intent["intent"]["name"] == "ChangeLightState", intent["intent"]["name"]
+        self.assertEqual(intent["intent"]["name"], "ChangeLightState")
         entities = {e["entity"]: e["value"] for e in intent["entities"]}
-        assert entities["name"] == "living room lamp", entities["name"]
-        assert entities["state"] == "on", entities["state"]
+        self.assertEqual(entities["name"], "living room lamp")
+        self.assertEqual(entities["state"], "on")
 
     # -------------------------------------------------------------------------
 
     def test_training(self):
         """Test training"""
         profile_name = "en"
-        with tempfile.TemporaryDirectory(prefix="rhasspy_") as temp_dir:
-            profiles_dirs = [temp_dir, "profiles"]
-            core = RhasspyCore(profile_name, profiles_dirs, do_logging=True)
+        with tempfile.TemporaryDirectory(prefix="rhasspy_") as temp_user_dir:
+            core = RhasspyCore(
+                profile_name, self.system_profiles_dir, temp_user_dir, do_logging=True
+            )
             core.profile.set("rhasspy.listen_on_start", False)
             core.profile.set("rhasspy.preload_profile", False)
             core.start()
@@ -60,7 +69,7 @@ class RhasspyTestCase(unittest.TestCase):
             core.train()
             with open("etc/test/what_time_is_it.wav", "rb") as wav_file:
                 text = core.transcribe_wav(wav_file.read()).text
-                assert text != "what time is it", text
+                self.assertNotEqual(text, "what time is it")
 
             # Add some more sentences
             with open(sentences_path, "a") as sentences_file:
@@ -71,22 +80,22 @@ class RhasspyTestCase(unittest.TestCase):
             core.train()
             with open("etc/test/what_time_is_it.wav", "rb") as wav_file:
                 text = core.transcribe_wav(wav_file.read()).text
-                assert text == "what time is it"
+                self.assertEqual(text, "what time is it")
 
     # -------------------------------------------------------------------------
 
     def test_pronounce(self):
         # Known word
         pronunciations = self.core.get_word_pronunciations(["test"], n=1).pronunciations
-        assert pronunciations["test"]["pronunciations"][0] == "T EH S T"
+        self.assertEqual(pronunciations["test"]["pronunciations"][0], "T EH S T")
 
         # Unknown word
         pronunciations = self.core.get_word_pronunciations(
             ["raxacoricofallipatorius"], n=1
         ).pronunciations
-        assert (
-            "R AE K S AH K AO R IH K AO F AE L AH P AH T AO R IY IH S"
-            in pronunciations["raxacoricofallipatorius"]["pronunciations"]
+        self.assertIn(
+            "R AE K S AH K AO R IH K AO F AE L AH P AH T AO R IY IH S",
+            pronunciations["raxacoricofallipatorius"]["pronunciations"],
         )
 
 

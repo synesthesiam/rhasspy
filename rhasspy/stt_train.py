@@ -80,10 +80,6 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         self.unknown_words: Dict[str, Dict[str, Any]] = {}
         self.receiver: Optional[RhasspyActor] = None
 
-        self.fst_path = self.profile.read_path(
-            self.profile.get("intent.fsticuffs.intent_fst")
-        )
-
         self.sentence_casing = self.profile.get("training.sentences.casing", "")
         self.dictionary_upper: bool = self.profile.get(
             "speech_to_text.dictionary_upper", False
@@ -410,9 +406,13 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
             )
         )
 
+        fst_path = self.profile.read_path(
+            self.profile.get("intent.fsticuffs.intent_fst")
+        )
+
         # Use opengrm
         start_time = time.time()
-        fst2arpa(self.fst_path, lm_dest_path)
+        fst2arpa(fst_path, lm_dest_path)
 
         lm_time = time.time() - start_time
         self._logger.debug(
