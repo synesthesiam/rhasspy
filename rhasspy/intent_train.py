@@ -146,7 +146,7 @@ class RasaIntentTrainer(RhasspyActor):
             suffix=".yml", mode="w+", delete=False
         ) as training_file:
             print('language: "%s"\n' % language, file=training_file)
-            print('pipeline: "spacy_sklearn"\n', file=training_file)
+            print('pipeline: "pretrained_embeddings_spacy"\n', file=training_file)
             print("data: |", file=training_file)
 
             # Write markdown directly into YAML.
@@ -167,17 +167,15 @@ class RasaIntentTrainer(RhasspyActor):
             # Do training via HTTP API
             training_url = urljoin(url, "train")
             training_file.seek(0)
-            training_data = open(training_file.name, "rb").read()
-            response = requests.post(
-                training_url,
-                data=training_data,
-                params={"project": project_name},
-                headers={"Content-Type": "application/x-yml"},
-            )
+            with open(training_file.name, "rb") as training_data:
+                response = requests.post(
+                    training_url,
+                    data=training_data,
+                    params={"project": project_name},
+                    headers={"Content-Type": "application/x-yml"},
+                )
 
-            self._logger.debug(
-                "POSTed %s byte(s) to %s" % (len(training_data), training_url)
-            )
+            self._logger.debug(f"POSTed training data to {training_url}")
             response.raise_for_status()
 
 

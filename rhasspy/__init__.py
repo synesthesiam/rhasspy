@@ -46,13 +46,19 @@ def main() -> None:
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Rhasspy Voice Assistant")
     parser.add_argument(
-        "--profile", type=str, help="Name of profile to use", default=None
+        "--profile", "-p", required=True, type=str, help="Name of profile to use"
     )
     parser.add_argument(
-        "--profiles",
-        action="append",
-        help="Directories where profiles are stored",
-        default=None,
+        "--system-profiles",
+        type=str,
+        help="Directory with base profile files (read only)",
+        default=os.path.join(os.getcwd(), "profiles"),
+    )
+    parser.add_argument(
+        "--user-profiles",
+        type=str,
+        help="Directory with user profile files (read/write)",
+        default=os.path.expanduser("~/.config/rhasspy/profiles"),
     )
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG log to console"
@@ -228,34 +234,24 @@ def main() -> None:
     else:
         do_logging = False
 
-    # Like PATH, searched in reverse order
-    if args.profiles is not None:
-        profiles_dirs = args.profiles
-    else:
-        profiles_dirs = [
-            os.path.abspath(path)
-            for path in os.environ.get("RHASSPY_PROFILES", "profiles").split(":")
-            if len(path.strip()) > 0
-        ]
+    profiles_dirs = [args.user_profiles, args.system_profiles]
 
     if args.debug:
         logging.debug(profiles_dirs)
 
     profiles_dirs.reverse()
 
-    default_settings = Profile.load_defaults(profiles_dirs)
-
-    # Get name of profile
-    profile_name = (
-        args.profile
-        or os.environ.get("RHASSPY_PROFILE", None)
-        or pydash.get(default_settings, "rhasspy.default_profile", "en")
-    )
+    default_settings = Profile.load_defaults(args.system_profiles)
 
     # Create rhasspy core
     from .core import RhasspyCore
 
-    core = RhasspyCore(profile_name, profiles_dirs, do_logging=do_logging)
+    core = RhasspyCore(
+        args.profile,
+        args.system_profiles,
+        args.user_profiles,
+        do_logging=do_logging,
+    )
 
     if args.command == "info":
         if args.defaults:

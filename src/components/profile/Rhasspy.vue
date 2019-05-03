@@ -15,23 +15,8 @@
             <hr>
             <div class="form-group">
                 <div class="form-row">
-                    <label for="default-profile" class="col-form-label">Default Profile</label>
-                    <div class="col">
-                        <select id="rhasspy-profiles" v-model="defaults.rhasspy.default_profile">
-                            <option disabled value="">Select Profile</option>
-                            <option v-for="name in profiles" v-bind:key="name">{{ name }}</option>
-                        </select>
-                    </div>
-                    <div class="col text-muted">
-                        Profile that Rhasspy will load at startup and use unless told otherwise
-                    </div>
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="form-row">
                     <input type="checkbox" id="wake-on-start" v-model="profile.rhasspy.listen_on_start">
                     <label for="wake-on-start" class="col-form-label">Listen for wake word on start-up</label>
-                    <span class="col-form-label text-muted">(default profile)</span>
                 </div>
             </div>
             <hr>

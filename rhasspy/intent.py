@@ -229,6 +229,7 @@ class RasaIntentRecognizer(RhasspyActor):
         if isinstance(message, RecognizeIntent):
             try:
                 intent = self.recognize(message.text)
+                logging.debug(intent)
             except Exception as e:
                 self._logger.exception("in_started")
                 intent = empty_intent()
@@ -332,7 +333,7 @@ class AdaptIntentRecognizer(RhasspyActor):
             self.engine = IntentDeterminationEngine()
             assert self.engine is not None
 
-            # { intents: { ... }, entities: { ... } }
+            # { intents: { ... }, entities: [ ... ] }
             with open(config_path, "r") as config_file:
                 config = json.load(config_file)
 

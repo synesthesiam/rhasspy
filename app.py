@@ -35,8 +35,11 @@ from flask import (
     send_from_directory,
 )
 from flask_cors import CORS
+from flask_sockets import Sockets
 import requests
 import pydash
+from gevent import pywsgi
+from geventwebsocket.handler import WebSocketHandler
 
 from rhasspy.profiles import Profile
 from rhasspy.core import RhasspyCore
@@ -55,6 +58,7 @@ from rhasspy.utils import (
 app = Flask("rhasspy")
 app.secret_key = str(uuid4())
 CORS(app)
+sockets = Sockets(app)
 
 # -----------------------------------------------------------------------------
 # Parse Arguments
@@ -62,9 +66,22 @@ CORS(app)
 
 parser = argparse.ArgumentParser("Rhasspy")
 parser.add_argument(
-    "--profile", "-p", type=str, help="Name of profile to load", default=None
+    "--profile", "-p", required=True, type=str, help="Name of profile to load"
 )
-
+parser.add_argument("--host", type=str, help="Host for web server", default="0.0.0.0")
+parser.add_argument("--port", type=int, help="Port for web server", default=12101)
+parser.add_argument(
+    "--system-profiles",
+    type=str,
+    help="Directory with base profile files (read only)",
+    default=os.path.join(os.getcwd(), "profiles"),
+)
+parser.add_argument(
+    "--user-profiles",
+    type=str,
+    help="Directory with user profile files (read/write)",
+    default=os.path.expanduser("~/.config/rhasspy/profiles"),
+)
 parser.add_argument(
     "--set",
     "-s",
@@ -74,9 +91,13 @@ parser.add_argument(
     default=[],
 )
 
-arg_str = os.environ.get("RHASSPY_ARGS", "")
-args = parser.parse_args(shlex.split(arg_str))
+args = parser.parse_args()
 logger.debug(args)
+
+system_profiles_dir = os.path.abspath(args.system_profiles)
+user_profiles_dir = os.path.abspath(args.user_profiles)
+
+profiles_dirs = [user_profiles_dir, system_profiles_dir]
 
 # -----------------------------------------------------------------------------
 # Dialogue Manager Setup
@@ -93,31 +114,13 @@ def shutdown(*args: Any, **kwargs: Any) -> None:
         core = None
 
 
-# Like PATH, searched in reverse order
-profiles_dirs = [
-    os.path.abspath(path)
-    for path in os.environ.get("RHASSPY_PROFILES", "profiles").split(":")
-    if len(path.strip()) > 0
-]
-
-profiles_dirs.reverse()
-logger.debug(profiles_dirs)
-
-
 def start_rhasspy() -> None:
     global core
 
-    default_settings = Profile.load_defaults(profiles_dirs)
-
-    # Get name of profile
-    profile_name = (
-        args.profile
-        or os.environ.get("RHASSPY_PROFILE", None)
-        or pydash.get(default_settings, "rhasspy.default_profile", "en")
-    )
+    default_settings = Profile.load_defaults(system_profiles_dir)
 
     # Load core
-    core = RhasspyCore(profile_name, profiles_dirs)
+    core = RhasspyCore(args.profile, system_profiles_dir, user_profiles_dir)
 
     # Set environment variables
     os.environ["RHASSPY_BASE_DIR"] = os.getcwd()
@@ -293,27 +296,9 @@ def api_profile() -> Response:
         #         print(json.dumps(profile_dict, indent=4))
         #         raise Exception(str(v._errors[0].info))
 
-        if layers == "defaults":
-            # Write default settings
-            for profiles_dir in profiles_dirs:
-                profile_path = os.path.join(profiles_dir, "defaults.json")
-                try:
-                    with open(profile_path, "wb") as profile_file:
-                        profile_file.write(request.data)
-                    break
-                except:
-                    pass
-        else:
-            # Write local profile settings
-            if "rhasspy" in profile_json:
-                if "default_profile" in profile_json["rhasspy"]:
-                    del profile_json["rhasspy"]["default_profile"]
-
-            recursive_remove(core.defaults, profile_json)
-
-            profile_path = os.path.abspath(core.profile.write_path("profile.json"))
-            with open(profile_path, "w") as profile_file:
-                json.dump(profile_json, profile_file, indent=4)
+        profile_path = os.path.abspath(core.profile.write_path("profile.json"))
+        with open(profile_path, "w") as profile_file:
+            json.dump(profile_json, profile_file, indent=4)
 
         msg = "Wrote profile to %s" % profile_path
         logger.debug(msg)
@@ -783,7 +768,7 @@ def handle_error(err) -> Tuple[str, int]:
 # Static Routes
 # ---------------------------------------------------------------------
 
-web_dir = os.path.join(os.path.dirname(__file__), "dist")
+web_dir = os.path.join(os.getcwd(), "dist")
 
 
 @app.route("/css/<path:filename>", methods=["GET"])
@@ -836,3 +821,12 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 # -----------------------------------------------------------------------------
+
+# Start web server
+logging.debug(f"Starting web server at http://{args.host}:{args.port}")
+server = pywsgi.WSGIServer((args.host, args.port), app)
+
+try:
+    server.serve_forever()
+except KeyboardInterrupt:
+    pass
