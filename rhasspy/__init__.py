@@ -44,7 +44,7 @@ def main() -> None:
     global mic_stdin_running, mic_stdin_thread
 
     # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="Rhasspy Voice Assistant")
+    parser = argparse.ArgumentParser(description="Rhasspy")
     parser.add_argument(
         "--profile", "-p", required=True, type=str, help="Name of profile to use"
     )

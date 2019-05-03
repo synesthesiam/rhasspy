@@ -4,13 +4,15 @@ export LC_ALL=C.UTF-8
 export LANG=C.UTF-8
 
 # Directory of *this* script
-DIR="$( cd "$( dirname "$0" )" && pwd )"
+this_dir="$( cd "$( dirname "$0" )" && pwd )"
+venv="${this_dir}/.venv"
 
-if [[ -z "$RHASSPY_PORT" ]]; then
-    export RHASSPY_PORT=12101
+if [[ ! -d "${venv}" ]]; then
+    echo "Missing virtual environment at ${venv}"
+    echo "Did you run create-venv.sh?"
+    exit 1
 fi
 
-cd "$DIR"
+cd "${this_dir}"
 source .venv/bin/activate
-export RHASSPY_PROFILES="$DIR/profiles:$HOME/.rhasspy-test/profiles"
 python3 test.py "$@"

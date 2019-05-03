@@ -36,7 +36,7 @@ trap cleanup EXIT
 # Debian dependencies
 # -----------------------------------------------------------------------------
 
-echo "Installing system dependencies"
+echo "Installing system dependencies (${FRIENDLY_ARCH})"
 sudo apt-get update
 sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
      python \
@@ -45,7 +45,8 @@ sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
      libatlas-base-dev \
      gfortran libfst-dev \
      sphinxbase-utils sphinxtrain pocketsphinx \
-     jq checkinstall unzip xz-utils
+     jq checkinstall unzip xz-utils \
+     libfst-dev
 
 # -----------------------------------------------------------------------------
 # Python 3.6
@@ -151,23 +152,24 @@ if [[ -z "$(which precise-engine)" ]]; then
 fi
 
 # -----------------------------------------------------------------------------
-# MITLM
+# Opengrm
 # -----------------------------------------------------------------------------
 
-if [[ -z "$(which estimate-ngram)" ]]; then
-    mitlm_file="${download_dir}/mitlm-0.4.2.tar.gz"
-    if [[ ! -f "${mitlm_file}" ]]; then
-        mitlm_url='https://github.com/mitlm/mitlm/releases/download/v0.4.2/mitlm-0.4.2.tar.xz'
-        echo "Download MITLM (${mitlm_url})"
-        wget -q -O "${mitlm_file}" "${mitlm_url}"
+if [[ -z "$(which ngramcount)" ]]; then
+    opengrm_file="${download_dir}/opengrm-ngram-1.3.3.tar.gz"
+    if [[ ! -f "${opengrm_file}" ]]; then
+        opengrm_url='https://www.opengrm.org/twiki/pub/GRM/NGramDownload/opengrm-ngram-1.3.3.tar.gz'
+        echo "Download Opengrm (${opengrm_url})"
+        wget -q -O "${opengrm_file}" "${opengrm_url}"
     fi
 
-    echo "Building MITLM ${mitlm_file}"
-    tar -C "${temp_dir}" -xf "${mitlm_file}" && \
-        cd "${temp_dir}/mitlm-0.4.2" && \
+    echo "Building Opengrm ${opengrm_file}"
+    tar -C "${temp_dir}" -xf "${opengrm_file}" && \
+        cd "${temp_dir}/opengrm-ngram-1.3.3" && \
         ./configure && \
         make -j 4 && \
-        sudo make install
+        sudo make install && \
+        sudo ldconfig
 fi
 
 # -----------------------------------------------------------------------------
@@ -191,20 +193,6 @@ if [[ -z "$(which phonetisaurus-apply)" ]]; then
 
         *)
             # Build from source
-            openfst_file="${download_dir}/openfst-1.6.2.tar.gz"
-            if [[ ! -f "${openfst_file}" ]]; then
-                openfst_url='http://www.openfst.org/twiki/pub/FST/FstDownload/openfst-1.6.2.tar.gz'
-                echo "Downloading OpenFST source (${openfst_url})"
-                wget -q -O "${openfst_file}" "${openfst_url}"
-            fi
-
-            echo "Building OpenFST (${openfst_file})"
-            tar -C "${temp_dir}" -xzf "${openfst_file}" && \
-                cd "${temp_dir}/openfst-1.6.2" && \
-                ./configure --enable-static --enable-shared --enable-far --enable-ngram-fsts && \
-                make -j 4 && \
-                sudo make install
-
             phonetisaurus_file="${download_dir}/phonetisaurus-2019.zip"
             if [[ ! -f "${phonetisaurus_file}" ]]; then
                 phonetisaurus_url="https://github.com/synesthesiam/phonetisaurus-2019/releases/download/v1.0/phonetisaurus-2019_${FRIENDLY_ARCH}.deb"

@@ -15,9 +15,10 @@ fi
 user_id=$(id -u)
 docker run -d -p 12101:12101 \
        --device /dev/snd:/dev/snd \
-       -e RHASSPY_PROFILES="/home/rhasspy/profiles:$profile_dir$RHASSPY_PROFILES" \
-       -v "$profile_dir":"$profile_dir" \
-       -v /run/user/${user_id}/pulse:/run/user/1000/pulse \
-       -v ${HOME}/.config/pulse/cookie:/home/pacat/.config/pulse/cookie \
+       -v "${profile_dir}":"${profile_dir}" \
+       -v "/run/user/${user_id}/pulse":/run/user/1000/pulse \
+       -v "${HOME}/.config/pulse/cookie:"/home/pacat/.config/pulse/cookie \
        -v /etc/localtime:/etc/localtime \
-       synesthesiam/rhasspy-server:latest
+       synesthesiam/rhasspy-server:latest \
+       --user-profiles "${profile_dir}" \
+       "$@"

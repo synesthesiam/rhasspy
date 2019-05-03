@@ -3,14 +3,13 @@ services:
   rhasspy:
     image: synesthesiam/rhasspy-server:latest
     network_mode: "host"
-    environment:
-      - RHASSPY_PROFILES=/profiles
     volumes:
-      - ./rhasspy/profiles:/profiles
+      - ./config/rhasspy/profiles:/profiles
     devices:
       - /dev/snd:/dev/snd
     ports:
       - "12101:12101"
+    command: --profile en --user-profiles /profiles
   hass:
     image: homeassistant/home-assistant
     network_mode: "host"

@@ -2,22 +2,20 @@ version: '2'
 services:
   server:
     image: synesthesiam/rhasspy-server:latest
-    environment:
-      - RHASSPY_PROFILES=/profiles
     volumes:
       - ./server/profiles:/profiles
     ports:
       - "13202:12101"
+    command: --profile en --user-profiles /profiles
   client:
     image: synesthesiam/rhasspy-server:latest
-    environment:
-      - RHASSPY_PROFILES=/profiles
     volumes:
       - ./client/profiles:/profiles
     devices:
       - /dev/snd:/dev/snd
     ports:
       - "12101:12101"
+    command: --profile en --user-profiles /profiles
   hass:
     image: homeassistant/home-assistant
     volumes:

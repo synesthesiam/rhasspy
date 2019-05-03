@@ -2,11 +2,10 @@ version: '2'
 services:
   rhasspy:
     image: synesthesiam/rhasspy-server:latest
-    environment:
-      - RHASSPY_PROFILES=/profiles
     volumes:
       - ./rhasspy/profiles:/profiles
     devices:
       - /dev/snd:/dev/snd
     ports:
       - "12101:12101"
+    command: --profile en --user-profiles /profiles

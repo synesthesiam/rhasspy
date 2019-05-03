@@ -1,4 +1,9 @@
 # Install Python dependencies
 RUN python3 -m pip install --no-cache-dir wheel
+
+COPY download/pyjsgf-1.6.0.tar.gz \
+     download/jsgf2fst-0.1.0.tar.gz \
+     /download/
+
 COPY requirements.txt /requirements.txt
 RUN python3 -m pip install --no-cache-dir -r /requirements.txt

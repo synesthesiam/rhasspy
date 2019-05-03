@@ -64,14 +64,16 @@ do
 done
 
 # -----------------------------------------------------------------------------
-# MITLM
+# Opengrm
 # -----------------------------------------------------------------------------
 
-mitlm_file="${download_dir}/mitlm-0.4.2.tar.gz"
-if [[ ! -f "${mitlm_file}" ]]; then
-    mitlm_url='https://github.com/mitlm/mitlm/releases/download/v0.4.2/mitlm-0.4.2.tar.xz'
-    echo "Download MITLM (${mitlm_url})"
-    wget -q -O "${mitlm_file}" "${mitlm_url}"
+if [[ -z "$(which ngramcount)" ]]; then
+    opengrm_file="${download_dir}/opengrm-ngram-1.3.3.tar.gz"
+    if [[ ! -f "${opengrm_file}" ]]; then
+        opengrm_url='https://www.opengrm.org/twiki/pub/GRM/NGramDownload/opengrm-ngram-1.3.3.tar.gz'
+        echo "Download Opengrm (${opengrm_url})"
+        wget -q -O "${opengrm_file}" "${opengrm_url}"
+    fi
 fi
 
 # -----------------------------------------------------------------------------

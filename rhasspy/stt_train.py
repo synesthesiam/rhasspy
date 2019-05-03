@@ -64,12 +64,12 @@ class DummySpeechTrainer(RhasspyActor):
 
 # -----------------------------------------------------------------------------
 # Speech system trainer for Pocketsphinx.
-# Uses mitlm (ARPA model) and phonetisaurus (pronunciations).
+# Uses opengrm (ARPA model) and phonetisaurus (pronunciations).
 # -----------------------------------------------------------------------------
 
 
 class PocketsphinxSpeechTrainer(RhasspyActor):
-    """Trains an ARPA language model using mitlm."""
+    """Trains an ARPA language model using opengrm."""
 
     def __init__(self, system: str = "pocketsphinx") -> None:
         RhasspyActor.__init__(self)

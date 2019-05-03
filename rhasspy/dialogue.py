@@ -924,10 +924,10 @@ class DialogueManager(RhasspyActor):
                 # Use command-line speech trainer
                 return CommandSpeechTrainer
         elif trainer_system == "pocketsphinx":
-            # Use mitlm/phonetisaurus
+            # Use opengrm/phonetisaurus
             return PocketsphinxSpeechTrainer
         elif trainer_system == "kaldi":
-            # Use mitlm/phonetisaurus/kaldi
+            # Use opengrm/phonetisaurus/kaldi
             return KaldiSpeechTrainer
         elif trainer_system == "command":
             # Use command-line speech trainer

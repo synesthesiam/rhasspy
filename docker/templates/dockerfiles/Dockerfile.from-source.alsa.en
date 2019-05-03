@@ -39,17 +39,24 @@ RUN cd /phonetisaurus && \
     make install && \
     rm -rf /phonetisaurus*
 
-# Install mitlm
-RUN apt-get install -y gfortran
-COPY download/mitlm-0.4.2.tar.xz /
-RUN cd / && tar -xf mitlm-0.4.2.tar.xz && cd mitlm-0.4.2/ && \
+# Install Opengrm
+RUN apt-get install -y libfst-dev
+COPY download/opengrm-ngram-1.3.3.tar.gz /
+RUN cd / && tar -xf opengrm-ngram-1.3.3.tar.gz && \
+    cd opengrm-ngram-1.3.3 && \
     ./configure && \
     make -j $MAKE_THREADS && \
     make install && \
-    rm -rf /mitlm-0.4.2*
+    ldconfig && \
+    rm -rf /opengrm*
 
 # Install Python dependencies
 RUN python3 -m pip install --no-cache-dir wheel
+
+COPY download/pyjsgf-1.6.0.tar.gz \
+     download/jsgf2fst-0.1.0.tar.gz \
+     /download/
+
 COPY requirements.txt /requirements.txt
 RUN python3 -m pip install --no-cache-dir -r /requirements.txt
 
@@ -57,11 +64,6 @@ RUN python3 -m pip install --no-cache-dir -r /requirements.txt
 COPY download/pocketsphinx-python.tar.gz /
 RUN python3 -m pip install --no-cache-dir /pocketsphinx-python.tar.gz && \
     rm -rf /pocketsphinx-python*
-
-# Install fixed PyJSGF library
-COPY download/pyjsgf-1.5.1.tar.gz /
-RUN python3 -m pip install /pyjsgf-1.5.1.tar.gz && \
-    rm /pyjsgf-1.5.1.tar.gz
 
 # Install snowboy
 COPY download/snowboy-1.3.0.tar.gz /
