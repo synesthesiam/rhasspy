@@ -15,26 +15,27 @@ logger = logging.getLogger(__name__)
 
 class Profile:
     def __init__(
-        self, name: str, profiles_dirs: List[str], layers: str = "all"
+        self,
+        name: str,
+        system_profiles_dir: str,
+        user_profiles_dir: str,
+        layers: str = "all",
     ) -> None:
 
         self.name: str = name
-        self.profiles_dirs: List[str] = profiles_dirs
+        self.system_profiles_dir = system_profiles_dir
+        self.user_profiles_dir = user_profiles_dir
+        self.profiles_dirs: List[str] = [user_profiles_dir, system_profiles_dir]
         self.layers: str = layers
         self.load_profile()
 
     # -------------------------------------------------------------------------
 
     @classmethod
-    def load_defaults(cls, profiles_dirs: List[str]) -> Dict[str, Any]:
-        defaults: Dict[str, Any] = {}
-        for profiles_dir in profiles_dirs[::-1]:
-            defaults_path = os.path.join(profiles_dir, "defaults.json")
-            if os.path.exists(defaults_path):
-                with open(defaults_path, "r") as defaults_file:
-                    recursive_update(defaults, json.load(defaults_file))
-
-        return defaults
+    def load_defaults(cls, system_profiles_dir: str) -> Dict[str, Any]:
+        defaults_path = os.path.join(system_profiles_dir, "defaults.json")
+        with open(defaults_path, "r") as defaults_file:
+            return json.load(defaults_file)
 
     # -------------------------------------------------------------------------
 
@@ -51,11 +52,9 @@ class Profile:
         self.json: Dict[str, Any] = {}  # no defaults
 
         if self.layers in ["all", "defaults"]:
-            for profiles_dir in self.profiles_dirs[::-1]:
-                defaults_path = os.path.join(profiles_dir, "defaults.json")
-                if os.path.exists(defaults_path):
-                    with open(defaults_path, "r") as defaults_file:
-                        recursive_update(self.json, json.load(defaults_file))
+            defaults_path = os.path.join(self.system_profiles_dir, "defaults.json")
+            with open(defaults_path, "r") as defaults_file:
+                self.json = json.load(defaults_file)
 
         # Overlay with profile
         if self.layers in ["all", "profile"]:
@@ -66,7 +65,7 @@ class Profile:
 
     def read_path(self, *path_parts: str) -> str:
         for profiles_dir in self.profiles_dirs:
-            # Try to find in the runtime profile first
+            # Try to find in the user profile first
             full_path = os.path.join(profiles_dir, self.name, *path_parts)
 
             if os.path.exists(full_path):

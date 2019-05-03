@@ -98,14 +98,10 @@
          saveSettings: function() {
              // POST to server
              this.$parent.beginAsync()
-             ProfileService.updateDefaultSettings(this.defaults)
+             ProfileService.updateProfileSettings(this.profile)
+                 .then(request => this.$parent.alert(request.data, 'success'))
                  .then(() => {
-                     ProfileService.updateProfileSettings(this.profile)
-                                   .then(request => this.$parent.alert(request.data, 'success'))
-                                   .then(() => {
-                                       this.$parent.endAsync()
-                                   })
-                                   .catch(err => this.$parent.error(err))
+                     this.$parent.endAsync()
                  })
                  .catch(err => this.$parent.error(err))
          },

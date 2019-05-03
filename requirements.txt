@@ -1,6 +1,7 @@
 Flask
 flask-swagger-ui
 flask_cors
+Flask-Sockets
 pydash
 requests
 paho-mqtt

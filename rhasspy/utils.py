@@ -109,7 +109,7 @@ def recursive_remove(base_dict: Dict[Any, Any], new_dict: Mapping[Any, Any]) -> 
                 recursive_remove(base_dict[k], v)
                 if len(v) == 0:
                     del new_dict[k]
-            elif (v == base_dict[k]):
+            elif v == base_dict[k]:
                 del new_dict[k]
 
 
@@ -244,7 +244,7 @@ def load_phoneme_map(path: str) -> Dict[str, str]:
 
 
 def empty_intent() -> Dict[str, Any]:
-    return {"text": "", "intent": {"name": "", "confidence": 0}, "entities": {}}
+    return {"text": "", "intent": {"name": "", "confidence": 0}, "entities": []}
 
 
 # -----------------------------------------------------------------------------

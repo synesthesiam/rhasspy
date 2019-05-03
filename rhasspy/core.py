@@ -51,20 +51,23 @@ class RhasspyCore:
     def __init__(
         self,
         profile_name: str,
-        profiles_dirs: List[str],
+        system_profiles_dir: str,
+        user_profiles_dir: str,
         actor_system: Optional[ActorSystem] = None,
         do_logging: bool = True,
     ) -> None:
 
         self._logger = logging.getLogger(self.__class__.__name__)
-        self.profiles_dirs = profiles_dirs
+        self.profiles_dirs: List[str] = [user_profiles_dir, system_profiles_dir]
         self.profile_name = profile_name
         self.actor_system = actor_system
 
-        self.profile = Profile(profile_name, profiles_dirs)
+        self.profile = Profile(
+            self.profile_name, system_profiles_dir, user_profiles_dir
+        )
         self._logger.debug("Loaded profile from %s" % self.profile.json_path)
 
-        self.defaults = Profile.load_defaults(profiles_dirs)
+        self.defaults = Profile.load_defaults(system_profiles_dir)
         self.do_logging = do_logging
 
     # -------------------------------------------------------------------------
@@ -280,8 +283,7 @@ class RhasspyCore:
 
     def shutdown(self) -> None:
         # Clear environment variables
-        rhasspy_vars = [v for v in os.environ
-                        if v.startswith("RHASSPY")]
+        rhasspy_vars = [v for v in os.environ if v.startswith("RHASSPY")]
 
         for v in rhasspy_vars:
             del os.environ[v]
