@@ -15,33 +15,32 @@ from jsgf2fst import jsgf2fst, read_slots, make_intent_fst
 
 from .actor import RhasspyActor
 from .profiles import Profile
-from .utils import SentenceEntity, extract_entities, sanitize_sentence, open_maybe_gzip
 
 # -----------------------------------------------------------------------------
 # Classes
 # -----------------------------------------------------------------------------
 
 
-class TrainingSentence:
-    def __init__(
-        self,
-        sentence: str,
-        entities: List[SentenceEntity],
-        tokens: List[str],
-        tagged_sentence: str,
-    ) -> None:
-        self.sentence = sentence
-        self.entities = entities
-        self.tokens = tokens
-        self.tagged_sentence = tagged_sentence
+# class TrainingSentence:
+#     def __init__(
+#         self,
+#         sentence: str,
+#         entities: List[SentenceEntity],
+#         tokens: List[str],
+#         tagged_sentence: str,
+#     ) -> None:
+#         self.sentence = sentence
+#         self.entities = entities
+#         self.tokens = tokens
+#         self.tagged_sentence = tagged_sentence
 
-    def json(self):
-        return {
-            "sentence": self.sentence,
-            "entities": [e.__dict__ for e in self.entities],
-            "tokens": self.tokens,
-            "tagged_sentence": self.tagged_sentence,
-        }
+#     def json(self):
+#         return {
+#             "sentence": self.sentence,
+#             "entities": [e.__dict__ for e in self.entities],
+#             "tokens": self.tokens,
+#             "tagged_sentence": self.tagged_sentence,
+#         }
 
 
 # -----------------------------------------------------------------------------
@@ -155,7 +154,8 @@ class JsgfSentenceGenerator(RhasspyActor):
             allow_no_value=True, strict=False, delimiters=["="]
         )
 
-        config.optionxform = lambda x: str(x)  # case sensitive
+        # Make case sensitive
+        config.optionxform = lambda x: str(x)  # type: ignore
         config.read_file(ini_file)
 
         os.makedirs(grammar_dir, exist_ok=True)

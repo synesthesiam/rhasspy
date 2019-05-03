@@ -260,7 +260,9 @@ class DialogueManager(RhasspyActor):
 
             self.send(
                 self.mqtt,
-                MqttPublish("rhasspy/speech-to-text/transcription", message.text),
+                MqttPublish(
+                    "rhasspy/speech-to-text/transcription", message.text.encode()
+                ),
             )
             self.send(self.mqtt, MqttPublish("hermes/asr/textCaptured", payload))
 
@@ -846,61 +848,47 @@ class DialogueManager(RhasspyActor):
             "command",
         ], ("Invalid intent training system: %s" % trainer_system)
 
+        from .intent_train import (
+            FsticuffsIntentTrainer,
+            FuzzyWuzzyIntentTrainer,
+            AdaptIntentTrainer,
+            RasaIntentTrainer,
+            CommandIntentTrainer,
+            DummyIntentTrainer,
+        )
+
         if trainer_system == "auto":
             # Use intent recognizer system
             if recognizer_system == "fsticuffs":
                 # Use OpenFST acceptor locally
-                from .intent_train import FsticuffsIntentTrainer
-
                 return FsticuffsIntentTrainer
             elif recognizer_system == "fuzzywuzzy":
                 # Use fuzzy string matching locally
-                from .intent_train import FuzzyWuzzyIntentTrainer
-
                 return FuzzyWuzzyIntentTrainer
             elif recognizer_system == "adapt":
                 # Use Mycroft Adapt locally
-                from .intent_train import AdaptIntentTrainer
-
                 return AdaptIntentTrainer
             elif recognizer_system == "rasa":
                 # Use rasaNLU remotely
-                from .intent_train import RasaIntentTrainer
-
                 return RasaIntentTrainer
             elif recognizer_system == "command":
                 # Use command-line intent trainer
-                from .intent_train import CommandIntentTrainer
-
                 return CommandIntentTrainer
         elif trainer_system == "fsticuffs":
             # Use OpenFST acceptor locally
-            from .intent_train import FsticuffsIntentTrainer
-
             return FsticuffsIntentTrainer
         elif trainer_system == "fuzzywuzzy":
             # Use fuzzy string matching locally
-            from .intent_train import FuzzyWuzzyIntentTrainer
-
             return FuzzyWuzzyIntentTrainer
         elif trainer_system == "adapt":
             # Use Mycroft Adapt locally
-            from .intent_train import AdaptIntentTrainer
-
             return AdaptIntentTrainer
         elif trainer_system == "rasa":
             # Use rasaNLU remotely
-            from .intent_train import RasaIntentTrainer
-
             return RasaIntentTrainer
         elif trainer_system == "command":
             # Use command-line intent trainer
-            from .intent_train import CommandIntentTrainer
-
             return CommandIntentTrainer
-
-        # Use dummy trainer as a fallback
-        from .intent_train import DummyIntentTrainer
 
         return DummyIntentTrainer
 
@@ -917,42 +905,35 @@ class DialogueManager(RhasspyActor):
             "command",
         ], ("Invalid speech training system: %s" % trainer_system)
 
+        from .stt_train import (
+            PocketsphinxSpeechTrainer,
+            KaldiSpeechTrainer,
+            CommandSpeechTrainer,
+            DummySpeechTrainer,
+        )
+
         if trainer_system == "auto":
             # Use speech decoder system
             if decoder_system == "pocketsphinx":
                 # Use opengrm/phonetisaurus
-                from .stt_train import PocketsphinxSpeechTrainer
-
                 return PocketsphinxSpeechTrainer
             elif decoder_system == "kaldi":
                 # Use opengrm/phonetisaurus
-                from .stt_train import KaldiSpeechTrainer
-
                 return KaldiSpeechTrainer
             elif decoder_system == "command":
                 # Use command-line speech trainer
-                from .stt_train import CommandSpeechTrainer
-
                 return CommandSpeechTrainer
         elif trainer_system == "pocketsphinx":
             # Use mitlm/phonetisaurus
-            from .stt_train import PocketsphinxSpeechTrainer
-
             return PocketsphinxSpeechTrainer
         elif trainer_system == "kaldi":
             # Use mitlm/phonetisaurus/kaldi
-            from .stt_train import KaldiSpeechTrainer
-
             return KaldiSpeechTrainer
         elif trainer_system == "command":
             # Use command-line speech trainer
-            from .stt_train import CommandSpeechTrainer
-
             return CommandSpeechTrainer
 
         # Use dummy trainer as a fallback
-        from .stt_train import DummySpeechTrainer
-
         return DummySpeechTrainer
 
     @classmethod
@@ -961,20 +942,20 @@ class DialogueManager(RhasspyActor):
             "Invalid intent handler system: %s" % system
         )
 
+        from .intent_handler import (
+            HomeAssistantIntentHandler,
+            CommandIntentHandler,
+            DummyIntentHandler,
+        )
+
         if system == "hass":
             # Use Home Assistant directly
-            from .intent_handler import HomeAssistantIntentHandler
-
             return HomeAssistantIntentHandler
         elif system == "command":
             # Use command-line speech trainer
-            from .intent_handler import CommandIntentHandler
-
             return CommandIntentHandler
         else:
             # Use dummy handlers as a fallback
-            from .intent_handler import DummyIntentHandler
-
             return DummyIntentHandler
 
     @classmethod
@@ -988,33 +969,30 @@ class DialogueManager(RhasspyActor):
             "command",
         ], ("Invalid text to speech system: %s" % system)
 
+        from .tts import (
+            EspeakSentenceSpeaker,
+            MaryTTSSentenceSpeaker,
+            FliteSentenceSpeaker,
+            CommandSentenceSpeaker,
+            PicoTTSSentenceSpeaker,
+            DummySentenceSpeaker,
+        )
+
         if system == "espeak":
             # Use eSpeak directly
-            from .tts import EspeakSentenceSpeaker
-
             return EspeakSentenceSpeaker
         elif system == "marytts":
             # Use MaryTTS
-            from .tts import MaryTTSSentenceSpeaker
-
             return MaryTTSSentenceSpeaker
         elif system == "flite":
             # Use CMU's Flite
-            from .tts import FliteSentenceSpeaker
-
             return FliteSentenceSpeaker
         elif system == "picotts":
             # Use SVOX PicoTTS
-            from .tts import PicoTTSSentenceSpeaker
-
             return PicoTTSSentenceSpeaker
         elif system == "command":
             # Use command-line text-to-speech system
-            from .tts import CommandSentenceSpeaker
-
             return CommandSentenceSpeaker
-        else:
-            # Use dummy as a fallback
-            from .tts import DummySentenceSpeaker
 
-            return DummySentenceSpeaker
+        # Use dummy as a fallback
+        return DummySentenceSpeaker

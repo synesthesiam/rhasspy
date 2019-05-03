@@ -117,7 +117,7 @@ class PhonetisaurusPronounce(RhasspyActor):
         # Write WAV to temporary file
         with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb+") as wav_file:
             espeak_command.extend(["-w", wav_file.name])
-            self._logger.debug(espeak_command)
+            self._logger.debug(repr(espeak_command))
 
             # Generate WAV data
             espeak_phonemes = subprocess.check_output(espeak_command).decode().strip()
@@ -178,7 +178,7 @@ class PhonetisaurusPronounce(RhasspyActor):
 
             espeak_command.append(word)
 
-            self._logger.debug(espeak_command)
+            self._logger.debug(repr(espeak_command))
             espeak_str = subprocess.check_output(espeak_command).decode().strip()
             pronunciations[word]["phonemes"] = espeak_str
 
@@ -257,7 +257,7 @@ class PhonetisaurusPronounce(RhasspyActor):
                         str(n),
                     ]
 
-                    self._logger.debug(g2p_command)
+                    self._logger.debug(repr(g2p_command))
                     subprocess.check_call(g2p_command, stdout=pronounce_file)
 
                     pronounce_file.seek(0)

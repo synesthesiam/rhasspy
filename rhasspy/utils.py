@@ -15,32 +15,35 @@ import tempfile
 import subprocess
 from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple
 
+from jsgf2fst import fstprintall, symbols2intent
+import pywrapfst as fst
+
 # -----------------------------------------------------------------------------
 
 
-class SentenceEntity:
-    def __init__(
-        self,
-        entity: str,
-        value: str,
-        text: Optional[str] = None,
-        start: Optional[int] = None,
-        end: Optional[int] = None,
-    ) -> None:
-        self.entity = entity
-        self.value = value
-        self.text = text or value
-        self.start = start or -1
-        self.end = end or -1
+# class SentenceEntity:
+#     def __init__(
+#         self,
+#         entity: str,
+#         value: str,
+#         text: Optional[str] = None,
+#         start: Optional[int] = None,
+#         end: Optional[int] = None,
+#     ) -> None:
+#         self.entity = entity
+#         self.value = value
+#         self.text = text or value
+#         self.start = start or -1
+#         self.end = end or -1
 
-    def json(self):
-        return {
-            "entity": self.entity,
-            "value": self.value,
-            "text": self.text,
-            "start": self.start,
-            "end": self.end,
-        }
+#     def json(self):
+#         return {
+#             "entity": self.entity,
+#             "value": self.value,
+#             "text": self.text,
+#             "start": self.start,
+#             "end": self.end,
+#         }
 
 
 # -----------------------------------------------------------------------------
@@ -101,11 +104,11 @@ def recursive_update(base_dict: Dict[Any, Any], new_dict: Mapping[Any, Any]) -> 
             base_dict[k] = v
 
 
-def recursive_remove(base_dict: Dict[Any, Any], new_dict: Mapping[Any, Any]) -> None:
+def recursive_remove(base_dict: Dict[Any, Any], new_dict: Dict[Any, Any]) -> None:
     """Recursively removes values from new dictionary that are already in base dictionary"""
     for k, v in list(new_dict.items()):
         if k in base_dict:
-            if isinstance(v, collections.Mapping):
+            if isinstance(v, dict):
                 recursive_remove(base_dict[k], v)
                 if len(v) == 0:
                     del new_dict[k]
@@ -116,39 +119,39 @@ def recursive_remove(base_dict: Dict[Any, Any], new_dict: Mapping[Any, Any]) -> 
 # -----------------------------------------------------------------------------
 
 
-def extract_entities(phrase: str) -> Tuple[str, List[SentenceEntity]]:
-    """Extracts embedded entity markings from a phrase.
-    Returns the phrase with entities removed and a list of entities.
+# def extract_entities(phrase: str) -> Tuple[str, List[SentenceEntity]]:
+#     """Extracts embedded entity markings from a phrase.
+#     Returns the phrase with entities removed and a list of entities.
 
-    The format [some text](entity name) is used to mark entities in a training phrase.
+#     The format [some text](entity name) is used to mark entities in a training phrase.
 
-    If the synonym format [some text](entity name:something else) is used, then
-    "something else" will be substituted for "some text".
-    """
-    entities = []
-    removed_chars = 0
+#     If the synonym format [some text](entity name:something else) is used, then
+#     "something else" will be substituted for "some text".
+#     """
+#     entities = []
+#     removed_chars = 0
 
-    def match(m) -> str:
-        nonlocal removed_chars
-        value, entity = m.group(1), m.group(2)
-        replacement = value
-        start = m.start(0) - removed_chars
-        removed_chars += 1 + len(entity) + 3  # 1 for [, 3 for ], (, and )
+#     def match(m) -> str:
+#         nonlocal removed_chars
+#         value, entity = m.group(1), m.group(2)
+#         replacement = value
+#         start = m.start(0) - removed_chars
+#         removed_chars += 1 + len(entity) + 3  # 1 for [, 3 for ], (, and )
 
-        # Replace value with entity synonym, if present.
-        entity_parts = entity.split(":", maxsplit=1)
-        if len(entity_parts) > 1:
-            entity = entity_parts[0]
-            value = entity_parts[1]
+#         # Replace value with entity synonym, if present.
+#         entity_parts = entity.split(":", maxsplit=1)
+#         if len(entity_parts) > 1:
+#             entity = entity_parts[0]
+#             value = entity_parts[1]
 
-        end = m.end(0) - removed_chars
-        entities.append(SentenceEntity(entity, value, replacement, start, end))
-        return replacement
+#         end = m.end(0) - removed_chars
+#         entities.append(SentenceEntity(entity, value, replacement, start, end))
+#         return replacement
 
-    # [text](entity label) => text
-    phrase = re.sub(r"\[([^]]+)\]\(([^)]+)\)", match, phrase)
+#     # [text](entity label) => text
+#     phrase = re.sub(r"\[([^]]+)\]\(([^)]+)\)", match, phrase)
 
-    return phrase, entities
+#     return phrase, entities
 
 
 # -----------------------------------------------------------------------------
@@ -333,3 +336,16 @@ def open_maybe_gzip(path, mode_normal="r", mode_gzip=None):
 def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     return itertools.zip_longest(*args, fillvalue=fillvalue)
+
+# -----------------------------------------------------------------------------
+
+def make_sentences_by_intent(intent_fst: fst.Fst) -> Dict[str, Any]:
+    # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
+    sentences_by_intent: Dict[str, Any] = defaultdict(list)
+
+    for symbols in fstprintall(intent_fst, exclude_meta=False):
+        intent = symbols2intent(symbols)
+        intent_name = intent["intent"]["name"]
+        sentences_by_intent[intent_name].append(intent)
+
+    return sentences_by_intent

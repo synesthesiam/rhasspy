@@ -10,12 +10,12 @@ from collections import defaultdict
 from typing import Dict, List, Any, Tuple, Set, Optional
 
 from jsgf2fst import fst2arpa
+import pywrapfst as fst
 
 from .actor import RhasspyActor
 from .profiles import Profile
 from .pronounce import GetWordPronunciations, WordPronunciations, PronunciationFailed
-from .train import TrainingSentence
-from .utils import read_dict, lcm, sanitize_sentence, open_maybe_gzip
+from .utils import read_dict, sanitize_sentence
 
 # -----------------------------------------------------------------------------
 # Events
@@ -23,13 +23,15 @@ from .utils import read_dict, lcm, sanitize_sentence, open_maybe_gzip
 
 
 class TrainSpeech:
-    def __init__(self, intent_fst, receiver: Optional[RhasspyActor] = None) -> None:
+    def __init__(
+        self, intent_fst: fst.Fst, receiver: Optional[RhasspyActor] = None
+    ) -> None:
         self.intent_fst = intent_fst
         self.receiver = receiver
 
 
 class SpeechTrainingComplete:
-    def __init__(self, intent_fst) -> None:
+    def __init__(self, intent_fst: fst.Fst) -> None:
         self.intent_fst = intent_fst
 
 
@@ -55,7 +57,9 @@ class UnknownWordsException(Exception):
 class DummySpeechTrainer(RhasspyActor):
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, TrainSpeech):
-            self.send(message.receiver or sender, SpeechTrainingComplete())
+            self.send(
+                message.receiver or sender, SpeechTrainingComplete(message.intent_fst)
+            )
 
 
 # -----------------------------------------------------------------------------
@@ -209,7 +213,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def write_dictionary(self, intent_fst) -> Set[str]:
+    def write_dictionary(self, intent_fst: fst.Fst) -> Set[str]:
         """Writes all required words to a CMU dictionary.
         Unknown words have their pronunciations guessed and written to a separate dictionary.
         Fails if any unknown words are found."""
@@ -520,6 +524,7 @@ class CommandSpeechTrainer(RhasspyActor):
 
     def train(self, sentences_by_intent):
         from jsgf2fst import fstprintall
+
         self._logger.debug(self.command)
 
         try:

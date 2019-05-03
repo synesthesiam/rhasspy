@@ -41,6 +41,8 @@ import pydash
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
+from jsgf2fst import read_slots
+
 from rhasspy.profiles import Profile
 from rhasspy.core import RhasspyCore
 from rhasspy.dialogue import ProfileTrainingFailed
@@ -275,7 +277,7 @@ def api_listen_for_command() -> Response:
 
 
 @app.route("/api/profile", methods=["GET", "POST"])
-def api_profile() -> Response:
+def api_profile() -> Union[str, Response]:
     """Read or write profile JSON directly"""
     assert core is not None
     layers = request.args.get("layers", "all")
@@ -666,31 +668,30 @@ def api_actor_states() -> Response:
 
 
 @app.route("/api/slots", methods=["GET", "POST"])
-def api_slots() -> Response:
+def api_slots() -> Union[str, Response]:
     """Get the values of all slots"""
     assert core is not None
     overwrite_all = request.args.get("overwrite_all", "false").lower() == "true"
     new_slot_values = json.loads(request.data)
 
-    slots_dirs = core.profile.read_paths(
+    slots_dir = core.profile.read_path(
         core.profile.get("speech_to_text.slots_dir", "slots")
     )
 
     if request.method == "POST":
         if overwrite_all:
             # Remote existing values first
-            for slots_dir in slots_dirs:
-                for name in new_slot_values.keys():
-                    slots_path = safe_join(slots_dir, f"{name}.txt")
-                    if os.path.exists(slots_path):
-                        try:
-                            os.unlink(slots_path)
-                        except:
-                            logger.exception("api_slots")
+            for name in new_slot_values.keys():
+                slots_path = safe_join(slots_dir, f"{name}")
+                if os.path.exists(slots_path):
+                    try:
+                        os.unlink(slots_path)
+                    except:
+                        logger.exception("api_slots")
 
         for name, values in new_slot_values.items():
             slots_path = core.profile.write_path(
-                core.profile.get("speech_to_text.slots_dir", "slots"), f"{name}.txt"
+                core.profile.get("speech_to_text.slots_dir", "slots"), f"{name}"
             )
 
             # Create directories
@@ -706,36 +707,33 @@ def api_slots() -> Response:
         return "OK"
 
     # Load slots values
-    slots_dirs = core.profile.read_paths(core.profile.get("speech_to_text.slots_dir"))
+    slots_dir = core.profile.read_path(core.profile.get("speech_to_text.slots_dir"))
 
-    from rhasspy.train import JsgfSentenceGenerator
-
-    return jsonify(JsgfSentenceGenerator.load_slots(slots_dirs))
+    return jsonify(read_slots(slots_dir))
 
 
 @app.route("/api/slots/<name>", methods=["GET", "POST"])
-def api_slots_by_name(name: str) -> Response:
+def api_slots_by_name(name: str) -> Union[str, Response]:
     """Get or sets the values of a slot list"""
     assert core is not None
     overwrite_all = request.args.get("overwrite_all", "false").lower() == "true"
 
-    slots_dirs = core.profile.read_paths(
+    slots_dir = core.profile.read_path(
         core.profile.get("speech_to_text.slots_dir", "slots")
     )
 
     if request.method == "POST":
         if overwrite_all:
             # Remote existing values first
-            for slots_dir in slots_dirs:
-                slots_path = safe_join(slots_dir, f"{name}.txt")
-                if os.path.exists(slots_path):
-                    try:
-                        os.unlink(slots_path)
-                    except:
-                        logger.exception("api_slots_by_name")
+            slots_path = safe_join(slots_dir, f"{name}")
+            if os.path.exists(slots_path):
+                try:
+                    os.unlink(slots_path)
+                except:
+                    logger.exception("api_slots_by_name")
 
         slots_path = core.profile.write_path(
-            core.profile.get("speech_to_text.slots_dir", "slots"), f"{name}.txt"
+            core.profile.get("speech_to_text.slots_dir", "slots"), f"{name}"
         )
 
         # Create directories
@@ -748,9 +746,7 @@ def api_slots_by_name(name: str) -> Response:
         return f"Wrote {len(request.data)} byte(s) to {slots_path}"
 
     # Load slots values
-    from rhasspy.train import JsgfSentenceGenerator
-
-    slot_values = JsgfSentenceGenerator.load_slots(slots_dirs)
+    slot_values = read_slots(slots_dir)
 
     return "\n".join(slot_values.get(name, []))
 

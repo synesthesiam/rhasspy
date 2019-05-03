@@ -83,7 +83,7 @@ class RemoteRecognizer(RhasspyActor):
         import requests
 
         params = {"profile": self.profile.name, "nohass": True}
-        response = requests.post(self.remote_url, params=params, data=text)
+        response = requests.post(self.remote_url, params=params, data=text.encode())
         response.raise_for_status()
 
         return response.json()
@@ -288,7 +288,7 @@ class RasaIntentRecognizer(RhasspyActor):
         if isinstance(message, RecognizeIntent):
             try:
                 intent = self.recognize(message.text)
-                logging.debug(intent)
+                logging.debug(repr(intent))
             except Exception as e:
                 self._logger.exception("in_started")
                 intent = empty_intent()
@@ -376,6 +376,8 @@ class AdaptIntentRecognizer(RhasspyActor):
                 ],
             }
 
+        return empty_intent()
+
     # -------------------------------------------------------------------------
 
     def load_engine(self) -> None:
@@ -384,6 +386,7 @@ class AdaptIntentRecognizer(RhasspyActor):
             from adapt.intent import IntentBuilder
             from adapt.engine import IntentDeterminationEngine
 
+            assert self.engine is not None
             config_path = self.profile.read_path("adapt_config.json")
             if not os.path.exists(config_path):
                 return

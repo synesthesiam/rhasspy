@@ -9,7 +9,7 @@ from collections import defaultdict, Counter
 from typing import Dict, List, Set, Any, Optional
 
 from .actor import RhasspyActor
-from .utils import open_maybe_gzip
+from .utils import make_sentences_by_intent
 
 # -----------------------------------------------------------------------------
 # Events
@@ -240,12 +240,7 @@ class AdaptIntentTrainer(RhasspyActor):
                 )
 
         # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
-        sentences_by_intent: Dict[str, Any] = defaultdict(list)
-
-        for symbols in fstprintall(intent_fst, exclude_meta=False):
-            intent = symbols2intent(symbols)
-            intent_name = intent["intent"]["name"]
-            sentences_by_intent[intent_name].append(intent)
+        sentences_by_intent: Dict[str, Any] = make_sentences_by_intent(intent_fst)
 
         # Generate intent configuration
         entities: Dict[str, Set[str]] = {}
@@ -380,18 +375,11 @@ class CommandIntentTrainer(RhasspyActor):
                 self.send(message.receiver or sender, IntentTrainingFailed(repr(e)))
 
     def train(self, intent_fst) -> None:
-        from jsgf2fst import fstprintall, symbols2intent
-
         try:
             self._logger.debug(self.command)
 
             # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
-            sentences_by_intent: Dict[str, Any] = defaultdict(list)
-
-            for symbols in fstprintall(intent_fst, exclude_meta=False):
-                intent = symbols2intent(symbols)
-                intent_name = intent["intent"]["name"]
-                sentences_by_intent[intent_name].append(intent)
+            sentences_by_intent: Dict[str, Any] = make_sentences_by_intent(intent_fst)
 
             # JSON -> STDIN
             input = json.dumps({sentences_by_intent}).encode()
