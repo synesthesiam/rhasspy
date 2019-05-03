@@ -1,6 +1,6 @@
 ![Rhasspy logo](img/rhasspy.svg)
 
-Rhasspy (pronounced RAH-SPEE) is an offline, [multilingual](#supported-languages) voice assistant toolkit inspired by [Jasper](https://jasperproject.github.io/) that works well with [Home Assistant](https://www.home-assistant.io/), [Hass.io](https://www.home-assistant.io/hassio/), and [NodeRed](https://nodered.org) .
+Rhasspy (pronounced RAH-SPEE) is an offline, [multilingual](#supported-languages) voice assistant toolkit inspired by [Jasper](https://jasperproject.github.io/) that works well with [Home Assistant](https://www.home-assistant.io/), [Hass.io](https://www.home-assistant.io/hassio/), and [Node-RED](https://nodered.org) .
 
 Rhasspy transforms voice commands into JSON events that can trigger actions in home automation software, [Home Assistant automations](https://www.home-assistant.io/docs/automation/trigger/#event-trigger). You define custom voice commands in a [profile](profiles.md) using a [specialized template syntax](training.md), and Rhasspy takes care of the rest.
 
@@ -31,7 +31,7 @@ Rhasspy provides **offline, private solutions** to problems 1-4 using off-the-sh
     * [Mycroft Adapt](https://github.com/MycroftAI/adapt)
     * [RasaNLU](https://rasa.com/)
 
-For problem 5 (fulfilling the speaker's intent), Rhasspy works with external home automation software, such as Home Assistant's built-in [automation capability](https://www.home-assistant.io/docs/automation/) or a [NodeRed flow](https://nodered.org). For each intent you define, Rhasspy sends an event to Home Assistant that can be used to do anything Home Assistant can do (toggle switches, call REST services, etc.). This means that Rhasspy will do very little out of the box compared to other voice assistants, but there will also be *no limits* to what can be done.
+For problem 5 (fulfilling the speaker's intent), Rhasspy works with external home automation software, such as Home Assistant's built-in [automation capability](https://www.home-assistant.io/docs/automation/) or a [Node-RED flow](https://nodered.org) flow. For each intent you define, Rhasspy emits a JSON event that can, for example, be used to do anything Home Assistant can do (toggle switches, call REST services, etc.). This means that Rhasspy will do very little out of the box compared to other voice assistants, but there are also be *no limits* to what can be done.
 
 ## Supported Languages
 
@@ -59,13 +59,24 @@ It is possible to extend Rhasspy to new languages with only:
 
 ## How It Works
 
-Rhasspy starts off asleep, listening for a [wake word](wake-word.md). Once awoken, it listens for a [voice command](command-listener.md). After recording the command, its transcribed with the [speech to text](speech-to-text.md) system into text, which is then run through an [intent recognizer](intent-recognition.md). Finally, the recognized intent is used to generate an event that can be [handled by Home Assistant](intent-handling.md). 
+Rhasspy starts off asleep, listening for a [wake word](wake-word.md). Once awoken, it listens for a [voice command](command-listener.md). After recording the command, its transcribed with the [speech to text](speech-to-text.md) system into text, which is then run through an [intent recognizer](intent-recognition.md). Finally, the recognized intent is used to generate an event that can be [handled by Home Assistant or Node-RED](intent-handling.md). 
 
 ![Rhasspy overview](img/rhasspy-overview.png)
 
 ## Customization
 
-Every step of Rhasspy's processing pipeline can be customized, including using a remote Rhasspy server via its [HTTP API](usage.md#http-api) for [speech to text](speech-to-text.md#remote-http-server) and [intent recognition](intent-recognition.md#remote-http-server).
+Every step of Rhasspy's processing pipeline can be customized, including using a remote Rhasspy server via its [HTTP API](usage.md#http-api) for [speech to text](speech-to-text.md#remote-http-server) and [intent recognition](intent-recognition.md#remote-http-server). Some useful Rhasspy API endpoints are:
+
+* `/api/listen-for-command`
+    * POST to wake Rhasspy up and start listening for a voice command
+* `/api/train`
+    * POST to re-train your profile
+* `/api/speech-to-intent`
+    * POST a WAV file and have Rhasspy process it as a voice command
+* `/api/text-to-intent`
+    * POST text and have Rhasspy process it as command
+* `/api/text-to-speech`
+    * POST text and have Rhasspy speak it
 
 Additionally, you can call out to a custom external program for [wake word detection](wake-word.md#command), [voice command listening](command-listener.md#command), [speech recognition](speech-to-text.md#command), [intent recognition](intent-recognition.md#command), and event [intent handling](intent-handling.md#command)! This means that you can use Rhasspy as a general voice command toolkit, with or without Home Assistant.
 

@@ -55,7 +55,7 @@ To install the add-on, add my [Hass.IO Add-On Repository](https://github.com/syn
 
 **NOTE:** Beware that on a Raspberry Pi 3, the add-on can take 10-15 minutes to build and around 1-2 minutes to start.
 
-Watch the system log for a message like `Build 8e35c251/armhf-addon-rhasspy:1.35 done`. If the “Open Web UI” link on the add-on page doesn’t work, please check the log for errors, wait a minute, and try again.
+Watch the system log for a message like `Build 8e35c251/armhf-addon-rhasspy:2.11 done`. If the “Open Web UI” link on the add-on page doesn’t work, please check the log for errors, wait a minute, and try again.
 
 Before starting the add-on, make sure to give it access to your microphone and speakers:
 
@@ -75,7 +75,7 @@ Then run the `create-venv.sh` script (assumes a Debian distribution):
     
 Once the installation finishes (5-10 minutes on a Raspberry Pi 3), you can use the `run-venv.sh` script to start Rhasspy:
 
-    ./run-venv.sh
+    ./run-venv.sh --profile en
     
 If all is well, the web interface will be available at http://localhost:12101
 

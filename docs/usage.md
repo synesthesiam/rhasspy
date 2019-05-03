@@ -75,6 +75,8 @@ Rhasspy features a comprehensive HTTP API available at `/api`, documented with [
     * POST a WAV file and have Rhasspy process it as a voice command
 * `/api/text-to-intent`
     * POST text and have Rhasspy process it as command
+* `/api/text-to-speech`
+    * POST text and have Rhasspy speak it
     
 See `public/swagger.yaml` in Rhasspy's repository for all available endpoints, or visit `/api` on your Rhasspy web server (e.g., [http://locahost:12101/api](http://localhost:12101/api)).
 
