@@ -26,8 +26,8 @@ acoustic_file="${download_dir}/cmusphinx-zh-cn-5.2.tar.gz"
 acoustic_output="${DIR}/acoustic_model"
 
 if [[ ! -s "${acoustic_file}" ]]; then
-    echo "Downloading acoustic model"
-    wget -q -O "${acoustic_file}" "${acoustic_url}"
+    echo "Downloading acoustic model (${acoustic_url})"
+    curl -sSfL -o "${acoustic_file}" "${acoustic_url}"
 fi
 
 echo "Extracting acoustic model (${acoustic_file})"
@@ -43,8 +43,8 @@ g2p_file="${download_dir}/zh-g2p.tar.gz"
 g2p_output="${DIR}/g2p.fst"
 
 if [[ ! -s "${g2p_file}" ]]; then
-    echo "Downloading g2p model"
-    wget -q -O "${g2p_file}" "${g2p_url}"
+    echo "Downloading g2p model (${g2p_url})"
+    curl -sSfL -o "${g2p_file}" "${g2p_url}"
 fi
 
 echo "Extracting g2p model (${g2p_file})"
@@ -76,6 +76,6 @@ for model_name in "${snowboy_models[@]}"; do
     if [[ ! -s "${model_output}" ]]; then
         model_url="https://github.com/Kitt-AI/snowboy/raw/master/resources/models/${model_name}"
         echo "Downloading ${model_output} (${model_url})"
-        wget -q -O "${model_output}" "${model_url}"
+        curl -sSfL -o "${model_output}" "${model_url}"
     fi
 done
