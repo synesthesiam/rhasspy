@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # Directory of *this* script
 DIR="$( cd "$( dirname "$0" )" && pwd )"
@@ -46,7 +47,7 @@ sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
      gfortran libfst-dev \
      sphinxbase-utils sphinxtrain pocketsphinx \
      jq checkinstall unzip xz-utils \
-     libfst-dev
+     libfst-dev curl
 
 # -----------------------------------------------------------------------------
 # Python 3.6
@@ -62,7 +63,7 @@ if [[ -z "$(which python3.6)" ]]; then
     python_file="${download_dir}/Python-3.6.8.tar.xz"
     if [[ ! -f "${python_file}" ]]; then
         python_url='https://www.python.org/ftp/python/3.6.8/Python-3.6.8.tar.xz'
-        wget -O "${python_file}" -q "${python_url}"
+        curl -sSfL-o "${python_file}" "${python_url}"
     fi
 
     tar -C "${temp_dir}" -xf "${python_file}"
@@ -94,17 +95,15 @@ source "${VENV_PATH}/bin/activate"
 "${PYTHON}" -m pip install wheel
 "${PYTHON}" -m pip install -r requirements.txt
 
+# Download dependencies
+echo "Downloading dependencies"
+bash download-dependencies.sh
+
 # -----------------------------------------------------------------------------
 # Pocketsphinx for Python
 # -----------------------------------------------------------------------------
 
 pocketsphinx_file="${download_dir}/pocketsphinx-python.tar.gz"
-if [[ ! -f "${pocketsphinx_file}" ]]; then
-    pocketsphinx_url='https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz'
-    echo "Downloading pocketsphinx (${pocketsphinx_url})"
-    wget -q -O "${pocketsphinx_file}" "${pocketsphinx_url}"
-fi
-
 "${PYTHON}" -m pip install "${pocketsphinx_file}"
 
 # -----------------------------------------------------------------------------
@@ -117,7 +116,7 @@ case $CPU_ARCH in
         if [[ ! -f "${snowboy_file}" ]]; then
             snowboy_url='https://github.com/Kitt-AI/snowboy/archive/v1.3.0.tar.gz'
             echo "Downloading snowboy (${snowboy_url})"
-            wget -q -O "${snowboy_file}" "${snowboy_url}"
+            curl -sSfL-o "${snowboy_file}" "${snowboy_url}"
         fi
 
         "${PYTHON}" -m pip install "${snowboy_file}"
@@ -135,12 +134,6 @@ if [[ -z "$(which precise-engine)" ]]; then
     case $CPU_ARCH in
         x86_64|armv7l)
             precise_file="${download_dir}/precise-engine_0.2.0_${CPU_ARCH}.tar.gz"
-            if [[ ! -f "${precise_file}" ]]; then
-                precise_url="https://github.com/MycroftAI/mycroft-precise/releases/download/v0.2.0/precise-engine_0.2.0_${CPU_ARCH}.tar.gz"
-                echo "Downloading Mycroft Precise (${precise_url})"
-                wget -q -O "${precise_file}" "${precise_url}"
-            fi
-
             precise_install='/usr/lib'
             sudo tar -C "${precise_install}" -xf "${precise_file}"
             sudo ln -s "${precise_install}/precise-engine/precise-engine" '/usr/bin/precise-engine'
@@ -157,12 +150,6 @@ fi
 
 if [[ -z "$(which ngramcount)" ]]; then
     opengrm_file="${download_dir}/opengrm-ngram-1.3.3.tar.gz"
-    if [[ ! -f "${opengrm_file}" ]]; then
-        opengrm_url='https://www.opengrm.org/twiki/pub/GRM/NGramDownload/opengrm-ngram-1.3.3.tar.gz'
-        echo "Download Opengrm (${opengrm_url})"
-        wget -q -O "${opengrm_file}" "${opengrm_url}"
-    fi
-
     echo "Building Opengrm ${opengrm_file}"
     tar -C "${temp_dir}" -xf "${opengrm_file}" && \
         cd "${temp_dir}/opengrm-ngram-1.3.3" && \
@@ -181,12 +168,6 @@ if [[ -z "$(which phonetisaurus-apply)" ]]; then
         x86_64|armv7l|arm64v8)
             # Install pre-built package
             phonetisaurus_file="${download_dir}/phonetisaurus-2019_${FRIENDLY_ARCH}.deb"
-            if [[ ! -f "${phonetisaurus_file}" ]]; then
-                phonetisaurus_url="https://github.com/synesthesiam/phonetisaurus-2019/releases/download/v1.0/phonetisaurus-2019_${FRIENDLY_ARCH}.deb"
-                echo "Downloading phonetisaurus (${phonetisaurus_url})"
-                wget -q -O "${phonetisaurus_file}" "${phonetisaurus_url}"
-            fi
-
             echo "Installing phonetisaurus (${phonetisaurus_file})"
             sudo dpkg -i "${phonetisaurus_file}"
         ;;
@@ -194,12 +175,6 @@ if [[ -z "$(which phonetisaurus-apply)" ]]; then
         *)
             # Build from source
             phonetisaurus_file="${download_dir}/phonetisaurus-2019.zip"
-            if [[ ! -f "${phonetisaurus_file}" ]]; then
-                phonetisaurus_url="https://github.com/synesthesiam/phonetisaurus-2019/releases/download/v1.0/phonetisaurus-2019_${FRIENDLY_ARCH}.deb"
-                echo "Downloading phonetisaurus source (${phonetisaurus_url})"
-                wget -q -O "${phonetisaurus_file}" "${phonetisaurus_url}"
-            fi
-
             echo "Building phonetisaurus (${phonetisaurus_file})"
             unzip -d "${temp_dir}" "${phonetisaurus_file}" && \
                 cd "${temp_dir}/phonetisaurus" && \
