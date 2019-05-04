@@ -26,7 +26,7 @@ acoustic_file="${download_dir}/cmusphinx-zh-cn-5.2.tar.gz"
 acoustic_output="${DIR}/acoustic_model"
 
 if [[ ! -s "${acoustic_file}" ]]; then
-    echo "Downloading acoustic model"
+    echo "Downloading acoustic model (${acoustic_url})"
     curl -sSfL -o "${acoustic_file}" "${acoustic_url}"
 fi
 
@@ -43,7 +43,7 @@ g2p_file="${download_dir}/zh-g2p.tar.gz"
 g2p_output="${DIR}/g2p.fst"
 
 if [[ ! -s "${g2p_file}" ]]; then
-    echo "Downloading g2p model"
+    echo "Downloading g2p model (${g2p_url})"
     curl -sSfL -o "${g2p_file}" "${g2p_url}"
 fi
 

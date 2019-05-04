@@ -21,12 +21,12 @@ echo "Downloading Greek (el) profile (sphinx)"
 # Acoustic Model
 #------------------------------------------------------------------------------
 
-acoustic_url='https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-el/cmusphinx-el-gr-5.2.tar.gz'
+acoustic_url='https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-el/cmusphinx-el-5.2.tar.gz'
 acoustic_file="${download_dir}/cmusphinx-el-5.2.tar.gz"
 acoustic_output="${DIR}/acoustic_model"
 
 if [[ ! -s "${acoustic_file}" ]]; then
-    echo "Downloading acoustic model"
+    echo "Downloading acoustic model (${acoustic_url})"
     curl -sSfL -o "${acoustic_file}" "${acoustic_url}"
 fi
 
@@ -43,7 +43,7 @@ g2p_file="${download_dir}/el-g2p.tar.gz"
 g2p_output="${DIR}/g2p.fst"
 
 if [[ ! -s "${g2p_file}" ]]; then
-    echo "Downloading g2p model"
+    echo "Downloading g2p model (${g2p_url})"
     curl -sSfL -o "${g2p_file}" "${g2p_url}"
 fi
 

@@ -26,13 +26,13 @@ acoustic_file="${download_dir}/cmusphinx-ru-5.2.tar.gz"
 acoustic_output="${DIR}/acoustic_model"
 
 if [[ ! -s "${acoustic_file}" ]]; then
-    echo "Downloading acoustic model"
+    echo "Downloading acoustic model (${acoustic_url})"
     curl -sSfL -o "${acoustic_file}" "${acoustic_url}"
 fi
 
 echo "Extracting acoustic model (${acoustic_file})"
 rm -rf "${acoustic_output}"
-tar -C "${DIR}" -xzf "${acoustic_file}" && mv "${DIR}/cmusphinx-ru-5.2" "${acoustic_output}" && rm -s "${acoustic_output}/ru.dic" "${acoustic_output}/rm.lm"
+tar -C "${DIR}" -xzf "${acoustic_file}" && mv "${DIR}/cmusphinx-ru-5.2" "${acoustic_output}" && rm -f "${acoustic_output}/ru.dic" "${acoustic_output}/rm.lm"
 
 #------------------------------------------------------------------------------
 # G2P
@@ -43,7 +43,7 @@ g2p_file="${download_dir}/ru-g2p.tar.gz"
 g2p_output="${DIR}/g2p.fst"
 
 if [[ ! -s "${g2p_file}" ]]; then
-    echo "Downloading g2p model"
+    echo "Downloading g2p model (${g2p_url})"
     curl -sSfL -o "${g2p_file}" "${g2p_url}"
 fi
 

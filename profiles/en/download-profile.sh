@@ -28,7 +28,7 @@ echo "${acoustic_file}"
 acoustic_output="${DIR}/acoustic_model"
 
 if [[ ! -s "${acoustic_file}" ]]; then
-    echo "Downloading acoustic model"
+    echo "Downloading acoustic model (${acoustic_url})"
     curl -sSfL -o "${acoustic_file}" "${acoustic_url}"
 fi
 
@@ -70,7 +70,7 @@ lm_file="${download_dir}/en-70k-0.2-pruned.lm.gz"
 lm_output="${DIR}/base_language_model.txt"
 
 if [[ ! -s "${lm_file}" ]]; then
-    echo "Downloading language model"
+    echo "Downloading language model (${lm_url})"
     curl -sSfL -o "${lm_file}" "${lm_url}"
 fi
 

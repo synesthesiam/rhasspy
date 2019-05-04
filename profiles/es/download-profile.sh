@@ -26,7 +26,7 @@ acoustic_file="${download_dir}/cmusphinx-es-5.2.tar.gz"
 acoustic_output="${DIR}/acoustic_model"
 
 if [[ ! -s "${acoustic_file}" ]]; then
-    echo "Downloading acoustic model"
+    echo "Downloading acoustic model (${acoustic_url})"
     curl -sSfL -o "${acoustic_file}" "${acoustic_url}"
 fi
 
@@ -43,7 +43,7 @@ g2p_file="${download_dir}/es-g2p.tar.gz"
 g2p_output="${DIR}/g2p.fst"
 
 if [[ ! -s "${g2p_file}" ]]; then
-    echo "Downloading g2p model"
+    echo "Downloading g2p model (${g2p_url})"
     curl -sSfL -o "${g2p_file}" "${g2p_url}"
 fi
 
@@ -65,18 +65,6 @@ tar --to-stdout -xf "${acoustic_file}" "cmusphinx-es-5.2/etc/voxforge_es_sphinx.
 lm_output="${DIR}/base_language_model.txt"
 echo "Extracting language model (${acoustic_file})"
 tar --to-stdout -xf "${acoustic_file}" "cmusphinx-es-5.2/etc/es-20k.lm.gz" | zcat > "${lm_output}"
-
-#------------------------------------------------------------------------------
-# Snowboy
-#------------------------------------------------------------------------------
-
-snowboy_models=("snowboy.umdl" "computer.umdl")
-for model_name in "${snowboy.umdl[@]}"; do
-    model_output="${DIR}/${model_name}"
-    if [[ ! -s "${model_output}" ]]; then
-        curl -sSfL -o "${model_output}" "https://github.com/Kitt-AI/snowboy/raw/master/resources/models/${model_name}"
-    fi
-done
 
 #------------------------------------------------------------------------------
 # Snowboy

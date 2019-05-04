@@ -27,7 +27,7 @@ acoustic_file="${download_dir}/portuguese.zip"
 acoustic_output="${DIR}/model"
 
 if [[ ! -s "${acoustic_file}" ]]; then
-    echo "Downloading acoustic model"
+    echo "Downloading acoustic model (${acoustic_url})"
     curl -sSfL -o "${acoustic_file}" "${acoustic_url}"
 fi
 
@@ -46,7 +46,7 @@ g2p_file="${download_dir}/portuguese_g2p.zip"
 g2p_output="${DIR}/g2p.fst"
 
 if [[ ! -s "${g2p_file}" ]]; then
-    echo "Downloading g2p model"
+    echo "Downloading g2p model (${g2p_url})"
     curl -sSfL -o "${g2p_file}" "${g2p_url}"
 fi
 
@@ -71,7 +71,7 @@ lm_file="${download_dir}/portuguese_arpa.tar.gz"
 lm_output="${DIR}/base_language_model.txt"
 
 if [[ ! -s "${lm_file}" ]]; then
-    echo "Downloading language model"
+    echo "Downloading language model (${lm_url})"
     curl -sSfL -o "${lm_file}" "${lm_url}"
 fi
 
