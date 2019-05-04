@@ -84,7 +84,7 @@ if [[ -z "$(which ngramcount)" ]]; then
     if [[ ! -f "${opengrm_file}" ]]; then
         opengrm_url='https://www.opengrm.org/twiki/pub/GRM/NGramDownload/opengrm-ngram-1.3.3.tar.gz'
         echo "Download Opengrm (${opengrm_url})"
-        curl -sSfL -o "${opengrm_file}" "${opengrm_url}"
+        curl -sSfLk -o "${opengrm_file}" "${opengrm_url}"
     fi
 fi
 
