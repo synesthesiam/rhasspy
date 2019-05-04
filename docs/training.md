@@ -1,8 +1,8 @@
 # Training
 
-Rhasspy is designed to recognize only the specific set of voice commands that [you provide](#sentencesini). These commands are categorized by **intent**, and may contain variable **slots**, such as the color of a light.
+Rhasspy is designed to recognize only the specific set of voice commands that [you provide](#sentencesini). These commands are categorized by **intent**, and may contain variable **slots** or **entities**, such as the color and name of a light.
 
-During the training process, Rhasspy simulataneously trains *both* a speech and intent recognizer. Combined, they enable a low power, offline system like a Raspberry Pi to understand and respond to your voice commands.
+During the training process, Rhasspy simulataneously trains *both* a speech and intent recognizer. The speech recognizer converts voice commands to text, and the intent recognizer converts text to JSON events. Combined, they enable a low power, offline system like a Raspberry Pi to understand and respond to your voice commands.
 
 ## How It Works
 
@@ -11,15 +11,16 @@ Recognizing voice commands typically involves two main steps:
 1. Speech to text (transcription)
 2. Text to intent (recognition)
 
-For step (1), Rhasspy uses [pocketsphinx](https://github.com/cmusphinx/pocketsphinx), and generates a custom [ARPA language model](https://cmusphinx.github.io/wiki/arpaformat/) during the training process. Specifically, the steps are:
+For step (1), Rhasspy uses [pocketsphinx](https://github.com/cmusphinx/pocketsphinx) or [Kaldi](https://kaldi-asr.org), and generates a custom [ARPA language model](https://cmusphinx.github.io/wiki/arpaformat/) during the training process. Specifically, the steps are:
 
-1. Generate all possible sentences from your [sentences.ini](#sentencesini) file
-2. Balance sentences by intent, ensuring all intents have equal probability
+1. Convert the grammar from your [sentences.ini](#sentencesini) file to a [finite state transducer](https://www.openfst.org)
+2. (Optionally) generate all possible sentences that can be spoken with entities tagged (e.g., `name` is `bedroom light`, `color` is `red`)
 3. Use the [opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary) toolkit to create a custom language model
+4. Train an intent recognizer with the tagged sentences
 
 Additionally, a custom [CMU phonetic dictionary](https://cmusphinx.github.io/wiki/tutorialdict/) is generated with *only* the words in your voice commands (and wake word, if you're using a [pocketsphinx keyphrase](wake-word.md#pocketsphinx)). If the pronunciation of a word is not known, Rhasspy calls out to [phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) to get a guess, and then halts training. Once you've confirmed the pronunciations by adding them to your [custom words](#custom-words), training can continue.
 
-For step (2), Rhasspy can use a [variety of intent recognition systems](intent-recognition.md). However, they are all trained from the **tagged sentences** generated from [sentences.ini](#sentencesini), e.g., `turn [on](state) the [living room lamp](name)`. These sentences are transformed into JSON, like:
+For step (4), Rhasspy can use a [variety of intent recognition systems](intent-recognition.md). However, most are all trained from the **tagged sentences** generated from [sentences.ini](#sentencesini), e.g., `turn [on](state) the [living room lamp](name)`. These sentences are transformed into JSON, like:
 
     { 
       "ChangeLightState": [
@@ -35,7 +36,9 @@ For step (2), Rhasspy can use a [variety of intent recognition systems](intent-r
       ...
     }
     
-and provided as training material to the intent recognition system. The [fuzzywuzzy](intent-recognition.md#fuzzywuzzy) system, for example, simply saves the JSON file and, during recognition, finds the closest matching sentence according to the [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance). More sophisticated systems like [rasaNLU](intent-recognition.md#rasanlu) use machine learning techniques classify sentences by intent and assign slota (entity) values.
+and provided as training material to the intent recognition system. The [fuzzywuzzy](intent-recognition.md#fuzzywuzzy) system, for example, simply saves the JSON file and, during recognition, finds the closest matching sentence according to the [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance). The [default intent recognizer](intent-recognition.md#fsticuffs) interacts directly with the finite state transducer(s) generated in step (1) and, while less tolerant of errors than `fuzzywuzzy`, is significantly faster for large sets of voice commands (i.e., millions).
+
+More sophisticated systems like [rasaNLU](intent-recognition.md#rasanlu) use machine learning techniques to classify sentences by intent and assign slota (entity) values. These systems are much better at recognizing sentences not seen during training, but can take minutes to hours to train.
 
 ## sentences.ini
 
