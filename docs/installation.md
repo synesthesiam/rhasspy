@@ -22,12 +22,13 @@ Next, start the [Rhasspy Docker image](https://hub.docker.com/r/synesthesiam/rha
 
     docker run -d -p 12101:12101 \
           --restart unless-stopped \
-          -e RHASSPY_PROFILES=/profiles \
           -v "$HOME/.config/rhasspy/profiles:/profiles" \
           --device /dev/snd:/dev/snd \
-          synesthesiam/rhasspy-server:latest
+          synesthesiam/rhasspy-server:latest \
+          --user-profiles /profiles \
+          --profile en
           
-This will start Rhasspy in the background (`-d`) on port 12101 (`-p`) and give Rhasspy access to your microphone (`--device`). Any changes you make to [your profile](profiles.md) will be saved to `~/.config/rhasspy`.
+This will start Rhasspy with the English profile (`en`) in the background (`-d`) on port 12101 (`-p`) and give Rhasspy access to your microphone (`--device`). Any changes you make to [your profile](profiles.md) will be saved to `~/.config/rhasspy`.
           
 Once it starts, Rhasspy's web interface should be accessible at [http://localhost:12101](http://localhost:12101). If something went wrong, trying running docker with `-it` instead of `-d` to see the output.
 
@@ -36,14 +37,13 @@ If you're using [docker compose](https://docs.docker.com/compose/), add the foll
     rhasspy:
         image: "synesthesiam/rhasspy-server:latest"
         restart: unless-stopped
-        environment:
-            RHASSPY_PROFILES: "/profiles"
         volumes:
             - "$HOME/.config/rhasspy/profiles:/profiles"
         ports:
             - "12101:12101"
         devices:
             - "/dev/snd:/dev/snd"
+        command: --user-profiles /profiles --profile en
 
 ### Hass.IO
 
@@ -77,17 +77,18 @@ Once the installation finishes (5-10 minutes on a Raspberry Pi 3), you can use t
 
     ./run-venv.sh --profile en
     
-If all is well, the web interface will be available at http://localhost:12101
+If all is well, the web interface will be available at [http://localhost:12101](http://localhost:12101)
 
 ### Software Requirements
 
 At its core, Rhasspy requires:
 
+* Linux
 * Python 3.6
-* [thespian](https://pypi.org/project/thespian/) actor library
 * [Flask](https://pypi.org/project/Flask/) web server, including
     * [flask-swagger-ui](https://pypi.org/project/flask-swagger-ui/) for HTTP API documentation
     * [Flask-Cors](https://pypi.org/project/Flask-Cors/) for [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) stuff
+    * [Flask-Sockets](https://pypi.org/project/Flask-Sockets/) for websocket support
 * [pydash](https://pypi.org/project/pydash/) utility library
 
 To actually use any components, however, requires a lot of [extra software](about.md#supporting-tools).

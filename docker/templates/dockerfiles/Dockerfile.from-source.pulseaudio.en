@@ -15,10 +15,11 @@ COPY etc/qemu-aarch64-static /usr/bin/
 
 RUN apt-get update && \
     apt-get install -y bash jq unzip \
+                       python3 python3-pip python3-dev \
                        build-essential portaudio19-dev swig \
                        libatlas-base-dev \
                        sox espeak flite alsa-utils \
-                       cmake git \
+                       cmake git curl \
                        autoconf libtool automake bison \
                        sphinxbase-utils sphinxtrain
 

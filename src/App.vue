@@ -253,6 +253,7 @@
              this.downloading = true
              ProfileService.downloadProfile()
                  .then(() => {
+                     alert("Download is complete. Rhasspy will now restart. Make sure to train before using your profile!")
                      this.restart()
                  })
                  .catch(err => this.error(err))

@@ -111,6 +111,45 @@ For the `ChangLightState` intent from the [RGB Light Example](index.md#rgb-light
 }
 ```
 
+## Home Assistant
+
+Rhasspy communicates with Home Assistant directly over its [REST API](https://developers.home-assistant.io/docs/en/external_api_rest.html).
+Specifically, Rhasspy intents are POST-ed to the [events endpoint](https://developers.home-assistant.io/docs/en/external_api_rest.html#post-api-events-lt-event_type).
+
+If you have a Rhasspy intent named `ChangeLightColor` with `name` and `color` slots like in the [RGB light example](index.md#rgb-light-example), then Home Assistant will receive an event of type `rhasspy_ChangeLightColor` whose event data is:
+
+```json
+{
+  "name": "bedroom",
+  "color": "red"
+}
+```
+
+when you say "set the bedroom to red". You should write a custom [automation with an event trigger](https://www.home-assistant.io/docs/automation/trigger/#event-trigger) to do something when this event arrives. Catching the example event would look like:
+
+```yaml
+automation:
+  trigger:
+    platform: event
+    event_type: rhasspy_ChangeLightColor
+    event_data:
+      color: red
+  action:
+    ...
+```
+
+You've now added offline, private voice commands to your Home Assistant. Happy automating!
+
+## Node-RED
+
+Rhasspy can interact directly with [Node-RED](https://nodered.org) directly through [websockets](usage.md#websocket-events).
+Simply add a websocket input and set the path to `ws://<rhasspy>:12101/api/events/intent` where `<rhasspy>` is the hostname or IP address of your Rhasspy server.
+Make sure to also set send/receive to "entire message".
+
+![Node-RED websocket example](img/nodered-websocket.png)
+
+More example flows are available [on Github](https://github.com/synesthesiam/rhasspy/tree/master/examples/nodered).
+
 ## Command Line
 
 You can access portions of Rhasspy's functionality without running a web server through the command-line interface.
