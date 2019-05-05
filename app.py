@@ -841,7 +841,7 @@ def add_ws_event(text: str):
             queue.put(text)
 
 
-@sockets.route("/events/intent")
+@sockets.route("/api/events/intent")
 def api_events_intent(ws) -> None:
     # Add new queue for websocket
     q = GQueue()
