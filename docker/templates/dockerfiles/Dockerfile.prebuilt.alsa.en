@@ -65,7 +65,7 @@ RUN if [ "$BUILD_ARCH" != "aarch64" ]; then \
     rm /precise-engine.tar.gz; \
     fi
 
-RUN apt-get install -y flite
+RUN apt-get install -y flite libttspico-utils
 
 COPY download/kaldi_${BUILD_ARCH}.tar.gz /kaldi.tar.gz
 RUN mkdir -p /opt && \
