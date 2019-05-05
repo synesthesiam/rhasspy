@@ -103,7 +103,11 @@ For the `ChangLightState` intent from the [RGB Light Example](index.md#rgb-light
       "entity": "color",
       "value": "red"
     }
-  ]
+  ],
+  "slots": {
+    "name": "bedroom",
+    "color": "red"
+  }
 }
 ```
 

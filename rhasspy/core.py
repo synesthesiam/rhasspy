@@ -163,6 +163,14 @@ class RhasspyCore:
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, RecognizeIntent(text, handle=False))
             assert isinstance(result, IntentRecognized)
+
+            # Add slots
+            intent_slots = {}
+            for ev in result.intent.get("entities", []):
+                intent_slots[ev["entity"]] = ev["value"]
+
+            result.intent["slots"] = intent_slots
+
             return result
 
     def handle_intent(self, intent: Dict[str, Any]) -> IntentHandled:

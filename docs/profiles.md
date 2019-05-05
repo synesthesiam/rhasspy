@@ -1,49 +1,62 @@
 # Profiles
 
-A Rhasspy profile contains all of the necessary files for wake word detection,
-speech transcription, intent recognition, and training.
+A Rhasspy profile contains all of the necessary files for wake word detection, speech transcription, intent recognition, and training.
 
-Each profile is a directory contained in the top-level `profiles` directory, The
-`profiles/defaults.json` file contains the default configuration for all
-profiles. The `profile.json` file *inside* each individual profile directory
-(e.g., `profiles/en/profile.json`) **overrides** settings in `defaults.json`.
+Each profile is a directory contained in the top-level `profiles` directory. The `profiles/defaults.json` file contains the default configuration for all profiles. The `profile.json` file *inside* each individual profile directory (e.g., `profiles/en/profile.json`) **overrides** settings in `defaults.json`.
+
+When starting Rhasspy, you must specify a profile name with `--profile <NAME>` where `<NAME>` is the name of the profile directory (`en`, `nl`, etc.).
 
 ## Profile Directories
 
-Rhasspy uses an environment variable named `RHASSPY_PROFILES` to decide where to read/write profile files. By default, this is set to a directory named `profiles` wherever Rhasspy is running.
+Rhasspy looks for profile-related files in two directories:
 
-Similar to the Unix `PATH` environment variable, you can add more directories to `RHASSPY_PROFILES` (separated by ":"). Rhasspy will go through the list of directories from **right to left** (like `PATH`) when reading or writing a profile file (like `profile.json`). When *reading* a profile file, Rhasspy tries each of the directories until the file is found. When *writing* a profile file, Rhasspy will try to write to each directory, stopping when it succeeds.
+1. The **system profile directory** (read only)
+    * Override with `--system-profiles <DIR>`
+2. The **user profile directory** (read/write)
+    * Override with `--user-profiles <DIR>`
+
+Files in the user profile directory override system files, and Rhasspy will *only* ever write to the user profile directory.
+The default location for each of these directories is:
+
+* Virtual Environment
+    * System profile location is `$PWD/profiles` where `$PWD` is Rhasspy's root directory (where `run-venv.sh` is located)
+    * User profile location is `$HOME/.config/rhasspy/profiles`
+* Docker
+    * System profile location is either `/usr/share/rhasspy/profiles` (ALSA) or `/home/rhasspy/profiles` (PulseAudio)
+    * User profile location **must** be explicity set and mapped to a volume:
+        * `docker run ... -v /path/to/profiles:/profiles synesthesiam/rhasspy-server --user-profiles /profiles`
 
 ### Example
 
-Assume you have `RHASSPY_PROFILES="/usr/share/rhasspy/profiles:/profiles"` and you add some new sentences to the `en` (English) profile in the web interface. When saving the `sentences.ini` file, Rhasspy will search for a **writable** directory in the following order:
+Assume you are running Rhasspy in a virtual environment, and you add some new sentences to the `en` (English) profile in the web interface. When saving the `sentences.ini` file, Rhasspy will create `$HOME/.config/rhasspy/profiles/en` (if it doesn't exist), and write `sentences.ini` in that directory. If you adjust and save your settings, you will find them in `$HOME/.config/rhasspy/profiles/en/profile.json`.
 
-1. `/profiles/en/`
-2. `/usr/share/rhasspy/profiles/en/`
+## Downloading Profiles
 
-If `/profiles/en` is writable, then `/profiles/en/sentences.ini` will be written with all of your sentences. When Rhasspy attempts to locate the profile file `sentences.ini` in the future, `/profiles/en/sentences.ini` will be found **first** and loaded *instead of* `/usr/share/rhasspy/profiles/en/sentences.ini`.
+The first time Rhasspy loads a profile, it needs to download the required binary artifacts (acoustic model, base dictionary, etc.) from [the internet](https://github.com/synesthesiam/rhasspy-profiles/releases). After the initial download, Rhasspy can function completely offline.
 
-## Default Profile
+If you need to install Rhasspy onto a machine that is not connected to the internet, you can simply download the artifacts yourself and place them in a `download` directory *inside* the appropriate profile directory. For example, the `fr` (French) profile has [three artifacts](https://github.com/synesthesiam/rhasspy-profiles/releases/tag/v1.0-fr):
 
-Rhasspy desides which profile to load by looking at the value of `rhasspy.default_profile` in the **first** `defaults.json` file in can find in the `RHASSPY_PROFILES` environment variable (right to left). You can override this behavior by setting `RHASSPY_PROFILE` to the name of a different profile. This is easy to see with the [command-line interface](usage.md#command-line):
+1. `cmusphinx-fr-5.2.tar.gz`
+2. `fr-g2p.tar.gz`
+3. `fr-small.lm.gz`
 
-    rhasspy-cli info --debugs | jq .rhasspy.default_profile
-    "en"
+If your user profile directory is `$HOME/.config/rhasspy/profiles`, then you should download/copy all three artifacts to `$HOME/.config/rhasspy/profiles/fr/download` on the offline machine. Now, when Rhasspy loads the `fr` profile and you click "Download", it will extract the files in the `download` directory without going out to the internet. 
 
-    rhasspy-cli info | jq .language
-    "en"
-    
-    RHASSPY_PROFILE=fr rhasspy-cli info | jq .language
-    "fr"
+If you want to know precisely which files Rhasspy is looking for for a given profile, visit the `profiles` directory in [the source code](https://github.com/synesthesiam/rhasspy/tree/master/profiles) and examine these scripts in that profile's directory:
+
+* `download-profile.sh`
+    * Downloads and extracts all required binary artifacts. Uses cache in `download` directory unless `--delete` option is given.
+* `check-profile.sh`
+    * Verifies that required binary artifacts are present. Returns non-zero exit code if download is required.
 
 ## Available Settings
 
 All available profile sections and settings are listed below:
 
 * `rhasspy` - configuration for Rhasspy assistant
-    * `default_profile` - name of the default profile
-    * `preload_profile` - true if speech/intent recognizers should be loaded immediately for default profile
-    * `listen_on_start` - true if Rhasspy should listen for wake word at startup
+    * `preload_profile` - true if speech/intent recognizers should be loaded immediately for default profile (default: `true`)
+    * `listen_on_start` - true if Rhasspy should listen for wake word at startup (default: `true`)
+    * `load_timeout_sec` - number of seconds to wait for internal actors before proceeding with start up
 * `home_assistant` - how to communicate with Home Assistant/Hass.io
     * `url` - Base URL of Home Assistant server (no `/api`)
     * `access_token` -  long-lived access token for Home Assistant (Hass.io token is used automatically)
@@ -53,6 +66,7 @@ All available profile sections and settings are listed below:
 * `speech_to_text` - transcribing [voice commands to text](speech-to-text.md)
     * `system` - name of speech to text system (`pocketsphinx`, `remote`, `command`, or `dummy`)
     * `pocketsphinx` - configuration for [Pocketsphinx](speech-to-text.md#pocketsphinx)
+        * `compatible` - true if profile can use pocketsphinx for speech recognition
         * `acoustic_model` - directory with CMU 16Khz acoustic model
         * `base_dictionary` - large text file with word pronunciations (read only)
         * `custom_words` - small text file with words/pronunciations added by user
@@ -60,20 +74,33 @@ All available profile sections and settings are listed below:
         * `unknown_words` - small text file with guessed word pronunciations (from phonetisaurus)
         * `language_model` - text file with trigram [ARPA language model](https://cmusphinx.github.io/wiki/arpaformat/) built from example sentences
         * `mllr_matrix` - MLLR matrix from [acoustic model tuning](https://cmusphinx.github.io/wiki/tutorialtuning/) 
+    * `kaldi` - configuration for [Kaldi](speech-to-text.md#kaldi)
+        * `compatible` - true if profile can use Kaldi for speech recognition
+        * `kaldi_dir` - absolute path to Kaldi root directory
+        * `model_dir` - directory where Kaldi model is stored (relative to profile directory)
+        * `graph` - directory where HCLG.fst is located (relative to `model_dir`)
+        * `base_dictionary` - large text file with word pronunciations (read only)
+        * `custom_words` - small text file with words/pronunciations added by user
+        * `dictionary` - text file with all words/pronunciations needed for example sentences
+        * `unknown_words` - small text file with guessed word pronunciations (from phonetisaurus)
     * `remote` - configuration for [remote Rhasspy server](speech-to-text.md#remote-http-server)
         * `url` - URL to POST WAV data for transcription (e.g., `http://your-rhasspy-server:12101/api/speech-to-text`)
     * `command` - configuration for [external speech-to-text program](speech-to-text.md#command)
         * `program` - path to executable
         * `arguments` - list of arguments to pass to program
     * `sentences_ini` - Ini file with example [sentences/JSGF templates](training.md#sentencesini) grouped by intent
-    * `sentences_text` - text file with all example sentences expanded and repeated
     * `g2p_model` - finite-state transducer for phonetisaurus to guess word pronunciations
     * `g2p_casing` - casing to force for g2p model (`upper`, `lower`, or blank)
+    * `dictionary_casing` - casing to force for dictionary words (`upper`, `lower`, or blank)
     * `grammars_dir` - directory to write generated JSGF grammars from sentences ini file
+    * `fsts_dir` - directory to write generated finite state transducers from JSGF grammars
 * `intent` - transforming text commands to intents
-    * `system` - intent recognition system (`fuzzywuzzy`, `rasa`, `remote`, `adapt`, `command`, or `dummy`)
+    * `system` - intent recognition system (`fsticuffs`, `fuzzywuzzy`, `rasa`, `remote`, `adapt`, `command`, or `dummy`)
+    * `fsticuffs` - configuration for [OpenFST-based](https://www.openfst.org) intent recognizer
+        * `intent_fst` - path to generated finite state transducer with all intents combined
     * `fuzzywuzzy` - configuration for simplistic [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) based intent recognizer
         * `examples_json` - JSON file with intents/example sentences
+        * `min_confidence` - minimum confidence required for intent to be converted to a JSON event (0-1)
     * `remote` - configuration for remote Rhasspy server
         * `url` - URL to POST text to for intent recognition (e.g., `http://your-rhasspy-server:12101/api/text-to-intent`)
     * `rasa` - configuration for [rasaNLU](https://rasa.com/) based intent recognizer
@@ -86,27 +113,34 @@ All available profile sections and settings are listed below:
         * `program` - path to executable
         * `arguments` - list of arguments to pass to program
 * `text_to_speech` - pronouncing words
-    * `system` - text to speech system (only `espeak` for now)
-    * `espeak`
+    * `system` - text to speech system (`espeak`, `flite`, `picotts`, `marytts`, `command`, or `dummy`)
+    * `espeak` - configuration for [eSpeak](http://espeak.sourceforge.net)
         * `phoneme_map` - text file mapping CMU phonemes to eSpeak phonemes
+    * `flite` - configuration for [flite](http://www.festvox.org/flite)
+        * `voice` - name of voice to use (e.g., `kal16`, `rms`, `awb`)
+    * `picotts` - configuration for [PicoTTS](https://en.wikipedia.org/wiki/SVOX)
+        * `language` - language to use (default if not present)
+    * `marytts` - configuration for [MaryTTS](http://mary.dfki.de)
+        * `url` - address:port of MaryTTS server (port is usually 59125)
+        * `voice` - name of voice to use (e.g., `cmu-slt`). Default if not present.
+        * `locale` - name of locale to use (e.g., `en-US`). Default if not present.
     * `phoneme_examples` - text file with examples for each CMU phoneme
 * `training` - training speech/intent recognizers
-    * `sentences`
-        * `balance_by_intent` - true if example sentences should be repeated to make all intents equally likely
-        * `casing` - make all sentences `lower` or `upper` case (do nothing if not present)
-        * `write_weights` - `true` if sentence weights should be written in the first column instead of repeating them (default: `false`)
-        * `write_sorted` - `true` if sentences should be sorted before writing out (default: `false`)
+    * `dictionary_number_duplicates` - true if duplicate words in dictionary should be suffixed by `(2)`, `(3)`, etc. 
     * `tokenizer` - system used to break sentences into words (`regex` only for now)
     * `regex` - configuration for regex tokenizer
         * `replace` - list of dictionaries with patterns/replacements used on each example sentence
         * `split` - pattern used to break sentences into words
+    * `unknown_words` - configuration for dealing with words not in base/custom dictionaries
+        * `fail_when_present` - true if Rhasspy should halt training when unknown words are found
+        * `guess_pronunciations` - true if [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) should be used to guess how an unknown word is pronounced
     * `speech_to_text` - training for speech decoder
-        * `system` - speech to text training system (`auto`, `pocketsphinx`, `command`, or `dummy`)
+        * `system` - speech to text training system (`auto`, `pocketsphinx`, `kaldi`, `command`, or `dummy`)
         * `command` - configuration for external speech-to-text training program
             * `program` - path to executable
             * `arguments` - list of arguments to pass to program
     * `intent` - training for intent recognizer
-        * `system` - intent recognizer training system (`auto`, `fuzzywuzzy`, `rasa`, `adapt`, `command`, or `dummy`)
+        * `system` - intent recognizer training system (`auto`, `fsticuffs`, `fuzzywuzzy`, `rasa`, `adapt`, `command`, or `dummy`)
         * `command` - configuration for external intent recognizer training program
             * `program` - path to executable
             * `arguments` - list of arguments to pass to program
@@ -127,9 +161,9 @@ All available profile sections and settings are listed below:
         * `sensitivity` - model sensitivity (0-1, default 0.5)
         * `trigger_level`  - number of events to trigger activation (default 3)
         * `chunk_size` - number of bytes per chunk to feed to Precise (default 2048)
-  * `command` - configuration for external speech-to-text program
-      * `program` - path to executable
-      * `arguments` - list of arguments to pass to program
+    * `command` - configuration for external speech-to-text program
+        * `program` - path to executable
+        * `arguments` - list of arguments to pass to program
 * `microphone` - configuration for audio recording
     * `system` - audio recording system (`pyaudio`, `arecord`, `hermes`, or `dummy`)
     * `pyaudio` - configuration for [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) microphone

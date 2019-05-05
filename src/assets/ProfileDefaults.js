@@ -155,24 +155,14 @@ const profileDefaults = {
         }
     },
     "training": {
-        "sentences": {
-            "balance_by_intent": true,
-            "casing": "lower",
-            "write_weights": false,
-            "write_sorted": false
-        },
         "grammars": {
             "delete_before_training": true
         },
         "regex": {
-            "replace": [
-                {
-                    "[^\\w ]+": " "
-                }
-            ],
             "split": "\\s+"
         },
         "sentences_by_intent": "sentences_by_intent.json.gz",
+        "fsts_dir": "fsts",
         "tokenizer": "regex",
         "unknown_words": {
             "guess_pronunciations": true,

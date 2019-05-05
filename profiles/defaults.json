@@ -89,7 +89,6 @@
         "username": ""
     },
     "rhasspy": {
-        "default_profile": "en",
         "listen_on_start": true,
         "load_timeout_sec": 15,
         "preload_profile": true
@@ -135,7 +134,6 @@
             "url": "http://my-server:12101/api/speech-to-text"
         },
         "sentences_ini": "sentences.ini",
-        "sentences_text": "sentences.txt",
         "slots_dir": "slots",
         "system": "pocketsphinx"
     },
@@ -171,12 +169,6 @@
         },
         "regex": {
             "split": "\\s+"
-        },
-        "sentences": {
-            "balance_by_intent": true,
-            "casing": "lower",
-            "write_sorted": false,
-            "write_weights": false
         },
         "speech_to_text": {
             "command": {
