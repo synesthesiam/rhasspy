@@ -1,6 +1,7 @@
 # Intent Recognition
 
-After you voice command has been transcribed by the [speech to text](speech-to-text.md) system, the next step is to recognize your intent. 
+After your voice command has been transcribed by the [speech to text](speech-to-text.md) system, the next step is to recognize your intent. 
+The end result is a JSON event.
 
 ## Fsticuffs
 

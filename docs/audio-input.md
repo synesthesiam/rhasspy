@@ -6,7 +6,8 @@ Eye camera](https://en.wikipedia.org/wiki/PlayStation_Eye).
 
 ## PyAudio
 
-Streams microphone data from [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) device.
+Streams microphone data from a [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) device.
+This is the default audio input system, and should work with both [ALSA](https://www.alsa-project.org/main/index.php/Main_Page) and [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/).
 
 Add to your [profile](profiles.md):
 
@@ -28,6 +29,7 @@ See `rhasspy.audio_recorder.PyAudioRecorder` for details.
 ## ALSA 
 
 Starts an `arecord` process locally and reads audio data from its standard out.
+Works best with [ALSA](https://www.alsa-project.org/main/index.php/Main_Page).
 
 Add to your [profile](profiles.md):
 
@@ -50,10 +52,9 @@ See `rhasspy.audio_recorder.ARecordAudioRecorder` for details.
 
 ## MQTT/Hermes
 
-Listens to the `hermes/audioServer/<SITE_ID>/audioFrame` topic for WAV data
-([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)). Audio
-data is automatically converted to 16-bit, 16Khz mono with
-[sox](http://sox.sourceforge.net).
+Listens to the `hermes/audioServer/<SITE_ID>/audioFrame` topic for WAV data ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)). 
+This allows Rhasspy to receive audio from [Snips.AI](https://snips.ai/).
+Audio data is automatically converted to 16-bit, 16Khz mono with [sox](http://sox.sourceforge.net).
 
 Add to your [profile](profiles.md):
 

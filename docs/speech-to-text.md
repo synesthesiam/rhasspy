@@ -1,8 +1,11 @@
 # Speech to Text
 
+Rhasspy's primary function is convert voice commands to JSON events. The first step of this process is converting speech to text (transcription).
+
 ## Pocketsphinx
 
 Does speech recognition with [CMU's pocketsphinx](https://github.com/cmusphinx/pocketsphinx).
+This is done completely offline, on your device. If you experience performance problems (usually on a Raspberry Pi), consider running on a home server as well and have your client Rhasspy use a [remote HTTP connection](speech-to-text.md#remote-http-server).
 
 Add to your [profile](profiles.md):
 
@@ -32,12 +35,45 @@ When Rhasspy starts, it creates a pocketsphinx decoder with the following attrib
 
 The `mllr_matrix` file is intended for advanced users who want to [tune/adapt their acoustic models](https://cmusphinx.github.io/wiki/tutorialadapt). This can increase the performance of Rhasspy's speech recognition for a specific user/microphone/acoustic environment.
 
+Pocketsphinx allows Rhasspy to support Enlgish (en), German (de), Dutch (nl), Spanish (es), Italian (it), French (fr), Greek (el), Russian (ru), Hindi (hi), and Mandarin (zh).
+
 See `rhasspy.stt.PocketsphinxDecoder` for details.
+
+## Kaldi
+
+Does speech recognition with [Kaldi](https://kaldi-asr.org).
+This is done completely offline, on your device. If you experience performance problems (usually on a Raspberry Pi), consider running on a home server as well and have your client Rhasspy use a [remote HTTP connection](speech-to-text.md#remote-http-server).
+
+```json
+{
+  "speech_to_text": {
+    "system": "kaldi",
+    "kaldi": {
+        "base_dictionary": "base_dictionary.txt",
+        "compatible": true,
+        "custom_words": "custom_words.txt",
+        "dictionary": "dictionary.txt",
+        "graph": "graph",
+        "kaldi_dir": "/opt/kaldi",
+        "language_model": "language_model.txt",
+        "model_dir": "model",
+        "unknown_words": "unknown_words.txt"
+    }
+  }
+}
+```
+
+Kaldi allows Rhasspy to support Vietnamese (vi) and Portuguese (pt) thanks to [pre-trained models](https://montreal-forced-aligner.readthedocs.io/en/latest/pretrained_models.html) from the folks from the [Montreal Forced Aligner](https://github.com/MontrealCorpusTools/Montreal-Forced-Aligner).
+
+This requires Kaldi to be installed, which is...challenging. The [Docker image of Rhasspy](https://cloud.docker.com/u/synesthesiam/repository/docker/synesthesiam/rhasspy-server) contains a [pre-built copy](https://github.com/synesthesiam/kaldi-docker/releases) of Kaldi, which might work for you outside of Docker. Make sure to set `kaldi_dir` to wherever you installed Kaldi.
+
+Rhasspy expects a Kaldi-compatible profile to contain a `model` directory with a `train.sh` and `decode.sh` script. See the Vietnamese (vi) or Portuguese (pt) [profile](https://github.com/synesthesiam/rhasspy-profiles/releases) for an example.
 
 ## Remote HTTP Server
 
 Uses a remote HTTP server to transform speech (WAV) to text.
 The `/api/speech-to-text` endpoint from [Rhasspy's HTTP API](usage.md#http-api) does just this, allowing you to use a remote instance of Rhasspy for speech recognition.
+This is typically used in a client/server set up, where Rhasspy does speech/intent recognition on a home server with decent CPU/RAM available.
 
 Add to your [profile](profiles.md):
 
@@ -67,7 +103,7 @@ Add to your [profile](profiles.md):
   "system": "command",
   "command": {
     "program": "/path/to/program",
-    "arguments": ["argument1", "argument2"]
+    "arguments": []
   }
 }
 ```

@@ -1,10 +1,12 @@
 # Wake Word
 
-The typical workflow for interacting with a voice assistant is to first activate it with a "wake" or "hot" word, then provide your voice command. Rhasspy supports listening for a wake word with one of several systems, using [pocketsphinx](#pocketsphinx).
+The typical workflow for interacting with a voice assistant is to first activate it with a "wake" or "hot" word, then provide your voice command. Rhasspy supports listening for a wake word with one of several systems.
+
+You can also wake Rhasspy up using the [HTTP API](usage.md#http-api) by POST-ing to `/api/listen-for-command`. Rhasspy will immediately wake up and [start listening](command-listener.md) for a voice command.
 
 ## Pocketsphinx
 
-Listens for a [keyphrase](https://cmusphinx.github.io/wiki/tutoriallm/#using-keyword-lists-with-pocketsphinx) using [pocketsphinx](https://github.com/cmusphinx/pocketsphinx).
+Listens for a [keyphrase](https://cmusphinx.github.io/wiki/tutoriallm/#using-keyword-lists-with-pocketsphinx) using [pocketsphinx](https://github.com/cmusphinx/pocketsphinx). This is the most flexible wake system, but has the worst performance in terms of false positives/negatives.
 
 Add to your [profile](profiles.md):
 
@@ -31,7 +33,7 @@ See `rhasspy.wake.PocketsphinxWakeListener` for details.
 
 ## Mycroft Precise
 
-Listens for a wake word with [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise).
+Listens for a wake word with [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise). It requires training up front, but can be done completely offline!
 
 Add to your [profile](profiles.md):
 
@@ -57,7 +59,7 @@ See `rhasspy.wake.PreciseWakeListener` for details.
 
 ## Snowboy
 
-Listens for a wake word with [snowboy](https://snowboy.kitt.ai).
+Listens for a wake word with [snowboy](https://snowboy.kitt.ai). This system has the best performance out of the box, but requires an online service to train.
 
 Add to your [profile](profiles.md):
 
@@ -88,7 +90,7 @@ See `rhasspy.wake.SnowboyWakeListener` for details.
 
 ## MQTT/Hermes
 
-Subscribes to the `hermes/hotword/<WAKEWORD_ID>/detected` topic, and wakes Rhasspy up when a message is received ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)).
+Subscribes to the `hermes/hotword/<WAKEWORD_ID>/detected` topic, and wakes Rhasspy up when a message is received ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)). This allows Rhasspy to use the wake word functionality in [Snips.AI](https://snips.ai/).
 
 Add to your [profile](profiles.md):
 
@@ -122,7 +124,7 @@ See `rhasspy.wake.HermesWakeListener` for details.
 
 ## Command
 
-Calls a custom external program to listen for a wake word, only waking up Rhasspy when it exits.
+Calls a custom external program to listen for a wake word, only waking up Rhasspy when the program exits.
 
 Add to your [profile](profiles.md):
 

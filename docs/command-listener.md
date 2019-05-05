@@ -5,6 +5,13 @@ The default system uses [webrtcvad](#webrtcvad) to detect when you start and sto
 
 If you're not using a physical microphone connected to wherever Rhasspy is running, you may consider using one of the other systems. The [oneshot](#oneshot) and [hermes](#mqtthermes) systems, for example, work well with [audio input coming in via MQTT](audio-input.md#mqtthermes).
 
+You can also make Rhasspy record a voice command using the [HTTP API](usage.md#http-api) by:
+
+1. POST-ing to `/api/start-recording`. Rhasspy will start recording from the microphone.
+2. Speaking your voice command
+3. POST-ing to `/api/stop-recording`. Rhasspy will stop recording and process the voice command.
+
+
 ## WebRTCVAD
 
 Listens for a voice commands using [webrtcvad](https://github.com/wiseman/py-webrtcvad) to detect speech and silence.
@@ -41,6 +48,8 @@ See `rhasspy.command_listener.Webrtcvadcommandlistener` for details.
 Takes the first chunk of audio input received to be the **entire** voice command.
 Useful when paired with the [MQTT audio input](audio-input.md#mqtthermes) system if an entire WAV file is being sent in a single MQTT message.
 
+(If you want to send a WAV file to Rhasspy [over HTTP](usage.md#http-api) instead, just POST it to `/api/speech-to-intent`)
+
 Add to your [profile](profiles.md):
 
 ```json
@@ -56,7 +65,10 @@ See `rhasspy.command_listener.OneShotCommandListener` for details.
 
 ## MQTT/Hermes
 
-Subscribes to the `hermes/asr/startListening` and `hermes/asr/stopListening` topics ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)). Wakes up Rhasspy when `startListening` is received and starts recording. Stops recording when `stopListening` is received and processes the voice command. 
+Subscribes to the `hermes/asr/startListening` and `hermes/asr/stopListening` topics ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)).
+This allows Rhasspy to be controlled by [Snips.AI](https://snips.ai/).
+
+Wakes up Rhasspy when `startListening` is received and starts recording. Stops recording when `stopListening` is received and processes the voice command. 
 
 Add to your [profile](profiles.md):
 

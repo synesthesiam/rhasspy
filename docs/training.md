@@ -65,7 +65,7 @@ Compared to JSON, YAML, etc., there is minimal syntactic overhead for the purpos
 3. You cannot share commonly *repeated phrases* across sentences or intents.
 4. There is no way to *tag phrases* so the intent recognizer knows the values for an intent's slots (e.g., color).
 
-Each of these shortcomings are addressed by considering the space between intent headings (`[Intent 1]`, etc.) as a **grammar** that will *generate* tagged sentences in [rasaNLU's training data format](https://rasa.com/docs/nlu/dataformat/#markdown-format). The generated sentences, stripped of their tags, are used as input to [mitlm](https://github.com/mitlm/mitlm) to produce a language model for [pocketsphinx](https://github.com/cmusphinx/pocketsphinx). The tagged sentences are then used to train an intent recognizer.
+Each of these shortcomings are addressed by considering the space between intent headings (`[Intent 1]`, etc.) as a **grammar** that will *generate* tagged sentences in [rasaNLU's training data format](https://rasa.com/docs/nlu/dataformat/#markdown-format). The generated sentences, stripped of their tags, are used as input to [opengrm](https://www.opengrm.org) to produce a language model for [pocketsphinx](https://github.com/cmusphinx/pocketsphinx) or [Kaldi](https://kaldi-asr.org). The tagged sentences are then used to train an intent recognizer.
 
 ### Optional Words
 
@@ -114,7 +114,7 @@ The second intent (`GetLightColor`) references the `colors` rule from `SetLightC
 
 The example templates above will generate sentences for training the speech recognizer, but using them to train the intent recognizer will not be satisfactory. The `SetLightColor` intent, when recognized, will result in a Home Assistant event called `rhasspy_SetLightColor`. But the actual *color* will not be provided because the intent recognizer is not aware that a `color` slot should exist (and has the values `red`, `green`, and `blue`).
 
-Luckily, JSGF has a (tag feature)(https://www.w3.org/TR/jsgf/#15057) that lets you annotate portions of sentences/rules. Rhasspy assumes that the tags themselves are *slot names* and the tagged portions of the sentence are *slot values*. The `SetLightColor` example can be extended with tags like this:
+Luckily, JSGF has a [tag feature](https://www.w3.org/TR/jsgf/#15057) that lets you annotate portions of sentences/rules. Rhasspy assumes that the tags themselves are *slot/entity names* and the tagged portions of the sentence are *slot/entity values*. The `SetLightColor` example can be extended with tags like this:
 
     [SetLightColor]
     colors = (red | green | blue){color}
@@ -126,25 +126,25 @@ With the `{color}` tag attached to the `(red | green | blue)` alternative set, e
 2. `set the light to [green](color)`
 3. `set the light to [blue](color)`
 
-When the `SetLightColor` intent is recognized now, the `rhasspy_SetLightColor` event will have some event data like:
+When the `SetLightColor` intent is recognized now, the corresponding JSON event (`rhasspy_SetLightColor` in Home Assistant) will have the following properties:
 
     {
       "color": "red" 
     }
     
     
-Your [automation](https://www.home-assistant.io/docs/automation) can use the slot values to take an appropriate action, such as (setting an RGB light's color)(https://www.home-assistant.io/docs/automation/action/) to `[255,0,0]`. 
+A Home Assistant [automation](https://www.home-assistant.io/docs/automation) can use the slot values to take an appropriate action, such as [setting an RGB light's color](https://www.home-assistant.io/docs/automation/action/) to `[255,0,0]` (red). 
 
 #### Tag Synonyms
 
-There are times where you want to match a particular part of your sentence with a tag, but want the actual *value* of the tag to be something different than the matched text. This is needed if you, for example, want to talk about entities in Home Assistant with phrases like "the living room lamp", but want to pass the appropriate entity id (say `lamp_1`) to Home Assistant instead.
+There are times where you want to match a particular part of your sentence with a tag, but want the actual *value* of the tag to be something different than the matched text. This is needed if you want to talk about entities in Home Assistant, for example, with phrases like "the living room lamp", but want to pass the appropriate entity id (say `lamp_1`) to Home Assistant instead.
 
 Normally, you would tag part of a sentence like this:
 
     [ChangeLightState]
     turn on the (living room lamp){name}
     
-When this intent is activated, Rhasspy will send an event named `rhasspy_ChangeLightState` to Home Assistant with
+When this intent is activated, Rhasspy will send a JSON event (named `rhasspy_ChangeLightState` in Home Assistant) with:
 
     {
       "name": "living room lamp"
@@ -163,6 +163,17 @@ The tag label and synonym are separated by a ":". When this sentence is spoken a
     
 Now in your Home Assistant automation, you could use [templating](https://www.home-assistant.io/docs/automation/templating/) to plug the `name` directly into the `entity_id` field of an action. One rule to rule them all.
 
+This same technique could be used to replace number words with digits, like:
+
+    [SetTimer]
+    set a timer for (ten){number:10} seconds
+    
+which would generate an event like this when recognized:
+
+    {
+      "number": "10"
+    }
+
 ### Slots Lists
 
 In the `SetLightColor` example above, the color names are stored in `sentences.ini` as a rule:
@@ -177,7 +188,7 @@ But what if this was a list of movie names that were stored on your [Kodi Home T
 It would be much easier if this list was stored externally, but could be *referenced* in the appropriate places in the grammar.
 This is possible in Rhasspy by placing text files in the `speech_to_text.slots_dir` directory specified in your [profile](profiles.md) ("slots" by default).
 
-If you're using the English (`en`) profile, for example, create the file `profiles/en/slots/movies.txt` and add the following content:
+If you're using the English (`en`) profile, for example, create the file `profiles/en/slots/movies` and add the following content:
 
     Primer
     Moon
@@ -185,10 +196,10 @@ If you're using the English (`en`) profile, for example, create the file `profil
     Timecrimes
     Mullholand Drive
     
-This list of movie can now be referenced as `-movies-` in your your `sentences.ini` file! Something like:
+This list of movie can now be referenced as `$movies` in your your `sentences.ini` file! Something like:
 
     [PlayMovie]
-    play (-movies-){movie_name}
+    play ($movies){movie_name}
     
 will generate `rhasspy_PlayMovie` events like:
 
@@ -196,9 +207,7 @@ will generate `rhasspy_PlayMovie` events like:
       "movie_name": "Primer"
     }
     
-If you update `movies.txt**, make sure to re-train Rhasspy in order to pick up the new movies.
-
-**NOTE**: Rhasspy will look for `slots` in *all* of your [profile directories](profiles.md#profile-directories), merging together all of the same named text files it finds.
+If you update the `movies` file, make sure to re-train Rhasspy in order to pick up the new movie names.
 
 ### Special Cases
 
@@ -225,7 +234,7 @@ You can use the [Words tab](usage.md#words-tab) in Rhasspy's web interface to ge
 
 ## Speech to Text
 
-Rhasspy generates training sentences from your [sentences.ini](#sentencesini) file, and then trains a custom language model using [mitlm](https://github.com/mitlm/mitlm). You can call a custom program instead if you want to use a different language modeling toolkit or your custom speech to text system needs special training.
+By default, Rhasspy generates training sentences from your [sentences.ini](#sentencesini) file, and then trains a custom language model using [opengrm](https://www.opengrm.org). You can call a **custom program** instead if you want to use a different language modeling toolkit or your custom speech to text system needs special training.
 
 Add to your [profile](profiles.md):
 
@@ -235,7 +244,7 @@ Add to your [profile](profiles.md):
     "system": "command",
     "command": {
       "program": "/path/to/program",
-      "arguments": ["argument1", "argument2"]
+      "arguments": []
     }
   }
 }
@@ -276,17 +285,11 @@ Example input:
           "entities": [
             {
               "entity": "name",
-              "value": "bedroom light",
-              "text": "bedroom light",
-              "start": 8,
-              "end": 21
+              "value": "bedroom light"
             },
             {
               "entity": "color",
-              "value": "red",
-              "text": "red",
-              "start": 25,
-              "end": 28
+              "value": "red"
             }
           ],
           "tokens": [
@@ -305,7 +308,7 @@ See [train-stt.sh](https://github.com/synesthesiam/rhasspy/blob/master/bin/mock-
 
 ## Intent Recognition
 
-During training, Rhasspy uses the sentences generated from [sentences.ini](#sentencesini) as training material for the selected intent recognition system. If your intent recognition system requires some special training, you can call a custom program here.
+During training, Rhasspy uses the sentences generated from [sentences.ini](#sentencesini) as training material for the selected intent recognition system. If your intent recognition system requires some special training, you can call a **custom program** here.
 
 Add to your [profile](profiles.md):
 
@@ -315,7 +318,7 @@ Add to your [profile](profiles.md):
     "system": "command",
     "command": {
       "program": "/path/to/program",
-      "arguments": ["argument1", "argument2"]
+      "arguments": []
     }
   }
 }
@@ -357,17 +360,11 @@ Example input:
       "entities": [
         {
           "entity": "name",
-          "value": "bedroom light",
-          "text": "bedroom light",
-          "start": 8,
-          "end": 21
+          "value": "bedroom light"
         },
         {
           "entity": "color",
-          "value": "red",
-          "text": "red",
-          "start": 25,
-          "end": 28
+          "value": "red"
         }
       ],
       "tokens": [

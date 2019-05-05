@@ -1,6 +1,8 @@
 # Intent Handling
 
-After a voice command has been transcribed and your intent has been successfully recognized, Rhasspy is ready to send an event to Home Assistant with all of the information it needs.
+After a voice command has been transcribed and your intent has been successfully recognized, Rhasspy is ready to send a JSON event to Home Assistant or Node-RED.
+
+Regardless of which intent handling system you choose, Rhasspy emits JSON events [over a websocket connection](usage.md#websocket-events).
 
 ## Home Assistant
 
@@ -62,6 +64,7 @@ See the documentation on [actions](https://www.home-assistant.io/docs/automation
 ### MQTT
 
 In addition to events, Rhasspy can also publish intents through MQTT ([Hermes protocol](https://docs.snips.ai/reference/dialogue#intent)).
+This allows Rhasspy to send intents to [Snips.AI](https://snips.ai/).
 
 Add to your [profile](profiles.md):
 

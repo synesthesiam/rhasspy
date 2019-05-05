@@ -80,6 +80,33 @@ Rhasspy features a comprehensive HTTP API available at `/api`, documented with [
     
 See `public/swagger.yaml` in Rhasspy's repository for all available endpoints, or visit `/api` on your Rhasspy web server (e.g., [http://locahost:12101/api](http://localhost:12101/api)).
 
+## WebSocket Events
+
+Whenever a voice command is recognized, Rhasspy emits JSON events over a websocket connection available at `ws://rhasspy:12101/api/events/intent`
+You can listen to these events in a [Node-RED](https://nodered.org) flow, and easily add offline, private voice commands to your home automation set up!
+
+For the `ChangLightState` intent from the [RGB Light Example](index.md#rgb-light-example), Rhasspy will emit a JSON event like this over the websocket:
+
+```json
+{
+  "text": "set the bedroom light to red",
+  "intent": {
+    "name": "ChangeLightColor",
+    "confidence": 1
+  },
+  "entities": [
+    {
+      "entity": "name",
+      "value": "bedroom"
+    },
+    {
+      "entity": "color",
+      "value": "red"
+    }
+  ]
+}
+```
+
 ## Command Line
 
 You can access portions of Rhasspy's functionality without running a web server through the command-line interface.
