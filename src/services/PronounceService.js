@@ -37,4 +37,9 @@ export default {
     getCustomWords() {
         return Api().get('/api/custom-words')
     },
+
+    saySentence(sentence) {
+        return Api().post('/api/text-to-speech', sentence,
+                          { headers: { 'Content-Type': 'text/plain' } })
+    },
 }

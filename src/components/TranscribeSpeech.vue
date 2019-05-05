@@ -72,6 +72,11 @@
                         <input id="sentence" type="text" class="form-control" v-model="sentence">
                     </div>
                     <div class="col-auto">
+                        <button type="button" class="btn btn-dark"
+                                @click="saySentence"
+                                title="Speak the sentence using Rhasspy's text to speech system">Speak</button>
+                    </div>
+                    <div class="col-auto">
                         <button type="submit" class="btn btn-secondary"
                                 title="Send a text command as if it were spoken">Get Intent</button>
                     </div>
@@ -103,6 +108,7 @@
 
 <script>
  import TranscribeService from '@/services/TranscribeService'
+ import PronounceService from '@/services/PronounceService'
 
  export default {
      name: 'TranscribeSpeech',
@@ -248,6 +254,12 @@
                               that.recorder = new Recorder(input)
                           })
              }
+         },
+
+         saySentence: function(event) {
+             event.preventDefault()
+             PronounceService.saySentence(this.sentence)
+                  .catch(err => this.$parent.error(err))
          }
      }
  }
