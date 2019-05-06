@@ -2,13 +2,13 @@
 
 Rhasspy was created and is currently maintained by [Michael Hansen](https://synesthesiam.com/).
 
+![Mike head](img/mike-head.png)
+
 Special thanks to:
 
 * [Romkabouter](https://community.home-assistant.io/u/Romkabouter)
 * [FunkyBoT](https://community.home-assistant.io/u/FunkyBoT)
 * [S_n_Nguy_n](https://community.home-assistant.io/u/S_n_Nguy_n)
-
-![Mike head](img/mike-head.png)
 
 ## Supporting Tools
 

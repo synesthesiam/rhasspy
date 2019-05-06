@@ -22,6 +22,7 @@ from .actor import ConfigureEvent, Configured, ActorSystem, RhasspyActor
 from .profiles import Profile
 from .utils import buffer_to_wav, maybe_convert_wav
 from .audio_recorder import AudioData, StartStreaming, StopStreaming
+from .audio_player import DummyAudioPlayer
 from .dialogue import DialogueManager
 from .wake import (
     PocketsphinxWakeListener,
@@ -59,6 +60,14 @@ def main() -> None:
         type=str,
         help="Directory with user profile files (read/write)",
         default=os.path.expanduser("~/.config/rhasspy/profiles"),
+    )
+    parser.add_argument(
+        "--set",
+        "-s",
+        nargs=2,
+        action="append",
+        help="Set a profile setting value",
+        default=[],
     )
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG log to console"
@@ -221,6 +230,18 @@ def main() -> None:
         help="Seconds to wait before sending next chunk (default=0.01)",
     )
 
+    # text2wav
+    text2wav_parser = sub_parsers.add_parser(
+        "text2wav", help="Output WAV file using text to speech system"
+    )
+    text2wav_parser.add_argument("sentence", help="Sentence to speak")
+
+    # text2speech
+    text2speech_parser = sub_parsers.add_parser(
+        "text2speech", help="Speak sentences using text to speech system"
+    )
+    text2speech_parser.add_argument("sentences", nargs="*", help="Sentences to speak")
+
     # sleep
     sleep_parser = sub_parsers.add_parser("sleep", help="Wait for wake word")
 
@@ -234,12 +255,10 @@ def main() -> None:
     else:
         do_logging = False
 
-    profiles_dirs = [args.user_profiles, args.system_profiles]
+    profiles_dirs = [args.system_profiles, args.user_profiles]
 
     if args.debug:
         logging.debug(profiles_dirs)
-
-    profiles_dirs.reverse()
 
     default_settings = Profile.load_defaults(args.system_profiles)
 
@@ -247,12 +266,22 @@ def main() -> None:
     from .core import RhasspyCore
 
     core = RhasspyCore(
-        args.profile,
-        args.system_profiles,
-        args.user_profiles,
-        do_logging=do_logging,
+        args.profile, args.system_profiles, args.user_profiles, do_logging=do_logging
     )
 
+    # Add profile settings from the command line
+    extra_settings = {}
+    for key, value in args.set:
+        try:
+            value = json.loads(value)
+        except:
+            pass
+
+        logging.debug("Profile: {0}={1}".format(key, value))
+        extra_settings[key] = value
+        core.profile.set(key, value)
+
+    # Handle command
     if args.command == "info":
         if args.defaults:
             # Print default settings
@@ -280,11 +309,12 @@ def main() -> None:
 
         if args.command == "wav2mqtt":
             profile.set("mqtt.enabled", True)
-
-        if args.command in ["mic2intent"] and args.stdin:
+        elif args.command in ["mic2intent"] and args.stdin:
             profile.set("microphone.system", "stdin")
             profile.set("microphone.stdin.auto_start", False)
             mic_stdin_running = True
+        elif args.command == "text2wav":
+            profile.set("sounds.system", "dummy")
 
         # Set environment variables
         os.environ["RHASSPY_BASE_DIR"] = os.getcwd()
@@ -309,6 +339,8 @@ def main() -> None:
             "word2phonemes": word2phonemes,
             "word2wav": word2wav,
             "wav2mqtt": wav2mqtt,
+            "text2wav": text2wav,
+            "text2speech": text2speech,
             "sleep": sleep,
         }
 
@@ -1027,6 +1059,31 @@ def wav2mqtt(core: RhasspyCore, profile: Profile, args: Any) -> None:
                     _send_frame(core, topic, audio_data, rate, width, channels)
 
             print(wav_path)
+
+
+# -----------------------------------------------------------------------------
+# text2wav: speak sentence and output WAV
+# -----------------------------------------------------------------------------
+
+
+def text2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    result = core.speak_sentence(args.sentence)
+    sys.stdout.buffer.write(result.wav_data)
+
+
+# -----------------------------------------------------------------------------
+# text2speech: speak sentences
+# -----------------------------------------------------------------------------
+
+
+def text2speech(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    sentences = args.sentences
+    if len(sentences) == 0:
+        sentences = sys.stdin
+
+    for sentence in sentences:
+        sentence = sentence.strip()
+        core.speak_sentence(sentence)
 
 
 # -----------------------------------------------------------------------------

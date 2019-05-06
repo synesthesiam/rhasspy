@@ -175,25 +175,19 @@ The [rhasspy-cli-ro](https://github.com/synesthesiam/rhasspy/blob/master/bin/rha
 
 The `rhasspy-cli` script takes a command and a set of arguments:
 
-    rhasspy-cli <COMMAND> <ARGUMENTS>
-    
-Before the command, you can provide a few options:
-
     rhasspy-cli --profile <PROFILE_NAME> <COMMAND> <ARGUMENTS>
     
-will use a different profile than your default.
+Adding `--debug` before the command will print additional information to the console:
 
-    rhasspy-cli --profiles <PROFILES_DIR> <COMMAND> <ARGUMENTS>
+    rhasspy-cli --debug --profile <PROFILE_NAME> <COMMAND> <ARGUMENTS>
     
-will search for profiles in a different directory.
+You can override profile settings with `--set` like this:
 
-    rhasspy-cli --debug <COMMAND> <ARGUMENTS>
+    rhasspy-cli --profile <PROFILE_NAME> --set <SETTING_NAME> <SETTING_VALUE> ... <COMMAND> <ARGUMENTS>
     
-will print debug information to the console.
-
 ### Available Commands
 
-For `rhasspy-cli <COMMAND> <ARGUMENTS>`, `<COMMAND>` can be:
+For `rhasspy-cli --profile <PROFILE_NAME> <COMMAND> <ARGUMENTS>`, `<COMMAND>` can be:
 
 * `info`
     * Print profile JSON to standard out
@@ -223,18 +217,22 @@ For `rhasspy-cli <COMMAND> <ARGUMENTS>`, `<COMMAND>` can be:
     * Add `-n <COUNT>` to control the maximum number of guessed pronunciations
 * `word2wav`
     * Pronounce a word (possibly unknown) and output WAV data
+* `text2speech`
+    * Speaks one or more sentences using Rhasspy's text to speech system
+* `text2wav`
+    * Converts a single sentence to WAV using Rhasspy's text to speech system
 * `sleep`
     * Run Rhasspy and wait until wake word is spoken
 
 ### Profile Operations
 
-Print the complete JSON for your profile with:
+Print the complete JSON for the Enlgish profile with:
 
-    rhasspy-cli info
+    rhasspy-cli --profile en info
     
 You can combine this with other commands, such as `jq` to get at specific pieces:
 
-    rhasspy-cli info | jq .wake.pocketsphinx.keyphrase
+    rhasspy-cli info --profile en | jq .wake.pocketsphinx.keyphrase
     
 Output (JSON):
 
@@ -242,9 +240,9 @@ Output (JSON):
     
 ### Training
 
-Retrain your profile with:
+Retrain your the English profile with:
 
-    rhasspy-cli train
+    rhasspy-cli --profile en train
     
 Add `--debug` before `train` for more information.
 
@@ -252,7 +250,7 @@ Add `--debug` before `train` for more information.
 
 Convert a WAV file to text from stdin:
 
-    rhasspy-cli wav2text < what-time-is-it.wav
+    rhasspy-cli --profile en wav2text < what-time-is-it.wav
     
 Output (text):
 
@@ -260,7 +258,7 @@ Output (text):
     
 Convert multiple WAV files:
 
-    rhasspy-cli wav2text what-time-is-it.wav turn-on-the-living-room-lamp.wav
+    rhasspy-cli --profile en wav2text what-time-is-it.wav turn-on-the-living-room-lamp.wav
     
 Output (JSON)
 
@@ -273,7 +271,7 @@ Output (JSON)
 
 Convert multiple WAV file(s) to intents **and** handle them:
     
-    rhasspy-cli wav2intent --handle what-time-is-it.wav turn-on-the-living-room-lamp.wav
+    rhasspy-cli --profile en wav2intent --handle what-time-is-it.wav turn-on-the-living-room-lamp.wav
     
 Output (JSON):
 
@@ -311,7 +309,7 @@ Output (JSON):
 
 Handle a command as if it was spoken:
 
-    rhasspy-cli text2intent --handle "turn off the living room lamp"
+    rhasspy-cli --profile en text2intent --handle "turn off the living room lamp"
     
 Output (JSON):
 
@@ -341,7 +339,7 @@ Output (JSON):
 
 Save a voice command to a WAV:
 
-    rhasspy-cli mic2wav > my-voice-command.wav
+    rhasspy-cli --profile en mic2wav > my-voice-command.wav
     
 You can listen to it with:
 
@@ -351,12 +349,65 @@ You can listen to it with:
 
 Start Rhasspy and wait for wake word:
 
-    rhasspy-cli sleep
+    rhasspy-cli --profile en sleep
     
 Should exit and print the wake word when its spoken.
+
+### Text to Speech
+
+Have Rhasspy speak one or more sentences:
+
+    rhasspy-cli --profile en text2speech "We ride at dawn!"
+
+Use a different text to speech system and voice:
+
+    rhasspy-cli --profile en \
+        --set 'text_to_speech.system' 'flite' \
+        --set 'text_to_speech.flite.voice' 'slt' \
+        text2speech "We ride at dawn!"
 
 ### Pronounce Words
 
 Speak words Rhasspy doesn't know!
 
-    rhasspy-cli word2wav raxacoricofallapatorius | aplay
+    rhasspy-cli --profile en word2wav raxacoricofallapatorius | aplay
+    
+### Text to Speech to Text to Intent
+
+Use the miracle of Unix pipes to have Rhasspy interpret voice commands from itself:
+
+    rhasspy-cli --profile en \
+        --set 'text_to_speech.system' 'picotts' \
+        text2wav "turn on the living room lamp" | \
+          rhasspy-cli --profile en wav2text | \
+            rhasspy-cli --profile en text2intent
+
+
+Output (JSON):
+
+```json
+{
+    "turn on the living room lamp": {
+        "text": "turn on the living room lamp",
+        "intent": {
+            "name": "ChangeLightState",
+            "confidence": 1.0
+        },
+        "entities": [
+            {
+                "entity": "state",
+                "value": "on"
+            },
+            {
+                "entity": "name",
+                "value": "living room lamp"
+            }
+        ],
+        "speech_confidence": 1,
+        "slots": {
+            "state": "on",
+            "name": "living room lamp"
+        }
+    }
+}
+```

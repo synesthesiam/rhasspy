@@ -1,6 +1,6 @@
 # Text to Speech
 
-After you voice command has been [handled](intent-handing.md), it's common to produce speech as a response back to the user. Rhasspy has support for several text to speech systems which, importantly, can be played through any of the [audio output](audio-output.md) systems.
+After you voice command has been [handled](intent-handling.md), it's common to produce speech as a response back to the user. Rhasspy has support for several text to speech systems which, importantly, can be played through any of the [audio output](audio-output.md) systems.
 
 ## eSpeak
 

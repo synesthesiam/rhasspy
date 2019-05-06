@@ -14,13 +14,18 @@ from .audio_player import PlayWavData, WavPlayed
 
 
 class SpeakSentence:
-    def __init__(self, sentence: str, receiver: Optional[RhasspyActor] = None) -> None:
+    def __init__(
+        self,
+        sentence: str,
+        receiver: Optional[RhasspyActor] = None,
+    ) -> None:
         self.sentence = sentence
         self.receiver = receiver
 
 
 class SentenceSpoken:
-    pass
+    def __init__(self, wav_data: bytes):
+        self.wav_data = wav_data
 
 
 # -----------------------------------------------------------------------------
@@ -31,7 +36,7 @@ class DummySentenceSpeaker(RhasspyActor):
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, SpeakSentence):
-            self.send(message.receiver or sender, SentenceSpoken())
+            self.send(message.receiver or sender, SentenceSpoken(bytes()))
 
 
 # -----------------------------------------------------------------------------
@@ -52,14 +57,14 @@ class EspeakSentenceSpeaker(RhasspyActor):
     def in_ready(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
-            wav_data = self.speak(message.sentence)
+            self.wav_data = self.speak(message.sentence)
             self.transition("speaking")
-            self.send(self.player, PlayWavData(wav_data))
+            self.send(self.player, PlayWavData(self.wav_data))
 
     def in_speaking(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, WavPlayed):
             self.transition("ready")
-            self.send(self.receiver, SentenceSpoken())
+            self.send(self.receiver, SentenceSpoken(self.wav_data))
 
     # -------------------------------------------------------------------------
 
@@ -95,14 +100,14 @@ class FliteSentenceSpeaker(RhasspyActor):
     def in_ready(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
-            wav_data = self.speak(message.sentence)
+            self.wav_data = self.speak(message.sentence)
             self.transition("speaking")
-            self.send(self.player, PlayWavData(wav_data))
+            self.send(self.player, PlayWavData(self.wav_data))
 
     def in_speaking(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, WavPlayed):
             self.transition("ready")
-            self.send(self.receiver, SentenceSpoken())
+            self.send(self.receiver, SentenceSpoken(self.wav_data))
 
     # -------------------------------------------------------------------------
 
@@ -141,14 +146,14 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
     def in_ready(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
-            wav_data = self.speak(message.sentence)
+            self.wav_data = self.speak(message.sentence)
             self.transition("speaking")
-            self.send(self.player, PlayWavData(wav_data))
+            self.send(self.player, PlayWavData(self.wav_data))
 
     def in_speaking(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, WavPlayed):
             self.transition("ready")
-            self.send(self.receiver, SentenceSpoken())
+            self.send(self.receiver, SentenceSpoken(self.wav_data))
 
     def to_stopped(self, from_state: str) -> None:
         self.temp_dir.cleanup()
@@ -195,14 +200,14 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
     def in_ready(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
-            wav_data = self.speak(message.sentence)
+            self.wav_data = self.speak(message.sentence)
             self.transition("speaking")
-            self.send(self.player, PlayWavData(wav_data))
+            self.send(self.player, PlayWavData(self.wav_data))
 
     def in_speaking(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, WavPlayed):
             self.transition("ready")
-            self.send(self.receiver, SentenceSpoken())
+            self.send(self.receiver, SentenceSpoken(self.wav_data))
 
     # -------------------------------------------------------------------------
 
@@ -252,14 +257,14 @@ class CommandSentenceSpeaker(RhasspyActor):
     def in_ready(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
-            wav_data = self.speak(message.sentence)
+            self.wav_data = self.speak(message.sentence)
             self.transition("speaking")
-            self.send(self.player, PlayWavData(wav_data))
+            self.send(self.player, PlayWavData(self.wav_data))
 
     def in_speaking(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, WavPlayed):
             self.transition("ready")
-            self.send(self.receiver, SentenceSpoken())
+            self.send(self.receiver, SentenceSpoken(self.wav_data))
 
     # -------------------------------------------------------------------------
 

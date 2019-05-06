@@ -66,7 +66,9 @@ class RhasspyCore:
             self.profile_name, system_profiles_dir, user_profiles_dir
         )
         self._logger.debug(f"Loaded profile from {self.profile.json_path}")
-        self._logger.debug(f"Profile files will be written to {self.profile.write_path()}")
+        self._logger.debug(
+            f"Profile files will be written to {self.profile.write_path()}"
+        )
 
         self.defaults = Profile.load_defaults(system_profiles_dir)
         self.do_logging = do_logging
