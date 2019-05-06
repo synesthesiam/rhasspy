@@ -274,6 +274,19 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
 
                     words_needed.add(word)
 
+        # Determine if we need to include the entire base dictionary
+        mix_weight = float(
+            self.profile.get(f"speech_to_text.{self.system}.mix_weight", 0)
+        )
+
+        if mix_weight > 0:
+            self._logger.debug(
+                "Including base dictionary because base language model will be mixed"
+            )
+
+            # Add in all the words
+            words_needed.update(word_dict.keys())
+
         # Write out dictionary with only the necessary words (speeds up loading)
         dictionary_path = self.profile.write_path(
             self.profile.get(
@@ -406,13 +419,68 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
             )
         )
 
-        fst_path = self.profile.read_path(
+        fst_path = self.profile.write_path(
             self.profile.get("intent.fsticuffs.intent_fst")
         )
 
+        fst_dest_path = f"{fst_path}.ngram"
+
         # Use opengrm
         start_time = time.time()
-        fst2arpa(fst_path, lm_dest_path)
+        fst2arpa(fst_path, arpa_path=lm_dest_path, ngram_fst_path=fst_dest_path)
+
+        mix_weight = float(
+            self.profile.get(f"speech_to_text.{self.system}.mix_weight", 0)
+        )
+
+        # Determine if we need to mix with base language model
+        if mix_weight > 0:
+            # Look for cached FST
+            base_lm_fst_path = self.profile.read_path("base_language_model.txt.fst")
+            if os.path.exists(base_lm_fst_path):
+                self._logger.debug(f"Using cached FST at {base_lm_fst_path}")
+            else:
+                # Need to convert base ARPA to FST
+                base_lm_fst_path = self.profile.write_path(
+                    "base_language_model.txt.fst"
+                )
+
+                base_lm_path = self.profile.read_path(
+                    self.profile.get(
+                        f"speech_to_text.{self.system}.base_language_model.txt",
+                        "base_language_model.txt",
+                    )
+                )
+
+                self._logger.debug(f"Converting {base_lm_path} to FST")
+                read_cmd = ["ngramread", "--ARPA", base_lm_path, base_lm_fst_path]
+                self._logger.debug(read_cmd)
+
+                subprocess.check_call(read_cmd)
+
+            # Do merge
+            self._logger.debug(f"Mixing in base language model (weight={mix_weight})")
+            mix_fst_path = self.profile.write_path(
+                self.profile.get(f"speech_to_text.{self.system}.mix_fst", "mixed.fst")
+            )
+
+            merge_cmd = [
+                "ngrammerge",
+                f"--beta={mix_weight}",
+                f"--ofile={mix_fst_path}",
+                fst_dest_path,
+                base_lm_fst_path,
+            ]
+
+            self._logger.debug(merge_cmd)
+            subprocess.check_call(merge_cmd)
+
+            # Save to ARPA
+            self._logger.debug(f"Converting {mix_fst_path} to ARPA")
+            print_cmd = ["ngramprint", "--ARPA", mix_fst_path, lm_dest_path]
+
+            self._logger.debug(print_cmd)
+            subprocess.check_call(print_cmd)
 
         lm_time = time.time() - start_time
         self._logger.debug(

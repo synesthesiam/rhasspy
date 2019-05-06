@@ -50,7 +50,8 @@
             "min_confidence": 0
         },
         "fsticuffs": {
-            "intent_fst": "intent.fst"
+            "intent_fst": "intent.fst",
+            "ignore_unknown_words": true
         },
         "rasa": {
             "examples_markdown": "intent_examples.md",
@@ -110,6 +111,7 @@
         "fsts_dir": "fsts",
         "kaldi": {
             "base_dictionary": "base_dictionary.txt",
+            "base_language_model": "base_language_model.txt",
             "compatible": false,
             "custom_words": "custom_words.txt",
             "dictionary": "dictionary.txt",
@@ -117,18 +119,23 @@
             "kaldi_dir": "/opt/kaldi",
             "language_model": "language_model.txt",
             "model_dir": "model",
-            "unknown_words": "unknown_words.txt"
+            "unknown_words": "unknown_words.txt",
+            "mix_weight": 0.0,
+            "mix_fst": "mixed.fst"
         },
         "pocketsphinx": {
             "acoustic_model": "acoustic_model",
             "base_dictionary": "base_dictionary.txt",
+            "base_language_model": "base_language_model.txt",
             "compatible": true,
             "custom_words": "custom_words.txt",
             "dictionary": "dictionary.txt",
             "language_model": "language_model.txt",
             "min_confidence": 0,
             "mllr_matrix": "acoustic_model_mllr",
-            "unknown_words": "unknown_words.txt"
+            "unknown_words": "unknown_words.txt",
+            "mix_weight": 0.0,
+            "mix_fst": "mixed.fst"
         },
         "remote": {
             "url": "http://my-server:12101/api/speech-to-text"

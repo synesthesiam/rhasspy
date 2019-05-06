@@ -13,10 +13,13 @@ Add to your [profile](profiles.md):
 "intent": {
   "system": "fsticuffs",
   "fsticuffs": {
-    "intent_fst": "intent.fst"
+    "intent_fst": "intent.fst",
+    "ignore_unknown_words": true
   }
 }
 ```
+
+When `ignore_unknown_words` is true, any word outside of `sentences.ini` is simply ignored. This allows a lot more sentences to be accepted, but may cause unexpected results when used with arbitrary input from text chat.
 
 See `rhasspy.intent.FsticuffsRecognizer` for details.
 

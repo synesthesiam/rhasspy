@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import os
 import sys
+import re
 import json
 import logging
 import subprocess
 import concurrent.futures
 from urllib.parse import urljoin
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple, List, Set
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -101,6 +102,7 @@ class FsticuffsRecognizer(RhasspyActor):
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.fst: Optional[Any] = None
+        self.words: Set[str] = set()
 
     def to_started(self, from_state: str) -> None:
         try:
@@ -130,7 +132,13 @@ class FsticuffsRecognizer(RhasspyActor):
     def recognize(self, text: str) -> Dict[str, Any]:
         from jsgf2fst import fstaccept
 
-        intents = fstaccept(self.fst, text)
+        # Assume lower case, white-space separated tokens
+        tokens = re.split("\s+", text.lower())
+
+        if self.profile.get("intent.fsticuffs.ignore_unknown_words", True):
+            tokens = [w for w in tokens if w in self.words]
+
+        intents = fstaccept(self.fst, tokens)
         self._logger.debug(f"Got {len(intents)} intent(s)")
 
         if len(intents) > 0:
@@ -149,6 +157,15 @@ class FsticuffsRecognizer(RhasspyActor):
             )
 
             self.fst = fst.Fst.read(fst_path)
+
+            # Add words from FST
+            out_symbols = self.fst.output_symbols()
+            self.words = set()
+            for i in range(out_symbols.num_symbols()):
+                word = out_symbols.find(i).decode()
+                # Ignore meta symbols like __begin__/__end__
+                if not word.startswith("__"):
+                    self.words.add(word)
 
 
 # -----------------------------------------------------------------------------
