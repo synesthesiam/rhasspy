@@ -4,12 +4,16 @@ import logging
 import tempfile
 import subprocess
 import re
+import shutil
+import time
+import random
+import copy
 from urllib.parse import urljoin
 from collections import defaultdict, Counter
 from typing import Dict, List, Set, Any, Optional
 
 from .actor import RhasspyActor
-from .utils import make_sentences_by_intent
+from .utils import make_sentences_by_intent, lcm
 
 # -----------------------------------------------------------------------------
 # Events
@@ -77,27 +81,11 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
             self.profile.get("intent.fuzzywuzzy.examples_json")
         )
 
-        examples = self._make_examples(intent_fst)
+        sentences_by_intent: Dict[str, Any] = make_sentences_by_intent(intent_fst)
         with open(examples_path, "w") as examples_file:
-            json.dump(examples, examples_file, indent=4)
+            json.dump(sentences_by_intent, examples_file, indent=4)
 
         self._logger.debug("Wrote intent examples to %s" % examples_path)
-
-    # -------------------------------------------------------------------------
-
-    def _make_examples(self, intent_fst) -> Dict[str, Any]:
-        """Write intent examples to a JSON file."""
-        from jsgf2fst import fstprintall, symbols2intent
-
-        # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
-        examples: Dict[str, Any] = defaultdict(list)
-
-        for symbols in fstprintall(intent_fst, exclude_meta=False):
-            intent = symbols2intent(symbols)
-            intent_name = intent["intent"]["name"]
-            examples[intent_name].append(intent)
-
-        return examples
 
 
 # -----------------------------------------------------------------------------
@@ -344,6 +332,208 @@ class AdaptIntentTrainer(RhasspyActor):
             json.dump(config, config_file, indent=4)
 
         self._logger.debug("Wrote adapt configuration to %s" % config_path)
+
+
+# -----------------------------------------------------------------------------
+# Flair Intent Trainer
+# https://github.com/zalandoresearch/flair
+# -----------------------------------------------------------------------------
+
+
+class FlairIntentTrainer(RhasspyActor):
+    """Trains a classification and NER model using flair"""
+
+    def to_started(self, from_state: str) -> None:
+        pass
+
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        if isinstance(message, TrainIntent):
+            try:
+                self.train(message.intent_fst)
+                self.send(message.receiver or sender, IntentTrainingComplete())
+            except Exception as e:
+                self._logger.exception("train")
+                self.send(message.receiver or sender, IntentTrainingFailed(repr(e)))
+
+    def train(self, intent_fst) -> None:
+        from flair.data import Sentence, Token
+        from flair.models import SequenceTagger, TextClassifier
+        from flair.embeddings import (
+            FlairEmbeddings,
+            StackedEmbeddings,
+            DocumentRNNEmbeddings,
+        )
+        from flair.data import TaggedCorpus
+        from flair.trainers import ModelTrainer
+
+        data_dir = self.profile.write_path(
+            self.profile.get("intent.flair.data_dir", "flair_data")
+        )
+
+        if os.path.exists(data_dir):
+            shutil.rmtree(data_dir)
+
+        # Create directories to write training data to
+        class_data_dir = os.path.join(data_dir, "classification")
+        ner_data_dir = os.path.join(data_dir, "ner")
+        os.makedirs(class_data_dir)
+        os.makedirs(ner_data_dir)
+
+        # Convert FST to training data
+        class_data_path = os.path.join(class_data_dir, "train.txt")
+        ner_data_path = os.path.join(ner_data_dir, "train.txt")
+
+        # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
+        start_time = time.time()
+        sentences_by_intent: Dict[str, Any] = make_sentences_by_intent(intent_fst)
+        sentence_time = time.time() - start_time
+        self._logger.debug(
+            f"Generated all possible sentences in {sentence_time} second(s)"
+        )
+
+        # Get least common multiple in order to balance sentences by intent
+        lcm_sentences = lcm(*(len(sents) for sents in sentences_by_intent.values()))
+
+        # Generate examples
+        class_sentences = []
+        ner_sentences = defaultdict(list)
+        for intent_name, intent_sents in sentences_by_intent.items():
+            num_repeats = max(1, lcm_sentences // len(intent_sents))
+            for intent_sent in intent_sents:
+                # Add balanced copies
+                for i in range(num_repeats):
+                    class_sent = Sentence(labels=[intent_name])
+                    for word in intent_sent["tokens"]:
+                        class_sent.add_token(Token(word))
+
+                    class_sentences.append(class_sent)
+
+                if len(intent_sent["entities"]) == 0:
+                    continue  # no entities, no sequence tagger
+
+                # Named entity recognition (NER) example
+                token_idx = 0
+                entity_start = {ev["start"]: ev for ev in intent_sent["entities"]}
+                entity_end = {ev["end"]: ev for ev in intent_sent["entities"]}
+                entity = None
+
+                word_tags = []
+                for word in intent_sent["tokens"]:
+                    # Determine tag label
+                    tag = "O" if not entity else f"I-{entity}"
+                    if token_idx in entity_start:
+                        entity = entity_start[token_idx]["entity"]
+                        tag = f"B-{entity}"
+
+                    word_tags.append((word, tag))
+
+                    # word ner
+                    token_idx += len(word) + 1
+
+                    if (token_idx - 1) in entity_end:
+                        entity = None
+
+                # Add balanced copies
+                for i in range(num_repeats):
+                    ner_sent = Sentence()
+                    for word, tag in word_tags:
+                        token = Token(word)
+                        token.add_tag("ner", tag)
+                        ner_sent.add_token(token)
+
+                    ner_sentences[intent_name].append(ner_sent)
+
+        # Random 80/10/10 split
+        class_train, class_dev, class_test = self._split_data(class_sentences)
+        class_corpus = TaggedCorpus(class_train, class_dev, class_test)
+
+        word_embeddings = [
+            FlairEmbeddings("news-forward"),
+            FlairEmbeddings("news-backward"),
+        ]
+
+        # Intent classification
+        doc_embeddings = DocumentRNNEmbeddings(
+            word_embeddings,
+            hidden_size=512,
+            reproject_words=True,
+            reproject_words_dimension=256,
+        )
+
+        classifier = TextClassifier(
+            doc_embeddings,
+            label_dictionary=class_corpus.make_label_dictionary(),
+            multi_label=False,
+        )
+
+        self._logger.debug(f"Intent classifier has {len(class_sentences)} example(s)")
+        trainer = ModelTrainer(classifier, class_corpus)
+        trainer.train(class_data_dir)
+
+        # Named entity recognition
+        stacked_embeddings = StackedEmbeddings(word_embeddings)
+
+        for intent_name, intent_ner_sents in ner_sentences.items():
+            ner_train, ner_dev, ner_test = self._split_data(intent_ner_sents)
+            ner_corpus = TaggedCorpus(ner_train, ner_dev, ner_test)
+
+            tagger = SequenceTagger(
+                hidden_size=256,
+                embeddings=stacked_embeddings,
+                tag_dictionary=ner_corpus.make_tag_dictionary(tag_type="ner"),
+                tag_type="ner",
+                use_crf=True,
+            )
+
+            ner_intent_dir = os.path.join(ner_data_dir, intent_name)
+            os.makedirs(ner_intent_dir, exist_ok=True)
+
+            self._logger.debug(
+                f"NER tagger for {intent_name} has {len(intent_ner_sents)} example(s)"
+            )
+            trainer = ModelTrainer(tagger, ner_corpus)
+            trainer.train(ner_intent_dir)
+
+        # with open(class_data_path, "w") as class_data_file:
+        #     with open(ner_data_path, "w") as ner_data_file:
+        #         for intent_name, intent_sents in sentences_by_intent.items():
+        #             intent_label = f"__label__{intent_name}"
+        #             for intent_sent in intent_sents:
+        #                 # Classification example
+        #                 print(intent_label, intent_sent["text"], file=class_data_file)
+
+        #                 # Named entity recognition (NER) example
+        #                 token_idx = 0
+        #                 entity_start = {
+        #                     ev["start"]: ev for ev in intent_sent["entities"]
+        #                 }
+        #                 entity_end = {ev["end"]: ev for ev in intent_sent["entities"]}
+        #                 entity = None
+
+        #                 for token in intent_sent["tokens"]:
+        #                     tag = "O" if not entity else f"I-{entity}"
+        #                     if token_idx in entity_start:
+        #                         entity = entity_start[token_idx]["entity"]
+        #                         tag = f"B-{entity}"
+
+        #                     # word ner
+        #                     print(token, tag, file=ner_data_file)
+        #                     token_idx += len(token) + 1
+
+        #                     if (token_idx - 1) in entity_end:
+        #                         entity = None
+
+        #                 print("", file=ner_data_file)
+
+        # embedding_names = ["news-forward", "news-backward"]
+
+    def _split_data(self, data, split=0.1):
+        random.shuffle(data)
+        split_index = int(len(data) * split)
+        train = data[(split_index * 2) :]
+        dev = data[:split_index]
+        test = data[split_index : (split_index * 2)]
+        return train, dev, test
 
 
 # -----------------------------------------------------------------------------

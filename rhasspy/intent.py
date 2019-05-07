@@ -436,6 +436,104 @@ class AdaptIntentRecognizer(RhasspyActor):
 
 
 # -----------------------------------------------------------------------------
+# Flair Intent Recognizer
+# https://github.com/zalandoresearch/flair
+# -----------------------------------------------------------------------------
+
+
+class FlairRecognizer(RhasspyActor):
+    """Flair based recognizer"""
+
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.class_model = None
+        self.ner_models = None
+
+    def to_started(self, from_state: str) -> None:
+        try:
+            # Pre-load models
+            self.load_models()
+        except Exception as e:
+            self._logger.warning("load_model")
+
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        if isinstance(message, RecognizeIntent):
+            try:
+                self.load_models()
+                intent = self.recognize(message.text)
+            except Exception as e:
+                self._logger.exception("in_started")
+                intent = empty_intent()
+                intent["text"] = message.text
+
+            intent["speech_confidence"] = message.confidence
+            self.send(
+                message.receiver or sender,
+                IntentRecognized(intent, handle=message.handle),
+            )
+
+    def recognize(self, text: str) -> Dict[str, Any]:
+        from flair.data import Sentence
+
+        intent = empty_intent()
+        sentence = Sentence(text)
+        self.class_model.predict(sentence)
+        assert len(sentence.labels) > 0, "No intent predicted"
+
+        label = sentence.labels[0]
+        intent_name = label.value
+        intent["intent"]["name"] = intent_name
+        intent["intent"]["confidence"] = label.score
+
+        if intent_name in self.ner_models:
+            self.ner_models[intent_name].predict(sentence)
+            ner_dict = sentence.to_dict(tag_type="ner")
+            for named_entity in ner_dict["entities"]:
+                intent["entities"].append(
+                    {
+                        "entity": named_entity["type"],
+                        "value": named_entity["text"],
+                        "start": named_entity["start_pos"],
+                        "end": named_entity["end_pos"],
+                        "confidence": named_entity["confidence"],
+                    }
+                )
+
+        return intent
+
+    def load_models(self) -> None:
+        from flair.models import TextClassifier, SequenceTagger
+
+        data_dir = self.profile.read_path(
+            self.profile.get("intent.flair.data_dir", "flair_data")
+        )
+
+        if self.class_model is None:
+            class_model_path = os.path.join(
+                data_dir, "classification", "final-model.pt"
+            )
+            self._logger.debug(f"Loading classification model from {class_model_path}")
+            self.class_model = TextClassifier.load_from_file(class_model_path)
+            self._logger.debug("Loaded classification model")
+
+        if self.ner_models is None:
+            ner_models = {}
+            ner_data_dir = os.path.join(data_dir, "ner")
+            for file_name in os.listdir(ner_data_dir):
+                ner_model_dir = os.path.join(ner_data_dir, file_name)
+                if os.path.isdir(ner_model_dir):
+                    # Assume directory is intent name
+                    ner_model_path = os.path.join(ner_model_dir, "final-model.pt")
+                    self._logger.debug(f"Loading NER model from {ner_model_path}")
+                    ner_models[file_name] = SequenceTagger.load_from_file(
+                        ner_model_path
+                    )
+
+            self._logger.debug("Loaded NER model(s)")
+            self.ner_models = ner_models
+
+
+# -----------------------------------------------------------------------------
 # Command Intent Recognizer
 # -----------------------------------------------------------------------------
 

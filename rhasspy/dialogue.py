@@ -446,10 +446,7 @@ class DialogueManager(RhasspyActor):
             )
         elif isinstance(message, SpeakSentence):
             # text -> speech
-            self.send(
-                self.speech,
-                SpeakSentence(message.sentence, receiver=sender),
-            )
+            self.send(self.speech, SpeakSentence(message.sentence, receiver=sender))
         elif isinstance(message, TrainProfile):
             # Training
             self.reload_actors_after_training = message.reload_actors
@@ -797,43 +794,43 @@ class DialogueManager(RhasspyActor):
             "adapt",
             "rasa",
             "remote",
+            "flair",
             "command",
         ], ("Invalid intent system: %s" % system)
 
+        from .intent import (
+            FsticuffsRecognizer,
+            AdaptIntentRecognizer,
+            RasaIntentRecognizer,
+            RemoteRecognizer,
+            FlairRecognizer,
+            CommandRecognizer,
+            DummyIntentRecognizer,
+        )
+
         if system == "fsticuffs":
             # Use OpenFST locally
-            from .intent import FsticuffsRecognizer
-
             return FsticuffsRecognizer
         elif system == "fuzzywuzzy":
             # Use fuzzy string matching locally
-            from .intent import FuzzyWuzzyRecognizer
-
             return FuzzyWuzzyRecognizer
         elif system == "adapt":
             # Use Mycroft Adapt locally
-            from .intent import AdaptIntentRecognizer
-
             return AdaptIntentRecognizer
         elif system == "rasa":
             # Use rasaNLU remotely
-            from .intent import RasaIntentRecognizer
-
             return RasaIntentRecognizer
         elif system == "remote":
             # Use remote rhasspy server
-            from .intent import RemoteRecognizer
-
             return RemoteRecognizer
+        elif system == "flair":
+            # Use flair locally
+            return FlairRecognizer
         elif system == "command":
             # Use command line
-            from .intent import CommandRecognizer
-
             return CommandRecognizer
         else:
             # Does nothing
-            from .intent import DummyIntentRecognizer
-
             return DummyIntentRecognizer
 
     @classmethod
@@ -847,6 +844,7 @@ class DialogueManager(RhasspyActor):
             "fuzzywuzzy",
             "adapt",
             "rasa",
+            "flair",
             "auto",
             "command",
         ], ("Invalid intent training system: %s" % trainer_system)
@@ -858,6 +856,7 @@ class DialogueManager(RhasspyActor):
             RasaIntentTrainer,
             CommandIntentTrainer,
             DummyIntentTrainer,
+            FlairIntentTrainer,
         )
 
         if trainer_system == "auto":
@@ -889,6 +888,9 @@ class DialogueManager(RhasspyActor):
         elif trainer_system == "rasa":
             # Use rasaNLU remotely
             return RasaIntentTrainer
+        elif trainer_system == "flair":
+            # Use flair RNN locally
+            return FlairIntentTrainer
         elif trainer_system == "command":
             # Use command-line intent trainer
             return CommandIntentTrainer
