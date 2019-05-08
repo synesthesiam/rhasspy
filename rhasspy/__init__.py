@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-import os
+import logging
+
+logger = logging.getLogger("rhasspy")
+
 import sys
+import os
 import io
 import json
 import argparse
@@ -8,7 +12,6 @@ import threading
 import tempfile
 import random
 import time
-import logging
 import itertools
 import wave
 import math
@@ -16,6 +19,12 @@ import random
 from typing import Any, List, Optional, Dict, Set
 
 import pydash
+
+try:
+    # Need to import here because they screw with logging
+    import flair
+except:
+    pass
 
 from .core import RhasspyCore
 from .actor import ConfigureEvent, Configured, ActorSystem, RhasspyActor
@@ -31,6 +40,37 @@ from .wake import (
     WakeWordDetected,
     WakeWordNotDetected,
 )
+
+
+# Configure logging
+import logging.config
+
+logging.config.dictConfig(
+    {
+        "version": 1,
+        "disable_existing_loggers": True,
+        "formatters": {
+            "rhasspy.format": {"format": "%(levelname)s:%(name)s:%(message)s"}
+        },
+        "handlers": {
+            "rhasspy.handler": {
+                "class": "logging.StreamHandler",
+                "formatter": "rhasspy.format",
+                "stream": "ext://sys.stderr",
+            }
+        },
+        "loggers": {
+            "rhasspy": {"handlers": ["rhasspy.handler"], "propagate": False},
+            "flair": {
+                "handlers": ["rhasspy.handler"],
+                "level": "INFO",
+                "propagate": False,
+            },
+        },
+        "root": {"handlers": ["rhasspy.handler"]},
+    }
+)
+
 
 # -----------------------------------------------------------------------------
 # Globals
@@ -250,24 +290,17 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
-        do_logging = True
-    else:
-        do_logging = False
+        logging.root.setLevel(logging.DEBUG)
 
     profiles_dirs = [args.system_profiles, args.user_profiles]
-
-    if args.debug:
-        logging.debug(profiles_dirs)
+    logger.debug(profiles_dirs)
 
     default_settings = Profile.load_defaults(args.system_profiles)
 
     # Create rhasspy core
     from .core import RhasspyCore
 
-    core = RhasspyCore(
-        args.profile, args.system_profiles, args.user_profiles, do_logging=do_logging
-    )
+    core = RhasspyCore(args.profile, args.system_profiles, args.user_profiles)
 
     # Add profile settings from the command line
     extra_settings = {}
@@ -277,7 +310,7 @@ def main() -> None:
         except:
             pass
 
-        logging.debug("Profile: {0}={1}".format(key, value))
+        logger.debug("Profile: {0}={1}".format(key, value))
         extra_settings[key] = value
         core.profile.set(key, value)
 
@@ -349,7 +382,7 @@ def main() -> None:
             core.start()
 
         if mic_stdin_running:
-            logging.debug("Reading audio data from stdin")
+            logger.debug("Reading audio data from stdin")
             mic_stdin_thread = threading.Thread(
                 target=read_audio_stdin, args=(core,), daemon=True
             )

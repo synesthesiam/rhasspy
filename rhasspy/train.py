@@ -17,33 +17,6 @@ from .actor import RhasspyActor
 from .profiles import Profile
 
 # -----------------------------------------------------------------------------
-# Classes
-# -----------------------------------------------------------------------------
-
-
-# class TrainingSentence:
-#     def __init__(
-#         self,
-#         sentence: str,
-#         entities: List[SentenceEntity],
-#         tokens: List[str],
-#         tagged_sentence: str,
-#     ) -> None:
-#         self.sentence = sentence
-#         self.entities = entities
-#         self.tokens = tokens
-#         self.tagged_sentence = tagged_sentence
-
-#     def json(self):
-#         return {
-#             "sentence": self.sentence,
-#             "entities": [e.__dict__ for e in self.entities],
-#             "tokens": self.tokens,
-#             "tagged_sentence": self.tagged_sentence,
-#         }
-
-
-# -----------------------------------------------------------------------------
 # Events
 # -----------------------------------------------------------------------------
 
@@ -106,8 +79,15 @@ class JsgfSentenceGenerator(RhasspyActor):
             f"Generated {len(grammar_paths)} grammar(s) in {grammar_time} second(s)"
         )
 
-        # intent -> training sentences
-        sentences_by_intent: Dict[str, List[Any]] = defaultdict(list)
+        # Create intent map
+        # TODO: Ensure that keys are valid identifiers (no spaces, etc.)
+        intent_map = {intent_name: intent_name for intent_name in grammar_paths.keys()}
+        intent_map_path = self.profile.write_path(
+            self.profile.get("training.intent.intent_map", "intent_map.json")
+        )
+
+        with open(intent_map_path, "w") as intent_map_file:
+            json.dump(intent_map, intent_map_file)
 
         # Ready slots values
         slots_dir = self.profile.read_path(self.profile.get("speech_to_text.slots_dir"))

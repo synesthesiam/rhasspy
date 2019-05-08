@@ -52,10 +52,49 @@
                         </label>
                     </div>
                 </div>
+                <div class="form-row">
+                    <p class="text-muted">Expecting words to ignore in <tt>{{ this.profile.intent.adapt.stop_words }}</tt></p>
+                </div>
+            </div>
+            <hr>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="intent-system" id="intent-system-flair" value="flair" v-model="profile.intent.system">
+                        <label class="form-check-label" for="intent-system-flair">
+                            Do intent recognition with <a href="https://github.com/zalandoresearch/flair">flair</a> on this device
+                        </label>
+                    </div>
+                </div>
             </div>
             <div class="form-group">
                 <div class="form-row">
-                    <p class="text-muted">Expecting words to ignore in <tt>{{ this.profile.intent.adapt.stop_words }}</tt></p>
+                    <input type="checkbox" id="flair-do-sampling" v-model="profile.intent.flair.do_sampling" :disabled="profile.intent.system != 'flair'">
+                    <label for="flair-do-sampling" class="col-form-label">Generate Random Sample Sentences</label>
+                </div>
+                <div class="alert alert-warning" v-if="!profile.intent.flair.do_sampling">
+                    All possible sentences will be used as training data (may take a long time to train)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="flair-samples" class="col-form-label">Samples Per Intent</label>
+                    <div class="col">
+                        <input id="flair-samples" type="number" class="form-control" min="1" v-model.number="profile.intent.flair.num_samples" :disabled="profile.intent.system != 'flair' || !profile.intent.flair.do_sampling">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="flair-max-epochs" class="col-form-label">Maximum Training Epochs</label>
+                    <div class="col">
+                        <input id="flair-max-epochs" type="number" class="form-control" min="1" v-model.number="profile.intent.flair.max_epochs" :disabled="profile.intent.system != 'flair'">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <p class="text-muted">Models will be stored in <tt>{{ this.profile.intent.flair.data_dir }}</tt></p>
                 </div>
             </div>
             <hr>

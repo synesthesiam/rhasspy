@@ -446,15 +446,17 @@ class FlairRecognizer(RhasspyActor):
 
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
-        self.class_model = None
-        self.ner_models = None
+
+        self.class_model: Optional[TextClassifier] = None
+        self.ner_models: Optional[Dict[str, SequenceTagger]] = None
+        self.intent_map: Optional[Dict[str, str]] = None
 
     def to_started(self, from_state: str) -> None:
         try:
             # Pre-load models
             self.load_models()
-        except Exception as e:
-            self._logger.warning("load_model")
+        except:
+            pass
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, RecognizeIntent):
@@ -477,16 +479,24 @@ class FlairRecognizer(RhasspyActor):
 
         intent = empty_intent()
         sentence = Sentence(text)
-        self.class_model.predict(sentence)
-        assert len(sentence.labels) > 0, "No intent predicted"
 
-        label = sentence.labels[0]
-        intent_name = label.value
-        intent["intent"]["name"] = intent_name
-        intent["intent"]["confidence"] = label.score
+        if self.class_model is not None:
+            self.class_model.predict(sentence)
+            assert len(sentence.labels) > 0, "No intent predicted"
 
-        if intent_name in self.ner_models:
-            self.ner_models[intent_name].predict(sentence)
+            label = sentence.labels[0]
+            intent_id = label.value
+            intent["intent"]["confidence"] = label.score
+        else:
+            # Assume first intent
+            intent_id = next(iter(self.intent_map.keys()))
+            intent["intent"]["confidence"] = 1
+
+        intent["intent"]["name"] = self.intent_map[intent_id]
+
+        if intent_id in self.ner_models:
+            # Predict entities
+            self.ner_models[intent_id].predict(sentence)
             ner_dict = sentence.to_dict(tag_type="ner")
             for named_entity in ner_dict["entities"]:
                 intent["entities"].append(
@@ -501,14 +511,26 @@ class FlairRecognizer(RhasspyActor):
 
         return intent
 
+    # -------------------------------------------------------------------------
+
     def load_models(self) -> None:
         from flair.models import TextClassifier, SequenceTagger
+
+        # Load mapping from intent id to user intent name
+        if self.intent_map is None:
+            intent_map_path = self.profile.read_path(
+                self.profile.get("training.intent.intent_map", "intent_map.json")
+            )
+
+            with open(intent_map_path, "r") as intent_map_file:
+                self.intent_map = json.load(intent_map_file)
 
         data_dir = self.profile.read_path(
             self.profile.get("intent.flair.data_dir", "flair_data")
         )
 
-        if self.class_model is None:
+        # Only load intent classifier if there is more than one intent
+        if (self.class_model is None) and (len(self.intent_map) > 1):
             class_model_path = os.path.join(
                 data_dir, "classification", "final-model.pt"
             )
@@ -523,9 +545,15 @@ class FlairRecognizer(RhasspyActor):
                 ner_model_dir = os.path.join(ner_data_dir, file_name)
                 if os.path.isdir(ner_model_dir):
                     # Assume directory is intent name
+                    intent_name = file_name
+                    if intent_name not in self.intent_map:
+                        self._logger.warning(
+                            f"{intent_name} was not found in intent map"
+                        )
+
                     ner_model_path = os.path.join(ner_model_dir, "final-model.pt")
                     self._logger.debug(f"Loading NER model from {ner_model_path}")
-                    ner_models[file_name] = SequenceTagger.load_from_file(
+                    ner_models[intent_name] = SequenceTagger.load_from_file(
                         ner_model_path
                     )
 

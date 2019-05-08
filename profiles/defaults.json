@@ -53,6 +53,12 @@
             "intent_fst": "intent.fst",
             "ignore_unknown_words": true
         },
+        "flair": {
+            "data_dir": "flair_data",
+            "max_epochs": 25,
+            "do_sampling": true,
+            "num_samples": 10000
+        },
         "rasa": {
             "examples_markdown": "intent_examples.md",
             "project_name": "rhasspy",
@@ -172,6 +178,7 @@
                 "arguments": [],
                 "program": ""
             },
+            "intent_map": "intent_map.json",
             "system": "auto"
         },
         "regex": {

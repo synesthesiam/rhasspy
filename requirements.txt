@@ -13,3 +13,5 @@ precise-runner
 cerberus
 download/pyjsgf-1.6.0.tar.gz
 download/jsgf2fst-0.1.0.tar.gz
+pytorch_pretrained_bert>=0.6.2
+flair>=0.4.1

@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
-import logging
-
-logging.basicConfig(level=logging.DEBUG)
-
-logger = logging.getLogger(__name__)
-
 import os
+import logging
 import sys
 import subprocess
 import json
@@ -43,6 +38,7 @@ from gevent.queue import Queue as GQueue
 from gevent.lock import RLock
 from geventwebsocket.handler import WebSocketHandler
 
+
 from jsgf2fst import read_slots
 
 from rhasspy.profiles import Profile
@@ -58,6 +54,9 @@ from rhasspy.utils import (
 # -----------------------------------------------------------------------------
 # Flask Web App Setup
 # -----------------------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
+logging.root.setLevel(logging.DEBUG)
 
 app = Flask("rhasspy")
 app.secret_key = str(uuid4())

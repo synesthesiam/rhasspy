@@ -21,34 +21,6 @@ import pywrapfst as fst
 # -----------------------------------------------------------------------------
 
 
-# class SentenceEntity:
-#     def __init__(
-#         self,
-#         entity: str,
-#         value: str,
-#         text: Optional[str] = None,
-#         start: Optional[int] = None,
-#         end: Optional[int] = None,
-#     ) -> None:
-#         self.entity = entity
-#         self.value = value
-#         self.text = text or value
-#         self.start = start or -1
-#         self.end = end or -1
-
-#     def json(self):
-#         return {
-#             "entity": self.entity,
-#             "value": self.value,
-#             "text": self.text,
-#             "start": self.start,
-#             "end": self.end,
-#         }
-
-
-# -----------------------------------------------------------------------------
-
-
 def read_dict(
     dict_file: Iterable[str], word_dict: Optional[Dict[str, List[str]]] = None
 ) -> Dict[str, List[str]]:
@@ -337,7 +309,9 @@ def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     return itertools.zip_longest(*args, fillvalue=fillvalue)
 
+
 # -----------------------------------------------------------------------------
+
 
 def make_sentences_by_intent(intent_fst: fst.Fst) -> Dict[str, Any]:
     # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
@@ -347,5 +321,41 @@ def make_sentences_by_intent(intent_fst: fst.Fst) -> Dict[str, Any]:
         intent = symbols2intent(symbols)
         intent_name = intent["intent"]["name"]
         sentences_by_intent[intent_name].append(intent)
+
+    return sentences_by_intent
+
+
+# -----------------------------------------------------------------------------
+
+
+def sample_sentences_by_intent(
+    intent_fst_paths: Dict[str, str], num_samples: int
+) -> Dict[str, Any]:
+    def sample_sentences(intent_name: str, intent_fst_path: str):
+        rand_fst = fst.Fst.read_from_string(
+            subprocess.check_output(
+                ["fstrandgen", f"--npath={num_samples}", intent_fst_path]
+            )
+        )
+
+        sentences: List[Dict[str, Any]] = []
+        for symbols in fstprintall(rand_fst, exclude_meta=False):
+            intent = symbols2intent(symbols)
+            intent_name = intent["intent"]["name"]
+            sentences.append(intent)
+
+        return sentences
+
+    # Generate samples in parallel
+    future_to_intent = {}
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        for intent_name, intent_fst_path in intent_fst_paths.items():
+            future = executor.submit(sample_sentences, intent_name, intent_fst_path)
+            future_to_intent[future] = intent_name
+
+    # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
+    sentences_by_intent: Dict[str, Any] = {}
+    for future, intent_name in future_to_intent.items():
+        sentences_by_intent[intent_name] = future.result()
 
     return sentences_by_intent

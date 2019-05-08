@@ -13,7 +13,7 @@ from collections import defaultdict, Counter
 from typing import Dict, List, Set, Any, Optional
 
 from .actor import RhasspyActor
-from .utils import make_sentences_by_intent, lcm
+from .utils import make_sentences_by_intent, lcm, sample_sentences_by_intent
 
 # -----------------------------------------------------------------------------
 # Events
@@ -343,6 +343,9 @@ class AdaptIntentTrainer(RhasspyActor):
 class FlairIntentTrainer(RhasspyActor):
     """Trains a classification and NER model using flair"""
 
+    def __init__(self):
+        RhasspyActor.__init__(self)
+
     def to_started(self, from_state: str) -> None:
         pass
 
@@ -384,12 +387,49 @@ class FlairIntentTrainer(RhasspyActor):
         ner_data_path = os.path.join(ner_data_dir, "train.txt")
 
         # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
+        sentences_by_intent: Dict[str, Any] = {}
+
+        # Get sentences
+        do_sampling = self.profile.get("intent.flair.do_sampling", True)
         start_time = time.time()
-        sentences_by_intent: Dict[str, Any] = make_sentences_by_intent(intent_fst)
+
+        if do_sampling:
+            # Sample from each intent FST
+            num_samples = int(self.profile.get("intent.flair.num_samples", 10000))
+            intent_map_path = self.profile.read_path(
+                self.profile.get("training.intent.intent_map", "intent_map.json")
+            )
+
+            with open(intent_map_path, "r") as intent_map_file:
+                intent_map = json.load(intent_map_file)
+
+            # Gather FSTs for all known intents
+            fsts_dir = self.profile.write_dir(
+                self.profile.get("speech_to_text.fsts_dir")
+            )
+
+            intent_fst_paths = {
+                intent_id: os.path.join(fsts_dir, f"{intent_id}.fst")
+                for intent_id in intent_map.keys()
+            }
+
+            # Generate samples
+            self._logger.debug(
+                f"Generating {num_samples} sample(s) from {len(intent_fst_paths)} intent(s)"
+            )
+
+            sentences_by_intent = sample_sentences_by_intent(
+                intent_fst_paths, num_samples
+            )
+        else:
+            # Exhaustively generate all sentences
+            self._logger.debug(
+                "Generating all possible sentences (may take a long time)"
+            )
+            sentences_by_intent = make_sentences_by_intent(intent_fst)
+
         sentence_time = time.time() - start_time
-        self._logger.debug(
-            f"Generated all possible sentences in {sentence_time} second(s)"
-        )
+        self._logger.debug(f"Generated sentences in {sentence_time} second(s)")
 
         # Get least common multiple in order to balance sentences by intent
         lcm_sentences = lcm(*(len(sents) for sents in sentences_by_intent.values()))
@@ -400,13 +440,15 @@ class FlairIntentTrainer(RhasspyActor):
         for intent_name, intent_sents in sentences_by_intent.items():
             num_repeats = max(1, lcm_sentences // len(intent_sents))
             for intent_sent in intent_sents:
-                # Add balanced copies
-                for i in range(num_repeats):
-                    class_sent = Sentence(labels=[intent_name])
-                    for word in intent_sent["tokens"]:
-                        class_sent.add_token(Token(word))
+                # Only train an intent classifier if there's more than one intent
+                if len(sentences_by_intent) > 1:
+                    # Add balanced copies
+                    for i in range(num_repeats):
+                        class_sent = Sentence(labels=[intent_name])
+                        for word in intent_sent["tokens"]:
+                            class_sent.add_token(Token(word))
 
-                    class_sentences.append(class_sent)
+                        class_sentences.append(class_sent)
 
                 if len(intent_sent["entities"]) == 0:
                     continue  # no entities, no sequence tagger
@@ -443,96 +485,89 @@ class FlairIntentTrainer(RhasspyActor):
 
                     ner_sentences[intent_name].append(ner_sent)
 
-        # Random 80/10/10 split
-        class_train, class_dev, class_test = self._split_data(class_sentences)
-        class_corpus = TaggedCorpus(class_train, class_dev, class_test)
+        # Start training
+        max_epochs = int(self.profile.get("intent.flair.max_epochs", 100))
 
-        word_embeddings = [
-            FlairEmbeddings("news-forward"),
-            FlairEmbeddings("news-backward"),
-        ]
+        if len(class_sentences) > 0:
+            self._logger.debug("Training intent classifier")
 
-        # Intent classification
-        doc_embeddings = DocumentRNNEmbeddings(
-            word_embeddings,
-            hidden_size=512,
-            reproject_words=True,
-            reproject_words_dimension=256,
-        )
+            # Random 80/10/10 split
+            class_train, class_dev, class_test = self._split_data(class_sentences)
+            class_corpus = TaggedCorpus(class_train, class_dev, class_test)
 
-        classifier = TextClassifier(
-            doc_embeddings,
-            label_dictionary=class_corpus.make_label_dictionary(),
-            multi_label=False,
-        )
+            word_embeddings = [
+                FlairEmbeddings("news-forward"),
+                FlairEmbeddings("news-backward"),
+            ]
 
-        self._logger.debug(f"Intent classifier has {len(class_sentences)} example(s)")
-        trainer = ModelTrainer(classifier, class_corpus)
-        trainer.train(class_data_dir)
-
-        # Named entity recognition
-        stacked_embeddings = StackedEmbeddings(word_embeddings)
-
-        for intent_name, intent_ner_sents in ner_sentences.items():
-            ner_train, ner_dev, ner_test = self._split_data(intent_ner_sents)
-            ner_corpus = TaggedCorpus(ner_train, ner_dev, ner_test)
-
-            tagger = SequenceTagger(
-                hidden_size=256,
-                embeddings=stacked_embeddings,
-                tag_dictionary=ner_corpus.make_tag_dictionary(tag_type="ner"),
-                tag_type="ner",
-                use_crf=True,
+            # Intent classification
+            doc_embeddings = DocumentRNNEmbeddings(
+                word_embeddings,
+                hidden_size=512,
+                reproject_words=True,
+                reproject_words_dimension=256,
             )
 
-            ner_intent_dir = os.path.join(ner_data_dir, intent_name)
-            os.makedirs(ner_intent_dir, exist_ok=True)
+            classifier = TextClassifier(
+                doc_embeddings,
+                label_dictionary=class_corpus.make_label_dictionary(),
+                multi_label=False,
+            )
 
             self._logger.debug(
-                f"NER tagger for {intent_name} has {len(intent_ner_sents)} example(s)"
+                f"Intent classifier has {len(class_sentences)} example(s)"
             )
-            trainer = ModelTrainer(tagger, ner_corpus)
-            trainer.train(ner_intent_dir)
+            trainer = ModelTrainer(classifier, class_corpus)
+            trainer.train(class_data_dir, max_epochs=max_epochs)
+        else:
+            self._logger.info("Skipping intent classifier training")
 
-        # with open(class_data_path, "w") as class_data_file:
-        #     with open(ner_data_path, "w") as ner_data_file:
-        #         for intent_name, intent_sents in sentences_by_intent.items():
-        #             intent_label = f"__label__{intent_name}"
-        #             for intent_sent in intent_sents:
-        #                 # Classification example
-        #                 print(intent_label, intent_sent["text"], file=class_data_file)
+        if len(ner_sentences) > 0:
+            self._logger.debug(f"Training {len(ner_sentences)} NER sequence tagger(s)")
 
-        #                 # Named entity recognition (NER) example
-        #                 token_idx = 0
-        #                 entity_start = {
-        #                     ev["start"]: ev for ev in intent_sent["entities"]
-        #                 }
-        #                 entity_end = {ev["end"]: ev for ev in intent_sent["entities"]}
-        #                 entity = None
+            # Named entity recognition
+            stacked_embeddings = StackedEmbeddings(word_embeddings)
 
-        #                 for token in intent_sent["tokens"]:
-        #                     tag = "O" if not entity else f"I-{entity}"
-        #                     if token_idx in entity_start:
-        #                         entity = entity_start[token_idx]["entity"]
-        #                         tag = f"B-{entity}"
+            for intent_name, intent_ner_sents in ner_sentences.items():
+                ner_train, ner_dev, ner_test = self._split_data(intent_ner_sents)
+                ner_corpus = TaggedCorpus(ner_train, ner_dev, ner_test)
 
-        #                     # word ner
-        #                     print(token, tag, file=ner_data_file)
-        #                     token_idx += len(token) + 1
+                tagger = SequenceTagger(
+                    hidden_size=256,
+                    embeddings=stacked_embeddings,
+                    tag_dictionary=ner_corpus.make_tag_dictionary(tag_type="ner"),
+                    tag_type="ner",
+                    use_crf=True,
+                )
 
-        #                     if (token_idx - 1) in entity_end:
-        #                         entity = None
+                ner_intent_dir = os.path.join(ner_data_dir, intent_name)
+                os.makedirs(ner_intent_dir, exist_ok=True)
 
-        #                 print("", file=ner_data_file)
+                self._logger.debug(
+                    f"NER tagger for {intent_name} has {len(intent_ner_sents)} example(s)"
+                )
+                trainer = ModelTrainer(tagger, ner_corpus)
+                trainer.train(ner_intent_dir, max_epochs=max_epochs)
+        else:
+            self._logger.info("Skipping NER sequence tagger training")
 
-        # embedding_names = ["news-forward", "news-backward"]
+    # -------------------------------------------------------------------------
 
     def _split_data(self, data, split=0.1):
+        """Randomly splits a data set into train, dev, and test sets"""
+
         random.shuffle(data)
         split_index = int(len(data) * split)
+
+        # 1 - (2*split)
         train = data[(split_index * 2) :]
+
+        # split
         dev = data[:split_index]
+
+        # split
         test = data[split_index : (split_index * 2)]
+
         return train, dev, test
 
 

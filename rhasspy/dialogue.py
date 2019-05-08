@@ -854,9 +854,9 @@ class DialogueManager(RhasspyActor):
             FuzzyWuzzyIntentTrainer,
             AdaptIntentTrainer,
             RasaIntentTrainer,
+            FlairIntentTrainer,
             CommandIntentTrainer,
             DummyIntentTrainer,
-            FlairIntentTrainer,
         )
 
         if trainer_system == "auto":
@@ -870,6 +870,9 @@ class DialogueManager(RhasspyActor):
             elif recognizer_system == "adapt":
                 # Use Mycroft Adapt locally
                 return AdaptIntentTrainer
+            elif recognizer_system == "flair":
+                # Use flair locally
+                return FlairIntentTrainer
             elif recognizer_system == "rasa":
                 # Use rasaNLU remotely
                 return RasaIntentTrainer
