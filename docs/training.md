@@ -545,4 +545,4 @@ $ echo 'would you please turn on the living room light' | \
 
 This works well for our toy example, but will not scale well when there are thousands of voice commands represented in `sentences.ini` or if the words used are significantly different than in the training set ("light" and "lamp" are close enough for `fuzzywuzzy`).
 
-A machine learning-based intent recognizer, like [RasaNLU](intent-recognition.md#rasanlu), would be a better choice for open ended speech.
+A machine learning-based intent recognizer, like [flar](intent-recognition.md#flair), would be a better choice for open ended speech.

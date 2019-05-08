@@ -59,9 +59,33 @@ The `intent.adapt.stop_words` text file contains words that should be ignored (i
 
 See `rhasspy.intent.AdaptIntentRecognizer` for details.
 
+## Flair
+
+Recognizes intents using the [flair NLP framework](https://github.com/zalandoresearch/flair). Works best when you have a large number of sentences (thousands to hundreds of thousands) and need to handle sentences *and* words not seen during training.
+
+Add to your [profile](profiles.md):
+
+```json
+"intent": {
+  "system": "flair", 
+  "flair": {
+      "data_dir": "flair_data",
+      "max_epochs": 25,
+      "do_sampling": true,
+      "num_samples": 10000
+  }
+}
+```
+
+By default, the flair recognizer will generate 10,000 random sentences (`num_samples`) from each intent in your [sentences.ini](training.md#sentencesini) file. If you set `do_sampling` to `false`, Rhasspy will generate **all** possible sentences and use them as training data. This will produce the most accurate models, but may take a *long* time depending on the complexity of your grammars.
+
+A flair `TextClassifier` will be trained to classify unseen sentences by intent, and a `SequenceTagger` will be trained for each intent that has at least one [tag](training.md#tags). During recognition, sentences are first classified by intent and then run through the appropriate `SequenceTagger` model to determine slots/entities.
+
+See `rhasspy.intent.FlairRecognizer` for details.
+
 ## RasaNLU
 
-Recognizes intents using a remote [rasaNLU](https://rasa.com/) server. Works well when you have a large number of sentences (thousands to hundreds of thousands) and need to handle sentences *and* words not seen during training.
+Recognizes intents **remotely** using a [rasaNLU](https://rasa.com/) server. You must [install a rasaNLU server](https://rasa.com/docs/nlu/installation) somewhere that Rhasspy can access. Works well when you have a large number of sentences (thousands to hundreds of thousands) and need to handle sentences *and* words not seen during training.
 
 Add to your [profile](profiles.md):
 
