@@ -3,8 +3,6 @@
     "name": "fr",
 
     "wake": {
-        "pocketsphinx": {
-            "keyphrase": "d'accord râpe"
-        }
+        "system": "snowboy"
     }
 }

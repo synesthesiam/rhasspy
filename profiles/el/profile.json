@@ -1,4 +1,7 @@
 {
     "language": "el",
-    "name": "el"
+    "name": "el",
+    "wake": {
+        "system": "snowboy"
+    }
 }

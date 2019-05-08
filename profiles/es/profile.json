@@ -1,8 +1,10 @@
 {
     "language": "es",
     "name": "es",
+    "wake": {
+        "system": "snowboy"
+    },
     "speech_to_text": {
-        "g2p_upper": true,
-        "dictionary_upper": true
+        "g2p_casing": "upper"
     }
 }

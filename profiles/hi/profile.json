@@ -1,4 +1,7 @@
 {
     "language": "hi",
-    "name": "hi"
+    "name": "hi",
+    "wake": {
+        "system": "snowboy"
+    }
 }
