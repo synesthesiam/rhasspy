@@ -38,6 +38,10 @@ const profileDefaults = {
         "forward_to_hass": true
     },
     "intent": {
+        "fsticuffs": {
+            "intent_fst": "intent.fst",
+            "ignore_unknown_words": true
+        },
         "adapt": {
             "stop_words": "stop_words.txt"
         },
@@ -52,6 +56,12 @@ const profileDefaults = {
         },
         "remote": {
             "url": "http://my-server:12101/api/text-to-intent"
+        },
+        "flair": {
+            "data_dir": "flair_data",
+            "max_epochs": 25,
+            "do_sampling": true,
+            "num_samples": 10000
         },
         "command": {
             "program": "$RHASSPY_BASE_DIR/bin/mock-commands/text2intent.sh",

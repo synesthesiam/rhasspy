@@ -18,7 +18,7 @@ import time
 import atexit
 from uuid import uuid4
 from collections import defaultdict
-from typing import Any, Union, Tuple, Dict
+from typing import Any, Union, Tuple, Dict, List
 
 from flask import (
     Flask,
@@ -33,6 +33,7 @@ from flask_cors import CORS
 from flask_sockets import Sockets
 import requests
 import pydash
+import gevent
 from gevent import pywsgi
 from gevent.queue import Queue as GQueue
 from gevent.lock import RLock
@@ -49,6 +50,7 @@ from rhasspy.utils import (
     recursive_remove,
     buffer_to_wav,
     load_phoneme_examples,
+    FunctionLoggingHandler,
 )
 
 # -----------------------------------------------------------------------------
@@ -480,7 +482,7 @@ def api_train() -> str:
     start_time = time.time()
     logger.info("Starting training")
 
-    result = core.train()
+    result = gevent.spawn(core.train).get()
     if isinstance(result, ProfileTrainingFailed):
         raise Exception(f"Training failed: {result.reason}")
 
@@ -539,7 +541,7 @@ def api_text_to_intent():
 
     intent_json = json.dumps(intent)
     logger.debug(intent_json)
-    add_ws_event(intent_json)
+    add_ws_event(WS_EVENT_INTENT, intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
@@ -575,7 +577,7 @@ def api_speech_to_intent() -> Response:
 
     intent_json = json.dumps(intent)
     logger.debug(intent_json)
-    add_ws_event(intent_json)
+    add_ws_event(WS_EVENT_INTENT, intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
@@ -619,7 +621,7 @@ def api_stop_recording() -> Response:
 
     intent_json = json.dumps(intent)
     logger.debug(intent_json)
-    add_ws_event(intent_json)
+    add_ws_event(WS_EVENT_INTENT, intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
@@ -662,16 +664,6 @@ def api_text_to_speech() -> str:
     core.speak_sentence(sentence)
 
     return sentence
-
-
-# -----------------------------------------------------------------------------
-
-
-@app.route("/api/actor_states", methods=["GET"])
-def api_actor_states() -> Response:
-    """Get the states of all actors"""
-    assert core is not None
-    return jsonify(core.get_actor_states())
 
 
 # -----------------------------------------------------------------------------
@@ -830,30 +822,60 @@ app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 # WebSocket API
 # -----------------------------------------------------------------------------
 
-ws_queues: Dict[Any, GQueue] = {}
-ws_lock: RLock = RLock()
+WS_EVENT_INTENT = 0
+WS_EVENT_LOG = 1
+
+ws_queues: List[Dict[Any, GQueue]] = [{}, {}]
+ws_locks: List[RLock] = [RLock(), RLock()]
 
 
-def add_ws_event(text: str):
-    with ws_lock:
-        for queue in ws_queues.values():
+def add_ws_event(event_type: int, text: str):
+    with ws_locks[event_type]:
+        for queue in ws_queues[event_type].values():
             queue.put(text)
+
+
+logging.root.addHandler(
+    FunctionLoggingHandler(lambda msg: add_ws_event(WS_EVENT_LOG, msg))
+)
 
 
 @sockets.route("/api/events/intent")
 def api_events_intent(ws) -> None:
     # Add new queue for websocket
     q = GQueue()
-    with ws_lock:
-        ws_queues[ws] = q
+    with ws_locks[WS_EVENT_INTENT]:
+        ws_queues[WS_EVENT_INTENT][ws] = q
 
-    while not ws.closed:
-        text = q.get()
-        ws.send(text)
+    try:
+        while not ws.closed:
+            text = q.get()
+            ws.send(text)
+    except Exception as e:
+        logging.exception("api_events_intent")
 
     # Remove queue
-    with ws_lock:
-        del ws_queues[ws]
+    with ws_locks[WS_EVENT_INTENT]:
+        del ws_queues[WS_EVENT_INTENT][ws]
+
+
+@sockets.route("/api/events/log")
+def api_events_log(ws) -> None:
+    # Add new queue for websocket
+    q = GQueue()
+    with ws_locks[WS_EVENT_LOG]:
+        ws_queues[WS_EVENT_LOG][ws] = q
+
+    try:
+        while not ws.closed:
+            text = q.get()
+            ws.send(text)
+    except Exception as e:
+        logging.exception("api_events_log")
+
+    # Remove queue
+    with ws_locks[WS_EVENT_LOG]:
+        del ws_queues[WS_EVENT_LOG][ws]
 
 
 # -----------------------------------------------------------------------------
@@ -861,6 +883,7 @@ def api_events_intent(ws) -> None:
 # Start web server
 logging.debug(f"Starting web server at http://{args.host}:{args.port}")
 server = pywsgi.WSGIServer((args.host, args.port), app, handler_class=WebSocketHandler)
+logging.getLogger("geventwebsocket").setLevel(logging.INFO)
 
 try:
     server.serve_forever()

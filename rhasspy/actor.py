@@ -4,6 +4,11 @@ import time
 import queue
 from typing import List, Callable, Optional, Any, Dict
 
+try:
+    from gevent import sleep
+except:
+    from time import sleep
+
 from .profiles import Profile
 
 # -----------------------------------------------------------------------------
@@ -157,6 +162,9 @@ class RhasspyActor:
         # Report state transition
         if self._transitions and (self._parent is not None):
             self.send(self._parent, StateTransition(self._name, from_state, to_state))
+
+        # Yield execution
+        sleep(0)
 
     def __repr__(self):
         return self._name

@@ -21,6 +21,19 @@ import pywrapfst as fst
 # -----------------------------------------------------------------------------
 
 
+class FunctionLoggingHandler(logging.Handler):
+    def __init__(self, func):
+        logging.Handler.__init__(self)
+        self.func = func
+        self.formatter = logging.Formatter("[%(levelname)s:%(relativeCreated)d] %(name)s: %(message)s")
+
+    def handle(self, record):
+        self.func(self.formatter.format(record))
+
+
+# -----------------------------------------------------------------------------
+
+
 def read_dict(
     dict_file: Iterable[str], word_dict: Optional[Dict[str, List[str]]] = None
 ) -> Dict[str, List[str]]:

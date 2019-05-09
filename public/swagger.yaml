@@ -1,7 +1,7 @@
 openapi: "3.0.0"
 info:
   title: 'Rhasspy Voice Assistant'
-  version: '1.0'
+  version: '2.0'
   description: 'API for Rhasspy Voice Assistant Toolkit'
 schemes:
   - http
@@ -156,6 +156,32 @@ paths:
               schema:
                 type: string
                 format: binary
+  /api/lookup:
+    post:
+      summary: 'Look up a word in the dictionary or guess pronunciation'
+      produces: 
+        - application/json
+      requestBody:
+        description: 'Word to look up'
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      parameters:
+      - in: query
+        name: n
+        description: 'Number of pronunciations to generate'
+        schema:
+          type: integer
+          default: 5
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
   /api/phonemes:
     get:
       summary: 'Get examples of phonemes for a profile'
@@ -386,3 +412,20 @@ paths:
             application/json:
               schema:
                 type: object
+  /api/download-profile:
+    post:
+      summary: 'Force Rhasspy to download files for current profile'
+      parameters:
+      - in: query
+        name: delete
+        description: 'True if download cache should be deleted'
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: Log
+          content:
+            text/plain:
+              schema:
+                type: string

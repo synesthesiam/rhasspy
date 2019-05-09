@@ -38,6 +38,9 @@
                 <li class="nav-item">
                     <a class="nav-link" id="advanced-tab" data-toggle="tab" href="#advanced" role="tab" aria-controls="advanced" aria-selected="true">Advanced</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="log-tab" data-toggle="tab" href="#log" role="tab" aria-controls="log" aria-selected="true">Log</a>
+                </li>
             </ul>
             <div class="tab-content" id="myTabContent">
                 <div class="tab-pane fade show active" id="speech" role="tabpanel" aria-labelledby="speech-tab">
@@ -59,6 +62,9 @@
                 </div>
                 <div class="tab-pane fade" id="advanced" role="tabpanel" aria-labelledby="advanced-tab">
                     <AdvancedSettings :profile="profile" :defaults="defaults" />
+                </div>
+                <div class="tab-pane fade" id="log" role="tabpanel" aria-labelledby="log-tab">
+                    <RhasspyLog :rhasspyLog="rhasspyLog" />
                 </div>
             </div>
 
@@ -113,6 +119,7 @@
  import TranscribeSpeech from './components/TranscribeSpeech.vue'
  import ProfileSettings from './components/ProfileSettings.vue'
  import AdvancedSettings from './components/AdvancedSettings.vue'
+ import RhasspyLog from './components/RhasspyLog.vue'
 
  import ProfileDefaults from '@/assets/ProfileDefaults'
 
@@ -123,7 +130,8 @@
          TrainLanguageModel,
          TranscribeSpeech,
          ProfileSettings,
-         AdvancedSettings
+         AdvancedSettings,
+         RhasspyLog
      },
 
      data: function() {
@@ -141,7 +149,9 @@
              restarting: false,
              downloading: false,
 
-             unknownWords: []
+             unknownWords: [],
+
+             rhasspyLog: ''
          }
      },
 
@@ -269,6 +279,9 @@
          this.getProfiles()
          this.getDefaults()
          this.getUnknownWords()
+         this.$options.sockets.onmessage = function(event) {
+             this.rhasspyLog = event.data + '\n' + this.rhasspyLog
+         }
      }
  }
 </script>
