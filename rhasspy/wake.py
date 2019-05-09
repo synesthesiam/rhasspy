@@ -315,7 +315,9 @@ class SnowboyWakeListener(RhasspyActor):
 
             self.model_name = self.profile.get("wake.snowboy.model")
             model_path = os.path.realpath(self.profile.read_path(self.model_name))
-            assert os.path.exists(model_path), f"Can't find snowboy model file (expected at {model_path})"
+            assert os.path.exists(
+                model_path
+            ), f"Can't find snowboy model file (expected at {model_path})"
 
             sensitivity = float(self.profile.get("wake.snowboy.sensitivity", 0.5))
             audio_gain = float(self.profile.get("wake.snowboy.audio_gain", 1.0))
@@ -349,69 +351,90 @@ class PreciseWakeListener(RhasspyActor):
     """Listens for a wake word using Mycroft Precise."""
 
     def __init__(self) -> None:
+        from precise_runner import ReadWriteStream
+
         RhasspyActor.__init__(self)
         self.receivers: List[RhasspyActor] = []
-        self.stream: Optional[ByteStream] = None
+        self.stream: Optional[ReadWriteStream] = None
         self.engine = None
         self.runner = None
-        self.prediction_event = threading.Event()
+        self.prediction_sem = threading.Semaphore()
         self.detected: bool = False
+        self.audio_info: Dict[Any, Any] = {}
 
     def to_started(self, from_state: str) -> None:
         self.recorder = self.config["recorder"]
         self.preload = self.config.get("preload", False)
-        self.not_detected: bool = self.config.get("not_detected", False)
+        self.send_not_detected: bool = self.config.get("not_detected", False)
         self.chunk_size: int = self.profile.get("wake.precise.chunk_size", 2048)
         self.chunk_delay: float = self.profile.get("wake.precise.chunk_delay", 0)
+
         if self.preload:
-            self.load_runner()
+            try:
+                self.load_runner()
+            except:
+                pass
 
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, ListenForWakeWord):
-            self.load_runner()
-            self.receivers.append(message.receiver or sender)
-            self.transition("listening")
-            if message.record:
-                self.send(self.recorder, StartStreaming(self.myAddress))
+            try:
+                self.load_runner()
+                self.receivers.append(message.receiver or sender)
+                self.transition("listening")
+                if message.record:
+                    self.send(self.recorder, StartStreaming(self.myAddress))
+            except Exception as e:
+                self._logger.exception("in_loaded")
 
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
-        if isinstance(message, AudioData):
-            audio_data = message.data
-            chunk = audio_data[: self.chunk_size]
-            detected = False
-            while len(chunk) > 0:
-                self.process_data(chunk)
-                time.sleep(self.chunk_delay)
-                if self.detected:
-                    break
+        try:
+            if isinstance(message, AudioData):
+                self.prediction_sem = threading.Semaphore()
+                self.audio_info = message.info
+                self.detected = False
 
-                audio_data = audio_data[self.chunk_size :]
+                audio_data = message.data
                 chunk = audio_data[: self.chunk_size]
+                num_chunks = 0
 
-            if self.detected:
+                while len(chunk) > 0:
+                    self.stream.write(chunk)
+                    audio_data = audio_data[self.chunk_size :]
+                    chunk = audio_data[: self.chunk_size]
+                    num_chunks += 1
+
+                if self.send_not_detected:
+                    # Wait for all chunks to finish processing
+                    for i in range(num_chunks):
+                        self.prediction_sem.acquire(timeout=0.1)
+
+                    # Wait a little bit for the precise engine to finish processing
+                    time.sleep(self.chunk_delay)
+                    if not self.detected:
+                        # Not detected
+                        not_detected_event = WakeWordNotDetected(
+                            self.model_name, audio_data_info=message.info
+                        )
+                        for receiver in self.receivers:
+                            self.send(receiver, not_detected_event)
+            elif isinstance(message, StopListeningForWakeWord):
+                self.receivers.remove(message.receiver or sender)
+                if len(self.receivers) == 0:
+                    if message.record:
+                        self.send(self.recorder, StopStreaming(self.myAddress))
+                    self.transition("loaded")
+            elif isinstance(message, str):
                 # Detected
                 self._logger.debug("Hotword detected (%s)" % self.model_name)
                 detected_event = WakeWordDetected(
-                    self.model_name, audio_data_info=message.info
+                    self.model_name, audio_data_info=self.audio_info
                 )
                 for receiver in self.receivers:
                     self.send(receiver, detected_event)
-                self.detected = False  # reset
-            elif self.not_detected:
-                # Not detected
-                not_detected_event = WakeWordNotDetected(
-                    self.model_name, audio_data_info=message.info
-                )
-                for receiver in self.receivers:
-                    self.send(receiver, not_detected_event)
-        elif isinstance(message, StopListeningForWakeWord):
-            self.receivers.remove(message.receiver or sender)
-            if len(self.receivers) == 0:
-                if message.record:
-                    self.send(self.recorder, StopStreaming(self.myAddress))
-                self.transition("loaded")
+        except Exception as e:
+            self._logger.exception("in_listening")
 
     def to_stopped(self, from_state: str) -> None:
         if self.stream is not None:
@@ -422,20 +445,15 @@ class PreciseWakeListener(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def process_data(self, data: bytes) -> None:
-        assert self.stream is not None
-        self.stream.write(data)
-        self.prediction_event.wait()
-
-    # -------------------------------------------------------------------------
-
     def load_runner(self) -> None:
         if self.engine is None:
             from precise_runner import PreciseEngine
 
             self.model_name = self.profile.get("wake.precise.model")
             self.model_path = self.profile.read_path(self.model_name)
-            self.engine_path = self.profile.get("wake.precise.engine_path")
+            self.engine_path = os.path.expandvars(
+                self.profile.get("wake.precise.engine_path")
+            )
 
             self._logger.debug(f"Loading Precise engine at {self.engine_path}")
             self.engine = PreciseEngine(
@@ -443,26 +461,27 @@ class PreciseWakeListener(RhasspyActor):
             )
 
         if self.runner is None:
-            from precise_runner import PreciseRunner
+            from precise_runner import PreciseRunner, ReadWriteStream
 
-            self.stream = ByteStream()
+            self.stream = ReadWriteStream()
 
             sensitivity = float(self.profile.get("wake.precise.sensitivity", 0.5))
             trigger_level = int(self.profile.get("wake.precise.trigger_level", 3))
 
             def on_prediction(prob: float) -> None:
-                self.prediction_event.set()
+                self.prediction_sem.release()
 
             def on_activation() -> None:
                 self.detected = True
+                self.send(self.myAddress, "activated")
 
             self.runner = PreciseRunner(
                 self.engine,
                 stream=self.stream,
                 sensitivity=sensitivity,
                 trigger_level=trigger_level,
-                on_prediction=on_prediction,
                 on_activation=on_activation,
+                on_prediction=on_prediction,
             )
 
             assert self.runner is not None

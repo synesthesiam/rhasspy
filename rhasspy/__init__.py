@@ -796,9 +796,11 @@ def test_wake(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
         start_time = time.time()
         with system.private() as private:
-            private.tell(
-                test_actor, (profile, wake_system, args.threads, all_wav_paths)
-            )
+            private.tell(test_actor, ConfigureEvent(profile, transitions=False))
+            result = private.listen()
+            assert isinstance(result, Configured)
+
+            private.tell(test_actor, (wake_system, args.threads, all_wav_paths))
 
             # Collect WAV paths that had a positive detection
             detected_paths = private.listen()
@@ -862,17 +864,17 @@ def test_wake(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 class TestWakeActor(RhasspyActor):
     def __init__(self):
-        super().__init__()
+        RhasspyActor.__init__(self)
         self.actors: List[RhasspyActor] = []
         self.wav_paths: List[str] = []
         self.wav_paths_left: List[str] = []
         self.detected_paths: Set[str] = set()
 
-    def receiveMessage(self, message: Any, sender: RhasspyActor):
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, tuple):
             # Start up
             self.parent = sender
-            self.profile, wake_system, num_actors, self.wav_paths = message
+            wake_system, num_actors, self.wav_paths = message
             self.wav_paths_left = list(self.wav_paths)
 
             # Create actors
@@ -889,7 +891,11 @@ class TestWakeActor(RhasspyActor):
                         not_detected=True,
                     ),
                 )
-        elif isinstance(message, Configured):
+
+            self.transition("loaded")
+
+    def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
+        if isinstance(message, Configured):
             self.send(sender, ListenForWakeWord())
         elif isinstance(message, StartStreaming):
             if len(self.wav_paths) > 0:
@@ -899,9 +905,11 @@ class TestWakeActor(RhasspyActor):
             wav_path = message.audio_data_info["path"]
             # print('!', end='', flush=True)
             self.detected_paths.add(wav_path)
-            self.wav_paths_left.remove(wav_path)
-            if len(self.wav_paths) > 0:
-                self.send_random_wav(sender)
+            if wav_path in self.wav_paths_left:
+                self.wav_paths_left.remove(wav_path)
+
+                if len(self.wav_paths) > 0:
+                    self.send_random_wav(sender)
 
         elif isinstance(message, WakeWordNotDetected):
             # Not detected
