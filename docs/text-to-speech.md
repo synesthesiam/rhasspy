@@ -2,6 +2,15 @@
 
 After you voice command has been [handled](intent-handling.md), it's common to produce speech as a response back to the user. Rhasspy has support for several text to speech systems which, importantly, can be played through any of the [audio output](audio-output.md) systems.
 
+The following table summarizes language support for the various text to speech systems:
+
+| System                               | en       | de       | es       | fr       | it       | nl       | ru       | el       | hi       | zh       | vi       | pt       |
+| ------                               | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  |
+| [espeak](text-to-speech.md#espeak)   | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |
+| [flite](text-to-speech.md#flite)     | &#x2713; |          |          |          |          |          |          |          | &#x2713; |          |          |          |
+| [picotts](text-to-speech.md#picotts) | &#x2713; |          |          |          |          |          |          |          |          |          |          |          |
+| [marytts](text-to-speech.md#marytts) | &#x2713; | &#x2713; |          | &#x2713; | &#x2713; |          | &#x2713; |          |          |          |          |          |
+
 ## eSpeak
 
 Uses [eSpeak](http://espeak.sourceforge.net) to speak sentences. This is the default text to speech system and, while it sounds robotic, has the widest support for different languages.

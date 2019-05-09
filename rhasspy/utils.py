@@ -25,7 +25,9 @@ class FunctionLoggingHandler(logging.Handler):
     def __init__(self, func):
         logging.Handler.__init__(self)
         self.func = func
-        self.formatter = logging.Formatter("[%(levelname)s:%(relativeCreated)d] %(name)s: %(message)s")
+        self.formatter = logging.Formatter(
+            "[%(levelname)s:%(relativeCreated)d] %(name)s: %(message)s"
+        )
 
     def handle(self, record):
         self.func(self.formatter.format(record))
@@ -99,44 +101,6 @@ def recursive_remove(base_dict: Dict[Any, Any], new_dict: Dict[Any, Any]) -> Non
                     del new_dict[k]
             elif v == base_dict[k]:
                 del new_dict[k]
-
-
-# -----------------------------------------------------------------------------
-
-
-# def extract_entities(phrase: str) -> Tuple[str, List[SentenceEntity]]:
-#     """Extracts embedded entity markings from a phrase.
-#     Returns the phrase with entities removed and a list of entities.
-
-#     The format [some text](entity name) is used to mark entities in a training phrase.
-
-#     If the synonym format [some text](entity name:something else) is used, then
-#     "something else" will be substituted for "some text".
-#     """
-#     entities = []
-#     removed_chars = 0
-
-#     def match(m) -> str:
-#         nonlocal removed_chars
-#         value, entity = m.group(1), m.group(2)
-#         replacement = value
-#         start = m.start(0) - removed_chars
-#         removed_chars += 1 + len(entity) + 3  # 1 for [, 3 for ], (, and )
-
-#         # Replace value with entity synonym, if present.
-#         entity_parts = entity.split(":", maxsplit=1)
-#         if len(entity_parts) > 1:
-#             entity = entity_parts[0]
-#             value = entity_parts[1]
-
-#         end = m.end(0) - removed_chars
-#         entities.append(SentenceEntity(entity, value, replacement, start, end))
-#         return replacement
-
-#     # [text](entity label) => text
-#     phrase = re.sub(r"\[([^]]+)\]\(([^)]+)\)", match, phrase)
-
-#     return phrase, entities
 
 
 # -----------------------------------------------------------------------------

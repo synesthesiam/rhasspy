@@ -225,14 +225,19 @@ class KaldiDecoder(RhasspyActor):
         self.kaldi_dir = os.path.expandvars(
             self.profile.get("speech_to_text.kaldi.kaldi_dir", "/opt/kaldi")
         )
-        self.model_dir = self.profile.read_path(
-            self.profile.get("speech_to_text.kaldi.model_dir", "model")
+
+        model_dir_name = self.profile.get(
+            "training.speech_to_text.kaldi.model_dir",
+            self.profile.get("speech_to_text.kaldi.model_dir", "model"),
         )
+
+        self.model_dir = self.profile.read_path(model_dir_name)
+
         self.graph_dir = os.path.join(
             self.model_dir, self.profile.get("speech_to_text.kaldi.graph_dir", "graph")
         )
         self.decode_command = [
-            os.path.join(self.model_dir, "decode.sh"),
+            self.profile.read_path(model_dir_name, "decode.sh"),
             self.kaldi_dir,
             self.model_dir,
             self.graph_dir,
@@ -274,7 +279,14 @@ class KaldiDecoder(RhasspyActor):
                 command = self.decode_command + [wav_file.name]
                 self._logger.debug(command)
 
-                return subprocess.check_output(command).decode()
+                try:
+                    return subprocess.check_output(
+                        command, stderr=subprocess.STDOUT
+                    ).decode()
+                except subprocess.CalledProcessError as e:
+                    output = e.output.decode()
+                    self._logger.error(output)
+                    raise Exception(output)
 
         except Exception as e:
             self._logger.exception("transcribe_wav")

@@ -5,7 +5,7 @@ It can also do [text to speech](text-to-speech.md).
 
 ## ALSA
 
-Plays WAV files on the local device by calling the `aplay` command.
+Plays WAV files on the local device by calling the `aplay` command. Should work with ALSA and PulseAudio.
 
 Add to your [profile](profiles.md):
 

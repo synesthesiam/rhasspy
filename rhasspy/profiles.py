@@ -57,11 +57,14 @@ class Profile:
                 self.json = json.load(defaults_file)
 
         # Overlay with profile
+        self.json_path = self.read_path("profile.json")
         if self.layers in ["all", "profile"]:
-            self.json_path = self.read_path("profile.json")
-            if os.path.exists(self.json_path):
-                with open(self.json_path, "r") as profile_file:
-                    recursive_update(self.json, json.load(profile_file))
+            # Read in reverse order so user profile overrides system
+            for profiles_dir in self.profiles_dirs[::-1]:
+                json_path = os.path.join(profiles_dir, self.name, "profile.json")
+                if os.path.exists(json_path):
+                    with open(json_path, "r") as profile_file:
+                        recursive_update(self.json, json.load(profile_file))
 
     def read_path(self, *path_parts: str) -> str:
         for profiles_dir in self.profiles_dirs:

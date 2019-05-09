@@ -507,14 +507,15 @@ class KaldiSpeechTrainer(PocketsphinxSpeechTrainer):
                 self.profile.get("speech_to_text.kaldi.kaldi_dir", "/opt/kaldi"),
             )
         )
-        self.model_dir = self.profile.read_path(
-            self.profile.get(
-                "training.speech_to_text.kaldi.model_dir",
-                self.profile.get("speech_to_text.kaldi.model_dir", "model"),
-            )
+
+        model_dir_name = self.profile.get(
+            "training.speech_to_text.kaldi.model_dir",
+            self.profile.get("speech_to_text.kaldi.model_dir", "model"),
         )
+
+        self.model_dir = self.profile.read_path(model_dir_name)
         self.train_command = [
-            os.path.join(self.model_dir, "train.sh"),
+            self.profile.read_path(model_dir_name, "train.sh"),
             self.kaldi_dir,
             self.model_dir,
         ]
@@ -546,9 +547,17 @@ class KaldiSpeechTrainer(PocketsphinxSpeechTrainer):
             )
         )
 
+        # Run training shell script
         command = self.train_command + [dictionary_path, lm_path]
         self._logger.debug(command)
-        subprocess.check_call(command)
+
+        try:
+            output = subprocess.check_output(command, stderr=subprocess.STDOUT).decode()
+            self._logger.debug(output)
+        except subprocess.CalledProcessError as e:
+            output = e.output.decode()
+            self._logger.error(output)
+            raise Exception(output)
 
 
 # -----------------------------------------------------------------------------

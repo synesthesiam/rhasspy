@@ -4,6 +4,14 @@ The typical workflow for interacting with a voice assistant is to first activate
 
 You can also wake Rhasspy up using the [HTTP API](usage.md#http-api) by POST-ing to `/api/listen-for-command`. Rhasspy will immediately wake up and [start listening](command-listener.md) for a voice command.
 
+The following table summarizes the key characteristics of each wake word system:
+
+| System                                    | Performance | Requires Training | Requires Online Sign Up |
+| ------                                    | ----------- | ----------------- | ----------------------- |
+| [pocketsphinx](wake-word.md#pocketsphinx) | poor        | no                | no                      |
+| [precise](wake-word.md#mycroft-precise)   | moderate    | yes, offline      | no                      |
+| [snowboy](wake-word.md#snowboy)           | good        | yes, online       | yes                     |
+
 ## Pocketsphinx
 
 Listens for a [keyphrase](https://cmusphinx.github.io/wiki/tutoriallm/#using-keyword-lists-with-pocketsphinx) using [pocketsphinx](https://github.com/cmusphinx/pocketsphinx). This is the most flexible wake system, but has the worst performance in terms of false positives/negatives.

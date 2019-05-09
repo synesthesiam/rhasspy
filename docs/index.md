@@ -40,6 +40,7 @@ Rhasspy currently supports the following languages:
 * English (`en`)
 * German (`de`)
 * Spanish (`es`)
+* French (`fr`)
 * Italian (`it`)
 * Dutch (`nl`)
 * Russian (`ru`)

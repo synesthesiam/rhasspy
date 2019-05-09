@@ -178,8 +178,10 @@ def api_profiles() -> Response:
 
     downloaded = True
     try:
-        subprocess.check_call(check_cmd)
-    except:
+        output = subprocess.check_output(check_cmd, stderr=subprocess.STDOUT).decode()
+    except subprocess.CalledProcessError as e:
+        output = e.output.decode()
+        logger.warning(output)
         downloaded = False
 
     return jsonify(
@@ -211,11 +213,13 @@ def api_download_profile() -> str:
     logger.debug(download_cmd)
 
     try:
-        output = subprocess.check_output(download_cmd, stderr=subprocess.STDOUT)
+        output = subprocess.check_output(
+            download_cmd, stderr=subprocess.STDOUT
+        ).decode()
     except subprocess.CalledProcessError as e:
-        logging.exception("download profile")
+        logger.exception("download profile")
         output = e.output.decode()
-        logging.debug(output)
+        logger.error(output)
         raise Exception(output)
 
     return output
@@ -300,6 +304,8 @@ def api_profile() -> Union[str, Response]:
         #     if not v.validate(profile_dict):
         #         print(json.dumps(profile_dict, indent=4))
         #         raise Exception(str(v._errors[0].info))
+
+        recursive_remove(core.defaults, profile_json)
 
         profile_path = os.path.abspath(core.profile.write_path("profile.json"))
         with open(profile_path, "w") as profile_file:
