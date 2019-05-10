@@ -359,6 +359,7 @@ class PreciseWakeListener(RhasspyActor):
         self.engine = None
         self.runner = None
         self.prediction_sem = threading.Semaphore()
+        self.audio_buffer: bytes = bytes()
         self.detected: bool = False
         self.audio_info: Dict[Any, Any] = {}
 
@@ -391,34 +392,32 @@ class PreciseWakeListener(RhasspyActor):
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
         try:
             if isinstance(message, AudioData):
-                self.prediction_sem = threading.Semaphore()
                 self.audio_info = message.info
                 self.detected = False
+                self.audio_buffer += message.data
+                num_chunks = len(self.audio_buffer) // self.chunk_size
 
-                audio_data = message.data
-                chunk = audio_data[: self.chunk_size]
-                num_chunks = 0
-
-                while len(chunk) > 0:
-                    self.stream.write(chunk)
-                    audio_data = audio_data[self.chunk_size :]
-                    chunk = audio_data[: self.chunk_size]
-                    num_chunks += 1
-
-                if self.send_not_detected:
-                    # Wait for all chunks to finish processing
+                if num_chunks > 0:
+                    self.prediction_sem = threading.Semaphore()
                     for i in range(num_chunks):
-                        self.prediction_sem.acquire(timeout=0.1)
+                        chunk = self.audio_buffer[: self.chunk_size]
+                        self.stream.write(chunk)
+                        self.audio_buffer = self.audio_buffer[self.chunk_size :]
 
-                    # Wait a little bit for the precise engine to finish processing
-                    time.sleep(self.chunk_delay)
-                    if not self.detected:
-                        # Not detected
-                        not_detected_event = WakeWordNotDetected(
-                            self.model_name, audio_data_info=message.info
-                        )
-                        for receiver in self.receivers:
-                            self.send(receiver, not_detected_event)
+                    if self.send_not_detected:
+                        # Wait for all chunks to finish processing
+                        for i in range(num_chunks):
+                            self.prediction_sem.acquire(timeout=0.1)
+
+                        # Wait a little bit for the precise engine to finish processing
+                        time.sleep(self.chunk_delay)
+                        if not self.detected:
+                            # Not detected
+                            not_detected_event = WakeWordNotDetected(
+                                self.model_name, audio_data_info=message.info
+                            )
+                            for receiver in self.receivers:
+                                self.send(receiver, not_detected_event)
             elif isinstance(message, StopListeningForWakeWord):
                 self.receivers.remove(message.receiver or sender)
                 if len(self.receivers) == 0:
@@ -437,8 +436,7 @@ class PreciseWakeListener(RhasspyActor):
             self._logger.exception("in_listening")
 
     def to_stopped(self, from_state: str) -> None:
-        if self.stream is not None:
-            self.stream.close()
+        self.stream = None
 
         if self.runner is not None:
             self.runner.stop()

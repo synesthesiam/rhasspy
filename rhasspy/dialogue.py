@@ -280,7 +280,7 @@ class DialogueManager(RhasspyActor):
     def in_recognizing(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, IntentRecognized):
             # Handle intent
-            self._logger.debug(intent)
+            self._logger.debug(message.intent)
             if message.handle:
                 # Forward to Home Assistant
                 self.send(self.handler, HandleIntent(message.intent))

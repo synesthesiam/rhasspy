@@ -216,7 +216,7 @@
             "chunk_delay": 0.005,
             "chunk_size": 2048,
             "engine_path": "precise-engine",
-            "model": "okay-rhasspy.pb",
+            "model": "hey-mycroft-2.pb",
             "sensitivity": 0.5,
             "trigger_level": 3
         },
