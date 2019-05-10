@@ -6,7 +6,8 @@ Rhasspy was created and is currently maintained by [Michael Hansen](https://syne
 
 Special thanks to:
 
-* [Romkabouter](https://community.home-assistant.io/u/Romkabouter)
+* [Romkabouter](https://github.com/Romkabouter)
+* [koenvervloesem](https://github.com/koenvervloesem)
 * [FunkyBoT](https://community.home-assistant.io/u/FunkyBoT)
 * [S_n_Nguy_n](https://community.home-assistant.io/u/S_n_Nguy_n)
 
@@ -15,6 +16,7 @@ Special thanks to:
 The following tools/libraries help to support Rhasspy:
 
 * [eSpeak](http://espeak.sourceforge.net) (text to speech)
+* [flair](http://github.com/zalandoresearch/flair) (intent recognition)
 * [Flask](http://flask.pocoo.org) (web server)
 * [flite](http://www.festvox.org/flite) (text to speech)
 * [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy) (fuzzy string matching)
