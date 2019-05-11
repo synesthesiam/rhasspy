@@ -5,8 +5,10 @@ services:
     network_mode: "host"
     environment:
       - RHASSPY_PROFILES=/profiles
+      - RHASSPY_TTS_DIR=/tts
     volumes:
       - ./rhasspy/profiles:/profiles
+      - ./rhasspy/tts:/tts
     devices:
       - /dev/snd:/dev/snd
     ports:

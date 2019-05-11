@@ -26,6 +26,7 @@ fi
 
 # Path to profiles
 export RHASSPY_PROFILES="$RHASSPY_APP/profiles:$RHASSPY_RUN/profiles:$RHASSPY_PROFILES"
+export RHASSPY_TTS_DIR="/tts"
 
 # External command-line arguments
 export RHASSPY_ARGS="$@"
