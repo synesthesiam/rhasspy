@@ -243,7 +243,7 @@ class HermesMqtt(RhasspyActor):
                 "input": intent.get("text", ""),
                 "intent": {
                     "intentName": intent_name,
-                    "probability": pydash.get(intent, "intent.confidence", 1),
+                    "confidenceScore": pydash.get(intent, "intent.confidence", 1),
                 },
                 "slots": [
                     {
