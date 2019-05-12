@@ -11,6 +11,7 @@ from .profiles import Profile
 from .audio_player import PlayWavData, WavPlayed
 from google.cloud import texttospeech
 import hashlib
+import socket
 
 # -----------------------------------------------------------------------------
 
@@ -280,7 +281,7 @@ class CommandSentenceSpeaker(RhasspyActor):
 # -----------------------------------------------------------------------------
 
 class GoogleWaveNetSentenceSpeaker(RhasspyActor):
-    def to_started(self, from_state: str) -> None:    
+    def to_started(self, from_state: str) -> None:  
         os.environ["RHASSPY_WAVENET_DIR"] = os.path.join(os.environ["RHASSPY_TTS_DIR"],"googlewavenet")
         if not os.path.exists(os.environ["RHASSPY_WAVENET_DIR"]):
             os.mkdir(os.environ["RHASSPY_WAVENET_DIR"])
@@ -292,7 +293,6 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
         self.gender = self.profile.get("text_to_speech.wavenet.gender", "FEMALE")
         self.samplerate = self.profile.get("text_to_speech.wavenet.samplerate", 22050)
         self.language_code = self.profile.get("text_to_speech.wavenet.language_code", "en-US")
-
         self.player: RhasspyActor = self.config["player"]
         self.receiver: Optional[RhasspyActor] = None
         self.transition("ready")
@@ -315,7 +315,7 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
         try:
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"]=os.path.join(os.environ["RHASSPY_WAVENET_DIR"], "credentials.json")
             m = hashlib.md5()
-            m.update("_".join([sentence,self.language_code + "-" + self.wavenet_voice, str(self.samplerate), self.language_code ]).encode('utf-8'))
+            m.update("_".join([sentence,self.language_code + "-" + self.wavenet_voice, self.gender, str(self.samplerate), self.language_code ]).encode('utf-8'))
             cachefile=os.path.join(os.environ["RHASSPY_WAVENET_CACHE_DIR"], m.hexdigest()+".wav")
             if os.path.isfile(cachefile) :
                 with open(cachefile, mode='rb') as file:
@@ -323,26 +323,46 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
                 self._logger.debug("Reading from cache file")            
                 return fileContent
             else: 
-                self._logger.debug("Calling Google Wavenet:")
-                self._logger.debug("Language code: "+self.language_code)
-                self._logger.debug("Voice: "+self.wavenet_voice) 
-                self._logger.debug("Gender: "+self.gender) 
-                self._logger.debug("Samplerate: "+str(self.samplerate)) 
-                client = texttospeech.TextToSpeechClient()
-                synthesis_input = texttospeech.types.SynthesisInput(text=sentence)
-                voice = texttospeech.types.VoiceSelectionParams(
-                    language_code=self.language_code,
-                    name=self.language_code + "-" + self.wavenet_voice,
-                    ssml_gender=self.gender)
-                audio_config = texttospeech.types.AudioConfig(
-                    audio_encoding="LINEAR16",
-                    sample_rate_hertz=self.samplerate)
+                if self.is_connected():
+                    self._logger.debug("Calling Google Wavenet:")
+                    self._logger.debug("Language code: "+self.language_code)
+                    self._logger.debug("Voice: "+self.wavenet_voice) 
+                    self._logger.debug("Gender: "+self.gender) 
+                    self._logger.debug("Samplerate: "+str(self.samplerate)) 
+                    client = texttospeech.TextToSpeechClient()
+                    synthesis_input = texttospeech.types.SynthesisInput(text=sentence)
+                    voice = texttospeech.types.VoiceSelectionParams(
+                        language_code=self.language_code,
+                        name=self.language_code + "-" + self.wavenet_voice,
+                        ssml_gender=self.gender)
+                    audio_config = texttospeech.types.AudioConfig(
+                        audio_encoding="LINEAR16",
+                        sample_rate_hertz=self.samplerate)
 
-                response = client.synthesize_speech(synthesis_input, voice, audio_config)
-                with open(cachefile, 'wb') as out:
-                    out.write(response.audio_content)
-
-            return response.audio_content
+                    response = client.synthesize_speech(synthesis_input, voice, audio_config)
+                    with open(cachefile, 'wb') as out:
+                        out.write(response.audio_content)
+                    return response.audio_content
+                else:
+                    #fallback to espeak when no cache and offline
+                    self.voice = self.profile.get(
+                        "text_to_speech.espeak.voice", None
+                    ) or self.profile.get("language", None)
+                    espeak_cmd = ["espeak"]
+                    if self.voice is not None:
+                        espeak_cmd.extend(["-v", str(self.voice)])
+                    espeak_cmd.append("--stdout")
+                    espeak_cmd.append(sentence)
+                    self._logger.debug(espeak_cmd)
+                    return subprocess.check_output(espeak_cmd)
         except:
             self._logger.exception("speak")
             return bytes()
+
+    def is_connected(self):
+        try:
+            socket.create_connection(("www.google.com", 80))
+            return True
+        except OSError:
+            pass
+        return False
