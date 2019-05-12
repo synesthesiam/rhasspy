@@ -281,7 +281,7 @@ class RhasspyCore:
     def shutdown(self) -> None:
         # Clear environment variables
         rhasspy_vars = [v for v in os.environ
-                        if v.startswith("RHASSPY")]
+                        if v.startswith("RHASSPY") and v != "RHASSPY_TTS_DIR"]
 
         for v in rhasspy_vars:
             del os.environ[v]

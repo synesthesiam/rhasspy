@@ -331,7 +331,7 @@
         "type": "dict",
         "schema": {
             "system": { "type": "string", "required": true,
-                        "allowed": ["dummy", "espeak", "marytts", "flite", "picotts", "command"] },
+                        "allowed": ["dummy", "espeak", "marytts", "flite", "picotts", "command", "wavenet"] },
 
             "phoneme_examples": { "type": "string" },
             "espeak": {
@@ -369,6 +369,17 @@
                 "schema": {
                     "program": { "type": "string" },
                     "arguments": { "type": "list", "schema": { "type": "string" } }
+                }
+            },
+
+            "wavenet": {
+                "type": "dict",
+                "schema": {
+                    "url": { "type": "string", "required": true },
+                    "wavenet_voice": { "type": "string" },
+                    "gender": { "type": "string" },
+                    "samplerate": { "type": "integer" },
+                    "language_code": { "type": "string" }
                 }
             }
         }

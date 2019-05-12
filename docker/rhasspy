@@ -16,5 +16,6 @@ if [[ ! -d "$RHASSPY_RUN" ]]; then
 fi
 
 export RHASSPY_PROFILES="$RHASSPY_APP/profiles:$RHASSPY_RUN/profiles:$RHASSPY_PROFILES"
+export RHASSPY_TTS_DIR="$RHASSPY_RUN/tts"
 PYTHONPATH="$DIR" python3 -m rhasspy "$@"
 

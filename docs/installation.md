@@ -24,6 +24,8 @@ Next, start the [Rhasspy Docker image](https://hub.docker.com/r/synesthesiam/rha
           --restart unless-stopped \
           -e RHASSPY_PROFILES=/profiles \
           -v "$HOME/.config/rhasspy/profiles:/profiles" \
+          -e RHASSPY_TTS_DIR=/tts \
+          -v "$HOME/.config/rhasspy/tts:/tts" \
           --device /dev/snd:/dev/snd \
           synesthesiam/rhasspy-server:latest
           
@@ -38,8 +40,10 @@ If you're using [docker compose](https://docs.docker.com/compose/), add the foll
         restart: unless-stopped
         environment:
             RHASSPY_PROFILES: "/profiles"
+            RHASSPY_TTS_DIR: "/tts"
         volumes:
             - "$HOME/.config/rhasspy/profiles:/profiles"
+            - "$HOME/.config/rhasspy/tts:/tts"
         ports:
             - "12101:12101"
         devices:

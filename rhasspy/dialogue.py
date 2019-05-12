@@ -969,6 +969,7 @@ class DialogueManager(RhasspyActor):
             "flite",
             "picotts",
             "command",
+            "wavenet"
         ], ("Invalid text to speech system: %s" % system)
 
         if system == "espeak":
@@ -996,6 +997,11 @@ class DialogueManager(RhasspyActor):
             from .tts import CommandSentenceSpeaker
 
             return CommandSentenceSpeaker
+        elif system == "wavenet":
+            # Use WaveNet text-to-speech system
+            from .tts import GoogleWaveNetSentenceSpeaker
+
+            return GoogleWaveNetSentenceSpeaker
         else:
             # Use dummy as a fallback
             from .tts import DummySentenceSpeaker

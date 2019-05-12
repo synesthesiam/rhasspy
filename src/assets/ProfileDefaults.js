@@ -148,6 +148,13 @@ const profileDefaults = {
         "marytts": {
             "url": "http://localhost:59125"
         },
+        "wavenet": {
+            "url": "https://texttospeech.googleapis.com/v1/text:synthesize",
+            "wavenet_voice": "Wavenet-C",
+            "gender": "FEMALE",
+            "samplerate": 22050,
+            "language_code": "en-US"
+        },
         "flite": {
             "voice": "kal16"
         },

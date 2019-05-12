@@ -15,6 +15,8 @@ To run Rhasspy using Docker:
           --restart unless-stopped \
           -e RHASSPY_PROFILES=/profiles \
           -v "$HOME/.config/rhasspy/profiles:/profiles" \
+          -e RHASSPY_TTS_DIR=/tts \
+          -v "$HOME/.config/rhasspy/tts:/tts" \
           --device /dev/snd:/dev/snd \
           synesthesiam/rhasspy-server:latest
           

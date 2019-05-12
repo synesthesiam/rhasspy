@@ -11,3 +11,4 @@ adapt-parser
 precise-runner
 cerberus
 https://github.com/Danesprite/pyjsgf/archive/v1.5.1.tar.gz
+google-cloud-texttospeech

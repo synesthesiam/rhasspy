@@ -7,6 +7,7 @@ export LANG=C.UTF-8
 DIR="$( cd "$( dirname "$0" )" && pwd )"
 
 export RHASSPY_PROFILES="$RHASSPY_PROFILES:$DIR/rhasspy/profiles"
+export RHASSPY_TTS_DIR="$DIR/rhasspy/tts"
 
 if [[ -z "$RHASSPY_PORT" ]]; then
     export RHASSPY_PORT=12101

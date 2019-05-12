@@ -4,8 +4,10 @@ services:
     image: synesthesiam/rhasspy-server:latest
     environment:
       - RHASSPY_PROFILES=/profiles
+      - RHASSPY_TTS_DIR=/tts
     volumes:
       - ./rhasspy/profiles:/profiles
+      - ./rhasspy/tts:/tts
     devices:
       - /dev/snd:/dev/snd
     ports:
