@@ -131,8 +131,6 @@ def start_rhasspy() -> None:
     os.environ["RHASSPY_BASE_DIR"] = os.getcwd()
     os.environ["RHASSPY_PROFILE"] = core.profile.name
     os.environ["RHASSPY_PROFILE_DIR"] = core.profile.write_dir()
-    if not os.path.exists(os.environ["RHASSPY_TTS_DIR"]):
-        os.mkdir(os.environ["RHASSPY_TTS_DIR"])
 
     # Add profile settings from the command line
     extra_settings = {}

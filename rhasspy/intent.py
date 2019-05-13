@@ -7,7 +7,7 @@ import logging
 import subprocess
 import concurrent.futures
 from urllib.parse import urljoin
-from typing import Dict, Any, Optional, Tuple, List, Set
+from typing import Dict, Any, Optional, Tuple, List, Set, Type
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -36,6 +36,47 @@ class IntentRecognized:
     def __init__(self, intent: Dict[str, Any], handle: bool = True) -> None:
         self.intent = intent
         self.handle = handle
+
+
+# -----------------------------------------------------------------------------
+
+
+def get_recognizer_class(system: str) -> Type[RhasspyActor]:
+    assert system in [
+        "dummy",
+        "fsticuffs",
+        "fuzzywuzzy",
+        "adapt",
+        "rasa",
+        "remote",
+        "flair",
+        "command",
+    ], ("Invalid intent system: %s" % system)
+
+    if system == "fsticuffs":
+        # Use OpenFST locally
+        return FsticuffsRecognizer
+    elif system == "fuzzywuzzy":
+        # Use fuzzy string matching locally
+        return FuzzyWuzzyRecognizer
+    elif system == "adapt":
+        # Use Mycroft Adapt locally
+        return AdaptIntentRecognizer
+    elif system == "rasa":
+        # Use rasaNLU remotely
+        return RasaIntentRecognizer
+    elif system == "remote":
+        # Use remote rhasspy server
+        return RemoteRecognizer
+    elif system == "flair":
+        # Use flair locally
+        return FlairRecognizer
+    elif system == "command":
+        # Use command line
+        return CommandRecognizer
+    else:
+        # Does nothing
+        return DummyIntentRecognizer
 
 
 # -----------------------------------------------------------------------------

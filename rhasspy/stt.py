@@ -5,7 +5,7 @@ import wave
 import logging
 import tempfile
 import subprocess
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Type
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -31,6 +31,31 @@ class WavTranscription:
         self.text = text
         self.confidence = confidence
         self.handle = handle
+
+
+# -----------------------------------------------------------------------------
+
+
+def get_decoder_class(system: str) -> Type[RhasspyActor]:
+    assert system in ["dummy", "pocketsphinx", "kaldi", "remote", "command"], (
+        "Invalid speech to text system: %s" % system
+    )
+
+    if system == "pocketsphinx":
+        # Use pocketsphinx locally
+        return PocketsphinxDecoder
+    elif system == "kaldi":
+        # Use kaldi locally
+        return KaldiDecoder
+    elif system == "remote":
+        # Use remote Rhasspy server
+        return RemoteDecoder
+    elif system == "command":
+        # Use external program
+        return CommandDecoder
+
+    # Use dummy decoder as a fallback
+    return DummyDecoder
 
 
 # -----------------------------------------------------------------------------

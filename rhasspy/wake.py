@@ -7,7 +7,7 @@ import re
 import time
 import subprocess
 from uuid import uuid4
-from typing import Optional, Any, List, Dict
+from typing import Optional, Any, List, Dict, Type
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -40,6 +40,39 @@ class WakeWordNotDetected:
     def __init__(self, name: str, audio_data_info: Dict[Any, Any] = {}) -> None:
         self.name = name
         self.audio_data_info = audio_data_info
+
+
+# -----------------------------------------------------------------------------
+
+
+def get_wake_class(system: str) -> Type[RhasspyActor]:
+    assert system in [
+        "dummy",
+        "pocketsphinx",
+        "hermes",
+        "snowboy",
+        "precise",
+        "command",
+    ], ("Invalid wake system: %s" % system)
+
+    if system == "pocketsphinx":
+        # Use pocketsphinx locally
+        return PocketsphinxWakeListener
+    elif system == "hermes":
+        # Use remote system via MQTT
+        return HermesWakeListener
+    elif system == "snowboy":
+        # Use snowboy locally
+        return SnowboyWakeListener
+    elif system == "precise":
+        # Use Mycroft Precise locally
+        return PreciseWakeListener
+    elif system == "command":
+        # Use command-line listener
+        return CommandWakeListener
+
+    # Use dummy listener as a fallback
+    return DummyWakeListener
 
 
 # -----------------------------------------------------------------------------

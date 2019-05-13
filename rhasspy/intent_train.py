@@ -10,7 +10,7 @@ import random
 import copy
 from urllib.parse import urljoin
 from collections import defaultdict, Counter
-from typing import Dict, List, Set, Any, Optional
+from typing import Dict, List, Set, Any, Optional, Type
 
 from .actor import RhasspyActor
 from .utils import make_sentences_by_intent, lcm, sample_sentences_by_intent
@@ -33,6 +33,64 @@ class IntentTrainingComplete:
 class IntentTrainingFailed:
     def __init__(self, reason: str) -> None:
         self.reason = reason
+
+
+# -----------------------------------------------------------------------------
+def get_intent_trainer_class(
+    trainer_system: str, recognizer_system: str = "dummy"
+) -> Type[RhasspyActor]:
+
+    assert trainer_system in [
+        "dummy",
+        "fsticuffs",
+        "fuzzywuzzy",
+        "adapt",
+        "rasa",
+        "flair",
+        "auto",
+        "command",
+    ], ("Invalid intent training system: %s" % trainer_system)
+
+    if trainer_system == "auto":
+        # Use intent recognizer system
+        if recognizer_system == "fsticuffs":
+            # Use OpenFST acceptor locally
+            return FsticuffsIntentTrainer
+        elif recognizer_system == "fuzzywuzzy":
+            # Use fuzzy string matching locally
+            return FuzzyWuzzyIntentTrainer
+        elif recognizer_system == "adapt":
+            # Use Mycroft Adapt locally
+            return AdaptIntentTrainer
+        elif recognizer_system == "flair":
+            # Use flair locally
+            return FlairIntentTrainer
+        elif recognizer_system == "rasa":
+            # Use rasaNLU remotely
+            return RasaIntentTrainer
+        elif recognizer_system == "command":
+            # Use command-line intent trainer
+            return CommandIntentTrainer
+    elif trainer_system == "fsticuffs":
+        # Use OpenFST acceptor locally
+        return FsticuffsIntentTrainer
+    elif trainer_system == "fuzzywuzzy":
+        # Use fuzzy string matching locally
+        return FuzzyWuzzyIntentTrainer
+    elif trainer_system == "adapt":
+        # Use Mycroft Adapt locally
+        return AdaptIntentTrainer
+    elif trainer_system == "rasa":
+        # Use rasaNLU remotely
+        return RasaIntentTrainer
+    elif trainer_system == "flair":
+        # Use flair RNN locally
+        return FlairIntentTrainer
+    elif trainer_system == "command":
+        # Use command-line intent trainer
+        return CommandIntentTrainer
+
+    return DummyIntentTrainer
 
 
 # -----------------------------------------------------------------------------
