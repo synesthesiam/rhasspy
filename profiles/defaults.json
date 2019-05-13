@@ -166,7 +166,14 @@
         },
         "phoneme_examples": "phoneme_examples.txt",
         "picotts": {},
-        "system": "espeak"
+        "system": "espeak",
+        "wavenet": {
+            "gender": "FEMALE",
+            "language_code": "en-US",
+            "samplerate": 22050,
+            "url": "https://texttospeech.googleapis.com/v1/text:synthesize",
+            "wavenet_voice": "Wavenet-C"
+        }
     },
     "training": {
         "dictionary_number_duplicates": true,

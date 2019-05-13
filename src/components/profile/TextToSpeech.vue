@@ -103,6 +103,57 @@
                     </div>
                 </div>
             </div>
+            <hr>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="tts-system" id="tts-system-wavenet" value="wavenet" v-model="profile.text_to_speech.system">
+                        <label class="form-check-label" for="tts-system-wavenet">
+                            Use Google Wavenet 
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="wavenet-wavenet_voice" class="col-form-label">Google Wavenet Voice</label>
+                    <div class="col">
+                        <input id="wavenet-wavenet_voice" type="text" class="form-control" v-model="profile.text_to_speech.wavenet.wavenet_voice" :disabled="profile.text_to_speech.system != 'wavenet'" placeholder="Wavenet-C">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="col-auto">
+                    <label for="wavenet-gender" class="col-form-label col">Gender</label>
+                    </div>
+                    <div class="col-auto">
+                        <select id="wavenet-gender" v-model="profile.text_to_speech.wavenet.gender">
+                        <option v-for="item in genders" :value="item">{{item}}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="wavenet-language_code" class="col-form-label">Language code (xx-XX)</label>
+                    <div class="col">
+                        <input id="wavenet-language_code" type="text" class="form-control" v-model="profile.text_to_speech.wavenet.language_code" :disabled="profile.text_to_speech.system != 'wavenet'">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="col-auto">
+                    <label for="wavenet-samplerate" class="col-form-label col">Samplerate</label>
+                    </div>
+                    <div class="col-auto">
+                        <select id="wavenet-samplerate" v-model="profile.text_to_speech.wavenet.samplerate">
+                         <option v-for="item in samplerates" :value="item">{{item}}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -112,7 +163,15 @@
      name: 'TextToSpeech',
      props: {
          profile : Object
-     }
+     },
+     data: function () {
+         return {
+             gender: 'FEMALE',
+             genders: ['FEMALE','MALE','NEUTRAL'],
+             samplerate: 22050,
+             samplerates: [8000, 11025, 16000, 22050, 44100]
+         }
+     },
  }
 </script>
 

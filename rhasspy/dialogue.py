@@ -975,6 +975,7 @@ class DialogueManager(RhasspyActor):
             "flite",
             "picotts",
             "command",
+            "wavenet",
         ], ("Invalid text to speech system: %s" % system)
 
         from .tts import (
@@ -984,6 +985,7 @@ class DialogueManager(RhasspyActor):
             CommandSentenceSpeaker,
             PicoTTSSentenceSpeaker,
             DummySentenceSpeaker,
+            GoogleWaveNetSentenceSpeaker,
         )
 
         if system == "espeak":
@@ -1001,6 +1003,12 @@ class DialogueManager(RhasspyActor):
         elif system == "command":
             # Use command-line text-to-speech system
             return CommandSentenceSpeaker
+        elif system == "wavenet":
+            # Use WaveNet text-to-speech system
+            return GoogleWaveNetSentenceSpeaker
+        else:
+            # Use dummy as a fallback
+            from .tts import DummySentenceSpeaker
 
         # Use dummy as a fallback
         return DummySentenceSpeaker
