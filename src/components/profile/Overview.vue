@@ -7,8 +7,8 @@
                     <div class="col">
                         <a href="#profile-rhasspy">MQTT</a>
                     </div>
-                    <div class="col" v-bind:class="{ 'text-success': mqtt, 'text-danger': !mqtt }">
-                        <p>{{ mqtt ? "enabled" : "DISABLED" }}</p>
+                    <div class="col badge p-2 mb-2" v-bind:class="{ 'badge-success': mqtt, 'badge-danger': !mqtt }">
+                        {{ mqtt ? "enabled" : "DISABLED" }}
                     </div>
                 </div>
             </div>
@@ -17,8 +17,8 @@
                     <div class="col">
                         <a href="#profile-handle">Intent Handling</a>
                     </div>
-                    <div class="col" v-bind:class="{ 'text-success': handle, 'text-danger': !handle }">
-                        <p>{{ handle ? profile.handle.system : "DISABLED" }}</p>
+                    <div class="col badge p-2 mb-2" v-bind:class="{ 'badge-success': handle, 'badge-danger': !handle }">
+                        {{ handle ? profile.handle.system : "DISABLED" }}
                     </div>
                 </div>
             </div>
@@ -27,8 +27,8 @@
                     <div class="col">
                         <a href="#profile-wake">Wake Word</a>
                     </div>
-                    <div class="col" v-bind:class="{ 'text-success': wake, 'text-danger': !wake }">
-                        <p>{{ wake ? profile.wake.system : "DISABLED" }}</p>
+                    <div class="col badge p-2 mb-2" v-bind:class="{ 'badge-success': wake, 'badge-danger': !wake }">
+                        {{ wake ? profile.wake.system : "DISABLED" }}
                     </div>
                 </div>
             </div>
@@ -37,8 +37,8 @@
                     <div class="col">
                         <a href="#profile-command">Voice Detection</a>
                     </div>
-                    <div class="col" v-bind:class="{ 'text-success': command, 'text-danger': !command }">
-                        <p>{{ command ? profile.command.system : "DISABLED" }}</p>
+                    <div class="col badge p-2 mb-2" v-bind:class="{ 'badge-success': command, 'badge-danger': !command }">
+                        {{ command ? profile.command.system : "DISABLED" }}
                     </div>
                 </div>
             </div>
@@ -47,8 +47,8 @@
                     <div class="col">
                         <a href="#profile-stt">Speech to Text</a>
                     </div>
-                    <div class="col" v-bind:class="{ 'text-success': stt, 'text-danger': !stt }">
-                        <p>{{ stt ? profile.speech_to_text.system : "DISABLED" }}</p>
+                    <div class="col badge p-2 mb-2" v-bind:class="{ 'badge-success': stt, 'badge-danger': !stt }">
+                        {{ stt ? profile.speech_to_text.system : "DISABLED" }}
                     </div>
                 </div>
             </div>
@@ -57,8 +57,8 @@
                     <div class="col">
                         <a href="#profile-intent">Intent Recognition</a>
                     </div>
-                    <div class="col" v-bind:class="{ 'text-success': intent, 'text-danger': !intent }">
-                        <p>{{ intent ? profile.intent.system : "DISABLED" }}</p>
+                    <div class="col badge p-2 mb-2" v-bind:class="{ 'badge-success': intent, 'badge-danger': !intent }">
+                        {{ intent ? profile.intent.system : "DISABLED" }}
                     </div>
                 </div>
             </div>
@@ -67,8 +67,8 @@
                     <div class="col">
                         <a href="#profile-tts">Text to Speech</a>
                     </div>
-                    <div class="col" v-bind:class="{ 'text-success': stt, 'text-danger': !tts }">
-                        <p>{{ tts ? profile.text_to_speech.system : "DISABLED" }}</p>
+                    <div class="col badge p-2 mb-2" v-bind:class="{ 'badge-success': stt, 'badge-danger': !tts }">
+                        {{ tts ? profile.text_to_speech.system : "DISABLED" }}
                     </div>
                 </div>
             </div>
@@ -77,8 +77,8 @@
                     <div class="col">
                         <a href="#profile-microphone">Microphone</a>
                     </div>
-                    <div class="col" v-bind:class="{ 'text-success': microphone, 'text-danger': !microphone }">
-                        <p>{{ microphone ? profile.microphone.system : "DISABLED" }}</p>
+                    <div class="col badge p-2 mb-2" v-bind:class="{ 'badge-success': microphone, 'badge-danger': !microphone }">
+                        {{ microphone ? profile.microphone.system : "DISABLED" }}
                     </div>
                 </div>
             </div>
@@ -87,8 +87,8 @@
                     <div class="col">
                         <a href="#profile-sounds">Sounds</a>
                     </div>
-                    <div class="col" v-bind:class="{ 'text-success': sounds, 'text-danger': !sounds }">
-                        <p>{{ sounds ? profile.sounds.system : "DISABLED" }}</p>
+                    <div class="col badge p-2 mb-2" v-bind:class="{ 'badge-success': sounds, 'badge-danger': !sounds }">
+                        {{ sounds ? profile.sounds.system : "DISABLED" }}
                     </div>
                 </div>
             </div>
