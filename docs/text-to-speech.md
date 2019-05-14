@@ -138,6 +138,8 @@ WAV files of each sentence are cached in `wavenet.cache_dir` in your profile dir
 
 If there are problems using the Google API (e.g., your internet connection fails), Rhasspy will switch over to the text to speech system given in `wavenet.fallback_tts`. The settings for the fallback system will be loaded from your profile as expected.
 
+Contributed by [Romkabouter](https://github.com/Romkabouter).
+
 See `rhasspy.tts.GoogleWaveNetSentenceSpeaker` for details.
 
 ## Command

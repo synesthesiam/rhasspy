@@ -317,10 +317,14 @@ class CommandSentenceSpeaker(RhasspyActor):
 
 # -----------------------------------------------------------------------------
 # Google WaveNet
+# https://cloud.google.com/text-to-speech/docs/wavenet
+#
+# Contributed by Romkabouter (https://github.com/Romkabouter)
 # -----------------------------------------------------------------------------
 
 
 class GoogleWaveNetSentenceSpeaker(RhasspyActor):
+    """Uses Google's WaveNet text to speech cloud API (online)"""
     def to_started(self, from_state: str) -> None:
         self.cache_dir = self.profile.write_dir(
             self.profile.get("text_to_speech.wavenet.cache_dir", "tts/googlewavenet")
