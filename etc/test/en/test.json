@@ -1,3 +1,20 @@
 {
-    "text": "turn on the living room lamp"
+    "text": "turn on the living room lamp",
+    "intent": {
+        "name": "ChangeLightState"
+    },
+    "entities": {
+        "name": "living room lamp",
+        "state": "on"
+    },
+    "words": {
+        "known": {
+            "word": "test",
+            "phonemes": "T EH S T"
+        },
+        "unknown": {
+            "word": "raxacoricofallipatorius",
+            "phonemes": "R AE K S AH K AO R IH K AO F AE L AH P AH T AO R IY IH S"
+        }
+    }
 }
