@@ -95,6 +95,7 @@ class PhonetisaurusPronounce(RhasspyActor):
                     message.receiver or sender, WordPronunciations(pronunciations)
                 )
             except Exception as e:
+                self._logger.exception("pronounce")
                 self.send(message.receiver or sender, PronunciationFailed(repr(e)))
         elif isinstance(message, GetWordPhonemes):
             phonemes = self.translate_phonemes(message.word)

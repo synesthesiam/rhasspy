@@ -91,3 +91,17 @@ for model_name in "${snowboy_models[@]}"; do
         curl -sSfL -o "${model_output}" "${model_url}"
     fi
 done
+
+#------------------------------------------------------------------------------
+# Mycroft Precise
+#------------------------------------------------------------------------------
+
+precise_files=("hey-mycroft-2.pb" "hey-mycroft-2.pb.params")
+for file_name in "${precise_files[@]}"; do
+    file_output="${DIR}/${file_name}"
+    if [[ ! -s "${file_output}" ]]; then
+        file_url="https://github.com/MycroftAI/precise-data/raw/models/${file_name}"
+        echo "Downloading ${file_output} (${file_url})"
+        curl -sSfL -o "${file_output}" "${file_url}"
+    fi
+done
