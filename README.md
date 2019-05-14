@@ -61,6 +61,8 @@ The table below summarizes language support across the various supporting techno
 |                        | [marytts](https://rhasspy.readthedocs.io/en/latest/text-to-speech/#marytts)           | &#x2713;               | &#x2713; | &#x2713; |          | &#x2713; | &#x2713; |          | &#x2713; |          |          |          |          |          |
 |                        | [wavenet](https://rhasspy.readthedocs.io/en/latest/text-to-speech/#google-wavenet)    |                        | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |
 
+&bull; - yes, but requires training/customization
+
 For more information, please see the [documentation](https://rhasspy.readthedocs.io/).
  
 ## Intended Audience
