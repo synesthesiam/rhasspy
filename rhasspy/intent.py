@@ -146,10 +146,12 @@ class FsticuffsRecognizer(RhasspyActor):
         self.words: Set[str] = set()
 
     def to_started(self, from_state: str) -> None:
-        try:
-            self.load_fst()
-        except:
-            self._logger.warning("to_started")
+        self.preload: bool = self.config.get("preload", False)
+        if self.preload:
+            try:
+                self.load_fst()
+            except Exception as e:
+                self._logger.warning(f"preload: {e}")
 
         self.transition("loaded")
 
@@ -224,7 +226,13 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
 
     def to_started(self, from_state: str) -> None:
         self.min_confidence = self.profile.get("intent.fuzzywuzzy.min_confidence", 0)
-        self.load_examples()
+        self.preload: bool = self.config.get("preload", False)
+        if self.preload:
+            try:
+                self.load_examples()
+            except Exception as e:
+                self._logger.warning(f"preload: {e}")
+
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
@@ -385,7 +393,13 @@ class AdaptIntentRecognizer(RhasspyActor):
         self.engine = None
 
     def to_started(self, from_state: str) -> None:
-        self.load_engine()
+        self.preload: bool = self.config.get("preload", False)
+        if self.preload:
+            try:
+                self.load_engine()
+            except Exception as e:
+                self._logger.warning(f"preload: {e}")
+
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
@@ -493,11 +507,13 @@ class FlairRecognizer(RhasspyActor):
         self.intent_map: Optional[Dict[str, str]] = None
 
     def to_started(self, from_state: str) -> None:
-        try:
-            # Pre-load models
-            self.load_models()
-        except:
-            pass
+        self.preload: bool = self.config.get("preload", False)
+        if self.preload:
+            try:
+                # Pre-load models
+                self.load_models()
+            except Exception as e:
+                self._logger.warning(f"preload: {e}")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, RecognizeIntent):

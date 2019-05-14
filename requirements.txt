@@ -12,6 +12,5 @@ adapt-parser
 precise-runner
 cerberus
 flair>=0.4.1
-download/pyjsgf-1.6.0.tar.gz
 download/jsgf2fst-0.1.0.tar.gz
 google-cloud-texttospeech

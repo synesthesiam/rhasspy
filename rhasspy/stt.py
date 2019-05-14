@@ -91,8 +91,8 @@ class PocketsphinxDecoder(RhasspyActor):
             with self._lock:
                 try:
                     self.load_decoder()
-                except:
-                    self._logger.exception("loading decoder")
+                except Exception as e:
+                    self._logger.warning(f"preload: {e}")
 
         self.transition("loaded")
 

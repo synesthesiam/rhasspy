@@ -20,11 +20,15 @@ class RhasspyTestCase(unittest.TestCase):
             do_logging=False,
         )
         self.core.profile.set("wake.system", "dummy")
-        self.core.start()
+        self.core.start(preload=False)
         self.core.train()
 
     def tearDown(self):
         self.core.shutdown()
+        try:
+            self.user_profiles_dir.cleanup()
+        except:
+            pass
 
     # -------------------------------------------------------------------------
 

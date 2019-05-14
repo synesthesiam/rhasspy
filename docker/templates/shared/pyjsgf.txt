@@ -1,4 +1,0 @@
-# Install fixed PyJSGF library
-COPY download/pyjsgf-1.5.1.tar.gz /
-RUN python3 -m pip install /pyjsgf-1.5.1.tar.gz && \
-    rm /pyjsgf-1.5.1.tar.gz
