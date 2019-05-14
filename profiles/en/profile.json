@@ -1,4 +1,20 @@
 {
     "language": "en",
-    "name": "en"
+    "name": "en",
+    "wake": {
+        "system": "snowboy"
+    },
+    "intent": {
+        "flair": {
+            "embeddings": ["news-forward", "news-backward"]
+        }
+    },
+    "text_to_speech": {
+        "wavenet": {
+            "language_code": "en-US"
+        },
+        "marytts": {
+            "locale": "en-US"
+        }
+    }
 }

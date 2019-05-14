@@ -276,7 +276,10 @@ class SnowboyWakeListener(RhasspyActor):
             "wake.snowboy.apply_frontend", False
         )
         if self.preload:
-            self.load_detector()
+            try:
+                self.load_detector()
+            except Exception as e:
+                self._logger.warning(f"preload: {e}")
 
         self.transition("loaded")
 

@@ -1,3 +1,20 @@
 {
-    "text": "schalte die wohnzimmerlampe ein"
+    "text": "schalte die wohnzimmerlampe ein",
+    "intent": {
+        "name": "ChangeLightState"
+    },
+    "entities": {
+        "name": "wohnzimmerlampe",
+        "state": "ein"
+    },
+    "words": {
+        "known": {
+            "word": "gesundheit",
+            "phonemes": "G AX S UU N T HH AY T"
+        },
+        "unknown": {
+            "word": "gesundheiten",
+            "phonemes": "G AX Z UU N T HH AY T AX N"
+        }
+    }
 }

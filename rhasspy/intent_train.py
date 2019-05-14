@@ -427,18 +427,29 @@ class FlairIntentTrainer(RhasspyActor):
         from flair.data import TaggedCorpus
         from flair.trainers import ModelTrainer
 
+        # Directory to look for downloaded embeddings
+        cache_dir = self.profile.read_path(
+            self.profile.get("intent.flair.cache_dir", "flair/cache")
+        )
+
+        os.makedirs(cache_dir, exist_ok=True)
+
+        # Directory to store generated models
         data_dir = self.profile.write_path(
-            self.profile.get("intent.flair.data_dir", "flair_data")
+            self.profile.get("intent.flair.data_dir", "flair/data")
         )
 
         if os.path.exists(data_dir):
             shutil.rmtree(data_dir)
 
+        self.embeddings = self.profile.get("intent.flair.embeddings", [])
+        assert len(self.embeddings) > 0, "No word embeddings"
+
         # Create directories to write training data to
         class_data_dir = os.path.join(data_dir, "classification")
         ner_data_dir = os.path.join(data_dir, "ner")
-        os.makedirs(class_data_dir)
-        os.makedirs(ner_data_dir)
+        os.makedirs(class_data_dir, exist_ok=True)
+        os.makedirs(ner_data_dir, exist_ok=True)
 
         # Convert FST to training data
         class_data_path = os.path.join(class_data_dir, "train.txt")
@@ -447,7 +458,7 @@ class FlairIntentTrainer(RhasspyActor):
         # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
         sentences_by_intent: Dict[str, Any] = {}
 
-        # Get sentences
+        # Get sentences for training
         do_sampling = self.profile.get("intent.flair.do_sampling", True)
         start_time = time.time()
 
@@ -546,17 +557,17 @@ class FlairIntentTrainer(RhasspyActor):
         # Start training
         max_epochs = int(self.profile.get("intent.flair.max_epochs", 100))
 
+        # Load word embeddings
+        word_embeddings = [
+            FlairEmbeddings(e, cache_directory=cache_dir) for e in self.embeddings
+        ]
+
         if len(class_sentences) > 0:
             self._logger.debug("Training intent classifier")
 
             # Random 80/10/10 split
             class_train, class_dev, class_test = self._split_data(class_sentences)
             class_corpus = TaggedCorpus(class_train, class_dev, class_test)
-
-            word_embeddings = [
-                FlairEmbeddings("news-forward"),
-                FlairEmbeddings("news-backward"),
-            ]
 
             # Intent classification
             doc_embeddings = DocumentRNNEmbeddings(

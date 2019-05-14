@@ -3,5 +3,18 @@
     "name": "de",
     "wake": {
         "system": "snowboy"
+    },
+    "intent": {
+        "flair": {
+            "embeddings": ["lm-mix-german-forward", "lm-mix-german-backward"]
+        }
+    },
+    "text_to_speech": {
+        "wavenet": {
+            "language_code": "de-DE"
+        },
+        "marytts": {
+            "locale": "de-DE"
+        }
     }
 }

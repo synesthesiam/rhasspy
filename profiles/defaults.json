@@ -54,7 +54,9 @@
             "ignore_unknown_words": true
         },
         "flair": {
-            "data_dir": "flair_data",
+            "cache_dir": "flair/cache",
+            "data_dir": "flair/data",
+            "embeddings": [],
             "max_epochs": 25,
             "do_sampling": true,
             "num_samples": 10000
