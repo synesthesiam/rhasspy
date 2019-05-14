@@ -17,7 +17,7 @@ def main():
     parser.add_argument("frequent_words", help="Path to text file with frequent words")
     parser.add_argument("dictionary", help="Path to CMU dictionary")
     parser.add_argument(
-        "frequent_phones", help="Path to eSpeak pronunciations for frequent words"
+        "--frequent_phones", help="Path to eSpeak pronunciations for frequent words"
     )
     args = parser.parse_args()
 
@@ -48,7 +48,7 @@ def main():
 
     # Get eSpeak phones
     freq_espeak = {}
-    if not os.path.exists(args.frequent_phones):
+    if (args.frequent_phones is None) or not os.path.exists(args.frequent_phones):
         # Generate
         def get_espeak(word):
             phones = (
@@ -58,6 +58,9 @@ def main():
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             freq_espeak = dict(executor.map(get_espeak, words))
+
+        if args.frequent_phones is None:
+            args.frequent_phones = os.path.splitext(args.frequent_words)[0] + ".phones"
 
         with open(args.frequent_phones, "w") as freq_phones_file:
             for word, phones in freq_espeak.items():
@@ -127,7 +130,7 @@ def main():
     # Generate candidates
     sorted_phonemes = sorted(all_phonemes)
     candidates = defaultdict(list)
-    n = 1
+    n = 0
     m = 4
     for p in all_phonemes:
         candidate_counts = [
@@ -140,14 +143,16 @@ def main():
         else:
             candidates[p] = [ec[0] for ec in candidate_counts[:m]]
 
-    for p in all_phonemes:
-        assert p in candidates, p
+    # for p in all_phonemes:
+    #     assert p in candidates, p
 
     # for p in sorted_phonemes:
     #     print(p, ", ".join(candidates[p]))
 
     # Write clingo file
-    with tempfile.NamedTemporaryFile(suffix=".lp", mode="w+", delete=False) as clingo_file:
+    with tempfile.NamedTemporaryFile(
+        suffix=".lp", mode="w+", delete=False
+    ) as clingo_file:
         for p in sorted_phonemes:
             print(f'phoneme("{p}").', file=clingo_file)
         for p, es in candidates.items():
@@ -202,8 +207,8 @@ assign(P, E) :- maybe_assign(P, E).
         parser = get_parser()
         clingo_file.seek(0)
         proc = subprocess.run(
-            ["clingo", "-n0", "--verbose=0", "--warn=none", clingo_file.name],
-            stdout=subprocess.PIPE
+            ["clingo", "-n0", "-t8", "--verbose=0", "--warn=none", clingo_file.name],
+            stdout=subprocess.PIPE,
         )
         predicates = []
         for line in proc.stdout.splitlines():
@@ -229,7 +234,10 @@ assign(P, E) :- maybe_assign(P, E).
 
         # Print best assignment
         for p in sorted_phonemes:
-            print(p, assignments[p])
+            if p in assignments:
+                print(p, assignments[p])
+            else:
+                print(f"Missing {p}")
 
 
 # -----------------------------------------------------------------------------

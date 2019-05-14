@@ -43,7 +43,7 @@
                     <input id="espeak-phonemes" title="eSpeak Phonemes" class="form-control" type="text" v-model="espeakPhonemes" readonly>
                 </div>
                 <div class="col-xs-auto">
-                    <button type="button" class="btn btn-secondary" @click="pronouncePhonemes(phonemes)"
+                    <button type="button" class="btn btn-secondary" @click="pronouncePhonemesOrWord(phonemes)"
                             title="Speak the selected pronunciation">Pronounce</button>
                 </div>
                 <div class="col-xs-auto">
@@ -189,12 +189,19 @@
          },
 
          // Pronounce word using speakers
-         pronouncePhonemes: function(phonemes) {
+         pronouncePhonemesOrWord: function(phonemes) {
              this.$parent.beginAsync()
              var pronounceString = (this.pronounceType == 'word')
                                  ? this.dictWord : phonemes
 
              PronounceService.pronounce(pronounceString, this.pronounceType)
+                             .then(() => this.$parent.endAsync())
+                             .catch(err => this.$parent.error(err))
+         },
+
+         pronouncePhonemes: function(phonemes) {
+             this.$parent.beginAsync()
+             PronounceService.pronounce(phonemes, "phonemes")
                  .then(() => this.$parent.endAsync())
                  .catch(err => this.$parent.error(err))
          },

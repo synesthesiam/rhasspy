@@ -1,36 +1,58 @@
-@ EINE qq ai n @
-a AM qq a m
-aa: DA d aa:
-ai BEI b ai
-au AUF qq au f
-b BIN b ii n
-cc ICH qq ii cc
-d DU d u:
-e: DEM d e: m
-ee ER qq ee r
-ei ABER qq aa: b ei
-f FüR f y: qq ee r
-g GUT g u: t
-h HAT h a t
-i: DIE d i:
-ii IM qq ii m
-j JA j aa:
-k KANN k a n
-l ALS qq aa: l s
-m UM qq uu m
-n AN qq a n
-o: SO z o:
-oo VON f oo n
-qq ES qq ee z
-r DER d ee r
-s ZU t s u:
-ss SCHON ss o: n
-t IST qq ii s t
-u: NUR n u: r
-ui: KöNNEN k ui: n e: n
-uu UND qq uu n t
-v WO v o:
-x AUCH qq au x
-y: üBER qq y: b e: r
-yy ÜBER qq yy b ei
-z SIE z i:
+AA high HH AA IH
+AAH anna Q AH N AAH
+AE alan AE L AX N
+AH aber Q AH B EX
+AO kino K IIH N AO
+AW auch Q AW X
+AX alle Q AH L AX
+AY beim B AY M
+B baby B EEH B IY
+CC dich D IH CC
+CH jack CH AE K
+D dach D AH X
+EE dave D EE IH F
+EEH dreh D RR EEH
+EH alex Q AH L EH K S
+EHH fair F EHH EX
+ER roger R AA JH ER
+EX arme Q AH EX M AX
+F aufs Q AW F S
+G auge Q AW G AX
+HH haar HH AAH EX
+IH bild B IH L T
+IIH bier B IIH EX
+IY joey JH AX UU IY
+JH jake JH EH IH K
+K bank B AH NG K
+L also Q AH L Z OOH
+M baum B AW M
+N bahn B AAH N
+NG dank D AH NG K
+OE hölle HH OE L AX
+OH möchtest M OH CC T AX S T
+OHH blöd B L OHH T
+OI fräulein F RR OI L AY N
+OO bord B OO EX T
+OOH auto Q AW T OOH
+OY euch Q OY CC
+P club K L UU P
+PF kopf K OO PF
+Q acht Q AH X T
+R mary M EH R IIH
+RR brot B RR OOH T
+S bist B IH S T
+SH chef SH EH F
+T alte Q AH L T AX
+TH smith S M IH TH
+TS arzt Q AH EX TS T
+UH yahoo Y AA HH UH
+UU burg B UU EX K
+UUH blut B L UUH T
+V etwa Q EH T V AH
+VV love L VV V
+W william W IH L Y AX M
+X buch B UUH X
+Y jahr Y AAH EX
+YY fünf F YY N F
+YYH büro B YYH RR OOH
+Z böse B OHH Z AX
