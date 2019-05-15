@@ -6,7 +6,10 @@
     },
     "intent": {
         "flair": {
-            "embeddings": ["news-forward", "news-backward"]
+            "embeddings": [
+                "news-forward-0.4.1.pt",
+                "news-backward-0.4.1.pt"
+            ]
         }
     },
     "text_to_speech": {

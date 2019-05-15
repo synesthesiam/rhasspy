@@ -558,8 +558,10 @@ class FlairIntentTrainer(RhasspyActor):
         max_epochs = int(self.profile.get("intent.flair.max_epochs", 100))
 
         # Load word embeddings
+        self._logger.debug(f"Loading word embeddings from {cache_dir}")
         word_embeddings = [
-            FlairEmbeddings(e, cache_directory=cache_dir) for e in self.embeddings
+            FlairEmbeddings(os.path.join(cache_dir, "embeddings", e))
+            for e in self.embeddings
         ]
 
         if len(class_sentences) > 0:

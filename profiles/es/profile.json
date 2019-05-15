@@ -4,9 +4,17 @@
     "wake": {
         "system": "snowboy"
     },
-    "intent": {
+    "text_to_speech": {
         "wavenet": {
             "language_code": "es-ES"
+        }
+    },
+    "intent": {
+        "flair": {
+            "embeddings": [
+                "lm-es-forward-fast.pt",
+                "lm-es-backward-fast.pt"
+            ]
         }
     }
 }

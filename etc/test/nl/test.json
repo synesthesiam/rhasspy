@@ -1,3 +1,20 @@
 {
-    "text": "zet de woonkamerlamp aan"
+    "text": "zet de woonkamerlamp aan",
+    "intent": {
+        "name": "ChangeLightState"
+    },
+    "entities": {
+        "name": "woonkamerlamp",
+        "state": "aan"
+    },
+    "words": {
+        "known": {
+            "word": "maken",
+            "phonemes": "m a k @ n"
+        },
+        "unknown": {
+            "word": "makenlamp",
+            "phonemes": "m a k @ n l aa m p"
+        }
+    }
 }

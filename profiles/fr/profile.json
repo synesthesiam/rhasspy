@@ -8,6 +8,11 @@
     "intent": {
         "wavenet": {
             "language_code": "fr-FR"
+        },
+        "flair": {
+            "embeddings": [
+                "lm-fr-charlm-backward.pt", "lm-fr-charlm-forward.pt"
+            ]
         }
     }
 }

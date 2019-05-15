@@ -2,13 +2,19 @@
     "language": "nl",
     "name": "nl",
     "wake": {
-        "pocketsphinx": {
-            "keyphrase": "ok raspy"
+        "system": "snowboy"
+    },
+    "text_to_speech": {
+        "wavenet": {
+            "language_code": "nl-NL"
         }
     },
     "intent": {
-        "wavenet": {
-            "language_code": "nl-NL"
+        "flair": {
+            "embeddings": [
+                "lm-nl-large-forward-v0.1.pt",
+                "lm-nl-large-backward-v0.1.pt"
+            ]
         }
     }
 }

@@ -6,7 +6,10 @@
     },
     "intent": {
         "flair": {
-            "embeddings": ["lm-mix-german-forward", "lm-mix-german-backward"]
+            "embeddings": [
+                "lm-mix-german-forward-v0.2rc.pt",
+                "lm-mix-german-backward-v0.2rc.pt"
+            ]
         }
     },
     "text_to_speech": {

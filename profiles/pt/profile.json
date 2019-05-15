@@ -17,6 +17,14 @@
         "system": "snowboy"
     },
     "intent": {
+        "flair": {
+            "embeddings": [
+                "lm-pt-forward.pt",
+                "lm-pt-backward.pt"
+            ]
+        }
+    },
+    "text_to_speech": {
         "wavenet": {
             "language_code": "pt-BR"
         }
