@@ -1,3 +1,20 @@
 {
-    "text": "enciende la lámpara de la sala"
+    "text": "enciende la lámpara de la sala",
+    "intent": {
+        "name": "ChangeLightState"
+    },
+    "entities": {
+        "name": "lámpara de la sala",
+        "state": "enciende"
+    },
+    "words": {
+        "known": {
+            "word": "familia",
+            "phonemes": "f a m i l i a"
+        },
+        "unknown": {
+            "word": "familialama",
+            "phonemes": "f a m i l i a l a m a"
+        }
+    }
 }
