@@ -1,3 +1,20 @@
 {
-    "text": "ligue a lâmpada da sala de estar"
+    "text": "ligue a lâmpada da sala de estar",
+    "intent": {
+        "name": "ChangeLightState"
+    },
+    "entities": {
+        "name": "lâmpada da sala de estar",
+        "state": "ligue"
+    },
+    "words": {
+        "known": {
+            "word": "tempo",
+            "phonemes": "T E~+ P UX"
+        },
+        "unknown": {
+            "word": "tempoada",
+            "phonemes": "T E~ P O A+ D AX"
+        }
+    }
 }
