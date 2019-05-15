@@ -254,9 +254,9 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         words_needed: Set[str] = set()
 
         # Gather all words needed
-        out_symbols = intent_fst.output_symbols()
-        for i in range(out_symbols.num_symbols()):
-            word = out_symbols.find(i).decode()
+        in_symbols = intent_fst.input_symbols()
+        for i in range(in_symbols.num_symbols()):
+            word = in_symbols.find(i).decode()
 
             if word.startswith("__") or word.startswith("<"):
                 continue  # skip metadata

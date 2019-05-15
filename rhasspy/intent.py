@@ -202,14 +202,11 @@ class FsticuffsRecognizer(RhasspyActor):
             self.fst = fst.Fst.read(fst_path)
 
             # Add words from FST
-            out_symbols = self.fst.output_symbols()
+            in_symbols = self.fst.input_symbols()
             self.words = set()
-            for i in range(out_symbols.num_symbols()):
-                word = out_symbols.find(i).decode()
-                # Ignore meta symbols like __begin__/__end__
-                if not word.startswith("__"):
-                    self.words.add(word)
-
+            for i in range(in_symbols.num_symbols()):
+                word = in_symbols.find(i).decode()
+                self.words.add(word)
 
 # -----------------------------------------------------------------------------
 # Fuzzywuzzy-based Intent Recognizer
