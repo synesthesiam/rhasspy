@@ -307,7 +307,7 @@ class KaldiDecoder(RhasspyActor):
                 try:
                     return subprocess.check_output(
                         command, stderr=subprocess.STDOUT
-                    ).decode()
+                    ).decode().strip()
                 except subprocess.CalledProcessError as e:
                     output = e.output.decode()
                     self._logger.error(output)

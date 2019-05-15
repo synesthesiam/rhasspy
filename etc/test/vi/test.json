@@ -1,0 +1,20 @@
+{
+    "text": "tắt đèn phòng khách",
+    "intent": {
+        "name": "ChangeLightState"
+    },
+    "entities": {
+        "name": "phòng khách",
+        "state": "tắt"
+    },
+    "words": {
+        "known": {
+            "word": "trước",
+            "phonemes": "ch ua2_T3 k"
+        },
+        "unknown": {
+            "word": "trướct",
+            "phonemes": "ch ua2_T3 k t"
+        }
+    }
+}
