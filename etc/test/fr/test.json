@@ -1,3 +1,20 @@
 {
-    "text": "allumer la lampe du salon"
+    "text": "allumer la lampe du salon",
+    "intent": {
+        "name": "ChangeLightState"
+    },
+    "entities": {
+        "name": "lampe du salon",
+        "state": "allumer"
+    },
+    "words": {
+        "known": {
+            "word": "beaucoup",
+            "phonemes": "bb oo kk ou"
+        },
+        "unknown": {
+            "word": "beaucoupveau",
+            "phonemes": "bb oo kk ou vv au"
+        }
+    }
 }

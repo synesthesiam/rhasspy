@@ -42,7 +42,7 @@ class RhasspyTestCore:
 
 # -----------------------------------------------------------------------------
 
-PROFILES = ["de"]
+PROFILES = ["fr"]
 TEST_WAV_PATH = {p: os.path.join("etc", "test", p, "test.wav") for p in PROFILES}
 TEST_JSON = {
     p: json.load(open(os.path.join("etc", "test", p, "test.json"))) for p in PROFILES
