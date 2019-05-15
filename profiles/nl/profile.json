@@ -1,10 +1,14 @@
 {
     "language": "nl",
     "name": "nl",
-
     "wake": {
         "pocketsphinx": {
             "keyphrase": "ok raspy"
+        }
+    },
+    "intent": {
+        "wavenet": {
+            "language_code": "nl-NL"
         }
     }
 }

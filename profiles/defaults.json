@@ -57,7 +57,8 @@
             "data_dir": "flair_data",
             "max_epochs": 25,
             "do_sampling": true,
-            "num_samples": 10000
+            "num_samples": 10000,
+            "compatible": true
         },
         "rasa": {
             "examples_markdown": "intent_examples.md",

@@ -3,5 +3,13 @@
     "name": "hi",
     "wake": {
         "system": "snowboy"
+    },
+    "intent": {
+        "wavenet": {
+            "language_code": "hi-HI"
+        },
+        "flair": {
+            "compatible": false
+        }
     }
 }

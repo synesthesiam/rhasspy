@@ -4,5 +4,10 @@
 
     "wake": {
         "system": "snowboy"
+    },
+    "intent": {
+        "wavenet": {
+            "language_code": "fr-FR"
+        }
     }
 }

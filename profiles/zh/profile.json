@@ -4,5 +4,13 @@
     "speech_to_text": {
         "g2p_casing": "n/a",
         "dictionary_casing": "n/a"
+    },
+    "intent": {
+        "wavenet": {
+            "language_code": "zh-TW"
+        },
+        "flair": {
+            "compatible": false
+        }
     }
 }

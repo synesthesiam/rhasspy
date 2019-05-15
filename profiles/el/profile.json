@@ -3,5 +3,10 @@
     "name": "el",
     "wake": {
         "system": "snowboy"
+    },
+    "intent": {
+        "flair": {
+            "compatible": false
+        }
     }
 }
