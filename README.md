@@ -59,7 +59,7 @@ The table below summarizes language support across the various supporting techno
 |                        | [flite](https://rhasspy.readthedocs.io/en/latest/text-to-speech/#flite)               | &#x2713;               | &#x2713; |          |          |          |          |          |          |          | &#x2713; |          |          |          |
 |                        | [picotts](https://rhasspy.readthedocs.io/en/latest/text-to-speech/#picotts)           | &#x2713;               | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |
 |                        | [marytts](https://rhasspy.readthedocs.io/en/latest/text-to-speech/#marytts)           | &#x2713;               | &#x2713; | &#x2713; |          | &#x2713; | &#x2713; |          | &#x2713; |          |          |          |          |          |
-|                        | [wavenet](https://rhasspy.readthedocs.io/en/latest/text-to-speech/#google-wavenet)    |                        | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |
+|                        | [wavenet](https://rhasspy.readthedocs.io/en/latest/text-to-speech/#google-wavenet)    |                        | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |          | &#x2713; | &#x2713; |          | &#x2713; |
 
 &bull; - yes, but requires training/customization
 
