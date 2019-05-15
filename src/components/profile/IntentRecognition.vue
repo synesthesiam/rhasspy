@@ -60,11 +60,14 @@
             <div class="form-group">
                 <div class="form-row">
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="intent-system" id="intent-system-flair" value="flair" v-model="profile.intent.system">
+                        <input class="form-check-input" type="radio" name="intent-system" id="intent-system-flair" value="flair" v-model="profile.intent.system" :disabled="!profile.intent.flair.compatible">
                         <label class="form-check-label" for="intent-system-flair">
                             Do intent recognition with <a href="https://github.com/zalandoresearch/flair">flair</a> on this device
                         </label>
                     </div>
+                </div>
+                <div class="alert alert-warning" v-if="!profile.intent.flair.compatible">
+                    Not compatible with this profile
                 </div>
             </div>
             <div class="form-group">
