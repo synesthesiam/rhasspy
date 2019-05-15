@@ -57,7 +57,7 @@ COPY download/snowboy-1.3.0.tar.gz /
 RUN if [ "$BUILD_ARCH" != "aarch64" ]; then pip3 install --no-cache-dir /snowboy-1.3.0.tar.gz; fi
 
 # Install Mycroft Precise
-COPY download/precise-engine_0.2.0_${CPU_ARCH}.tar.gz /precise-engine.tar.gz
+COPY download/precise-engine_0.3.0_${CPU_ARCH}.tar.gz /precise-engine.tar.gz
 RUN if [ "$BUILD_ARCH" != "aarch64" ]; then \
     cd / && tar -xzf /precise-engine.tar.gz && \
     ln -s /precise-engine/precise-engine /usr/bin/precise-engine && \
