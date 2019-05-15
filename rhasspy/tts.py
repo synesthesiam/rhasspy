@@ -326,6 +326,7 @@ class CommandSentenceSpeaker(RhasspyActor):
 class GoogleWaveNetSentenceSpeaker(RhasspyActor):
     """Uses Google's WaveNet text to speech cloud API (online)"""
     def to_started(self, from_state: str) -> None:
+        self.wav_data: bytes = bytes()
         self.cache_dir = self.profile.write_dir(
             self.profile.get("text_to_speech.wavenet.cache_dir", "tts/googlewavenet")
         )
@@ -369,11 +370,12 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
 
     def in_ready(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, SpeakSentence):
+            self.wav_data = bytes()
             self.receiver = message.receiver or sender
             try:
-                wav_data = self.speak(message.sentence)
+                self.wav_data = self.speak(message.sentence)
                 self.transition("speaking")
-                self.send(self.player, PlayWavData(wav_data))
+                self.send(self.player, PlayWavData(self.wav_data))
             except Exception as e:
                 self._logger.exception("speak")
 
@@ -389,7 +391,7 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
                 except Exception as e:
                     # Give up
                     self.transition("ready")
-                    self.send(self.receiver, SentenceSpoken())
+                    self.send(self.receiver, SentenceSpoken(bytes()))
         elif isinstance(message, Configured):
             # Fallback actor is configured
             pass
@@ -397,7 +399,7 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
     def in_speaking(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, WavPlayed):
             self.transition("ready")
-            self.send(self.receiver, SentenceSpoken())
+            self.send(self.receiver, SentenceSpoken(self.wav_data))
         elif isinstance(message, SentenceSpoken):
             # From fallback actor
             self.transition("ready")

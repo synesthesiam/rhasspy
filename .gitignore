@@ -23,6 +23,9 @@ base_language_model.txt
 g2p.fst
 profiles/*/model/
 profiles/*/*.umdl
+profiles/*/flair/
+profiles/*/*.pb
+profiles/*/*.pb.params
 
 adapt_config.json
 tagged_sentences.md
