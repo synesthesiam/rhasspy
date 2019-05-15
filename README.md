@@ -14,8 +14,6 @@ To run Rhasspy with the English (en) profile using Docker:
     docker run -d -p 12101:12101 \
           --restart unless-stopped \
           -v "$HOME/.config/rhasspy/profiles:/profiles" \
-          -e RHASSPY_TTS_DIR=/tts \
-          -v "$HOME/.config/rhasspy/tts:/tts" \
           --device /dev/snd:/dev/snd \
           synesthesiam/rhasspy-server:latest \
           --profile en \
