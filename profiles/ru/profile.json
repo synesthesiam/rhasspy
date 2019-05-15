@@ -1,8 +1,15 @@
 {
     "language": "ru",
     "name": "ru",
-
     "wake": {
         "system": "snowboy"
+    },
+    "intent": {
+        "wavenet": {
+            "language_code": "ru-RU"
+        },
+        "flair": {
+            "compatible": false
+        }
     }
 }

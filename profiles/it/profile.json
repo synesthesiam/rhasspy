@@ -3,5 +3,13 @@
     "language": "it",
     "wake": {
         "system": "snowboy"
+    },
+    "intent": {
+        "wavenet": {
+            "language_code": "it-IT"
+        },
+        "flair": {
+            "compatible": false
+        }
     }
 }

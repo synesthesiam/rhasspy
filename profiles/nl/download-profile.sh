@@ -93,3 +93,19 @@ for file_name in "${precise_files[@]}"; do
         curl -sSfL -o "${file_output}" "${file_url}"
     fi
 done
+
+#------------------------------------------------------------------------------
+# Flair Embeddings
+#------------------------------------------------------------------------------
+
+flair_dir="${DIR}/flair/cache/embeddings"
+mkdir -p "${flair_dir}"
+flair_files=("lm-nl-large-forward-v0.1.pt" "lm-nl-large-backward-v0.1.pt")
+for file_name in "${flair_files[@]}"; do
+    file_output="${flair_dir}/${file_name}"
+    if [[ ! -s "${file_output}" ]]; then
+        file_url="https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-nl/${file_name}"
+        echo "Downloading ${file_output} (${file_url})"
+        curl -sSfL -o "${file_output}" "${file_url}"
+    fi
+done

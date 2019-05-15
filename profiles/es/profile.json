@@ -6,5 +6,10 @@
     },
     "speech_to_text": {
         "g2p_casing": "upper"
+    },
+    "intent": {
+        "wavenet": {
+            "language_code": "es-ES"
+        }
     }
 }
