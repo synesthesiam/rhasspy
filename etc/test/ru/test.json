@@ -1,3 +1,20 @@
 {
-    "text": "включить лампу в гостиной"
+    "text": "включить лампу в гостиной",
+    "intent": {
+        "name": "ChangeLightState"
+    },
+    "entities": {
+        "name": "лампу в гостиной",
+        "state": "включить"
+    },
+    "words": {
+        "known": {
+            "word": "такой",
+            "phonemes": "t a0 k o1 j"
+        },
+        "unknown": {
+            "word": "такойта",
+            "phonemes": "t a0 k o1 j t a0"
+        }
+    }
 }
