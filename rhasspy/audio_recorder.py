@@ -10,7 +10,7 @@ import io
 import re
 import audioop
 from queue import Queue
-from typing import Dict, Any, Callable, Optional, List
+from typing import Dict, Any, Callable, Optional, List, Type
 from collections import defaultdict
 
 from .actor import RhasspyActor
@@ -49,6 +49,31 @@ class StopRecordingToBuffer:
     ) -> None:
         self.buffer_name = buffer_name
         self.receiver = receiver
+
+
+# -----------------------------------------------------------------------------
+
+
+def get_microphone_class(system: str) -> Type[RhasspyActor]:
+    assert system in ["arecord", "pyaudio", "dummy", "hermes", "stdin"], (
+        "Unknown microphone system: %s" % system
+    )
+
+    if system == "arecord":
+        # Use arecord locally
+        return ARecordAudioRecorder
+    elif system == "pyaudio":
+        # Use PyAudio locally
+        return PyAudioRecorder
+    elif system == "hermes":
+        # Use MQTT
+        return HermesAudioRecorder
+    elif system == "stdin":
+        # Use STDIN
+        return StdinAudioRecorder
+
+    # Use dummy recorder as a fallback
+    return DummyAudioRecorder
 
 
 # -----------------------------------------------------------------------------

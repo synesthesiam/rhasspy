@@ -23,7 +23,9 @@ class RhasspyTestCore:
             do_logging=False,
         )
         self.core.profile.set("wake.system", "dummy")
-        self.core.start()
+        self.core.start(preload=False)
+        self.core.train()
+
 
         if self.train:
             self.core.train()
@@ -32,11 +34,14 @@ class RhasspyTestCore:
 
     def __exit__(self, *args):
         self.core.shutdown()
-        self.user_profiles_dir.cleanup()
+        try:
+            self.user_profiles_dir.cleanup()
+        except:
+            pass
 
 # -----------------------------------------------------------------------------
 
-PROFILES = ["de"]
+PROFILES = ["en", "de"]
 
 class RhasspyTestCase(unittest.TestCase):
 

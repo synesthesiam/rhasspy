@@ -70,6 +70,8 @@ See `rhasspy.tts.PicoTTSSentenceSpeaker` for details.
 
 Uses a remote [MaryTTS](http://mary.dfki.de/) web server. Supported languages include German, British and American English, French, Italian, Luxembourgish, Russian, Swedish, Telugu, and Turkish. An [MaryTTS Docker image](https://hub.docker.com/r/synesthesiam/marytts) is available, though only the default voice is included.
 
+Add to your [profile](profiles.md):
+
 ```json
 "text_to_speech": {
   "system": "marytts",
@@ -107,6 +109,36 @@ docker run -it -p 59125:59125 -v "$(pwd)/marytts-5.2/lib/voice-${voice}-hsmm-5.2
 Change the first line to select the voice you'd like to add. It's not recommended to link in all of the voices at once, since MaryTTS seems to load them all into memory and overwhelm the RAM of a Raspberry Pi.
 
 See `rhasspy.tts.MaryTTSSentenceSpeaker` for details.
+
+## Google WaveNet
+
+Uses Google's [WaveNet](https://cloud.google.com/text-to-speech/docs/wavenet) text to speech system. This **requires a Google account and an internet connection to function**. Rhasspy will cache WAV files for previously spoken sentences, but you will be sending Google information for every new sentence that Rhasspy speaks.
+
+Add to your [profile](profiles.md):
+
+```json
+"text_to_speech": {
+  "system": "wavenet",
+  "wavenet": {
+    "cache_dir": "tts/googlewavenet/cache",
+    "credentials_json": "tts/googlewavenet/credentials.json",
+    "gender": "FEMALE",
+    "language_code": "en-US",
+    "sample_rate": 22050,
+    "url": "https://texttospeech.googleapis.com/v1/text:synthesize",
+    "voice": "Wavenet-C",
+    "fallback_tts": "espeak"
+  }
+}
+```
+
+Before using WaveNet, you must set up a Google cloud account and [generate a JSON credentials file](https://cloud.google.com/text-to-speech/docs/reference/libraries#setting_up_authentication). Save the JSON credentials file to wherever `wavenet.credentials_json` points to in your profile directory. You may also need to visit your Google cloud account settings and enable the text-to-speech API.
+
+WAV files of each sentence are cached in `wavenet.cache_dir` in your profile directory. Sentences are cached based on their text and the `gender`, `voice`, `language_code`, and `sample_rate` of the `wavenet` system. Changing any of these things will require using the Google API.
+
+If there are problems using the Google API (e.g., your internet connection fails), Rhasspy will switch over to the text to speech system given in `wavenet.fallback_tts`. The settings for the fallback system will be loaded from your profile as expected.
+
+See `rhasspy.tts.GoogleWaveNetSentenceSpeaker` for details.
 
 ## Command
 

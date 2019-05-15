@@ -87,7 +87,9 @@ class RhasspyCore:
 
             self.actor_system = ActorSystem("multiprocTCPBase", **kwargs)
 
-        preload = preload or self.profile.get("rhasspy.preload_profile", False)
+        if preload is None:
+            preload = self.profile.get("rhasspy.preload_profile", False)
+
         assert self.actor_system is not None
         self.dialogue_manager = self.actor_system.createActor(DialogueManager)
         with self.actor_system.private() as sys:

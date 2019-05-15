@@ -167,7 +167,17 @@
         },
         "phoneme_examples": "phoneme_examples.txt",
         "picotts": {},
-        "system": "espeak"
+        "system": "espeak",
+        "wavenet": {
+            "cache_dir": "tts/googlewavenet/cache",
+            "credentials_json": "tts/googlewavenet/credentials.json",
+            "gender": "FEMALE",
+            "language_code": "en-US",
+            "sample_rate": 22050,
+            "url": "https://texttospeech.googleapis.com/v1/text:synthesize",
+            "voice": "Wavenet-C",
+            "fallback_tts": "espeak"
+        }
     },
     "training": {
         "dictionary_number_duplicates": true,

@@ -4,7 +4,7 @@ import logging
 import json
 import subprocess
 from urllib.parse import urljoin
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, Type
 
 import pydash
 
@@ -38,6 +38,25 @@ class ForwardIntent:
 class IntentForwarded:
     def __init__(self, intent: Dict[str, Any]) -> None:
         self.intent = intent
+
+
+# -----------------------------------------------------------------------------
+
+
+def get_intent_handler_class(system: str) -> Type[RhasspyActor]:
+    assert system in ["dummy", "hass", "command"], (
+        "Invalid intent handler system: %s" % system
+    )
+
+    if system == "hass":
+        # Use Home Assistant directly
+        return HomeAssistantIntentHandler
+    elif system == "command":
+        # Use command-line speech trainer
+        return CommandIntentHandler
+
+    # Use dummy handlers as a fallback
+    return DummyIntentHandler
 
 
 # -----------------------------------------------------------------------------

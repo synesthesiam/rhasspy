@@ -5,7 +5,7 @@ import logging
 import subprocess
 import tempfile
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 from .actor import RhasspyActor
 from .mqtt import MqttPublish
@@ -31,6 +31,20 @@ class PlayWavData:
 
 class WavPlayed:
     pass
+
+
+# -----------------------------------------------------------------------------
+
+
+def get_sound_class(system: str) -> Type[RhasspyActor]:
+    assert system in ["aplay", "hermes", "dummy"], "Unknown sound system: %s" % system
+
+    if system == "aplay":
+        return APlayAudioPlayer
+    elif system == "hermes":
+        return HermesAudioPlayer
+    else:
+        return DummyAudioPlayer
 
 
 # -----------------------------------------------------------------------------

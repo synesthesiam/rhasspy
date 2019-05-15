@@ -7,7 +7,7 @@ import logging
 import subprocess
 import concurrent.futures
 from urllib.parse import urljoin
-from typing import Dict, Any, Optional, Tuple, List, Set
+from typing import Dict, Any, Optional, Tuple, List, Set, Type
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -36,6 +36,47 @@ class IntentRecognized:
     def __init__(self, intent: Dict[str, Any], handle: bool = True) -> None:
         self.intent = intent
         self.handle = handle
+
+
+# -----------------------------------------------------------------------------
+
+
+def get_recognizer_class(system: str) -> Type[RhasspyActor]:
+    assert system in [
+        "dummy",
+        "fsticuffs",
+        "fuzzywuzzy",
+        "adapt",
+        "rasa",
+        "remote",
+        "flair",
+        "command",
+    ], ("Invalid intent system: %s" % system)
+
+    if system == "fsticuffs":
+        # Use OpenFST locally
+        return FsticuffsRecognizer
+    elif system == "fuzzywuzzy":
+        # Use fuzzy string matching locally
+        return FuzzyWuzzyRecognizer
+    elif system == "adapt":
+        # Use Mycroft Adapt locally
+        return AdaptIntentRecognizer
+    elif system == "rasa":
+        # Use rasaNLU remotely
+        return RasaIntentRecognizer
+    elif system == "remote":
+        # Use remote rhasspy server
+        return RemoteRecognizer
+    elif system == "flair":
+        # Use flair locally
+        return FlairRecognizer
+    elif system == "command":
+        # Use command line
+        return CommandRecognizer
+    else:
+        # Does nothing
+        return DummyIntentRecognizer
 
 
 # -----------------------------------------------------------------------------
@@ -105,10 +146,12 @@ class FsticuffsRecognizer(RhasspyActor):
         self.words: Set[str] = set()
 
     def to_started(self, from_state: str) -> None:
-        try:
-            self.load_fst()
-        except:
-            self._logger.warning("to_started")
+        self.preload: bool = self.config.get("preload", False)
+        if self.preload:
+            try:
+                self.load_fst()
+            except Exception as e:
+                self._logger.warning(f"preload: {e}")
 
         self.transition("loaded")
 
@@ -183,7 +226,13 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
 
     def to_started(self, from_state: str) -> None:
         self.min_confidence = self.profile.get("intent.fuzzywuzzy.min_confidence", 0)
-        self.load_examples()
+        self.preload: bool = self.config.get("preload", False)
+        if self.preload:
+            try:
+                self.load_examples()
+            except Exception as e:
+                self._logger.warning(f"preload: {e}")
+
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
@@ -344,7 +393,13 @@ class AdaptIntentRecognizer(RhasspyActor):
         self.engine = None
 
     def to_started(self, from_state: str) -> None:
-        self.load_engine()
+        self.preload: bool = self.config.get("preload", False)
+        if self.preload:
+            try:
+                self.load_engine()
+            except Exception as e:
+                self._logger.warning(f"preload: {e}")
+
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
@@ -452,11 +507,13 @@ class FlairRecognizer(RhasspyActor):
         self.intent_map: Optional[Dict[str, str]] = None
 
     def to_started(self, from_state: str) -> None:
-        try:
-            # Pre-load models
-            self.load_models()
-        except:
-            pass
+        self.preload: bool = self.config.get("preload", False)
+        if self.preload:
+            try:
+                # Pre-load models
+                self.load_models()
+            except Exception as e:
+                self._logger.warning(f"preload: {e}")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, RecognizeIntent):

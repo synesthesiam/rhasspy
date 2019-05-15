@@ -16,18 +16,34 @@ from .wake import (
     StopListeningForWakeWord,
     WakeWordDetected,
     WakeWordNotDetected,
+    get_wake_class,
 )
-from .command_listener import ListenForCommand, VoiceCommand
-from .audio_recorder import StartRecordingToBuffer, StopRecordingToBuffer, AudioData
-from .audio_player import PlayWavFile, PlayWavData, WavPlayed
-from .stt import TranscribeWav, WavTranscription
-from .stt_train import TrainSpeech, SpeechTrainingComplete, SpeechTrainingFailed
-from .intent import RecognizeIntent, IntentRecognized
-from .intent_train import TrainIntent, IntentTrainingComplete, IntentTrainingFailed
-from .intent_handler import HandleIntent, IntentHandled
+from .command_listener import ListenForCommand, VoiceCommand, get_command_class
+from .audio_recorder import (
+    StartRecordingToBuffer,
+    StopRecordingToBuffer,
+    AudioData,
+    get_microphone_class,
+)
+from .audio_player import PlayWavFile, PlayWavData, WavPlayed, get_sound_class
+from .stt import TranscribeWav, WavTranscription, get_decoder_class
+from .stt_train import (
+    TrainSpeech,
+    SpeechTrainingComplete,
+    SpeechTrainingFailed,
+    get_speech_trainer_class,
+)
+from .intent import RecognizeIntent, IntentRecognized, get_recognizer_class
+from .intent_train import (
+    TrainIntent,
+    IntentTrainingComplete,
+    IntentTrainingFailed,
+    get_intent_trainer_class,
+)
+from .intent_handler import HandleIntent, IntentHandled, get_intent_handler_class
 from .train import GenerateSentences, SentencesGenerated, SentenceGenerationFailed
 from .pronounce import GetWordPhonemes, SpeakWord, GetWordPronunciations
-from .tts import SpeakSentence
+from .tts import SpeakSentence, get_speech_class
 from .mqtt import MqttPublish
 from .utils import buffer_to_wav
 
@@ -486,7 +502,7 @@ class DialogueManager(RhasspyActor):
             # Get all microphones
             recorder_class = self.recorder_class
             if message.system is not None:
-                recorder_class = DialogueManager.get_microphone_class(message.system)
+                recorder_class = get_microphone_class(message.system)
 
             mics = recorder_class.get_microphones()
             self.send(sender, mics)
@@ -496,7 +512,7 @@ class DialogueManager(RhasspyActor):
             if message.system is not None:
                 recorder_system = message.system
 
-            recorder_class = DialogueManager.get_microphone_class(recorder_system)
+            recorder_class = get_microphone_class(recorder_system)
             test_path = "microphone.%s.test_chunk_size" % recorder_system
             chunk_size = int(self.profile.get(test_path, 1024))
 
@@ -506,7 +522,7 @@ class DialogueManager(RhasspyActor):
             # Get all speakers
             player_class = self.player_class
             if message.system is not None:
-                player_class = DialogueManager.get_sound_class(message.system)
+                player_class = get_sound_class(message.system)
 
             speakers = player_class.get_speakers()
             self.send(sender, speakers)
@@ -534,49 +550,49 @@ class DialogueManager(RhasspyActor):
 
         # Microphone
         mic_system = self.profile.get("microphone.system", "dummy")
-        self.recorder_class = DialogueManager.get_microphone_class(mic_system)
+        self.recorder_class = get_microphone_class(mic_system)
         self.recorder: RhasspyActor = self.createActor(self.recorder_class)
         self.actors["recorder"] = self.recorder
 
         # Audio player
         player_system = self.profile.get("sounds.system", "dummy")
-        self.player_class = DialogueManager.get_sound_class(player_system)
+        self.player_class = get_sound_class(player_system)
         self.player: RhasspyActor = self.createActor(self.player_class)
         self.actors["player"] = self.player
 
         # Text to Speech
         speech_system = self.profile.get("text_to_speech.system", "dummy")
-        self.speech_class = DialogueManager.get_speech_class(speech_system)
+        self.speech_class = get_speech_class(speech_system)
         self.speech: RhasspyActor = self.createActor(self.speech_class)
         self.actors["speech"] = self.speech
 
         # Wake listener
         wake_system = self.profile.get("wake.system", "dummy")
-        self.wake_class = DialogueManager.get_wake_class(wake_system)
+        self.wake_class = get_wake_class(wake_system)
         self.wake: RhasspyActor = self.createActor(self.wake_class)
         self.actors["wake"] = self.wake
 
         # Command listener
         command_system = self.profile.get("command.system", "dummy")
-        self.command_class = DialogueManager.get_command_class(command_system)
+        self.command_class = get_command_class(command_system)
         self.command: RhasspyActor = self.createActor(self.command_class)
         self.actors["command"] = self.command
 
         # Speech decoder
         decoder_system = self.profile.get("speech_to_text.system", "dummy")
-        self.decoder_class = DialogueManager.get_decoder_class(decoder_system)
+        self.decoder_class = get_decoder_class(decoder_system)
         self.decoder: RhasspyActor = self.createActor(self.decoder_class)
         self.actors["decoder"] = self.decoder
 
         # Intent recognizer
         recognizer_system = self.profile.get("intent.system", "dummy")
-        self.recognizer_class = DialogueManager.get_recognizer_class(recognizer_system)
+        self.recognizer_class = get_recognizer_class(recognizer_system)
         self.recognizer: RhasspyActor = self.createActor(self.recognizer_class)
         self.actors["recognizer"] = self.recognizer
 
         # Intent handler
         handler_system = self.profile.get("handle.system", "dummy")
-        self.handler_class = DialogueManager.get_intent_handler_class(handler_system)
+        self.handler_class = get_intent_handler_class(handler_system)
         self.handler: RhasspyActor = self.createActor(self.handler_class)
         self.actors["handler"] = self.handler
 
@@ -602,7 +618,7 @@ class DialogueManager(RhasspyActor):
         speech_trainer_system = self.profile.get(
             "training.speech_to_text.system", "auto"
         )
-        self.speech_trainer_class = DialogueManager.get_speech_trainer_class(
+        self.speech_trainer_class = get_speech_trainer_class(
             speech_trainer_system, decoder_system
         )
 
@@ -611,7 +627,7 @@ class DialogueManager(RhasspyActor):
 
         # Intent trainer
         intent_trainer_system = self.profile.get("training.intent.system", "auto")
-        self.intent_trainer_class = DialogueManager.get_intent_trainer_class(
+        self.intent_trainer_class = get_intent_trainer_class(
             intent_trainer_system, recognizer_system
         )
 
@@ -640,367 +656,3 @@ class DialogueManager(RhasspyActor):
 
         actor_names = list(self.wait_actors.keys())
         self._logger.debug(f"Actors created. Waiting for {actor_names} to start.")
-
-    # -------------------------------------------------------------------------
-
-    @classmethod
-    def get_sound_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ["aplay", "hermes", "dummy"], (
-            "Unknown sound system: %s" % system
-        )
-
-        if system == "aplay":
-            from .audio_player import APlayAudioPlayer
-
-            return APlayAudioPlayer
-        elif system == "hermes":
-            from .audio_player import HermesAudioPlayer
-
-            return HermesAudioPlayer
-        else:
-            from .audio_player import DummyAudioPlayer
-
-            return DummyAudioPlayer
-
-    @classmethod
-    def get_wake_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in [
-            "dummy",
-            "pocketsphinx",
-            "hermes",
-            "snowboy",
-            "precise",
-            "command",
-        ], ("Invalid wake system: %s" % system)
-
-        if system == "pocketsphinx":
-            # Use pocketsphinx locally
-            from .wake import PocketsphinxWakeListener
-
-            return PocketsphinxWakeListener
-        elif system == "hermes":
-            # Use remote system via MQTT
-            from .wake import HermesWakeListener
-
-            return HermesWakeListener
-        elif system == "snowboy":
-            # Use snowboy locally
-            from .wake import SnowboyWakeListener
-
-            return SnowboyWakeListener
-        elif system == "precise":
-            # Use Mycroft Precise locally
-            from .wake import PreciseWakeListener
-
-            return PreciseWakeListener
-        elif system == "command":
-            # Use command-line listener
-            from .wake import CommandWakeListener
-
-            return CommandWakeListener
-        else:
-            # Does nothing
-            from .wake import DummyWakeListener
-
-            return DummyWakeListener
-
-    @classmethod
-    def get_microphone_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ["arecord", "pyaudio", "dummy", "hermes", "stdin"], (
-            "Unknown microphone system: %s" % system
-        )
-
-        if system == "arecord":
-            from .audio_recorder import ARecordAudioRecorder
-
-            return ARecordAudioRecorder
-        elif system == "pyaudio":
-            from .audio_recorder import PyAudioRecorder
-
-            return PyAudioRecorder
-        elif system == "hermes":
-            from .audio_recorder import HermesAudioRecorder
-
-            return HermesAudioRecorder
-        elif system == "stdin":
-            from .audio_recorder import StdinAudioRecorder
-
-            return StdinAudioRecorder
-        else:
-            from .audio_recorder import DummyAudioRecorder
-
-            return DummyAudioRecorder
-
-    @classmethod
-    def get_command_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ["dummy", "webrtcvad", "command", "oneshot", "hermes"], (
-            "Unknown voice command system: %s" % system
-        )
-
-        if system == "webrtcvad":
-            from .command_listener import WebrtcvadCommandListener
-
-            return WebrtcvadCommandListener
-        elif system == "command":
-            from .command_listener import CommandCommandListener
-
-            return CommandCommandListener
-        elif system == "oneshot":
-            from .command_listener import OneShotCommandListener
-
-            return OneShotCommandListener
-        elif system == "hermes":
-            from .command_listener import HermesCommandListener
-
-            return HermesCommandListener
-        else:
-            from .command_listener import DummyCommandListener
-
-            return DummyCommandListener
-
-    @classmethod
-    def get_decoder_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ["dummy", "pocketsphinx", "kaldi", "remote", "command"], (
-            "Invalid speech to text system: %s" % system
-        )
-
-        if system == "pocketsphinx":
-            from .stt import PocketsphinxDecoder
-
-            return PocketsphinxDecoder
-        elif system == "kaldi":
-            from .stt import KaldiDecoder
-
-            return KaldiDecoder
-        elif system == "remote":
-            from .stt import RemoteDecoder
-
-            return RemoteDecoder
-        elif system == "command":
-            from .stt import CommandDecoder
-
-            return CommandDecoder
-        else:
-            from .stt import DummyDecoder
-
-            return DummyDecoder
-
-    @classmethod
-    def get_recognizer_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in [
-            "dummy",
-            "fsticuffs",
-            "fuzzywuzzy",
-            "adapt",
-            "rasa",
-            "remote",
-            "flair",
-            "command",
-        ], ("Invalid intent system: %s" % system)
-
-        from .intent import (
-            FsticuffsRecognizer,
-            AdaptIntentRecognizer,
-            RasaIntentRecognizer,
-            RemoteRecognizer,
-            FlairRecognizer,
-            CommandRecognizer,
-            DummyIntentRecognizer,
-        )
-
-        if system == "fsticuffs":
-            # Use OpenFST locally
-            return FsticuffsRecognizer
-        elif system == "fuzzywuzzy":
-            # Use fuzzy string matching locally
-            return FuzzyWuzzyRecognizer
-        elif system == "adapt":
-            # Use Mycroft Adapt locally
-            return AdaptIntentRecognizer
-        elif system == "rasa":
-            # Use rasaNLU remotely
-            return RasaIntentRecognizer
-        elif system == "remote":
-            # Use remote rhasspy server
-            return RemoteRecognizer
-        elif system == "flair":
-            # Use flair locally
-            return FlairRecognizer
-        elif system == "command":
-            # Use command line
-            return CommandRecognizer
-        else:
-            # Does nothing
-            return DummyIntentRecognizer
-
-    @classmethod
-    def get_intent_trainer_class(
-        cls, trainer_system: str, recognizer_system: str = "dummy"
-    ) -> Type[RhasspyActor]:
-
-        assert trainer_system in [
-            "dummy",
-            "fsticuffs",
-            "fuzzywuzzy",
-            "adapt",
-            "rasa",
-            "flair",
-            "auto",
-            "command",
-        ], ("Invalid intent training system: %s" % trainer_system)
-
-        from .intent_train import (
-            FsticuffsIntentTrainer,
-            FuzzyWuzzyIntentTrainer,
-            AdaptIntentTrainer,
-            RasaIntentTrainer,
-            FlairIntentTrainer,
-            CommandIntentTrainer,
-            DummyIntentTrainer,
-        )
-
-        if trainer_system == "auto":
-            # Use intent recognizer system
-            if recognizer_system == "fsticuffs":
-                # Use OpenFST acceptor locally
-                return FsticuffsIntentTrainer
-            elif recognizer_system == "fuzzywuzzy":
-                # Use fuzzy string matching locally
-                return FuzzyWuzzyIntentTrainer
-            elif recognizer_system == "adapt":
-                # Use Mycroft Adapt locally
-                return AdaptIntentTrainer
-            elif recognizer_system == "flair":
-                # Use flair locally
-                return FlairIntentTrainer
-            elif recognizer_system == "rasa":
-                # Use rasaNLU remotely
-                return RasaIntentTrainer
-            elif recognizer_system == "command":
-                # Use command-line intent trainer
-                return CommandIntentTrainer
-        elif trainer_system == "fsticuffs":
-            # Use OpenFST acceptor locally
-            return FsticuffsIntentTrainer
-        elif trainer_system == "fuzzywuzzy":
-            # Use fuzzy string matching locally
-            return FuzzyWuzzyIntentTrainer
-        elif trainer_system == "adapt":
-            # Use Mycroft Adapt locally
-            return AdaptIntentTrainer
-        elif trainer_system == "rasa":
-            # Use rasaNLU remotely
-            return RasaIntentTrainer
-        elif trainer_system == "flair":
-            # Use flair RNN locally
-            return FlairIntentTrainer
-        elif trainer_system == "command":
-            # Use command-line intent trainer
-            return CommandIntentTrainer
-
-        return DummyIntentTrainer
-
-    @classmethod
-    def get_speech_trainer_class(
-        cls, trainer_system: str, decoder_system: str = "dummy"
-    ) -> Type[RhasspyActor]:
-
-        assert trainer_system in [
-            "dummy",
-            "pocketsphinx",
-            "kaldi",
-            "auto",
-            "command",
-        ], ("Invalid speech training system: %s" % trainer_system)
-
-        from .stt_train import (
-            PocketsphinxSpeechTrainer,
-            KaldiSpeechTrainer,
-            CommandSpeechTrainer,
-            DummySpeechTrainer,
-        )
-
-        if trainer_system == "auto":
-            # Use speech decoder system
-            if decoder_system == "pocketsphinx":
-                # Use opengrm/phonetisaurus
-                return PocketsphinxSpeechTrainer
-            elif decoder_system == "kaldi":
-                # Use opengrm/phonetisaurus
-                return KaldiSpeechTrainer
-            elif decoder_system == "command":
-                # Use command-line speech trainer
-                return CommandSpeechTrainer
-        elif trainer_system == "pocketsphinx":
-            # Use opengrm/phonetisaurus
-            return PocketsphinxSpeechTrainer
-        elif trainer_system == "kaldi":
-            # Use opengrm/phonetisaurus/kaldi
-            return KaldiSpeechTrainer
-        elif trainer_system == "command":
-            # Use command-line speech trainer
-            return CommandSpeechTrainer
-
-        # Use dummy trainer as a fallback
-        return DummySpeechTrainer
-
-    @classmethod
-    def get_intent_handler_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in ["dummy", "hass", "command"], (
-            "Invalid intent handler system: %s" % system
-        )
-
-        from .intent_handler import (
-            HomeAssistantIntentHandler,
-            CommandIntentHandler,
-            DummyIntentHandler,
-        )
-
-        if system == "hass":
-            # Use Home Assistant directly
-            return HomeAssistantIntentHandler
-        elif system == "command":
-            # Use command-line speech trainer
-            return CommandIntentHandler
-        else:
-            # Use dummy handlers as a fallback
-            return DummyIntentHandler
-
-    @classmethod
-    def get_speech_class(cls, system: str) -> Type[RhasspyActor]:
-        assert system in [
-            "dummy",
-            "espeak",
-            "marytts",
-            "flite",
-            "picotts",
-            "command",
-        ], ("Invalid text to speech system: %s" % system)
-
-        from .tts import (
-            EspeakSentenceSpeaker,
-            MaryTTSSentenceSpeaker,
-            FliteSentenceSpeaker,
-            CommandSentenceSpeaker,
-            PicoTTSSentenceSpeaker,
-            DummySentenceSpeaker,
-        )
-
-        if system == "espeak":
-            # Use eSpeak directly
-            return EspeakSentenceSpeaker
-        elif system == "marytts":
-            # Use MaryTTS
-            return MaryTTSSentenceSpeaker
-        elif system == "flite":
-            # Use CMU's Flite
-            return FliteSentenceSpeaker
-        elif system == "picotts":
-            # Use SVOX PicoTTS
-            return PicoTTSSentenceSpeaker
-        elif system == "command":
-            # Use command-line text-to-speech system
-            return CommandSentenceSpeaker
-
-        # Use dummy as a fallback
-        return DummySentenceSpeaker

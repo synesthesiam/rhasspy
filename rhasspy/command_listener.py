@@ -9,7 +9,7 @@ import json
 import uuid
 import subprocess
 from datetime import timedelta
-from typing import Optional, Any, Tuple, Dict
+from typing import Optional, Any, Tuple, Dict, Type
 
 from .actor import RhasspyActor, WakeupMessage
 from .audio_recorder import StartStreaming, StopStreaming, AudioData
@@ -36,6 +36,31 @@ class VoiceCommand:
         self.data = data
         self.timeout = timeout
         self.handle = handle
+
+
+# -----------------------------------------------------------------------------
+
+
+def get_command_class(system: str) -> Type[RhasspyActor]:
+    assert system in ["dummy", "webrtcvad", "command", "oneshot", "hermes"], (
+        "Unknown voice command system: %s" % system
+    )
+
+    if system == "webrtcvad":
+        # Use WebRTCVAD locally
+        return WebrtcvadCommandListener
+    elif system == "command":
+        # Use external program
+        return CommandCommandListener
+    elif system == "oneshot":
+        # Use one-shot listener locally
+        return OneShotCommandListener
+    elif system == "hermes":
+        # Use MQTT listener
+        return HermesCommandListener
+
+    # Use dummy listener as a fallback
+    return DummyCommandListener
 
 
 # -----------------------------------------------------------------------------

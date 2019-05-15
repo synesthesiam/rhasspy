@@ -7,7 +7,7 @@ import shutil
 import json
 import time
 from collections import defaultdict
-from typing import Dict, List, Any, Tuple, Set, Optional
+from typing import Dict, List, Any, Tuple, Set, Optional, Type
 
 from jsgf2fst import fst2arpa
 import pywrapfst as fst
@@ -49,6 +49,42 @@ class UnknownWordsException(Exception):
 
     def __repr__(self):
         return f"Unknown words: {self.unknown_words}"
+
+
+# -----------------------------------------------------------------------------
+
+
+def get_speech_trainer_class(
+    trainer_system: str, decoder_system: str = "dummy"
+) -> Type[RhasspyActor]:
+
+    assert trainer_system in ["dummy", "pocketsphinx", "kaldi", "auto", "command"], (
+        "Invalid speech training system: %s" % trainer_system
+    )
+
+    if trainer_system == "auto":
+        # Use speech decoder system
+        if decoder_system == "pocketsphinx":
+            # Use opengrm/phonetisaurus
+            return PocketsphinxSpeechTrainer
+        elif decoder_system == "kaldi":
+            # Use opengrm/phonetisaurus
+            return KaldiSpeechTrainer
+        elif decoder_system == "command":
+            # Use command-line speech trainer
+            return CommandSpeechTrainer
+    elif trainer_system == "pocketsphinx":
+        # Use opengrm/phonetisaurus
+        return PocketsphinxSpeechTrainer
+    elif trainer_system == "kaldi":
+        # Use opengrm/phonetisaurus/kaldi
+        return KaldiSpeechTrainer
+    elif trainer_system == "command":
+        # Use command-line speech trainer
+        return CommandSpeechTrainer
+
+    # Use dummy trainer as a fallback
+    return DummySpeechTrainer
 
 
 # -----------------------------------------------------------------------------
