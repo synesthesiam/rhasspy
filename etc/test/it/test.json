@@ -1,3 +1,20 @@
 {
-    "text": "accendi la lampada del soggiorno"
+    "text": "accendi la lampada del soggiorno",
+    "intent": {
+        "name": "ChangeLightState"
+    },
+    "entities": {
+        "name": "lampada del soggiorno",
+        "state": "accendi"
+    },
+    "words": {
+        "known": {
+            "word": "grazie",
+            "phonemes": "g r a1 ts ts j e"
+        },
+        "unknown": {
+            "word": "grazieama",
+            "phonemes": "g r a1 ts ts j e a1 m a"
+        }
+    }
 }
