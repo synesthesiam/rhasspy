@@ -74,3 +74,10 @@ Rhasspy is intended for advanced users that want to have a voice interface to Ho
 3. Work well with Home Assistant, Hass.io, and Node-RED
 
 If you feel comfortable sending your voice commands through the Internet for someone else to process, or are not comfortable with rolling your own Home Assistant automations to handle intents, I recommend taking a look at [Mycroft](https://mycroft.ai).
+
+## Contributing
+
+For users who are also coders, pull requests for bug fixes or new components are always welcome and much appreciated!
+
+If you can speak/write one of the supported languages, I would love to hear your feedback about that language's profile.
+I only speak English, so I rely on users of Rhasspy (and Google Translate) to help me write example sentences and create test WAV files.
