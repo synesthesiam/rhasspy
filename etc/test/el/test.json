@@ -1,0 +1,21 @@
+{
+    "text": "ενεργοποιήστε τη λάμπα του καθιστικού",
+    "intent": {
+        "name": "ChangeLightState"
+    },
+    "entities": {
+        "name": "καθιστικού",
+        "state": "ενεργοποιήστε"
+    },
+    "words": {
+        "known": {
+            "word": "κάποιος",
+            "phonemes": "k a1 p i0 o0 s"
+        },
+        "unknown": {
+            "word": "κάποιοσκ",
+            "phonemes": "k a1 p i0 o0 s k"
+        }
+    }
+
+}
