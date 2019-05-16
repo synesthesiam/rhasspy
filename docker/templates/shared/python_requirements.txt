@@ -4,5 +4,10 @@ RUN python3 -m pip install --no-cache-dir wheel
 COPY download/jsgf2fst-0.1.0.tar.gz \
      /download/
 
+RUN apt-get install -y libfreetype6-dev libpng-dev pkg-config
 COPY requirements.txt /requirements.txt
+RUN if [ "$BUILD_ARCH" != "amd64" ]; then \
+    grep -v flair /requirements.txt > /requirements-noflair.txt; \
+    mv /requirements-noflair.txt /requirements.txt; \
+    fi
 RUN python3 -m pip install --no-cache-dir -r /requirements.txt
