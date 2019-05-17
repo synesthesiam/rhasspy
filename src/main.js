@@ -8,7 +8,12 @@ import VueNativeSock from 'vue-native-websocket'
 Vue.use(VueAxios, axios)
 Vue.use(VueLodash)
 
-var wsURL = 'ws://' + window.location.host + '/api/events/log'
+var wsProtocol = 'ws://'
+if (window.location.protocol == "https:") {
+    wsProtocol = 'wss://'
+}
+
+var wsURL = wsProtocol + window.location.host + '/api/events/log'
 Vue.use(VueNativeSock, wsURL, {
     reconnection: true
 })

@@ -95,6 +95,9 @@ parser.add_argument(
     help="Set a profile setting value",
     default=[],
 )
+parser.add_argument(
+    "--ssl", nargs=2, help="Use SSL with <CERT_FILE <KEY_FILE>", default=None
+)
 
 args = parser.parse_args()
 logger.debug(args)
@@ -887,8 +890,19 @@ def api_events_log(ws) -> None:
 # -----------------------------------------------------------------------------
 
 # Start web server
-logging.debug(f"Starting web server at http://{args.host}:{args.port}")
-server = pywsgi.WSGIServer((args.host, args.port), app, handler_class=WebSocketHandler)
+protocol = "http"
+server_kwargs = {}
+
+if args.ssl is not None:
+    logging.debug(f"Using SSL with certfile, keyfile = {args.ssl}")
+    server_kwargs["certfile"] = args.ssl[0]
+    server_kwargs["keyfile"] = args.ssl[1]
+    protocol = "https"
+
+logging.debug(f"Starting web server at {protocol}://{args.host}:{args.port}")
+server = pywsgi.WSGIServer(
+    (args.host, args.port), app, handler_class=WebSocketHandler, **server_kwargs
+)
 logging.getLogger("geventwebsocket").setLevel(logging.INFO)
 
 try:

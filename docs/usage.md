@@ -80,9 +80,31 @@ Rhasspy features a comprehensive HTTP API available at `/api`, documented with [
     
 See `public/swagger.yaml` in Rhasspy's repository for all available endpoints, or visit `/api` on your Rhasspy web server (e.g., [http://locahost:12101/api](http://localhost:12101/api)).
 
+## Secure Hosting with HTTPS
+
+If you need to access Rhasspy's web interface/API through HTTPS (formally SSL), you can provide a certificate and key file via command-line parameters or the Hass.IO configuration.
+
+If you're running Rhasspy via Docker or in a virtual environment, add `--ssl <CERT_FILE> <KEY_FILE>` to the command-line arguments where `<CERT_FILE>` is your SSL certificate and `<KEY_FILE>` is your SSL key file.
+
+You can generate a self-signed certificate with the following command:
+
+    openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 365
+    
+After answering the series of questions, you should have `cert.pem` and `key.pem` in your current directory. Then run Rhasspy with:
+
+    <RHASSPY COMMAND> --ssl cert.pem key.pem
+    
+The web interface will now be available at [https://localhost:12101](https://locahost:12101) and the web socket events at `wss://localhost:12101/api/events/intent`
+
+In Hass.IO, you will need to set the following options via the web interface or in your JSON configuration:
+
+  * `ssl`: `true`
+  * `certfile`: `cert.pem`
+  * `keyfile`: `key.pem`
+
 ## WebSocket Events
 
-Whenever a voice command is recognized, Rhasspy emits JSON events over a websocket connection available at `ws://rhasspy:12101/api/events/intent`
+Whenever a voice command is recognized, Rhasspy emits JSON events over a websocket connection available at `ws://rhasspy:12101/api/events/intent` (replace `ws://` with `wss://` if you're using [secure hosting](usage.md#secure-hosting-with-https)).
 You can listen to these events in a [Node-RED](https://nodered.org) flow, and easily add offline, private voice commands to your home automation set up!
 
 For the `ChangLightState` intent from the [RGB Light Example](index.md#rgb-light-example), Rhasspy will emit a JSON event like this over the websocket:
