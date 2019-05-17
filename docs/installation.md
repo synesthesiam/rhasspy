@@ -68,9 +68,10 @@ Rhasspy can be installed into a Python virtual environment, though there are a n
 
     git clone https://github.com/synesthesiam/rhasspy.git
     
-Then run the `create-venv.sh` script (assumes a Debian distribution):
+Then run the `download-dependencies.sh` and `create-venv.sh` scripts (assumes a Debian distribution):
 
     cd rhasspy/
+    ./download-dependencies.sh
     ./create-venv.sh
     
 Once the installation finishes (5-10 minutes on a Raspberry Pi 3), you can use the `run-venv.sh` script to start Rhasspy:

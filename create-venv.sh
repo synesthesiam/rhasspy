@@ -133,7 +133,7 @@ esac
 if [[ -z "$(which precise-engine)" ]]; then
     case $CPU_ARCH in
         x86_64|armv7l)
-            precise_file="${download_dir}/precise-engine_0.2.0_${CPU_ARCH}.tar.gz"
+            precise_file="${download_dir}/precise-engine_0.3.0_${CPU_ARCH}.tar.gz"
             precise_install='/usr/lib'
             sudo tar -C "${precise_install}" -xf "${precise_file}"
             sudo ln -s "${precise_install}/precise-engine/precise-engine" '/usr/bin/precise-engine'
