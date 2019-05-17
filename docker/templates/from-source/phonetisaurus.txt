@@ -1,14 +1,5 @@
-# Install phonetisaurus (with openfst 1.6.2)
-COPY download/openfst-1.6.9.tar.gz /
-RUN cd / && tar -xzf openfst-1.6.9.tar.gz && \
-    cd /openfst-1.6.9 && \
-    ./configure --enable-static --enable-shared --enable-far --enable-ngram-fsts && \
-    make -j $MAKE_THREADS && \
-    make install && \
-    rm -rf /openfst*
-
-COPY download/phonetisaurus-2019.zip /phonetisaurus.zip
-RUN cd / && unzip phonetisaurus.zip
+COPY download/phonetisaurus-2019.tar.gz /phonetisaurus.tar.gz
+RUN cd / && tar -xf phonetisaurus.tar.gz
 RUN cd /phonetisaurus && \
     ./configure && \
     make -j $MAKE_THREADS && \

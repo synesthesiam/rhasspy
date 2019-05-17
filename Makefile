@@ -22,7 +22,7 @@ docker-armhf:
      -t synesthesiam/rhasspy-server:armhf
 
 docker-aarch64:
-	docker build . -f docker/templates/dockerfiles/Dockerfile.prebuilt.alsa.all \
+	docker build . -f docker/templates/dockerfiles/Dockerfile.from-source.alsa.all \
      --build-arg BUILD_ARCH=aarch64 \
      --build-arg CPU_ARCH=arm64v8 \
      --build-arg BUILD_FROM=arm64v8/ubuntu:bionic \
