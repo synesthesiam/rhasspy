@@ -47,7 +47,7 @@ sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
      gfortran libfst-dev \
      sphinxbase-utils sphinxtrain pocketsphinx \
      jq checkinstall unzip xz-utils \
-     libfst-dev curl
+     libfst-dev libfst-tools curl
 
 # -----------------------------------------------------------------------------
 # Python 3.6
