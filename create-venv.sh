@@ -93,7 +93,18 @@ mkdir -p "${VENV_PATH}"
 # shellcheck source=/dev/null
 source "${VENV_PATH}/bin/activate"
 "${PYTHON}" -m pip install wheel
-"${PYTHON}" -m pip install -r requirements.txt
+
+case $CPU_ARCH in
+    armv7l|arm64v8)
+        # Exclude flair
+        grep -v flair requirements.txt > "${temp_dir}/requirements-noflair.txt"
+        "${PYTHON}" -m pip install -r "${temp_dir}/requirements-noflair.txt"
+        ;;
+
+    *)
+        # Install all requirements
+        "${PYTHON}" -m pip install -r requirements.txt
+esac
 
 # Download dependencies
 echo "Downloading dependencies"

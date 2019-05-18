@@ -1,33 +1,35 @@
-aa a aa
-ai d dd ai
-an en an
-au au au
-bb bon bb on
-ch chose ch au zz
-dd de dd
-ee y ii gg rr ai gg ee
-ei ce ss ei ee
-eu deux dd eu
-ff fait ff ai
-ii ai aa ii
-in bien bb yy in
-jj je jj ee
-kk que kk
-ll l ai ll
-mm ma mm aa
-nn ne nn
-oe ces ss ei oe ai ss
-on on on
-oo non nn oo nn
-ou yaourt yy aa ou rr
-pp par pp aa rr
-rr sur ss uu rr
-ss as aa ss
-tt et ai tt
-un un un
-uu du dd uu
-uy lui ll uy ii
-vv va vv aa
-ww moi mm ww aa
-yy rien rr yy in
-zz es ai zz
+aa abri aa bb rr ii
+ai aide ai dd
+an adam aa dd an
+au allô aa ll au
+bb aube au bb
+ch chat ch aa
+dd aidé ai dd ei
+ee acte aa kk tt ee
+ei aimé ai mm ei
+eu bleu bb ll eu
+ff afin aa ff in
+gg agir aa gg ii rr
+gn gagne gg aa gn
+ii agit aa jj ii
+in bain bb in
+jj ange an jj
+kk alex aa ll ai kk ss
+ll allé aa ll ei
+mm aime ai mm
+nn andy aa nn dd ii
+oe club kk ll oe bb
+on bons bb on
+oo aura oo rr aa
+ou août ou
+pp camp kk aa mm pp
+rr arme aa rr mm
+ss bras bb rr aa ss
+tt bout bb ou tt
+un aucun oo kk un
+uu buts bb uu
+uy fuir ff uy ii rr
+vv avec aa vv ai kk
+ww bois bb ww aa
+yy ayez ai yy ei
+zz aise ai zz
