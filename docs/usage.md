@@ -245,6 +245,8 @@ For `rhasspy-cli --profile <PROFILE_NAME> <COMMAND> <ARGUMENTS>`, `<COMMAND>` ca
     * Converts a single sentence to WAV using Rhasspy's text to speech system
 * `sleep`
     * Run Rhasspy and wait until wake word is spoken
+* `download`
+    * Download necessary profile files from the internet
 
 ### Profile Operations
 

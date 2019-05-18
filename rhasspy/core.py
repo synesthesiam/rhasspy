@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import subprocess
 from typing import List, Dict, Optional, Any, Callable, Tuple, Union
 
 import pydash
@@ -305,3 +306,34 @@ class RhasspyCore:
         if self.actor_system is not None:
             self.actor_system.shutdown()
             self.actor_system = None
+
+    # -------------------------------------------------------------------------
+
+    def check_profile(self) -> bool:
+        """Returns (True, output) if the profile has all necessary files downloaded."""
+        check_path = self.profile.read_path("check-profile.sh")
+        assert os.path.exists(check_path), "Missing profile check script"
+        check_cmd = ["bash", check_path, self.profile.write_path()]
+        self._logger.debug(check_cmd)
+
+        try:
+            subprocess.run(check_cmd, stderr=sys.stderr, stdout=sys.stderr, check=True)
+        except subprocess.CalledProcessError as e:
+            return False
+
+        return True
+
+    # -------------------------------------------------------------------------
+
+    def download_profile(self, delete=False) -> None:
+        """Downloads all necessary profile files from Github."""
+        download_script = os.path.abspath(self.profile.read_path("download-profile.sh"))
+        assert os.path.exists(download_script), "Profile download script is missing."
+        download_cmd = ["bash", download_script, self.profile.write_path()]
+
+        if delete:
+            download_cmd.append("--delete")
+
+        self._logger.debug(download_cmd)
+
+        subprocess.run(download_cmd, stderr=sys.stderr, stdout=sys.stderr, check=True)

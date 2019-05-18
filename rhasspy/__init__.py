@@ -112,6 +112,11 @@ def main() -> None:
     parser.add_argument(
         "--debug", action="store_true", help="Print DEBUG log to console"
     )
+    parser.add_argument(
+        "--no-check",
+        action="store_true",
+        help="Don't check profile for necessary files",
+    )
 
     sub_parsers = parser.add_subparsers(dest="command")
     sub_parsers.required = True
@@ -285,6 +290,12 @@ def main() -> None:
     # sleep
     sleep_parser = sub_parsers.add_parser("sleep", help="Wait for wake word")
 
+    # download
+    download_parser = sub_parsers.add_parser("download", help="Download profile files")
+    download_parser.add_argument(
+        "--delete", action="store_true", help="Clear download cache before downloading"
+    )
+
     # -------------------------------------------------------------------------
 
     args = parser.parse_args()
@@ -375,11 +386,21 @@ def main() -> None:
             "text2wav": text2wav,
             "text2speech": text2speech,
             "sleep": sleep,
+            "download": download,
         }
 
         if not args.command in ["test-wake"]:
             # Automatically start core
             core.start()
+
+        if not args.no_check and args.command != "download":
+            # Verify that profile has necessary files
+            downloaded = core.check_profile()
+            if not downloaded:
+                logger.fatal(
+                    f"Missing required files for {profile.name}. Please run download command and try again."
+                )
+                sys.exit(1)
 
         if mic_stdin_running:
             logger.debug("Reading audio data from stdin")
@@ -1128,7 +1149,6 @@ def text2speech(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 # -----------------------------------------------------------------------------
-
 # sleep: wait for wake word
 # -----------------------------------------------------------------------------
 
@@ -1139,6 +1159,16 @@ def sleep(core: RhasspyCore, profile: Profile, args: Any) -> None:
         print(result.name)
     else:
         print("")  # not detected
+
+
+# -----------------------------------------------------------------------------
+# download: download profile files
+# -----------------------------------------------------------------------------
+
+
+def download(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    core.download_profile(delete=args.delete)
+    print("OK")
 
 
 # -----------------------------------------------------------------------------
