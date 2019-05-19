@@ -18,6 +18,17 @@ CPU_TO_FRIENDLY["armv7l"]="armhf"
 CPU_TO_FRIENDLY["arm64v8"]="aarch64"
 
 # -----------------------------------------------------------------------------
+# OpenFST
+# -----------------------------------------------------------------------------
+
+openfst_file="${download_dir}/openfst-1.6.2.tar.gz"
+if [[ ! -f "${openfst_file}" ]]; then
+    openfst_url='http://www.openfst.org/twiki/pub/FST/FstDownload/openfst-1.6.2.tar.gz'
+    echo "Downloading OpenFST source (${openfst_url})"
+    curl -sSfL -o "${openfst_file}" "${openfst_url}"
+fi
+
+# -----------------------------------------------------------------------------
 # Pocketsphinx for Python
 # -----------------------------------------------------------------------------
 

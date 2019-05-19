@@ -655,7 +655,7 @@ def api_unknown_words() -> Response:
         for line in open(unknown_path, "r"):
             line = line.strip()
             if len(line) > 0:
-                word, pronunciation = re.split(r"\s+", line, maxsplit=1)
+                word, pronunciation = re.split(r"[ ]+", line, maxsplit=1)
                 unknown_words[word] = pronunciation
 
     return jsonify(unknown_words)

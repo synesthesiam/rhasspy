@@ -44,10 +44,35 @@ sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
      build-essential autoconf autoconf-archive libtool automake bison \
      sox espeak flite swig portaudio19-dev \
      libatlas-base-dev \
-     gfortran libfst-dev \
+     gfortran \
      sphinxbase-utils sphinxtrain pocketsphinx \
      jq checkinstall unzip xz-utils \
-     libfst-dev libfst-tools curl
+     curl
+
+# Download dependencies
+echo "Downloading dependencies"
+bash download-dependencies.sh
+
+# -----------------------------------------------------------------------------
+# OpenFST
+# -----------------------------------------------------------------------------
+
+case $CPU_ARCH in
+    armv7l|arm64v8)
+        # Build from source
+        openfst_file="${download_dir}/openfst-1.6.2.tar.gz"
+        echo "Building OpenFST (${openfst_file})"
+        tar -C "${temp_dir}" -xzf "${openfst_file}" && \
+            cd "${temp_dir}/openfst-1.6.2" && \
+            ./configure --enable-static --enable-shared --enable-far --enable-ngram-fsts && \
+            make -j 4 && \
+            sudo make install
+        ;;
+
+    *)
+        # Use pre-built packages
+        sudo apt-get install -y libfst-dev libfst-tools
+esac
 
 # -----------------------------------------------------------------------------
 # Python 3.6
@@ -105,10 +130,6 @@ case $CPU_ARCH in
         # Install all requirements
         "${PYTHON}" -m pip install -r requirements.txt
 esac
-
-# Download dependencies
-echo "Downloading dependencies"
-bash download-dependencies.sh
 
 # -----------------------------------------------------------------------------
 # Pocketsphinx for Python

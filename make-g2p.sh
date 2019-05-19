@@ -23,10 +23,10 @@ trap finish EXIT
 
 cd "${temp_dir}"
 perl -pe 's/\([0-9]+\)//;
-            s/\s+/ /g; s/^\s+//;
-            s/\s+$//; @_ = split (/\s+/);
+            s/[ ]+/ /g; s/^[ ]+//;
+            s/[ ]+$//; @_ = split (/[ ]+/);
             $w = shift (@_);
-            $_ = $w."\t".join (" ", @_)."\n";' < "${dict_path}" | sed -e '/_/d' > formatted.dict
+            $_ = $w."\t".join (" ", @_)."\n";' < "${dict_path}" | sed -e '/[_|\xA0]/d' > formatted.dict
 
 phonetisaurus-train --lexicon formatted.dict --seq2_del --verbose
 cp train/model.fst "${model_path}"

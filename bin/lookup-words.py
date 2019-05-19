@@ -7,6 +7,7 @@ from collections import defaultdict
 
 # This script downloads frequently used words in the supported languages.
 
+
 def main():
     words = set()
     for line in sys.stdin:
@@ -16,20 +17,25 @@ def main():
     # path to CMU dictionary
     dict_path = sys.argv[1]
 
-    with open(dict_path, 'r') as dict_file:
+    with open(dict_path, "r") as dict_file:
         for line in dict_file:
             line = line.strip()
             if len(line) == 0:
                 continue
 
-            parts = re.split(r'\s+', line)
+            parts = re.split(r"[ ]+", line)
             word = parts[0].upper()
             if word in words:
-                espeak_phones = subprocess.check_output(['espeak', '-x', '-q', word]).decode().strip()
-                print(word, espeak_phones, ' '.join(parts[1:]))
+                espeak_phones = (
+                    subprocess.check_output(["espeak", "-x", "-q", word])
+                    .decode()
+                    .strip()
+                )
+                print(word, espeak_phones, " ".join(parts[1:]))
                 words.remove(word)
+
 
 # -----------------------------------------------------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -34,7 +34,7 @@ def main():
             if len(line) == 0:
                 continue
 
-            parts = re.split(r"\s+", line)
+            parts = re.split(r"[ ]+", line)
             word = parts[0].lower()
 
             if ("(" in word) or (word in freq_phonemes):
@@ -73,7 +73,7 @@ def main():
                 if len(line) == 0:
                     continue
 
-                parts = re.split(r"\s+", line, maxsplit=1)
+                parts = re.split(r"[ ]+", line, maxsplit=1)
                 word = parts[0].lower()
                 freq_espeak[word] = parts[1]
 
