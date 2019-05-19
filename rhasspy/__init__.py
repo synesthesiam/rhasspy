@@ -1035,7 +1035,8 @@ def word2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
     word_pronunciations = all_pronunciations[args.word]["pronunciations"]
 
     # Convert from CMU phonemes to eSpeak phonemes
-    espeak_str = core.get_word_phonemes(word_pronunciations[0]).phonemes
+    sphinx = word_pronunciations[0]
+    espeak_str = all_pronunciations[args.word]["phonemes"][sphinx]["espeak"]
 
     # Pronounce as WAV
     wav_data = core.speak_word(espeak_str).wav_data

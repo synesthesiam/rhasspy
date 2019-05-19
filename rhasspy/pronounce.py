@@ -5,6 +5,7 @@ import logging
 import subprocess
 import tempfile
 from typing import Dict, Tuple, List, Optional, Any
+from collections import defaultdict
 
 from .actor import RhasspyActor
 from .utils import read_dict, load_phoneme_map
@@ -35,7 +36,7 @@ class GetWordPhonemes:
 
 
 class WordPhonemes:
-    def __init__(self, word: str, phonemes: str) -> None:
+    def __init__(self, word: str, phonemes: Dict[str, str]) -> None:
         self.word = word
         self.phonemes = phonemes
 
@@ -98,8 +99,11 @@ class PhonetisaurusPronounce(RhasspyActor):
                 self._logger.exception("pronounce")
                 self.send(message.receiver or sender, PronunciationFailed(repr(e)))
         elif isinstance(message, GetWordPhonemes):
-            phonemes = self.translate_phonemes(message.word)
-            self.send(message.receiver or sender, WordPhonemes(message.word, phonemes))
+            phonemes = self.translate_phonemes([message.word])
+            self.send(
+                message.receiver or sender,
+                WordPhonemes(message.word, phonemes[message.word]),
+            )
 
     # -------------------------------------------------------------------------
 
@@ -129,20 +133,49 @@ class PhonetisaurusPronounce(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def translate_phonemes(self, phonemes: str) -> str:
-        # Load map from Sphinx to eSpeak phonemes
+    def translate_phonemes(self, sphinxes: List[str]) -> Dict[str, Dict[str, str]]:
+        from .lexconvert import convert
+
+        # Load map from Sphinx to IPA
         map_path = self.profile.read_path(
-            self.profile.get("text_to_speech.espeak.phoneme_map")
+            self.profile.get(
+                "text_to_speech.espeak.ipa.phoneme_map", "ipa_phonemes.txt"
+            )
         )
 
-        phoneme_map = load_phoneme_map(map_path)
+        if os.path.exists(map_path):
+            # Compute Sphinx <-> eSpeak map using IPA
+            ipa_map = load_phoneme_map(map_path)
+            phoneme_map = {
+                sphinx: convert(ipa, "unicode-ipa", "espeak")
+                for sphinx, ipa in ipa_map.items()
+            }
+        else:
+            # Fall back to Sphinx <-> eSpeak map
+            map_path = self.profile.read_path(
+                self.profile.get(
+                    "text_to_speech.espeak.phoneme_map", "espeak_phonemes.txt"
+                )
+            )
 
-        # Convert from Sphinx to espeak phonemes
-        espeak_str = "[['%s]]" % "".join(
-            phoneme_map.get(p, p) for p in phonemes.split()
-        )
+            phoneme_map = load_phoneme_map(map_path)
+            ipa_map = {
+                sphinx: convert(espeak, "espeak", "unicode-ipa")
+                for sphinx, espeak in phoneme_map.items()
+            }
 
-        return espeak_str
+        phonemes = defaultdict(dict)
+        for sphinx in sphinxes:
+            sphinx_parts = sphinx.split()
+
+            # Convert from Sphinx to espeak phonemes
+            phonemes[sphinx]["espeak"] = "[['%s]]" % "".join(
+                phoneme_map.get(p, p) for p in sphinx_parts
+            )
+
+            phonemes[sphinx]["ipa"] = "".join(ipa_map.get(p, p) for p in sphinx_parts)
+
+        return phonemes
 
     # -------------------------------------------------------------------------
 
@@ -168,20 +201,16 @@ class PhonetisaurusPronounce(RhasspyActor):
                     read_dict(dictionary_file, word_dict)
 
         pronunciations = self._lookup_words(words, word_dict, n)
+        all_pronunciations = []
+        for pron in pronunciations.values():
+            all_pronunciations.extend(pron["pronunciations"])
 
-        # Get phonemes from eSpeak
-        for word in words:
-            espeak_command = ["espeak", "-q", "-x"]
+        phonemes = self.translate_phonemes(all_pronunciations)
 
-            voice = self._get_voice()
-            if voice is not None:
-                espeak_command.extend(["-v", voice])
-
-            espeak_command.append(word)
-
-            self._logger.debug(repr(espeak_command))
-            espeak_str = subprocess.check_output(espeak_command).decode().strip()
-            pronunciations[word]["phonemes"] = espeak_str
+        for word in pronunciations.keys():
+            pronunciations[word]["phonemes"] = {}
+            for pron in pronunciations[word]["pronunciations"]:
+                pronunciations[word]["phonemes"][pron] = phonemes[pron]
 
         return pronunciations
 

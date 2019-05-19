@@ -159,7 +159,8 @@
             "program": ""
         },
         "espeak": {
-            "phoneme_map": "espeak_phonemes.txt"
+            "phoneme_map": "espeak_phonemes.txt",
+            "ipa_map": "ipa_phonemes.txt"
         },
         "flite": {
             "voice": "kal16"

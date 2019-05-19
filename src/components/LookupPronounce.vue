@@ -40,7 +40,7 @@
                     <button type="button" class="btn btn-success" title="Add this pronunciation to your custom words" @click="addToCustomWords">Add</button>
                 </div>
                 <div class="col-xs-auto">
-                    <input id="espeak-phonemes" title="eSpeak Phonemes" class="form-control" type="text" v-model="espeakPhonemes" readonly>
+                    <input id="espeak-phonemes" title="IPA/eSpeak Phonemes" class="form-control" type="text" v-model="espeakPhonemes" readonly>
                 </div>
                 <div class="col-xs-auto">
                     <button type="button" class="btn btn-secondary" @click="pronouncePhonemesOrWord(phonemes)"
@@ -176,7 +176,7 @@
                          this.phonemes = this.pronunciations[0];
                      }
 
-                     this.espeakPhonemes = request.data.phonemes
+                     this.espeakPhonemes = request.data.phonemes[this.phonemes]['ipa']
                  })
                  .then(() => this.$parent.endAsync())
                  .catch(err => this.$parent.error(err))

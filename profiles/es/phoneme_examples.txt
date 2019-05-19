@@ -1,22 +1,25 @@
-A A A
-B VEZ B E Z
-CH MUCHO M U CH O
-D DE D E
-E EL E L
-F FUE F U E
-G ALGO A L G O
-GN AñOS A GN O S
-I Y I
-K CON K O N
-L AL A L
-LL ELLA E LL A
-M ME M E
-N EN E N
-O O O
-P POR P O R
-R ERA E R A
-S ES E S
-T TE T E
-U SU S U
-Y YA Y A
-Z HACE A Z E
+a abre a b r e
+b baja b a j a
+ch ocho o ch o
+d anda a n d a
+e aire a i r e
+f café k a f e
+g agua a g u a
+gn años a gn o s
+i allí a ll i
+j bajo b a j o
+k acto a k t o
+l alex a l e x
+ll allá a ll a
+m alma a l m a
+n andy a n d i
+o algo a l g o
+p copa k o p a
+r amor a m o r
+rr raro rr a r o
+s base b a s e
+t alta a l t a
+u auto a u t o
+x sexo s e x o
+y ayer a y e r
+z azul a z u l

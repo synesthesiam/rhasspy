@@ -363,7 +363,7 @@ def api_pronounce() -> Union[Response, str]:
 
     if pronounce_type == "phonemes":
         # Convert from Sphinx to espeak phonemes
-        espeak_str = core.get_word_phonemes(pronounce_str).phonemes
+        espeak_str = core.get_word_phonemes(pronounce_str).phonemes["espeak"]
     else:
         # Speak word directly
         espeak_str = pronounce_str
@@ -404,8 +404,13 @@ def api_phonemes():
     """Get phonemes and example words for a profile"""
     assert core is not None
     examples_path = core.profile.read_path(
-        core.profile.get("text_to_speech.phoneme_examples", "phoneme_examples.txt")
+        core.profile.get("text_to_speech.espeak.ipa.phoneme_map", "ipa_phonemes.txt")
     )
+
+    if not os.path.exists(examples_path):
+        examples_path = core.profile.read_path(
+            core.profile.get("text_to_speech.phoneme_examples", "phoneme_examples.txt")
+        )
 
     # phoneme -> { word, phonemes }
     logger.debug("Loading phoneme examples from %s" % examples_path)
