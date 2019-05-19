@@ -42,7 +42,7 @@ class RhasspyTestCore:
 
 # -----------------------------------------------------------------------------
 
-# PROFILES = ["en", "de", "es", "fr", "it", "nl", "ru", "pt"]
+PROFILES = ["en", "de", "es", "fr", "it", "nl", "ru", "pt"]
 # Not passing: vi, el
 # Not tested: hi, zh
 TEST_WAV_PATH = {p: os.path.join("etc", "test", p, "test.wav") for p in PROFILES}
