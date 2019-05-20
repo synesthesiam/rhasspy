@@ -404,13 +404,8 @@ def api_phonemes():
     """Get phonemes and example words for a profile"""
     assert core is not None
     examples_path = core.profile.read_path(
-        core.profile.get("text_to_speech.espeak.ipa.phoneme_map", "ipa_phonemes.txt")
+        core.profile.get("text_to_speech.phoneme_examples", "phoneme_examples.txt")
     )
-
-    if not os.path.exists(examples_path):
-        examples_path = core.profile.read_path(
-            core.profile.get("text_to_speech.phoneme_examples", "phoneme_examples.txt")
-        )
 
     # phoneme -> { word, phonemes }
     logger.debug("Loading phoneme examples from %s" % examples_path)
