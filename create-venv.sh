@@ -47,11 +47,11 @@ sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
      gfortran \
      sphinxbase-utils sphinxtrain pocketsphinx \
      jq checkinstall unzip xz-utils \
-     curl
+     curl libffi-dev
 
 # Download dependencies
 echo "Downloading dependencies"
-bash download-dependencies.sh
+bash download-dependencies.sh "${CPU_ARCH}"
 
 # -----------------------------------------------------------------------------
 # OpenFST
@@ -59,18 +59,14 @@ bash download-dependencies.sh
 
 case $CPU_ARCH in
     armv7l|arm64v8)
-        # Build from source
-        openfst_file="${download_dir}/openfst-1.6.2.tar.gz"
-        echo "Building OpenFST (${openfst_file})"
-        tar -C "${temp_dir}" -xzf "${openfst_file}" && \
-            cd "${temp_dir}/openfst-1.6.2" && \
-            ./configure --enable-static --enable-shared --enable-far --enable-ngram-fsts && \
-            make -j 4 && \
-            sudo make install
+        # Use pre-built packages
+        openfst_file="${download_dir}/openfst_1.6.9-1_${FRIENDLY_ARCH}.deb"
+        echo "Installing OpenFST (${openfst_file})"
+        sudo dpkg -i "${openfst_file}"
         ;;
 
     *)
-        # Use pre-built packages
+        # Use system packages
         sudo apt-get install -y libfst-dev libfst-tools
 esac
 
@@ -121,6 +117,9 @@ source "${VENV_PATH}/bin/activate"
 
 case $CPU_ARCH in
     armv7l|arm64v8)
+        # Force newer openfst
+        "${PYTHON}" -m pip install 'openfst==1.6.9'
+
         # Exclude flair
         grep -v flair requirements.txt > "${temp_dir}/requirements-noflair.txt"
         "${PYTHON}" -m pip install -r "${temp_dir}/requirements-noflair.txt"
@@ -181,14 +180,25 @@ fi
 # -----------------------------------------------------------------------------
 
 if [[ -z "$(which ngramcount)" ]]; then
-    opengrm_file="${download_dir}/opengrm-ngram-1.3.3.tar.gz"
-    echo "Building Opengrm ${opengrm_file}"
-    tar -C "${temp_dir}" -xf "${opengrm_file}" && \
-        cd "${temp_dir}/opengrm-ngram-1.3.3" && \
-        ./configure && \
-        make -j 4 && \
-        sudo make install && \
-        sudo ldconfig
+    case $CPU_ARCH in
+        armv7l|arm64v8)
+            # Use pre-built packages
+            opengrm_file="${download_dir}/opengrm_1.3.4-1_${FRIENDLY_ARCH}.deb"
+            echo "Installing opengrm (${opengrm_file})"
+            sudo dpkg -i "${opengrm_file}"
+            ;;
+
+        *)
+            # Build from source
+            opengrm_file="${download_dir}/opengrm-ngram-1.3.3.tar.gz"
+            echo "Building Opengrm ${opengrm_file}"
+            tar -C "${temp_dir}" -xf "${opengrm_file}" && \
+                cd "${temp_dir}/opengrm-ngram-1.3.3" && \
+                ./configure && \
+                make -j 4 && \
+                sudo make install && \
+                sudo ldconfig
+    esac
 fi
 
 # -----------------------------------------------------------------------------
@@ -218,30 +228,6 @@ fi
 
 # Add /usr/local/lib to LD_LIBRARY_PATH
 sudo ldconfig
-
-# -----------------------------------------------------------------------------
-# NodeJS / Yarn
-# -----------------------------------------------------------------------------
-
-if [[ -z "$(which node)" ]]; then
-    echo "Installing nodejs"
-    sudo apt-get install -y nodejs
-fi
-
-if [[ -z "$(which yarn)" ]]; then
-    echo "Installing yarn"
-    curl -o- -L https://yarnpkg.com/install.sh | bash
-
-    # Need to re-source .bashrc so yarn is in the path
-    source "${HOME}/.bashrc"
-fi
-
-# -----------------------------------------------------------------------------
-# Web Interface
-# -----------------------------------------------------------------------------
-
-echo "Building web interface"
-cd "${DIR}" && yarn && yarn build
 
 # -----------------------------------------------------------------------------
 

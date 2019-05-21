@@ -8,25 +8,32 @@ DIR="$( cd "$( dirname "$0" )" && pwd )"
 download_dir="${DIR}/download"
 mkdir -p "${download_dir}"
 
-# CPU architecture
-CPU_ARCHS=("x86_64" "armv7l" "arm64v8")
-FRIENDLY_ARCHS=("amd64" "armhf" "aarch64")
-
 declare -A CPU_TO_FRIENDLY
 CPU_TO_FRIENDLY["x86_64"]="amd64"
 CPU_TO_FRIENDLY["armv7l"]="armhf"
 CPU_TO_FRIENDLY["arm64v8"]="aarch64"
 
+# CPU architecture
+CPU_ARCHS=("x86_64" "armv7l" "arm64v8")
+FRIENDLY_ARCHS=("amd64" "armhf" "aarch64")
+
+if [[ ! -z "$1" ]]; then
+    CPU_ARCHS=("$1")
+    FRIENDLY_ARCHS=(${CPU_TO_FRIENDLY["$1"]})
+fi
+
 # -----------------------------------------------------------------------------
 # OpenFST
 # -----------------------------------------------------------------------------
 
-openfst_file="${download_dir}/openfst-1.6.2.tar.gz"
-if [[ ! -f "${openfst_file}" ]]; then
-    openfst_url='http://www.openfst.org/twiki/pub/FST/FstDownload/openfst-1.6.2.tar.gz'
-    echo "Downloading OpenFST source (${openfst_url})"
-    curl -sSfL -o "${openfst_file}" "${openfst_url}"
-fi
+for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"; do
+    openfst_file="${download_dir}/openfst_1.6.9-1_${FRIENDLY_ARCH}.deb"
+    if [[ ! -f "${openfst_file}" ]]; then
+        openfst_url="https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${FRIENDLY_ARCH}/openfst_1.6.9-1_${FRIENDLY_ARCH}.deb"
+        echo "Downloading OpenFST pre-built binary (${openfst_url})"
+        curl -sSfL -o "${openfst_file}" "${openfst_url}"
+    fi
+done
 
 # -----------------------------------------------------------------------------
 # Pocketsphinx for Python
@@ -80,12 +87,23 @@ done
 # -----------------------------------------------------------------------------
 
 if [[ -z "$(which ngramcount)" ]]; then
+    # Download source
     opengrm_file="${download_dir}/opengrm-ngram-1.3.3.tar.gz"
     if [[ ! -f "${opengrm_file}" ]]; then
         opengrm_url='https://www.opengrm.org/twiki/pub/GRM/NGramDownload/opengrm-ngram-1.3.3.tar.gz'
         echo "Download Opengrm (${opengrm_url})"
         curl -sSfLk -o "${opengrm_file}" "${opengrm_url}"
     fi
+
+    # Download pre-built packages
+    for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"; do
+        opengrm_file="${download_dir}/opengrm_1.3.4-1_${FRIENDLY_ARCH}.deb"
+        if [[ ! -f "${opengrm_file}" ]]; then
+            opengrm_url="https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${FRIENDLY_ARCH}/opengrm_1.3.4-1_${FRIENDLY_ARCH}.deb"
+            echo "Downloading opengrm pre-built binary (${opengrm_url})"
+            curl -sSfL -o "${opengrm_file}" "${opengrm_url}"
+        fi
+    done
 fi
 
 # -----------------------------------------------------------------------------
