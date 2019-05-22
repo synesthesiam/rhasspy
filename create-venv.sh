@@ -58,7 +58,7 @@ bash download-dependencies.sh "${CPU_ARCH}"
 # -----------------------------------------------------------------------------
 
 case $CPU_ARCH in
-    armv7l|arm64v8)
+    x86_64|armv7l|arm64v8)
         # Use pre-built packages
         openfst_file="${download_dir}/openfst_1.6.9-1_${FRIENDLY_ARCH}.deb"
         echo "Installing OpenFST (${openfst_file})"
@@ -117,9 +117,6 @@ source "${VENV_PATH}/bin/activate"
 
 case $CPU_ARCH in
     armv7l|arm64v8)
-        # Force newer openfst
-        "${PYTHON}" -m pip install 'openfst==1.6.9'
-
         # Exclude flair
         grep -v flair requirements.txt > "${temp_dir}/requirements-noflair.txt"
         "${PYTHON}" -m pip install -r "${temp_dir}/requirements-noflair.txt"
@@ -181,7 +178,7 @@ fi
 
 if [[ -z "$(which ngramcount)" ]]; then
     case $CPU_ARCH in
-        armv7l|arm64v8)
+        x86_64|armv7l|arm64v8)
             # Use pre-built packages
             opengrm_file="${download_dir}/opengrm_1.3.4-1_${FRIENDLY_ARCH}.deb"
             echo "Installing opengrm (${opengrm_file})"
@@ -228,6 +225,30 @@ fi
 
 # Add /usr/local/lib to LD_LIBRARY_PATH
 sudo ldconfig
+
+# -----------------------------------------------------------------------------
+# NodeJS / Yarn
+# -----------------------------------------------------------------------------
+
+if [[ -z "$(which node)" ]]; then
+    echo "Installing nodejs"
+    sudo apt-get install -y nodejs
+fi
+
+if [[ -z "$(which yarn)" ]]; then
+    echo "Installing yarn"
+    curl -o- -L https://yarnpkg.com/install.sh | bash
+
+    # Need to re-source .bashrc so yarn is in the path
+    source "${HOME}/.bashrc"
+fi
+
+# -----------------------------------------------------------------------------
+# Web Interface
+# -----------------------------------------------------------------------------
+
+echo "Building web interface"
+cd "${DIR}" && yarn && yarn build
 
 # -----------------------------------------------------------------------------
 
