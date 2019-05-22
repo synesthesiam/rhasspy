@@ -41,6 +41,10 @@ grammars/
 sentences/
 record/
 
+# Tools
+tools/dist/
+tools/etc/
+
 # Third party
 etc/*.tar.gz
 etc/*.tar.xz
