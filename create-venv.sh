@@ -84,7 +84,7 @@ if [[ -z "$(which python3.6)" ]]; then
     python_file="${download_dir}/Python-3.6.8.tar.xz"
     if [[ ! -f "${python_file}" ]]; then
         python_url='https://www.python.org/ftp/python/3.6.8/Python-3.6.8.tar.xz'
-        curl -sSfL-o "${python_file}" "${python_url}"
+        curl -sSfL -o "${python_file}" "${python_url}"
     fi
 
     tar -C "${temp_dir}" -xf "${python_file}"
@@ -114,6 +114,7 @@ mkdir -p "${VENV_PATH}"
 # shellcheck source=/dev/null
 source "${VENV_PATH}/bin/activate"
 "${PYTHON}" -m pip install wheel
+"${PYTHON}" -m pip install requests
 
 case $CPU_ARCH in
     armv7l|arm64v8)
@@ -144,7 +145,7 @@ case $CPU_ARCH in
         if [[ ! -f "${snowboy_file}" ]]; then
             snowboy_url='https://github.com/Kitt-AI/snowboy/archive/v1.3.0.tar.gz'
             echo "Downloading snowboy (${snowboy_url})"
-            curl -sSfL-o "${snowboy_file}" "${snowboy_url}"
+            curl -sSfL -o "${snowboy_file}" "${snowboy_url}"
         fi
 
         "${PYTHON}" -m pip install "${snowboy_file}"
