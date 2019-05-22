@@ -127,10 +127,14 @@ def main() -> None:
         "--defaults", action="store_true", help="Only print default settings"
     )
 
-    # validate
-    validate_parser = sub_parsers.add_parser(
-        "validate", help="Validate profile against schema"
+    sentences_parser = sub_parsers.add_parser(
+        "sentences", help="Print profile sentences.ini"
     )
+
+    # validate
+    # validate_parser = sub_parsers.add_parser(
+    #     "validate", help="Validate profile against schema"
+    # )
 
     # wav2text
     wav2text_parser = sub_parsers.add_parser(
@@ -345,6 +349,13 @@ def main() -> None:
                 print("INVALID")
                 for err in v._errors:
                     print(err)
+    elif args.command == "sentences":
+        sentences_path = core.profile.read_path(
+            core.profile.get("speech_to_text.sentences_ini", "sentences.ini")
+        )
+
+        with open(sentences_path, "r") as sentences_file:
+            sys.stdout.write(sentences_file.read())
     else:
         # Patch profile
         profile = core.profile

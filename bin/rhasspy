@@ -1,14 +1,29 @@
 #!/usr/bin/env bash
+set -e
 
 # Directory of *this* script
-DIR="$( cd "$( dirname "$0" )" && pwd )"
+this_dir="$( cd "$( dirname "$0" )" && pwd )"
 
-cd "$DIR/.."
-source .venv/bin/activate
+venv="${this_dir}/../.venv"
+if [[ ! -d "${venv}" ]]; then
+    echo "Missing virtual environment at ${venv}"
+    echo "Did you run create-venv.sh?"
+    exit 1
+fi
+
+source "${venv}/bin/activate"
+
+# Force .venv/lib to be used
+export LD_LIBRARY_PATH="${venv}/lib:${LD_LIBRARY_PATH}"
+
+# Use local Kaldi
+if [[ -d "${this_dir}/../opt/kaldi" ]]; then
+    export KALDI_PREFIX="${this_dir}/../opt"
+fi
 
 # Path to sphinxtrain tools
 if [[ -d "/usr/lib/sphinxtrain" ]]; then
-    export PATH="/usr/lib/sphinxtrain:$PATH"
+    export PATH="/usr/lib/sphinxtrain:${PATH}"
 fi
 
-python3 -m rhasspy "$@"
+cd "${this_dir}/.." && python3 -m rhasspy "$@"

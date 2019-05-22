@@ -14,25 +14,29 @@ CPU_TO_FRIENDLY["armv7l"]="armhf"
 CPU_TO_FRIENDLY["arm64v8"]="aarch64"
 
 # CPU architecture
-CPU_ARCHS=("x86_64" "armv7l" "arm64v8")
-FRIENDLY_ARCHS=("amd64" "armhf" "aarch64")
-
-if [[ ! -z "$1" ]]; then
+if [[ -z "$1" ]]; then
+    CPU_ARCHS=("x86_64" "armv7l" "arm64v8")
+    FRIENDLY_ARCHS=("amd64" "armhf" "aarch64")
+else
     CPU_ARCHS=("$1")
-    FRIENDLY_ARCHS=(${CPU_TO_FRIENDLY["$1"]})
+    FRIENDLY_ARCHS=("${CPU_TO_FRIENDLY[$1]}")
 fi
 
 # -----------------------------------------------------------------------------
-# OpenFST
+# Rhasspy
 # -----------------------------------------------------------------------------
 
-for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"; do
-    openfst_file="${download_dir}/openfst_1.6.9-1_${FRIENDLY_ARCH}.deb"
-    if [[ ! -f "${openfst_file}" ]]; then
-        openfst_url="https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${FRIENDLY_ARCH}/openfst_1.6.9-1_${FRIENDLY_ARCH}.deb"
-        echo "Downloading OpenFST pre-built binary (${openfst_url})"
-        curl -sSfL -o "${openfst_file}" "${openfst_url}"
-    fi
+for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}";
+do
+    rhasspy_files=("rhasspy-tools_${FRIENDLY_ARCH}.tar.gz" "rhasspy-web-dist.tar.gz")
+    for rhasspy_file_name in "${rhasspy_files}"; do
+        rhasspy_file="${download_dir}/${rhasspy_file_name}"
+        if [[ ! -f "${rhasspy_file}" ]]; then
+            rhasspy_file_url="https://github.com/synesthesiam/rhasspy/releases/download/v2.0/${rhasspy_file_name}"
+            echo "Downloading ${rhasspy_file} (${rhasspy_file_url})"
+            curl -sSfL -o "${rhasspy_file}" "${rhasspy_file_url}"
+        fi
+    done
 done
 
 # -----------------------------------------------------------------------------
@@ -72,68 +76,24 @@ fi
 # Mycroft Precise
 # -----------------------------------------------------------------------------
 
-for CPU_ARCH in "x86_64" "armv7l"
+for CPU_ARCH in "${CPU_ARCHS}";
 do
-    precise_file="${download_dir}/precise-engine_0.3.0_${CPU_ARCH}.tar.gz"
-    if [[ ! -f "${precise_file}" ]]; then
-        precise_url="https://github.com/MycroftAI/mycroft-precise/releases/download/v0.3.0/precise-engine_0.3.0_${CPU_ARCH}.tar.gz"
-        echo "Downloading Mycroft Precise (${precise_url})"
-        curl -sSfL -o "${precise_file}" "${precise_url}"
-    fi
+    case $CPU_ARCH in
+        x86_64|armv7l)
+            precise_file="${download_dir}/precise-engine_0.3.0_${CPU_ARCH}.tar.gz"
+            if [[ ! -f "${precise_file}" ]]; then
+                precise_url="https://github.com/MycroftAI/mycroft-precise/releases/download/v0.3.0/precise-engine_0.3.0_${CPU_ARCH}.tar.gz"
+                echo "Downloading Mycroft Precise (${precise_url})"
+                curl -sSfL -o "${precise_file}" "${precise_url}"
+            fi
+    esac
 done
-
-# -----------------------------------------------------------------------------
-# Opengrm
-# -----------------------------------------------------------------------------
-
-if [[ -z "$(which ngramcount)" ]]; then
-    # Download source
-    opengrm_file="${download_dir}/opengrm-ngram-1.3.3.tar.gz"
-    if [[ ! -f "${opengrm_file}" ]]; then
-        opengrm_url='https://www.opengrm.org/twiki/pub/GRM/NGramDownload/opengrm-ngram-1.3.3.tar.gz'
-        echo "Download Opengrm (${opengrm_url})"
-        curl -sSfLk -o "${opengrm_file}" "${opengrm_url}"
-    fi
-
-    # Download pre-built packages
-    for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"; do
-        opengrm_file="${download_dir}/opengrm_1.3.4-1_${FRIENDLY_ARCH}.deb"
-        if [[ ! -f "${opengrm_file}" ]]; then
-            opengrm_url="https://github.com/synesthesiam/docker-opengrm/releases/download/v1.3.4-${FRIENDLY_ARCH}/opengrm_1.3.4-1_${FRIENDLY_ARCH}.deb"
-            echo "Downloading opengrm pre-built binary (${opengrm_url})"
-            curl -sSfL -o "${opengrm_file}" "${opengrm_url}"
-        fi
-    done
-fi
-
-# -----------------------------------------------------------------------------
-# Phonetisaurus
-# -----------------------------------------------------------------------------
-
-for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"
-do
-    # Install pre-built package
-    phonetisaurus_file="${download_dir}/phonetisaurus-2019_${FRIENDLY_ARCH}.deb"
-    if [[ ! -f "${phonetisaurus_file}" ]]; then
-        phonetisaurus_url="https://github.com/synesthesiam/phonetisaurus-2019/releases/download/v1.0/phonetisaurus-2019_${FRIENDLY_ARCH}.deb"
-        echo "Downloading phonetisaurus (${phonetisaurus_url})"
-        curl -sSfL -o "${phonetisaurus_file}" "${phonetisaurus_url}"
-    fi
-done
-
-# Build from source
-phonetisaurus_file="${download_dir}/phonetisaurus-2019.zip"
-if [[ ! -f "${phonetisaurus_file}" ]]; then
-    phonetisaurus_url="https://github.com/synesthesiam/phonetisaurus-2019/releases/download/v1.0/phonetisaurus-2019_${FRIENDLY_ARCH}.deb"
-    echo "Downloading phonetisaurus source (${phonetisaurus_url})"
-    curl -sSfL -o "${phonetisaurus_file}" "${phonetisaurus_url}"
-fi
 
 # -----------------------------------------------------------------------------
 # Kaldi
 # -----------------------------------------------------------------------------
 
-for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"
+for FRIENDLY_ARCH in "${FRIENDLY_ARCHS}"
 do
     # Install pre-built package
     kaldi_file="${download_dir}/kaldi_${FRIENDLY_ARCH}.tar.gz"
