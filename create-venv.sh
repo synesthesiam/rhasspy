@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
+# Process command-line arguments
+no_flair="no"
+for arg in "$@"; do
+    shift
+    case "${arg}" in
+        "--no-flair") no_flair="yes" ;;
+    esac
+done
+
 # Directory of *this* script
 DIR="$( cd "$( dirname "$0" )" && pwd )"
 
@@ -10,7 +19,7 @@ mkdir -p "${download_dir}"
 
 # CPU architecture
 CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
-case $CPU_ARCH in
+case "${CPU_ARCH}" in
     x86_64)
         FRIENDLY_ARCH=amd64
         ;;
@@ -47,7 +56,7 @@ sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
      gfortran libfst-dev \
      sphinxbase-utils sphinxtrain pocketsphinx \
      jq checkinstall unzip xz-utils \
-     libfst-dev libfst-tools curl
+     curl
 
 # -----------------------------------------------------------------------------
 # Python 3.6
@@ -74,6 +83,13 @@ if [[ -z "$(which python3.6)" ]]; then
 fi
 
 # -----------------------------------------------------------------------------
+# Download dependencies
+# -----------------------------------------------------------------------------
+
+echo "Downloading dependencies"
+bash download-dependencies.sh "${CPU_ARCH}"
+
+# -----------------------------------------------------------------------------
 # Virtual environment
 # -----------------------------------------------------------------------------
 
@@ -90,14 +106,28 @@ echo "Creating new virtual environment"
 mkdir -p "${VENV_PATH}"
 "${PYTHON}" -m venv "${VENV_PATH}"
 
+# Extract Rhasspy tools
+rhasspy_tools_file="${download_dir}/rhasspy-tools_${FRIENDLY_ARCH}.tar.gz"
+echo "Extracting tools (${rhasspy_tools_file})"
+tar -C "${VENV_PATH}" -xf "${rhasspy_tools_file}"
+
+# Force .venv/lib to be used
+export LD_LIBRARY_PATH="${VENV_PATH}/lib:${LD_LIBRARY_PATH}"
+
 # shellcheck source=/dev/null
 source "${VENV_PATH}/bin/activate"
-"${PYTHON}" -m pip install wheel
-"${PYTHON}" -m pip install -r requirements.txt
 
-# Download dependencies
-echo "Downloading dependencies"
-bash download-dependencies.sh
+echo "Installing Python requirements"
+"${PYTHON}" -m pip install wheel
+
+requirements_file="${DIR}/requirements.txt"
+if [[ ! -z "${no_flair}" ]]; then
+    echo "Excluding flair from virtual environment"
+    grep -v flair "${requirements_file}" > "${temp_dir}/requirements.txt"
+    requirements_file="${temp_dir}/requirements.txt"
+fi
+
+"${PYTHON}" -m pip install -r "${requirements_file}"
 
 # -----------------------------------------------------------------------------
 # Pocketsphinx for Python
@@ -110,15 +140,10 @@ pocketsphinx_file="${download_dir}/pocketsphinx-python.tar.gz"
 # Snowboy
 # -----------------------------------------------------------------------------
 
-case $CPU_ARCH in
+case "${CPU_ARCH}" in
     x86_64|armv7l)
         snowboy_file="${download_dir}/snowboy-1.3.0.tar.gz"
-        if [[ ! -f "${snowboy_file}" ]]; then
-            snowboy_url='https://github.com/Kitt-AI/snowboy/archive/v1.3.0.tar.gz'
-            echo "Downloading snowboy (${snowboy_url})"
-            curl -sSfL-o "${snowboy_file}" "${snowboy_url}"
-        fi
-
+        echo "Installing snowboy"
         "${PYTHON}" -m pip install "${snowboy_file}"
         ;;
 
@@ -131,12 +156,13 @@ esac
 # -----------------------------------------------------------------------------
 
 if [[ -z "$(which precise-engine)" ]]; then
-    case $CPU_ARCH in
+    case "${CPU_ARCH}" in
         x86_64|armv7l)
+            echo "Installing Mycroft Precise"
             precise_file="${download_dir}/precise-engine_0.3.0_${CPU_ARCH}.tar.gz"
-            precise_install='/usr/lib'
-            sudo tar -C "${precise_install}" -xf "${precise_file}"
-            sudo ln -s "${precise_install}/precise-engine/precise-engine" '/usr/bin/precise-engine'
+            precise_install="${VENV_PATH}/lib"
+            tar -C "${precise_install}" -xf "${precise_file}"
+            ln -s "${precise_install}/precise-engine/precise-engine" "${VENV_PATH}/bin/precise-engine"
             ;;
 
         *)
@@ -145,71 +171,21 @@ if [[ -z "$(which precise-engine)" ]]; then
 fi
 
 # -----------------------------------------------------------------------------
-# Opengrm
+# Kaldi
 # -----------------------------------------------------------------------------
 
-if [[ -z "$(which ngramcount)" ]]; then
-    opengrm_file="${download_dir}/opengrm-ngram-1.3.3.tar.gz"
-    echo "Building Opengrm ${opengrm_file}"
-    tar -C "${temp_dir}" -xf "${opengrm_file}" && \
-        cd "${temp_dir}/opengrm-ngram-1.3.3" && \
-        ./configure && \
-        make -j 4 && \
-        sudo make install && \
-        sudo ldconfig
-fi
-
-# -----------------------------------------------------------------------------
-# Phonetisaurus
-# -----------------------------------------------------------------------------
-
-if [[ -z "$(which phonetisaurus-apply)" ]]; then
-    case $CPU_ARCH in
-        x86_64|armv7l|arm64v8)
-            # Install pre-built package
-            phonetisaurus_file="${download_dir}/phonetisaurus-2019_${FRIENDLY_ARCH}.deb"
-            echo "Installing phonetisaurus (${phonetisaurus_file})"
-            sudo dpkg -i "${phonetisaurus_file}"
-        ;;
-
-        *)
-            # Build from source
-            phonetisaurus_file="${download_dir}/phonetisaurus-2019.zip"
-            echo "Building phonetisaurus (${phonetisaurus_file})"
-            unzip -d "${temp_dir}" "${phonetisaurus_file}" && \
-                cd "${temp_dir}/phonetisaurus" && \
-                ./configure && \
-                make -j 4 && \
-                sudo make install
-    esac
-fi
-
-# Add /usr/local/lib to LD_LIBRARY_PATH
-sudo ldconfig
-
-# -----------------------------------------------------------------------------
-# NodeJS / Yarn
-# -----------------------------------------------------------------------------
-
-if [[ -z "$(which node)" ]]; then
-    echo "Installing nodejs"
-    sudo apt-get install -y nodejs
-fi
-
-if [[ -z "$(which yarn)" ]]; then
-    echo "Installing yarn"
-    curl -o- -L https://yarnpkg.com/install.sh | bash
-
-    # Need to re-source .bashrc so yarn is in the path
-    source "${HOME}/.bashrc"
-fi
+kaldi_file="${download_dir}/kaldi_${FRIENDLY_ARCH}.tar.gz"
+echo "Installing Kaldi (${kaldi_file})"
+mkdir -p "${DIR}/opt"
+tar -C "${DIR}/opt" -xf "${kaldi_file}"
 
 # -----------------------------------------------------------------------------
 # Web Interface
 # -----------------------------------------------------------------------------
 
-echo "Building web interface"
-cd "${DIR}" && yarn && yarn build
+rhasspy_web_file="${download_dir}/rhasspy-web-dist.tar.gz"
+echo "Extracting web interface (${rhasspy_web_file})"
+tar -C "${DIR}" -xf "${rhasspy_web_file}"
 
 # -----------------------------------------------------------------------------
 

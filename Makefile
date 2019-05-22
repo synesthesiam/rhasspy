@@ -49,8 +49,9 @@ manifest:
 
 web-dist:
 	yarn build
-	rm -f rhasspy_web.tar.gz
-	tar -czf rhasspy-web-dist.tar.gz dist/
+	mkdir -p download
+	rm -f download/rhasspy-web-dist.tar.gz
+	tar -czf download/rhasspy-web-dist.tar.gz dist/
 
 # -----------------------------------------------------------------------------
 # Documentation
