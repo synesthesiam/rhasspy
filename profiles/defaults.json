@@ -125,7 +125,7 @@
             "custom_words": "custom_words.txt",
             "dictionary": "dictionary.txt",
             "graph": "graph",
-            "kaldi_dir": "/opt/kaldi",
+            "kaldi_dir": "${KALDI_PREFIX}/kaldi",
             "language_model": "language_model.txt",
             "model_dir": "model",
             "unknown_words": "unknown_words.txt",
