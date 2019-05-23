@@ -105,5 +105,15 @@ do
 done
 
 # -----------------------------------------------------------------------------
+# Web Interface
+# -----------------------------------------------------------------------------
+
+rhasspy_web_file="${download_dir}/rhasspy-web-dist.tar.gz"
+rhasspy_web_url="https://github.com/synesthesiam/rhasspy/releases/download/v2.0/rhasspy-web-dist.tar.gz"
+echo "Downloading web interface (${rhasspy_web_url})"
+curl -sSfL -o "${rhasspy_web_file}" "${rhasspy_web_url}"
+
+
+# -----------------------------------------------------------------------------
 
 echo "Done"

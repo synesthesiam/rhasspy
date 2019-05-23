@@ -119,6 +119,17 @@ source "${VENV_PATH}/bin/activate"
 
 echo "Installing Python requirements"
 "${PYTHON}" -m pip install wheel
+"${PYTHON}" -m pip install requests
+
+openfst_url='https://github.com/synesthesiam/jsgf2fst/releases/download/v0.1.0/openfst-1.6.1.tar.gz'
+INCLUDE_DIR="${VENV_PATH}/include" LIBRARY_DIR="${VENV_PATH}/lib" \
+	           "${PYTHON}" -m pip install "${openfst_url}"
+
+# pytorch is not available on ARM
+case "${CPU_ARCH}" in
+    armv7l|arm64v8)
+	    no_flair="yes" ;;
+esac
 
 requirements_file="${DIR}/requirements.txt"
 if [[ ! -z "${no_flair}" ]]; then
