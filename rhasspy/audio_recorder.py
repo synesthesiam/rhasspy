@@ -143,34 +143,38 @@ class PyAudioRecorder(RhasspyActor):
             self.transition("recording")
 
     def to_recording(self, from_state: str) -> None:
-        import pyaudio
+        try:
+            import pyaudio
 
-        # Start audio system
-        def stream_callback(data, frame_count, time_info, status):
-            if len(data) > 0:
-                # Send to this actor to avoid threading issues
-                self.send(self.myAddress, AudioData(data))
+            # Start audio system
+            def stream_callback(data, frame_count, time_info, status):
+                if len(data) > 0:
+                    # Send to this actor to avoid threading issues
+                    self.send(self.myAddress, AudioData(data))
 
-            return (data, pyaudio.paContinue)
+                return (data, pyaudio.paContinue)
 
-        self.audio = pyaudio.PyAudio()
-        assert self.audio is not None
-        data_format = self.audio.get_format_from_width(2)  # 16-bit
-        self.mic = self.audio.open(
-            format=data_format,
-            channels=1,
-            rate=16000,
-            input_device_index=self.device_index,
-            input=True,
-            stream_callback=stream_callback,
-            frames_per_buffer=self.frames_per_buffer,
-        )
+            self.audio = pyaudio.PyAudio()
+            assert self.audio is not None
+            data_format = self.audio.get_format_from_width(2)  # 16-bit
+            self.mic = self.audio.open(
+                format=data_format,
+                channels=1,
+                rate=16000,
+                input_device_index=self.device_index,
+                input=True,
+                stream_callback=stream_callback,
+                frames_per_buffer=self.frames_per_buffer,
+            )
 
-        assert self.mic is not None
-        self.mic.start_stream()
-        self._logger.debug(
-            "Recording from microphone (PyAudio, device=%s)" % self.device_index
-        )
+            assert self.mic is not None
+            self.mic.start_stream()
+            self._logger.debug(
+                "Recording from microphone (PyAudio, device=%s)" % self.device_index
+            )
+        except Exception as e:
+            self._logger.exception("to_recording")
+            self.transition("started")
 
     # -------------------------------------------------------------------------
 
@@ -217,14 +221,17 @@ class PyAudioRecorder(RhasspyActor):
             self._logger.debug("Stopped recording from microphone (PyAudio)")
 
     def to_stopped(self, from_state: str) -> None:
-        if self.mic is not None:
-            self.mic.stop_stream()
-            self.mic = None
-            self._logger.debug("Stopped recording from microphone (PyAudio)")
+        try:
+            if self.mic is not None:
+                self.mic.stop_stream()
+                self.mic = None
+                self._logger.debug("Stopped recording from microphone (PyAudio)")
 
-        if self.audio is not None:
-            self.audio.terminate()
-            self.audio = None
+            if self.audio is not None:
+                self.audio.terminate()
+                self.audio = None
+        except Exception as e:
+            self._logger.exception("to_stopped")
 
     # -------------------------------------------------------------------------
 
@@ -375,12 +382,18 @@ class ARecordAudioRecorder(RhasspyActor):
                     time.sleep(0.01)
 
         # Start recording
-        self.is_recording = True
-        self.recording_thread = threading.Thread(target=process_data, daemon=True)
-        assert self.recording_thread is not None
-        self.recording_thread.start()
+        try:
+            self.is_recording = True
+            self.recording_thread = threading.Thread(target=process_data, daemon=True)
+            assert self.recording_thread is not None
+            self.recording_thread.start()
 
-        self._logger.debug("Recording from microphone (arecord)")
+            self._logger.debug("Recording from microphone (arecord)")
+        except Exception as e:
+            self._logger.exception("to_recording")
+            self.is_recording = False
+            self.recording_thread = None
+            self.transition("started")
 
     def in_recording(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, AudioData):
