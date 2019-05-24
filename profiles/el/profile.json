@@ -5,7 +5,8 @@
         "system": "snowboy"
     },
     "speech_to_text": {
-        "g2p_casing": "lower"
+        "g2p_casing": "lower",
+        "system": "pocketsphinx"
     },
     "intent": {
         "flair": {

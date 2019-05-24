@@ -151,7 +151,7 @@
         },
         "sentences_ini": "sentences.ini",
         "slots_dir": "slots",
-        "system": "pocketsphinx"
+        "system": "dummy"
     },
     "text_to_speech": {
         "command": {

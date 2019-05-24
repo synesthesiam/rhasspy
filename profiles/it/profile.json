@@ -4,6 +4,9 @@
     "wake": {
         "system": "snowboy"
     },
+    "speech_to_text": {
+        "system": "pocketsphinx"
+    },
     "intent": {
         "wavenet": {
             "language_code": "it-IT"

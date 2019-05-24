@@ -5,6 +5,9 @@
         "g2p_casing": "n/a",
         "dictionary_casing": "n/a"
     },
+    "speech_to_text": {
+        "system": "pocketsphinx"
+    },
     "intent": {
         "wavenet": {
             "language_code": "zh-TW"
