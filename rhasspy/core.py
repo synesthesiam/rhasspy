@@ -313,7 +313,13 @@ class RhasspyCore:
         """Returns (True, output) if the profile has all necessary files downloaded."""
         check_path = self.profile.read_path("check-profile.sh")
         assert os.path.exists(check_path), "Missing profile check script"
+
         check_cmd = ["bash", check_path, self.profile.write_path()]
+
+        # Only check embeddings if flair is being used
+        if self.profile.get("intent.system", "") != "flair":
+            check_cmd.append("--no-flair")
+
         self._logger.debug(check_cmd)
 
         try:
@@ -333,6 +339,10 @@ class RhasspyCore:
 
         if delete:
             download_cmd.append("--delete")
+
+        # Only download embeddings if flair is being used
+        if self.profile.get("intent.system", "") != "flair":
+            download_cmd.append("--no-flair")
 
         self._logger.debug(download_cmd)
 

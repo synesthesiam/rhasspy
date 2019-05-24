@@ -7,9 +7,18 @@ if [[ -z "$1" ]]; then
 fi
 
 DIR="$1"
-download_dir="${DIR}/download"
+shift
 
-if [[ "$2" = "--delete" ]]; then
+# Parse command-line options
+delete="no"
+for arg in "$@"; do
+    shift
+    case "$arg" in
+        "--delete") delete="yes" ;;
+    esac
+done
+
+if [[ "${delete}" == "yes" ]]; then
     rm -rf "${download_dir}"
 fi
 

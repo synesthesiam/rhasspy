@@ -8,8 +8,20 @@ fi
 
 DIR="$1"
 download_dir="${DIR}/download"
+shift
 
-if [[ "$2" = "--delete" ]]; then
+# Parse command-line options
+delete="no"
+no_flair="no"
+for arg in "$@"; do
+    shift
+    case "$arg" in
+        "--delete") delete="yes" ;;
+        "--no-flair") no_flair="yes" ;;
+    esac
+done
+
+if [[ "${delete}" == "yes" ]]; then
     rm -rf "${download_dir}"
 fi
 
@@ -106,14 +118,16 @@ done
 # Flair Embeddings
 #------------------------------------------------------------------------------
 
-flair_dir="${DIR}/flair/cache/embeddings"
-mkdir -p "${flair_dir}"
-flair_files=("lm-fr-charlm-forward.pt" "lm-fr-charlm-backward.pt")
-for file_name in "${flair_files[@]}"; do
-    file_output="${flair_dir}/${file_name}"
-    if [[ ! -s "${file_output}" ]]; then
-        file_url="https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/${file_name}"
-        echo "Downloading ${file_output} (${file_url})"
-        curl -sSfL -o "${file_output}" "${file_url}"
-    fi
-done
+if [[ "${no_flair}" != "yes" ]]; then
+    flair_dir="${DIR}/flair/cache/embeddings"
+    mkdir -p "${flair_dir}"
+    flair_files=("lm-fr-charlm-forward.pt" "lm-fr-charlm-backward.pt")
+    for file_name in "${flair_files[@]}"; do
+        file_output="${flair_dir}/${file_name}"
+        if [[ ! -s "${file_output}" ]]; then
+            file_url="https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/${file_name}"
+            echo "Downloading ${file_output} (${file_url})"
+            curl -sSfL -o "${file_output}" "${file_url}"
+        fi
+    done
+fi

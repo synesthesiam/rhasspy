@@ -56,12 +56,14 @@ fi
 # Flair Embeddings
 #------------------------------------------------------------------------------
 
-flair_dir="${DIR}/flair/cache/embeddings"
-flair_files=("lm-pt-forward.pt" "lm-pt-backward.pt")
-for file_name in "${flair_files[@]}"; do
-    file_output="${flair_dir}/${file_name}"
-    if [[ ! -s "${file_output}" ]]; then
-        echo "Missing flair embedding (${file_name})"
-        exit 1
-    fi
-done
+if [[ "${no_flair}" != "yes" ]]; then
+    flair_dir="${DIR}/flair/cache/embeddings"
+    flair_files=("lm-pt-forward.pt" "lm-pt-backward.pt")
+    for file_name in "${flair_files[@]}"; do
+        file_output="${flair_dir}/${file_name}"
+        if [[ ! -s "${file_output}" ]]; then
+            echo "Missing flair embedding (${file_name})"
+            exit 1
+        fi
+    done
+fi
