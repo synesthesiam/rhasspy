@@ -17,8 +17,8 @@ source "${venv}/bin/activate"
 export LD_LIBRARY_PATH="${venv}/lib:${LD_LIBRARY_PATH}"
 
 # Use local Kaldi
-if [[ -d "${this_dir}/../opt/kaldi" ]]; then
-    export KALDI_PREFIX="${this_dir}/../opt"
+if [[ -d "${this_dir}/opt/kaldi" ]]; then
+    export KALDI_PREFIX="${this_dir}/opt"
 fi
 
 # Path to sphinxtrain tools

@@ -172,19 +172,7 @@ def api_profiles() -> Response:
             if os.path.isdir(profile_dir):
                 profile_names.add(name)
 
-    check_path = core.profile.read_path("check-profile.sh")
-    assert os.path.exists(check_path), "Missing profile check script"
-    check_cmd = ["bash", check_path, core.profile.write_path()]
-    logger.debug(check_cmd)
-
-    downloaded = True
-    try:
-        output = subprocess.check_output(check_cmd, stderr=subprocess.STDOUT).decode()
-    except subprocess.CalledProcessError as e:
-        output = e.output.decode()
-        logger.warning(output)
-        downloaded = False
-
+    downloaded = core.check_profile()
     return jsonify(
         {
             "default_profile": core.profile.name,
@@ -202,28 +190,9 @@ def api_download_profile() -> str:
     """Downloads the current profile."""
     assert core is not None
     delete = request.args.get("delete", "false").lower() == "true"
+    core.download_profile(delete=delete)
 
-    download_script = os.path.abspath(core.profile.read_path("download-profile.sh"))
-    logger.debug(download_script)
-    assert os.path.exists(download_script), "Profile download script is missing."
-    download_cmd = ["bash", download_script, core.profile.write_path()]
-
-    if delete:
-        download_cmd.append("--delete")
-
-    logger.debug(download_cmd)
-
-    try:
-        output = subprocess.check_output(
-            download_cmd, stderr=subprocess.STDOUT
-        ).decode()
-    except subprocess.CalledProcessError as e:
-        logger.exception("download profile")
-        output = e.output.decode()
-        logger.error(output)
-        raise Exception(output)
-
-    return output
+    return "OK"
 
 
 # -----------------------------------------------------------------------------

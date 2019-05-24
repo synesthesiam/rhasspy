@@ -50,16 +50,21 @@ def read_dict(
         if len(line) == 0:
             continue
 
-        word, pronounce = re.split(r"[ ]+", line, maxsplit=1)
-        idx = word.find("(")
-        if idx > 0:
-            word = word[:idx]
+        try:
+            # Use explicit whitespace (avoid 0xA0)
+            word, pronounce = re.split(r"[ \t]+", line, maxsplit=1)
 
-        pronounce = pronounce.strip()
-        if word in word_dict:
-            word_dict[word].append(pronounce)
-        else:
-            word_dict[word] = [pronounce]
+            idx = word.find("(")
+            if idx > 0:
+                word = word[:idx]
+
+            pronounce = pronounce.strip()
+            if word in word_dict:
+                word_dict[word].append(pronounce)
+            else:
+                word_dict[word] = [pronounce]
+        except Exception as e:
+            logging.warning(f"read_dict: {e}")
 
     return word_dict
 
