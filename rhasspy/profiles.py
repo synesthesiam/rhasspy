@@ -51,11 +51,22 @@ class Profile:
     def load_profile(self) -> None:
         # Load defaults first
         self.json: Dict[str, Any] = {}  # no defaults
+        self.system_json: Dict[str, Any] = {}  # no defaults
 
         if self.layers in ["all", "defaults"]:
             defaults_path = os.path.join(self.system_profiles_dir, "defaults.json")
             with open(defaults_path, "r") as defaults_file:
                 self.json = json.load(defaults_file)
+                defaults_file.seek(0)
+                self.system_json = json.load(defaults_file)
+
+        # Load just the system profile.json (on top of defaults)
+        system_profile_path = os.path.join(
+            self.system_profiles_dir, self.name, "profile.json"
+        )
+
+        with open(system_profile_path, "r") as system_profile_file:
+            recursive_update(self.system_json, json.load(system_profile_file))
 
         # Overlay with profile
         self.json_path = self.read_path("profile.json")
