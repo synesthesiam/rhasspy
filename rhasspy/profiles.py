@@ -35,6 +35,7 @@ class Profile:
     def load_defaults(cls, system_profiles_dir: str) -> Dict[str, Any]:
         defaults_path = os.path.join(system_profiles_dir, "defaults.json")
         with open(defaults_path, "r") as defaults_file:
+            logging.debug(f"Loading default profile settings from {defaults_path}")
             return json.load(defaults_file)
 
     # -------------------------------------------------------------------------

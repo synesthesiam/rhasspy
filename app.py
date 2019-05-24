@@ -125,8 +125,6 @@ def shutdown(*args: Any, **kwargs: Any) -> None:
 def start_rhasspy() -> None:
     global core
 
-    default_settings = Profile.load_defaults(system_profiles_dir)
-
     # Load core
     core = RhasspyCore(args.profile, system_profiles_dir, user_profiles_dir)
 
@@ -308,7 +306,7 @@ def api_profile() -> Union[str, Response]:
         #         print(json.dumps(profile_dict, indent=4))
         #         raise Exception(str(v._errors[0].info))
 
-        recursive_remove(core.defaults, profile_json)
+        recursive_remove(core.profile.json, profile_json)
 
         profile_path = os.path.abspath(core.profile.write_path("profile.json"))
         with open(profile_path, "w") as profile_file:
