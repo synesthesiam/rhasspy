@@ -544,7 +544,7 @@ class HermesWakeListener(RhasspyActor):
         self.mqtt = self.config["mqtt"]
 
         # Subscribe to wake topic
-        self.site_id: str = self.profile.get("mqtt.site_id", "default")
+        self.site_ids = self.profile.get("mqtt.site_id", "default").split(",")
         self.wakeword_id: str = self.profile.get("wake.hermes.wakeword_id", "default")
         self.wake_topic = "hermes/hotword/%s/detected" % self.wakeword_id
         self.send(self.mqtt, MqttSubscribe(self.wake_topic))
@@ -562,7 +562,7 @@ class HermesWakeListener(RhasspyActor):
                 # Check site ID
                 payload = json.loads(message.payload.decode())
                 payload_site_id = payload.get("siteId", "")
-                if payload_site_id != self.site_id:
+                if payload_site_id in self.site_ids:
                     self._logger.debug(
                         "Got detected message, but wrong site id (%s)" % payload_site_id
                     )

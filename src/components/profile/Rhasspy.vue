@@ -66,7 +66,7 @@
                         <input id="mqtt-siteid" type="text" class="form-control" v-model="profile.mqtt.site_id" :disabled="!profile.mqtt.enabled">
                     </div>
                     <div class="col text-muted">
-                        Snips site name
+                        (comma-separated)
                     </div>
                 </div>
             </div>

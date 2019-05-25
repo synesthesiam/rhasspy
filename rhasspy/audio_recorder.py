@@ -529,7 +529,11 @@ class HermesAudioRecorder(RhasspyActor):
 
     def to_started(self, from_state: str) -> None:
         self.mqtt = self.config["mqtt"]
-        self.site_id = self.profile.get("mqtt.site_id")
+        self.site_ids = self.profile.get("mqtt.site_id", "default").split(",")
+        if len(self.site_ids) > 0:
+            self.site_id = self.site_ids[0]
+        else:
+            self.site_id = "default"
         self.topic_audio_frame = "hermes/audioServer/%s/audioFrame" % self.site_id
         self.send(self.mqtt, MqttSubscribe(self.topic_audio_frame))
 

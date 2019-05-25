@@ -385,7 +385,7 @@ class HermesCommandListener(RhasspyActor):
         self.timeout_sec = self.profile.get("command.hermes.timeout_sec", 30)
 
         # Subscribe to MQTT topics
-        self.site_id: str = self.profile.get("mqtt.site_id", "default")
+        self.site_ids = self.profile.get("mqtt.site_id", "default").split(",")
         self.start_topic = "hermes/asr/startListening"
         self.stop_topic = "hermes/asr/stopListening"
         self.send(self.mqtt, MqttSubscribe(self.start_topic))
@@ -412,7 +412,7 @@ class HermesCommandListener(RhasspyActor):
             # startListening
             if message.topic == self.start_topic:
                 payload_json = json.loads(message.payload)
-                if payload_json.get("siteId", "default") == self.site_id:
+                if payload_json.get("siteId", "default") in self.site_ids:
                     # Wake up Rhasspy
                     self._logger.debug("Received startListening")
                     self.send(self._parent, ListenForCommand())
@@ -434,7 +434,7 @@ class HermesCommandListener(RhasspyActor):
             if message.topic == self.stop_topic:
                 # stopListening
                 payload_json = json.loads(message.payload)
-                if payload_json.get("siteId", "default") == self.site_id:
+                if payload_json.get("siteId", "default") in self.site_ids:
                     self._logger.debug("Received stopListening")
                     self.send(self.recorder, StopStreaming(self.myAddress))
                     self.send(

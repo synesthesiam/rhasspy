@@ -68,7 +68,12 @@ class HermesMqtt(RhasspyActor):
 
     def to_started(self, from_state: str) -> None:
         # Load settings
-        self.site_id = self.profile.get("mqtt.site_id", "default")
+        self.site_ids = self.profile.get("mqtt.site_id", "default").split(",")
+        if len(self.site_ids) > 0:
+            self.site_id = self.site_ids[0]
+        else:
+            self.site_id = "default"
+
         self.host = self.profile.get("mqtt.host", "localhost")
         self.port = self.profile.get("mqtt.port", 1883)
         self.username = self.profile.get("mqtt.username", "")
