@@ -21,7 +21,9 @@ class ConfigureEvent:
 
 
 class Configured:
-    pass
+    def __init__(self, name: str, problems: Dict[str, Any] = {}):
+        self.name = name
+        self.problems = problems
 
 
 class StateTransition:
@@ -101,7 +103,7 @@ class RhasspyActor:
                 self.config: Dict[str, Any] = message.config
                 self._transitions = self.config.get("transitions", True)
                 self.transition("started")
-                self.send(sender, Configured())
+                self.send(sender, Configured(self._name, self.get_problems()))
             else:
                 # Call in_<state> method
                 if self._state_method is not None:
@@ -168,6 +170,11 @@ class RhasspyActor:
 
     def __repr__(self):
         return self._name
+
+    # -------------------------------------------------------------------------
+
+    def get_problems(self) -> Dict[str, Any]:
+        return {}
 
 
 # -----------------------------------------------------------------------------

@@ -28,7 +28,7 @@
             "program": ""
         },
         "forward_to_hass": true,
-        "system": "hass"
+        "system": "dummy"
     },
     "home_assistant": {
         "access_token": "",

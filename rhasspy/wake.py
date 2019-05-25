@@ -6,6 +6,7 @@ import json
 import re
 import time
 import subprocess
+import shutil
 from uuid import uuid4
 from typing import Optional, Any, List, Dict, Type
 
@@ -285,11 +286,14 @@ class SnowboyWakeListener(RhasspyActor):
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, ListenForWakeWord):
-            self.load_detector()
-            self.receivers.append(message.receiver or sender)
-            self.transition("listening")
-            if message.record:
-                self.send(self.recorder, StartStreaming(self.myAddress))
+            try:
+                self.load_detector()
+                self.receivers.append(message.receiver or sender)
+                self.transition("listening")
+                if message.record:
+                    self.send(self.recorder, StartStreaming(self.myAddress))
+            except Exception as e:
+                self._logger.exception("in_loaded")
 
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, AudioData):
@@ -349,7 +353,7 @@ class SnowboyWakeListener(RhasspyActor):
         if self.detector is None:
             from snowboy import snowboydetect, snowboydecoder
 
-            self.model_name = self.profile.get("wake.snowboy.model")
+            self.model_name = self.profile.get("wake.snowboy.model", "snowboy.umdl")
             model_path = os.path.realpath(self.profile.read_path(self.model_name))
             assert os.path.exists(
                 model_path
@@ -375,6 +379,27 @@ class SnowboyWakeListener(RhasspyActor):
                 "Loaded snowboy (model=%s, sensitivity=%s, audio_gain=%s)"
                 % (model_path, sensitivity, audio_gain)
             )
+
+    # -------------------------------------------------------------------------
+
+    def get_problems(self) -> Dict[str, Any]:
+        problems: Dict[str, Any] = {}
+        try:
+            from snowboy import snowboydetect, snowboydecoder
+        except:
+            problems[
+                "snowboy not installed"
+            ] = "The snowboy Python library is not installed. Try pip3 install snowboy"
+
+        model_path = self.profile.read_path(
+            self.profile.get("wake.snowboy.model", "snowboy.umdl")
+        )
+        if not os.path.exists(model_path):
+            problems[
+                "Missing model"
+            ] = f"Your snowboy model could not be loaded from {model_path}"
+
+        return problems
 
 
 # -----------------------------------------------------------------------------
@@ -483,10 +508,10 @@ class PreciseWakeListener(RhasspyActor):
         if self.engine is None:
             from precise_runner import PreciseEngine
 
-            self.model_name = self.profile.get("wake.precise.model")
+            self.model_name = self.profile.get("wake.precise.model", "hey-mycroft-2.pb")
             self.model_path = self.profile.read_path(self.model_name)
             self.engine_path = os.path.expandvars(
-                self.profile.get("wake.precise.engine_path")
+                self.profile.get("wake.precise.engine_path", "precise-engine")
             )
 
             self._logger.debug(f"Loading Precise engine at {self.engine_path}")
@@ -525,6 +550,35 @@ class PreciseWakeListener(RhasspyActor):
                 "Loaded Mycroft Precise (model=%s, sensitivity=%s, trigger_level=%s)"
                 % (self.model_path, sensitivity, trigger_level)
             )
+
+    # -------------------------------------------------------------------------
+
+    def get_problems(self) -> Dict[str, Any]:
+        problems: Dict[str, Any] = {}
+        try:
+            from precise_runner import PreciseRunner, ReadWriteStream
+        except:
+            problems[
+                "precise_runner not installed"
+            ] = "The precise_runner Python library is not installed. Try pip3 install precise_runner"
+
+        engine_path = os.path.expandvars(
+            self.profile.get("wake.precise.engine_path", "precise-engine")
+        )
+
+        if not os.path.exists(engine_path) and not shutil.which(engine_path):
+            problems[
+                "Missing precise-engine"
+            ] = 'The Mycroft Precise engine is not installed. Follow the <a href="https://github.com/MycroftAI/mycroft-precise#binary-install">binary install instructions</a>.'
+
+        model_name = self.profile.get("wake.precise.model", "hey-mycroft-2.pb")
+        model_path = self.profile.read_path(model_name)
+        if not os.path.exists(model_path):
+            problems[
+                "Missing model"
+            ] = f"Your Mycroft Precise model could not be loaded from {model_path}"
+
+        return problems
 
 
 # -----------------------------------------------------------------------------

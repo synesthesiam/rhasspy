@@ -186,6 +186,21 @@ class HomeAssistantIntentHandler(RhasspyActor):
 
         return event_type, slots
 
+    # -------------------------------------------------------------------------
+
+    def get_problems(self) -> Dict[str, Any]:
+        problems: Dict[str, Any] = {}
+        hass_url = self.hass_config["url"]
+        try:
+            url = urljoin(self.hass_config["url"], "/api/")
+            requests.get(url)
+        except:
+            problems[
+                "Can't contact server"
+            ] = f"Unable to reach your Home Assistant server at {hass_url}. Is it running?"
+
+        return problems
+
 
 # -----------------------------------------------------------------------------
 # Command Intent Recognizer

@@ -87,8 +87,9 @@ class ProfileTrainingComplete:
 
 
 class Ready:
-    def __init__(self, timeout: bool = False) -> None:
+    def __init__(self, timeout: bool = False, problems: Dict[str, Any] = {}) -> None:
         self.timeout = timeout
+        self.problems = problems
 
 
 class GetVoiceCommand:
@@ -101,6 +102,15 @@ class GetVoiceCommand:
 
 class GetActorStates:
     pass
+
+
+class GetProblems:
+    pass
+
+
+class Problems:
+    def __init__(self, problems: Dict[str, Any] = {}):
+        self.problems = problems
 
 
 # -----------------------------------------------------------------------------
@@ -121,6 +131,7 @@ class DialogueManager(RhasspyActor):
         self.actors: Dict[str, RhasspyActor] = {}
         self.actor_states: Dict[str, str] = {}
         self.reload_actors_after_training = True
+        self.problems: Dict[str, Any] = {}
 
         self.transition("loading_mqtt")
 
@@ -146,6 +157,7 @@ class DialogueManager(RhasspyActor):
 
     def in_loading_mqtt(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, Configured) and (sender == self.mqtt):
+            self.problems[message.name] = message.problems
             self.transition("loading")
         elif isinstance(message, WakeupMessage):
             self._logger.warning("MQTT actor did not load! Trying to keep going...")
@@ -157,6 +169,8 @@ class DialogueManager(RhasspyActor):
 
     def in_loading(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, Configured):
+            self.problems[message.name] = message.problems
+
             # Remove sender
             sender_name = None
             for name, actor in self.wait_actors.items():
@@ -397,6 +411,7 @@ class DialogueManager(RhasspyActor):
 
     def in_training_loading(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, Configured):
+            self.problems[message.name] = message.problems
             self.wait_actors = {
                 name: actor
                 for name, actor in self.wait_actors.items()
@@ -488,6 +503,9 @@ class DialogueManager(RhasspyActor):
             pass
         elif isinstance(message, WavPlayed):
             pass
+        elif isinstance(message, GetProblems):
+            # Report problems from child actors
+            self.send(sender, Problems(self.problems))
         else:
             self.handle_forward(message, sender)
 

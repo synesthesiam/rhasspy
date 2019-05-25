@@ -5,7 +5,7 @@ import wave
 import logging
 import tempfile
 import subprocess
-from typing import Any, Optional, Tuple, Type
+from typing import Any, Optional, Tuple, Type, Dict
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -123,12 +123,18 @@ class PocketsphinxDecoder(RhasspyActor):
             # Load decoder
             import pocketsphinx
 
-            ps_config = self.profile.get("speech_to_text.pocketsphinx")
+            ps_config = self.profile.get("speech_to_text.pocketsphinx", {})
 
             # Load decoder settings
-            hmm_path = self.profile.read_path(ps_config["acoustic_model"])
-            dict_path = self.profile.read_path(ps_config["dictionary"])
-            lm_path = self.profile.read_path(ps_config["language_model"])
+            hmm_path = self.profile.read_path(
+                ps_config.get("acoustic_model", "acoustic_model")
+            )
+            dict_path = self.profile.read_path(
+                ps_config.get("dictionary", "dictionary.txt")
+            )
+            lm_path = self.profile.read_path(
+                ps_config.get("language_model", "language_model.txt")
+            )
 
             self._logger.debug(
                 "Loading decoder with hmm=%s, dict=%s, lm=%s"
@@ -197,6 +203,57 @@ class PocketsphinxDecoder(RhasspyActor):
 
         # No transcription
         return "", 0
+
+    # -------------------------------------------------------------------------
+
+    def get_problems(self) -> Dict[str, Any]:
+        problems: Dict[str, Any] = {}
+
+        try:
+            import pocketsphinx
+        except:
+            problems[
+                "Missing pocketsphinx"
+            ] = "pocketsphinx Python library not installed. Try pip3 install pocketsphinx"
+
+        ps_config = self.profile.get("speech_to_text.pocketsphinx", {})
+        hmm_path = self.profile.read_path(
+            ps_config.get("acoustic_model", "acoustic_model")
+        )
+
+        if not os.path.exists(hmm_path):
+            problems[
+                "Missing acoustic model"
+            ] = f"Acoustic model directory not found at {hmm_path}. Did you download your profile?"
+
+        base_dict_path = self.profile.read_path(
+            ps_config.get("base_dictionary", "base_dictionary.txt")
+        )
+
+        if not os.path.exists(base_dict_path):
+            problems[
+                "Missing base dictionary"
+            ] = f"Base dictionary not found at {base_dict_path}. Did you download your profile?"
+
+        dict_path = self.profile.read_path(
+            ps_config.get("dictionary", "dictionary.txt")
+        )
+
+        if not os.path.exists(dict_path):
+            problems[
+                "Missing dictionary"
+            ] = f"Dictionary not found at {dict_path}. Did you train your profile?"
+
+        lm_path = self.profile.read_path(
+            ps_config.get("language_model", "language_model.txt")
+        )
+
+        if not os.path.exists(lm_path):
+            problems[
+                "Missing language model"
+            ] = f"Language model not found at {lm_path}. Did you train your profile?"
+
+        return problems
 
 
 # -----------------------------------------------------------------------------
@@ -305,9 +362,11 @@ class KaldiDecoder(RhasspyActor):
                 self._logger.debug(command)
 
                 try:
-                    return subprocess.check_output(
-                        command, stderr=subprocess.STDOUT
-                    ).decode().strip()
+                    return (
+                        subprocess.check_output(command, stderr=subprocess.STDOUT)
+                        .decode()
+                        .strip()
+                    )
                 except subprocess.CalledProcessError as e:
                     output = e.output.decode()
                     self._logger.error(output)

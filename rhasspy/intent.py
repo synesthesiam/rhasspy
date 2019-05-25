@@ -5,6 +5,7 @@ import re
 import json
 import logging
 import subprocess
+import shutil
 import concurrent.futures
 from urllib.parse import urljoin
 from typing import Dict, Any, Optional, Tuple, List, Set, Type
@@ -207,6 +208,35 @@ class FsticuffsRecognizer(RhasspyActor):
             for i in range(in_symbols.num_symbols()):
                 word = in_symbols.find(i).decode()
                 self.words.add(word)
+
+    # -------------------------------------------------------------------------
+
+    def get_problems(self) -> Dict[str, Any]:
+        problems: Dict[str, Any] = {}
+
+        try:
+            import pywrapfst as fst
+        except:
+            problems[
+                "openfst not installed"
+            ] = "openfst Python library not installed. Try pip3 install openfst"
+
+        if not shutil.which("fstminimize"):
+            problems[
+                "Missing OpenFST tools"
+            ] = "OpenFST command-line tools not installed. Try sudo apt-get install libfst-tools"
+
+        fst_path = self.profile.read_path(
+            self.profile.get("intent.fsticuffs.intent_fst", "intent.fst")
+        )
+
+        if not os.path.exists(fst_path):
+            problems[
+                "Missing intent FST"
+            ] = f"Intent finite state transducer (FST) not found at {fst_path}. Did you train your profile?"
+
+        return problems
+
 
 # -----------------------------------------------------------------------------
 # Fuzzywuzzy-based Intent Recognizer

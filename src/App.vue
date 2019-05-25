@@ -36,9 +36,6 @@
                     <a class="nav-link" id="settings-tab" data-toggle="tab" href="#settings" role="tab" aria-controls="settings" aria-selected="true">Settings</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" id="advanced-tab" data-toggle="tab" href="#advanced" role="tab" aria-controls="advanced" aria-selected="true">Advanced</a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" id="log-tab" data-toggle="tab" href="#log" role="tab" aria-controls="log" aria-selected="true">Log</a>
                 </li>
             </ul>
@@ -59,9 +56,6 @@
                                      v-on:restart="restart"
                                      v-on:alert="alert($event.text, $event.level)"
                                      v-on:error="error($event)" />
-                </div>
-                <div class="tab-pane fade" id="advanced" role="tabpanel" aria-labelledby="advanced-tab">
-                    <AdvancedSettings :profile="profile" :defaults="defaults" />
                 </div>
                 <div class="tab-pane fade" id="log" role="tabpanel" aria-labelledby="log-tab">
                     <RhasspyLog :rhasspyLog="rhasspyLog" />
@@ -94,7 +88,6 @@
                         </p>
                         <p>
                             Rhasspy will not work correctly until these files are downloaded.
-                            If you want to use a different profile, select it from the Settings page and click Restart.
                         </p>
                     </div>
                     <div class="modal-footer">

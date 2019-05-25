@@ -5,6 +5,7 @@ import uuid
 import wave
 import time
 import threading
+import socket
 from queue import Queue
 from typing import Dict, Any, Optional, List
 from collections import defaultdict
@@ -264,3 +265,19 @@ class HermesMqtt(RhasspyActor):
 
         self.client.publish(topic, payload)
         self._logger.debug(f"Published intent to {topic}")
+
+    # -------------------------------------------------------------------------
+
+    def get_problems(self) -> Dict[str, Any]:
+        problems: Dict[str, Any] = {}
+        s = socket.socket()
+        try:
+            s.connect((self.host, self.port))
+        except:
+            problems[
+                "Can't connect to server"
+            ] = f"Unable to connect to your MQTT server at {self.host}:{self.port}. Is it running?"
+        finally:
+            s.close()
+
+        return problems

@@ -41,6 +41,8 @@ from .dialogue import (
     GetActorStates,
     GetSpeakers,
     SpeakSentence,
+    GetProblems,
+    Problems,
 )
 
 # -----------------------------------------------------------------------------
@@ -347,3 +349,13 @@ class RhasspyCore:
         self._logger.debug(download_cmd)
 
         subprocess.run(download_cmd, stderr=sys.stderr, stdout=sys.stderr, check=True)
+
+    # -------------------------------------------------------------------------
+
+    def get_problems(self) -> Dict[str, Any]:
+        """Returns a dictionary with problems from each actor."""
+        assert self.actor_system is not None
+        with self.actor_system.private() as sys:
+            result = sys.ask(self.dialogue_manager, GetProblems())
+            assert isinstance(result, Problems)
+            return result.problems

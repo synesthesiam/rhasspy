@@ -198,6 +198,18 @@ def api_download_profile() -> str:
 # -----------------------------------------------------------------------------
 
 
+@app.route("/api/problems", methods=["GET"])
+def api_problems() -> Response:
+    """Returns any problems Rhasspy has found."""
+    assert core is not None
+    problems = core.get_problems()
+
+    return jsonify(problems)
+
+
+# -----------------------------------------------------------------------------
+
+
 @app.route("/api/microphones", methods=["GET"])
 def api_microphones() -> Response:
     """Get a dictionary of available recording devices"""

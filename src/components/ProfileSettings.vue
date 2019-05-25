@@ -102,6 +102,9 @@
                  .then(request => this.$parent.alert(request.data, 'success'))
                  .then(() => {
                      this.$parent.endAsync()
+                     if (confirm("Settings saved. Restart Rhasspy?")) {
+                         this.$parent.restart()
+                     }
                  })
                  .catch(err => this.$parent.error(err))
          },

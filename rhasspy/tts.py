@@ -3,8 +3,9 @@ import subprocess
 import tempfile
 import hashlib
 import json
+import shutil
 from urllib.parse import urljoin
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, Dict
 
 import requests
 
@@ -118,6 +119,17 @@ class EspeakSentenceSpeaker(RhasspyActor):
             self._logger.exception("speak")
             return bytes()
 
+    # -------------------------------------------------------------------------
+
+    def get_problems(self) -> Dict[str, Any]:
+        problems: Dict[str, Any] = {}
+        if not shutil.which("espeak"):
+            problems[
+                "Missing espeak"
+            ] = "The espeak text to speech system is not installed. Try sudo apt-get install espeak"
+
+        return problems
+
 
 # -----------------------------------------------------------------------------
 # Flite Text to Speech
@@ -158,6 +170,17 @@ class FliteSentenceSpeaker(RhasspyActor):
         except:
             self._logger.exception("speak")
             return bytes()
+
+    # -------------------------------------------------------------------------
+
+    def get_problems(self) -> Dict[str, Any]:
+        problems: Dict[str, Any] = {}
+        if not shutil.which("flite"):
+            problems[
+                "Missing flite"
+            ] = "The flite text to speech system is not installed. Try sudo apt-get install flite"
+
+        return problems
 
 
 # -----------------------------------------------------------------------------
@@ -208,6 +231,17 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
         except:
             self._logger.exception("speak")
             return bytes()
+
+    # -------------------------------------------------------------------------
+
+    def get_problems(self) -> Dict[str, Any]:
+        problems: Dict[str, Any] = {}
+        if not shutil.which("pico2wave"):
+            problems[
+                "Missing pico2wave"
+            ] = "The pico text to speech system is not installed. Try sudo apt-get install libttspico-utils"
+
+        return problems
 
 
 # -----------------------------------------------------------------------------
@@ -268,6 +302,23 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
             self._logger.exception("speak")
             return bytes()
 
+    # -------------------------------------------------------------------------
+
+    def get_problems(self) -> Dict[str, Any]:
+        problems: Dict[str, Any] = {}
+        try:
+            url = self.url
+            if url.endswith("/process"):
+                url = url[:-8]
+
+            requests.get(url)
+        except:
+            problems[
+                "Can't contact server"
+            ] = f"Unable to reach your MaryTTS server at {self.url}. Is it running?"
+
+        return problems
+
 
 # -----------------------------------------------------------------------------
 # Command Text to Speech
@@ -325,6 +376,7 @@ class CommandSentenceSpeaker(RhasspyActor):
 
 class GoogleWaveNetSentenceSpeaker(RhasspyActor):
     """Uses Google's WaveNet text to speech cloud API (online)"""
+
     def to_started(self, from_state: str) -> None:
         self.wav_data: bytes = bytes()
         self.cache_dir = self.profile.write_dir(
