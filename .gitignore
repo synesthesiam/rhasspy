@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 .ipynb_checkpoints/
 download/
+build/
 
 # QEMU
 etc/qemu-arm-static
@@ -57,6 +58,12 @@ deps/
 tts/
 *.log
 .HA_VERSION
+
+# Tests
+etc/test/pt/Google/
+etc/test/pt/PT*
+etc/test/pt/original/
+etc/test/vi/2*
 
 # Misc
 workbench.xmi

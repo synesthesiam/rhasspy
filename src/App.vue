@@ -12,6 +12,7 @@
                 <div class="navbar-container">
                     <a href="/" class="text-white font-weight-bold">Rhasspy</a>
                     <a href="/api/" class="badge badge-info ml-2">API</a>
+                    <span class="badge badge-pill badge-danger ml-2" v-if="this.numProblems > 0" title="Problems were detected"><i class="fas fa-exclamation"></i></span>
                 </div>
                 <div class="navbar-container ml-auto">
                     <span title="Profile name" class="badge badge-primary ml-2" style="font-size: 1em">{{ this.profile.name }}</span>
@@ -35,6 +36,9 @@
                 <li class="nav-item">
                     <a class="nav-link" id="settings-tab" data-toggle="tab" href="#settings" role="tab" aria-controls="settings" aria-selected="true">Settings</a>
                 </li>
+                <li class="nav-item" v-if="this.numProblems > 0">
+                    <a class="nav-link" id="problems-tab" data-toggle="tab" href="#problems" role="tab" aria-controls="problems" aria-selected="true">Problems <span class="badge badge-pill badge-danger">{{ this.numProblems }}</span></a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" id="log-tab" data-toggle="tab" href="#log" role="tab" aria-controls="log" aria-selected="true">Log</a>
                 </li>
@@ -56,6 +60,9 @@
                                      v-on:restart="restart"
                                      v-on:alert="alert($event.text, $event.level)"
                                      v-on:error="error($event)" />
+                </div>
+                <div class="tab-pane fade" id="problems" role="tabpanel" aria-labelledby="problems-tab">
+                    <Problems :problems="problems" />
                 </div>
                 <div class="tab-pane fade" id="log" role="tabpanel" aria-labelledby="log-tab">
                     <RhasspyLog :rhasspyLog="rhasspyLog" />
@@ -111,7 +118,7 @@
  import TrainLanguageModel from './components/TrainLanguageModel.vue'
  import TranscribeSpeech from './components/TranscribeSpeech.vue'
  import ProfileSettings from './components/ProfileSettings.vue'
- import AdvancedSettings from './components/AdvancedSettings.vue'
+ import Problems from './components/Problems.vue'
  import RhasspyLog from './components/RhasspyLog.vue'
 
  import ProfileDefaults from '@/assets/ProfileDefaults'
@@ -123,7 +130,7 @@
          TrainLanguageModel,
          TranscribeSpeech,
          ProfileSettings,
-         AdvancedSettings,
+         Problems,
          RhasspyLog
      },
 
@@ -144,7 +151,10 @@
 
              unknownWords: [],
 
-             rhasspyLog: ''
+             rhasspyLog: '',
+
+             problems: {},
+             numProblems: 0
          }
      },
 
@@ -247,6 +257,18 @@
                              .catch(err => this.error(err))
          },
 
+         getProblems: function() {
+             RhasspyService.getProblems()
+                             .then(request => {
+                                 this.problems = request.data
+                                 this.numProblems = 0
+                                 for (var actor in this.problems) {
+                                     this.numProblems += Object.keys(this.problems[actor]).length
+                                 }
+                             })
+                             .catch(err => this.error(err))
+         },
+
          wakeup: function() {
              TranscribeService.wakeup()
          },
@@ -272,6 +294,7 @@
          this.getProfiles()
          this.getDefaults()
          this.getUnknownWords()
+         this.getProblems()
          this.$options.sockets.onmessage = function(event) {
              this.rhasspyLog = event.data + '\n' + this.rhasspyLog
          }

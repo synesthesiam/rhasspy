@@ -882,7 +882,7 @@ logging.debug(f"Starting web server at {protocol}://{args.host}:{args.port}")
 server = pywsgi.WSGIServer(
     (args.host, args.port), app, handler_class=WebSocketHandler, **server_kwargs
 )
-logging.getLogger("geventwebsocket").setLevel(logging.INFO)
+logging.getLogger("geventwebsocket").setLevel(logging.WARN)
 
 try:
     server.serve_forever()

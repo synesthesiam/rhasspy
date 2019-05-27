@@ -27,7 +27,7 @@
             "arguments": [],
             "program": ""
         },
-        "forward_to_hass": true,
+        "forward_to_hass": false,
         "system": "dummy"
     },
     "home_assistant": {

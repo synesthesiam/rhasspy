@@ -132,8 +132,12 @@ class DialogueManager(RhasspyActor):
         self.actor_states: Dict[str, str] = {}
         self.reload_actors_after_training = True
         self.problems: Dict[str, Any] = {}
+        self.mqtt: Optional[RhasspyActor] = None
 
-        self.transition("loading_mqtt")
+        if self.profile.get("mqtt.enabled", False):
+            self.transition("loading_mqtt")
+        else:
+            self.transition("loading")
 
     def to_loading_mqtt(self, from_state: str) -> None:
         self._logger.debug("Loading MQTT first")
@@ -142,7 +146,7 @@ class DialogueManager(RhasspyActor):
         from .mqtt import HermesMqtt
 
         self.mqtt_class = HermesMqtt
-        self.mqtt: RhasspyActor = self.createActor(self.mqtt_class)
+        self.mqtt = self.createActor(self.mqtt_class)
         self.actors["mqtt"] = self.mqtt
 
         self.send(
@@ -614,11 +618,11 @@ class DialogueManager(RhasspyActor):
         self.handler: RhasspyActor = self.createActor(self.handler_class)
         self.actors["handler"] = self.handler
 
-        self.hass_handler: RhasspyActor = self.handler
-        if handler_system != "hass":
+        self.hass_handler: Optional[RhasspyActor] = None
+        forward_to_hass = self.profile.get("handle.forward_to_hass", False)
+        if (handler_system != "hass") and forward_to_hass:
             # Create a separate actor just for home assistant
             from .intent_handler import HomeAssistantIntentHandler
-
             self.hass_handler = self.createActor(HomeAssistantIntentHandler)
 
         self.actors["hass_handler"] = self.hass_handler

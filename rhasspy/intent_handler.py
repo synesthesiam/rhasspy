@@ -219,8 +219,8 @@ class CommandIntentHandler(RhasspyActor):
 
         self.command = [program] + arguments
 
-        self.forward_to_hass: bool = self.profile.get("handle.forward_to_hass", True)
-        self.hass_handler: RhasspyActor = self.config["hass_handler"]
+        self.forward_to_hass: bool = self.profile.get("handle.forward_to_hass", False)
+        self.hass_handler: Optional[RhasspyActor] = self.config["hass_handler"]
         self.receiver: Optional[RhasspyActor] = None
 
         self.transition("ready")
@@ -241,7 +241,7 @@ class CommandIntentHandler(RhasspyActor):
                 self._logger.exception("in_started")
                 intent["error"] = str(e)
 
-            if self.forward_to_hass:
+            if self.forward_to_hass and self.hass_handler:
                 self.transition("forwarding")
                 self.send(self.hass_handler, ForwardIntent(intent))
             else:
