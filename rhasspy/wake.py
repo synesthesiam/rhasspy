@@ -7,6 +7,7 @@ import re
 import time
 import subprocess
 import shutil
+import struct
 from uuid import uuid4
 from typing import Optional, Any, List, Dict, Type
 
@@ -654,16 +655,20 @@ class PorcupineWakeListener(RhasspyActor):
     def to_started(self, from_state: str) -> None:
         self.recorder = self.config["recorder"]
         self.library_path = self.profile.read_path(
-            self.profile.get("wake.porcupine.library_path", "libpv_porcupine.so")
+            self.profile.get(
+                "wake.porcupine.library_path", "porcupine/libpv_porcupine.so"
+            )
         )
         self.model_path = self.profile.read_path(
             self.profile.get(
-                "wake.porcupine.model_path", "porcupine_compressed_params.pv"
+                "wake.porcupine.model_path", "porcupine/porcupine_params.pv"
             )
         )
         self.keyword_paths = [
             self.profile.read_path(
-                self.profile.get("wake.porcupine.keyword_path", "porcupine.ppn")
+                self.profile.get(
+                    "wake.porcupine.keyword_path", "porcupine/porcupine.ppn"
+                )
             )
         ]
         self.sensitivities = [
@@ -672,7 +677,7 @@ class PorcupineWakeListener(RhasspyActor):
 
         self.preload: bool = self.config.get("preload", False)
         self.audio_buffer: bytes = bytes()
-        self.chunk_size = 512
+        self.chunk_size = 1024
         self.handle = None
 
         if self.preload:
@@ -700,6 +705,7 @@ class PorcupineWakeListener(RhasspyActor):
             if num_chunks > 0:
                 for i in range(num_chunks):
                     chunk = self.audio_buffer[: self.chunk_size]
+                    chunk = struct.unpack_from(self.chunk_format, chunk)
                     self.audio_buffer = self.audio_buffer[self.chunk_size :]
 
                     # Process chunk
@@ -743,7 +749,9 @@ class PorcupineWakeListener(RhasspyActor):
                 sensitivities=self.sensitivities,
             )
 
-            self.chunk_size = self.handle.frame_length
+            # 16-bit
+            self.chunk_size = self.handle.frame_length * 2
+            self.chunk_format = "h" * self.handle.frame_length
             self._logger.debug(
                 f"Loaded porcupine (keyword={self.keyword_paths[0]}). Expecting sample rate={self.handle.sample_rate}, frame length={self.handle.frame_length}"
             )
