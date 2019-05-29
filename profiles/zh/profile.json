@@ -15,5 +15,31 @@
         "flair": {
             "compatible": false
         }
+    },
+    "download": {
+        "conditions": {
+            "speech_to_text.system": {
+                "pocketsphinx": {
+                    "acoustic_model": "cmusphinx-zh-cn-5.2.tar.gz:cmusphinx-zh-cn-5.2/zh_cn.cd_cont_5000",
+                    "base_dictionary.txt": "cmusphinx-zh-cn-5.2.tar.gz:cmusphinx-zh-cn-5.2/zh_cn.dic",
+                    "g2p.fst": "zh-g2p.tar.gz:g2p.fst"
+                }
+            },
+
+            "speech_to_text.pocketsphinx.mix_weight": {
+                ">0": {
+                    "base_language_model.txt": "cmusphinx-zh-cn-5.2.tar.gz:cmusphinx-zh-cn-5.2/zh_cn.lm"
+                }
+            }
+        },
+
+        "files": {
+            "cmusphinx-zh-cn-5.2.tar.gz": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-zh/cmusphinx-zh-cn-5.2.tar.gz"
+            },
+            "zh-g2p.tar.gz": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-zh/zh-g2p.tar.gz"
+            }
+        }
     }
 }

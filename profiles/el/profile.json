@@ -1,9 +1,6 @@
 {
     "language": "el",
     "name": "el",
-    "wake": {
-        "system": "snowboy"
-    },
     "speech_to_text": {
         "g2p_casing": "lower",
         "system": "pocketsphinx"
@@ -12,5 +9,32 @@
         "flair": {
             "compatible": false
         }
+    },
+    "download": {
+        "conditions": {
+            "speech_to_text.system": {
+                "pocketsphinx": {
+                    "acoustic_model": "cmusphinx-el-5.2.tar.gz:cmusphinx-el-gr-5.2/el-gr.cd_cont_5000",
+                    "base_dictionary.txt": "cmusphinx-el-5.2.tar.gz:cmusphinx-el-gr-5.2/el-gr.dic",
+                    "g2p.fst": "el-g2p.tar.gz:g2p.fst"
+                }
+            },
+
+            "speech_to_text.pocketsphinx.mix_weight": {
+                ">0": {
+                    "base_language_model.txt": "cmusphinx-el-5.2.tar.gz:cmusphinx-el-gr-5.2/el-gr.lm.gz:"
+                }
+            }
+        },
+
+        "files": {
+            "cmusphinx-el-5.2.tar.gz": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-el/cmusphinx-el-5.2.tar.gz"
+            },
+            "el-g2p.tar.gz": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-el/el-g2p.tar.gz"
+            }
+        }
     }
+
 }

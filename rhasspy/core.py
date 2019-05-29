@@ -109,7 +109,7 @@ class RhasspyCore:
                     ready=block,
                     transitions=False,
                     load_timeout_sec=30,
-                    observer=observer
+                    observer=observer,
                 ),
             )
 
@@ -364,6 +364,17 @@ class RhasspyCore:
         else:
             return lambda v: v == value
 
+    def _unpack_gz(self, src_path, temp_dir):
+        # Strip off .gz and put relative to temporary directory
+        temp_file_path = os.path.join(temp_dir, os.path.split(src_path[:-3])[1])
+
+        # Decompress single file
+        with open(src_path, "rb") as src_file:
+            with open(temp_file_path, "wb") as temp_file:
+                temp_file.write(gzip.decompress(src_file.read()))
+
+        return temp_file_path
+
     # -------------------------------------------------------------------------
 
     def download_profile(self, delete=False) -> None:
@@ -492,18 +503,7 @@ class RhasspyCore:
                 # Handle special archives
                 if src_path.endswith(".gz"):
                     # Single file compressed with gzip
-                    def unpack_gz(temp_dir):
-                        # Strip off .gz and put relative to temporary directory
-                        temp_file_path = os.path.join(
-                            temp_dir, os.path.split(src_path[:-3])[1]
-                        )
-
-                        # Decompress single file
-                        with open(src_path, "rb") as src_file:
-                            with open(temp_file_path, "wb") as temp_file:
-                                temp_file.write(gzip.decompress(src_file.read()))
-
-                    unpack = unpack_gz
+                    unpack = lambda temp_dir: self._unpack_gz(src_path, temp_dir)
                 else:
                     # Very bad situation
                     self._logger.warning(
@@ -515,6 +515,16 @@ class RhasspyCore:
                 unpack(temp_dir)
 
                 for dest_path, src_extract in extract_paths:
+                    src_exclude = []
+                    if "!" in src_extract:
+                        extract_parts = src_extract.split("!")
+                        src_extract = extract_parts[0]
+                        src_exclude = defaultdict(list)
+                        for exclude_path in extract_parts[1:]:
+                            exclude_path = os.path.join(temp_dir, exclude_path)
+                            exclude_dir, exclude_name = os.path.split(exclude_path)
+                            src_exclude[exclude_dir].append(exclude_name)
+
                     # Remove existing file/directory
                     if os.path.isdir(dest_path):
                         self._logger.debug(f"Removing {dest_path}")
@@ -526,11 +536,22 @@ class RhasspyCore:
                     # Create necessary directories
                     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
+                    if src_extract.endswith(":"):
+                        # Unpack .gz inside archive
+                        src_path = os.path.join(temp_dir, src_extract[:-1])
+                        extract_path = self._unpack_gz(src_path, temp_dir)
+                    else:
+                        # Regular file
+                        extract_path = os.path.join(temp_dir, src_extract)
+
                     # Copy specific file/directory
-                    extract_path = os.path.join(temp_dir, src_extract)
                     self._logger.debug(f"Copying {extract_path} to {dest_path}")
                     if os.path.isdir(extract_path):
-                        shutil.copytree(extract_path, dest_path)
+                        ignore = None
+                        if len(src_exclude) > 0:
+                            ignore = lambda cur_dir, filenames: src_exclude[cur_dir]
+
+                        shutil.copytree(extract_path, dest_path, ignore=ignore)
                     else:
                         shutil.copy2(extract_path, dest_path)
 
