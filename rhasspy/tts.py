@@ -392,7 +392,7 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
             "https://texttospeech.googleapis.com/v1/text:synthesize",
         )
         self.voice = self.profile.get(
-            "text_to_speech.wavenet.wavenet_voice", "Wavenet-C"
+            "text_to_speech.wavenet.voice", "Wavenet-C"
         )
         self.gender = self.profile.get("text_to_speech.wavenet.gender", "FEMALE")
         self.sample_rate = int(
