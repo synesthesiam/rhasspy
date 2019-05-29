@@ -133,6 +133,7 @@ class DialogueManager(RhasspyActor):
         self.reload_actors_after_training = True
         self.problems: Dict[str, Any] = {}
         self.mqtt: Optional[RhasspyActor] = None
+        self.observer: Optional[RhasspyActor] = self.config.get("observer", None)
 
         if self.profile.get("mqtt.enabled", False):
             self.transition("loading_mqtt")
@@ -321,6 +322,10 @@ class DialogueManager(RhasspyActor):
 
                 # Forward to MQTT (hermes)
                 self.send(self.mqtt, message)
+
+                # Forward to observer
+                if self.observer:
+                    self.send(self.observer, message)
 
                 self.transition("handling")
             else:
@@ -623,6 +628,7 @@ class DialogueManager(RhasspyActor):
         if (handler_system != "hass") and forward_to_hass:
             # Create a separate actor just for home assistant
             from .intent_handler import HomeAssistantIntentHandler
+
             self.hass_handler = self.createActor(HomeAssistantIntentHandler)
 
         self.actors["hass_handler"] = self.hass_handler
