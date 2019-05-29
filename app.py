@@ -44,7 +44,9 @@ from jsgf2fst import read_slots
 
 from rhasspy.profiles import Profile
 from rhasspy.core import RhasspyCore
+from rhasspy.actor import RhasspyActor, ActorSystem, ConfigureEvent
 from rhasspy.dialogue import ProfileTrainingFailed
+from rhasspy.intent import IntentRecognized
 from rhasspy.utils import (
     recursive_update,
     recursive_remove,
@@ -126,7 +128,10 @@ def start_rhasspy() -> None:
     global core
 
     # Load core
-    core = RhasspyCore(args.profile, system_profiles_dir, user_profiles_dir)
+    system = ActorSystem()
+    core = RhasspyCore(
+        args.profile, system_profiles_dir, user_profiles_dir, actor_system=system
+    )
 
     # Set environment variables
     os.environ["RHASSPY_BASE_DIR"] = os.getcwd()
@@ -145,13 +150,13 @@ def start_rhasspy() -> None:
         extra_settings[key] = value
         core.profile.set(key, value)
 
-    core.start()
+    # Load observer actor to catch intents
+    observer = system.createActor(WebSocketObserver)
+    system.ask(observer, ConfigureEvent(core.profile))
+
+    core.start(observer=observer)
     logger.info("Started")
 
-
-# -----------------------------------------------------------------------------
-
-start_rhasspy()
 
 # -----------------------------------------------------------------------------
 # HTTP API
@@ -828,6 +833,24 @@ logging.root.addHandler(
 )
 
 
+class WebSocketObserver(RhasspyActor):
+    """Observes the dialogue manager and outputs intents to the websocket."""
+
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        if isinstance(message, IntentRecognized):
+            # Add slots
+            intent_slots = {}
+            for ev in message.intent.get("entities", []):
+                intent_slots[ev["entity"]] = ev["value"]
+
+            message.intent["slots"] = intent_slots
+
+            # Convert to JSON
+            intent_json = json.dumps(message.intent)
+            self._logger.debug(intent_json)
+            add_ws_event(WS_EVENT_INTENT, intent_json)
+
+
 @sockets.route("/api/events/intent")
 def api_events_intent(ws) -> None:
     # Add new queue for websocket
@@ -865,6 +888,10 @@ def api_events_log(ws) -> None:
     with ws_locks[WS_EVENT_LOG]:
         del ws_queues[WS_EVENT_LOG][ws]
 
+
+# -----------------------------------------------------------------------------
+
+start_rhasspy()
 
 # -----------------------------------------------------------------------------
 

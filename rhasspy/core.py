@@ -7,7 +7,7 @@ from typing import List, Dict, Optional, Any, Callable, Tuple, Union
 import pydash
 
 # Internal imports
-from .actor import ConfigureEvent, ActorSystem
+from .actor import ConfigureEvent, ActorSystem, RhasspyActor
 from .profiles import Profile
 from .audio_recorder import AudioData, StartRecordingToBuffer, StopRecordingToBuffer
 from .stt import WavTranscription
@@ -57,7 +57,6 @@ class RhasspyCore:
         system_profiles_dir: str,
         user_profiles_dir: str,
         actor_system: Optional[ActorSystem] = None,
-        do_logging: bool = True,
     ) -> None:
 
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -74,21 +73,20 @@ class RhasspyCore:
         )
 
         self.defaults = Profile.load_defaults(system_profiles_dir)
-        self.do_logging = do_logging
 
     # -------------------------------------------------------------------------
 
     def start(
-        self, preload: Optional[bool] = None, block: bool = True, timeout: float = 60
+        self,
+        preload: Optional[bool] = None,
+        block: bool = True,
+        timeout: float = 60,
+        observer: Optional[RhasspyActor] = None,
     ) -> None:
         """Start Rhasspy"""
 
         if self.actor_system is None:
-            kwargs = {}
-            if not self.do_logging:
-                kwargs["logDefs"] = {"version": 1, "loggers": {"": {}}}
-
-            self.actor_system = ActorSystem("multiprocTCPBase", **kwargs)
+            self.actor_system = ActorSystem()
 
         if preload is None:
             preload = self.profile.get("rhasspy.preload_profile", False)
@@ -104,6 +102,7 @@ class RhasspyCore:
                     ready=block,
                     transitions=False,
                     load_timeout_sec=30,
+                    observer=observer
                 ),
             )
 
