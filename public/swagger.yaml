@@ -346,13 +346,16 @@ paths:
     post:
       summary: 'Play WAV data using configured audio output'
       requestBody:
-        description: 'WAV data'
+        description: 'WAV data or URL'
         required: true
         content:
           audio/wav:
             schema:
               type: string
               format: binary
+          text/plain:
+            schema:
+              type: string
       responses:
         '200':
           description: OK

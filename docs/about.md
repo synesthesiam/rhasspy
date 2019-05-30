@@ -28,6 +28,7 @@ The following tools/libraries help to support Rhasspy:
 * [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus) (word pronunciations)
 * [PicoTTS](https://en.wikipedia.org/wiki/SVOX) (text to speech)
 * [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx) (speech to text, wake word)
+* [porcupine](https://github.com/Picovoice/Porcupine) (wake word)
 * [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) (microphone)
 * [pyjsgf](https://github.com/Danesprite/pyjsgf) (JSGF grammar parsing)
 * [Python 3](https://www.python.org)
