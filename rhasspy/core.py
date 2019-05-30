@@ -123,21 +123,21 @@ class RhasspyCore:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, GetMicrophones(system))
-            assert isinstance(result, dict)
+            assert isinstance(result, dict), result
             return result
 
     def test_microphones(self, system: Optional[str] = None) -> Dict[Any, Any]:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, TestMicrophones(system))
-            assert isinstance(result, dict)
+            assert isinstance(result, dict), result
             return result
 
     def get_speakers(self, system: Optional[str] = None) -> Dict[Any, Any]:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, GetSpeakers(system))
-            assert isinstance(result, dict)
+            assert isinstance(result, dict), result
             return result
 
     # -------------------------------------------------------------------------
@@ -150,14 +150,14 @@ class RhasspyCore:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, ListenForCommand(handle=handle))
-            assert isinstance(result, dict)
+            assert isinstance(result, dict), result
             return result
 
     def record_command(self, timeout: Optional[float] = None) -> VoiceCommand:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, GetVoiceCommand(timeout=timeout))
-            assert isinstance(result, VoiceCommand)
+            assert isinstance(result, VoiceCommand), result
             return result
 
     # -------------------------------------------------------------------------
@@ -168,14 +168,14 @@ class RhasspyCore:
             result = sys.ask(
                 self.dialogue_manager, TranscribeWav(wav_data, handle=False)
             )
-            assert isinstance(result, WavTranscription)
+            assert isinstance(result, WavTranscription), result
             return result
 
     def recognize_intent(self, text: str) -> IntentRecognized:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, RecognizeIntent(text, handle=False))
-            assert isinstance(result, IntentRecognized)
+            assert isinstance(result, IntentRecognized), result
 
             # Add slots
             intent_slots = {}
@@ -190,7 +190,7 @@ class RhasspyCore:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, HandleIntent(intent))
-            assert isinstance(result, IntentHandled)
+            assert isinstance(result, IntentHandled), result
             return result
 
     # -------------------------------------------------------------------------
@@ -207,7 +207,7 @@ class RhasspyCore:
             result = self.actor_system.ask(
                 self.dialogue_manager, StopRecordingToBuffer(buffer_name)
             )
-            assert isinstance(result, AudioData)
+            assert isinstance(result, AudioData), result
             return result
 
     # -------------------------------------------------------------------------
@@ -228,28 +228,28 @@ class RhasspyCore:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, GetWordPronunciations(words, n))
-            assert isinstance(result, WordPronunciations)
+            assert isinstance(result, WordPronunciations), result
             return result
 
     def get_word_phonemes(self, word: str) -> WordPhonemes:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, GetWordPhonemes(word))
-            assert isinstance(result, WordPhonemes)
+            assert isinstance(result, WordPhonemes), result
             return result
 
     def speak_word(self, word: str) -> WordSpoken:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, SpeakWord(word))
-            assert isinstance(result, WordSpoken)
+            assert isinstance(result, WordSpoken), result
             return result
 
     def speak_sentence(self, sentence: str) -> SentenceSpoken:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, SpeakSentence(sentence))
-            assert isinstance(result, SentenceSpoken)
+            assert isinstance(result, SentenceSpoken), result
             return result
 
     # -------------------------------------------------------------------------
@@ -264,7 +264,7 @@ class RhasspyCore:
             )
             assert isinstance(result, ProfileTrainingComplete) or isinstance(
                 result, ProfileTrainingFailed
-            )
+            ), result
             return result
 
     # -------------------------------------------------------------------------
@@ -282,7 +282,7 @@ class RhasspyCore:
             result = sys.ask(self.dialogue_manager, ListenForWakeWord())
             assert isinstance(result, WakeWordDetected) or isinstance(
                 result, WakeWordNotDetected
-            )
+            ), result
 
             return result
 
@@ -292,7 +292,7 @@ class RhasspyCore:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, GetActorStates())
-            assert isinstance(result, dict)
+            assert isinstance(result, dict), result
             return result
 
     # -------------------------------------------------------------------------
@@ -562,5 +562,5 @@ class RhasspyCore:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = sys.ask(self.dialogue_manager, GetProblems())
-            assert isinstance(result, Problems)
+            assert isinstance(result, Problems), result
             return result.problems
