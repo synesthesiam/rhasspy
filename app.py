@@ -125,6 +125,7 @@ def shutdown(*args: Any, **kwargs: Any) -> None:
 
 
 def start_rhasspy() -> None:
+    """Create actor system and Rhasspy core."""
     global core
 
     # Load core
@@ -165,7 +166,7 @@ def start_rhasspy() -> None:
 
 @app.route("/api/profiles")
 def api_profiles() -> Response:
-    """Get list of available profiles"""
+    """Get list of available profiles and verify necessary files."""
     assert core is not None
     profile_names = set()
     for profiles_dir in profiles_dirs:
@@ -279,19 +280,6 @@ def api_profile() -> Union[str, Response]:
     if request.method == "POST":
         # Ensure that JSON is valid
         profile_json = json.loads(request.data)
-        # from cerberus import Validator
-
-        # schema_path = os.path.join(
-        #     os.path.dirname(__file__), "rhasspy", "profile_schema.json"
-        # )
-
-        # with open(schema_path, "r") as schema_file:
-        #     v = Validator(json.load(schema_file))
-        #     profile_dict = json.loads(request.data)
-        #     if not v.validate(profile_dict):
-        #         print(json.dumps(profile_dict, indent=4))
-        #         raise Exception(str(v._errors[0].info))
-
         recursive_remove(core.profile.system_json, profile_json)
 
         profile_path = os.path.abspath(core.profile.write_path("profile.json"))
@@ -373,9 +361,17 @@ def api_play_wav() -> str:
     """Play WAV data through the configured audio output system"""
     assert core is not None
 
+    if request.content_type == "audio/wav":
+        wav_data = request.data
+    else:
+        # Interpret as URL
+        url = request.data.decode()
+        logger.debug(f"Loading WAV data from {url}")
+        wav_data = requests.get(url).content
+
     # Play through speakers
-    logger.debug(f"Playing {len(request.data)} byte(s)")
-    core.play_wav_data(request.data)
+    logger.debug(f"Playing {len(wav_data)} byte(s)")
+    core.play_wav_data(wav_data)
 
     return "OK"
 
@@ -863,7 +859,7 @@ def api_events_intent(ws) -> None:
             text = q.get()
             ws.send(text)
     except Exception as e:
-        logging.exception("api_events_intent")
+        logger.exception("api_events_intent")
 
     # Remove queue
     with ws_locks[WS_EVENT_INTENT]:
@@ -882,7 +878,7 @@ def api_events_log(ws) -> None:
             text = q.get()
             ws.send(text)
     except Exception as e:
-        logging.exception("api_events_log")
+        logger.exception("api_events_log")
 
     # Remove queue
     with ws_locks[WS_EVENT_LOG]:
@@ -900,16 +896,16 @@ protocol = "http"
 server_kwargs = {}
 
 if args.ssl is not None:
-    logging.debug(f"Using SSL with certfile, keyfile = {args.ssl}")
+    logger.debug(f"Using SSL with certfile, keyfile = {args.ssl}")
     server_kwargs["certfile"] = args.ssl[0]
     server_kwargs["keyfile"] = args.ssl[1]
     protocol = "https"
 
-logging.debug(f"Starting web server at {protocol}://{args.host}:{args.port}")
+logger.debug(f"Starting web server at {protocol}://{args.host}:{args.port}")
 server = pywsgi.WSGIServer(
     (args.host, args.port), app, handler_class=WebSocketHandler, **server_kwargs
 )
-logging.getLogger("geventwebsocket").setLevel(logging.WARN)
+logger.getLogger("geventwebsocket").setLevel(logging.WARN)
 
 try:
     server.serve_forever()

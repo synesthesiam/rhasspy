@@ -102,8 +102,15 @@ class RhasspyActor:
                 self.profile: Profile = message.profile
                 self.config: Dict[str, Any] = message.config
                 self._transitions = self.config.get("transitions", True)
-                self.transition("started")
-                self.send(sender, Configured(self._name, self.get_problems()))
+
+                try:
+                    self.transition("started")
+                    self.send(sender, Configured(self._name, self.get_problems()))
+                except Exception as e:
+                    self._logger.exception("started")
+                    self.send(
+                        sender, Configured(self._name, {e.__class__.__name__: str(e)})
+                    )
             else:
                 # Call in_<state> method
                 if self._state_method is not None:

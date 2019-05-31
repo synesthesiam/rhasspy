@@ -129,6 +129,15 @@ All available profile sections and settings are listed below:
         * `url` - address:port of MaryTTS server (port is usually 59125)
         * `voice` - name of voice to use (e.g., `cmu-slt`). Default if not present.
         * `locale` - name of locale to use (e.g., `en-US`). Default if not present.
+    * `wavenet` - configuration for Google's [WaveNet](https://cloud.google.com/text-to-speech/docs/wavenet)
+        * `cache_dir` - path to directory in your profile where WAV files are cached
+        * `credentials_json` - path to the JSON credentials file (generated online)
+        * `gender` - gender of speaker (`MALE` `FEMALE`)
+        * `language_code` - language/locale e.g. `en-US`,
+        * `sample_rate` - WAV sample rate (default: 22050)
+        * `url` - URL of WaveNet endpoint
+        * `voice` - voice to use (e.g., `Wavenet-C`)
+        * `fallback_tts` - text to speech system to use when offline or error occurs (e.g., `espeak`)
     * `phoneme_examples` - text file with examples for each CMU phoneme
 * `training` - training speech/intent recognizers
     * `dictionary_number_duplicates` - true if duplicate words in dictionary should be suffixed by `(2)`, `(3)`, etc. 
@@ -150,7 +159,7 @@ All available profile sections and settings are listed below:
             * `program` - path to executable
             * `arguments` - list of arguments to pass to program
 * `wake` - waking Rhasspy up for speech input
-    * `system` - wake word recognition system (`pocketsphinx`, `snowboy`, `precise`, `command`, or `dummy`)
+    * `system` - wake word recognition system (`pocketsphinx`, `snowboy`, `precise`, `porcupine`, `command`, or `dummy`)
     * `pocketsphinx` - configuration for Pocketsphinx wake word recognizer
         * `keyphrase` - phrase to wake up on (3-4 syllables recommended)
         * `threshold` - sensitivity of detection (recommended range 1e-50 to 1e-5)
@@ -166,6 +175,11 @@ All available profile sections and settings are listed below:
         * `sensitivity` - model sensitivity (0-1, default 0.5)
         * `trigger_level`  - number of events to trigger activation (default 3)
         * `chunk_size` - number of bytes per chunk to feed to Precise (default 2048)
+    * `porcupine` - configuration for [PicoVoice's Porcupine](https://github.com/Picovoice/Porcupine)
+        * `library_path` - path to  `libpv_porcupine.so` for your platform/architecture
+        * `model_path` - path to the `porcupine_params.pv` (lib/common)
+        * `keyword_path` - path to the `.ppn` keyword file
+        * `sensitivity` - model sensitivity (0-1, default 0.5)
     * `command` - configuration for external speech-to-text program
         * `program` - path to executable
         * `arguments` - list of arguments to pass to program
@@ -226,3 +240,15 @@ All available profile sections and settings are listed below:
     * `system` - system for tuning (currently only `sphinxtrain`)
     * `sphinxtrain` - configuration for [sphinxtrain](https://github.com/cmusphinx/sphinxtrain) based acoustic model tuning
         * `mllr_matrix` - name of generated MLLR matrix (should match `speech_to_text.pocketsphinx.mllr_matrix`)
+* `download` - configuration for profile file downloading
+    * `cache_dir` - directory in your profile where downloaded files are cached
+    * `conditions` - profile settings that will trigger file downloads
+        * keys are profile setting paths (e.g., `wake.system`)
+        * values are dictionaries whose keys are profile settings values (e.g., `snowboy`)
+            * settings may have the form `<=N` or `!X` to mean "less than or equal to N" or "not X"
+            * leaf nodes are dictionaries whose keys are destination file paths and whose values reference the `files` dictionary
+    * `files` - locations, etc. of files to download
+        * keys are names of files
+        * values are dictionaries with:
+            * `url` - URL of file to download
+            * `cache` - `false` if file should be downloaded directly into profile (skipping cache)

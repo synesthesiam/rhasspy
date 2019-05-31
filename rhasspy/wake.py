@@ -7,6 +7,7 @@ import re
 import time
 import subprocess
 import shutil
+import struct
 from uuid import uuid4
 from typing import Optional, Any, List, Dict, Type
 
@@ -53,6 +54,7 @@ def get_wake_class(system: str) -> Type[RhasspyActor]:
         "hermes",
         "snowboy",
         "precise",
+        "porcupine",
         "command",
     ], ("Invalid wake system: %s" % system)
 
@@ -68,6 +70,9 @@ def get_wake_class(system: str) -> Type[RhasspyActor]:
     elif system == "precise":
         # Use Mycroft Precise locally
         return PreciseWakeListener
+    elif system == "porcupine":
+        # Use Picovoice's porcupine locally
+        return PorcupineWakeListener
     elif system == "command":
         # Use command-line listener
         return CommandWakeListener
@@ -631,6 +636,125 @@ class HermesWakeListener(RhasspyActor):
             self.receivers.remove(message.receiver or sender)
             if len(self.receivers) == 0:
                 self.transition("loaded")
+
+
+# -----------------------------------------------------------------------------
+# Porcupine Wake Listener
+# https://github.com/Picovoice/Porcupine
+# -----------------------------------------------------------------------------
+
+
+class PorcupineWakeListener(RhasspyActor):
+    """Wake word listener that uses picovoice's porcupine library"""
+
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.receivers: List[RhasspyActor] = []
+        self.wake_proc = None
+
+    def to_started(self, from_state: str) -> None:
+        self.recorder = self.config["recorder"]
+        self.library_path = self.profile.read_path(
+            self.profile.get(
+                "wake.porcupine.library_path", "porcupine/libpv_porcupine.so"
+            )
+        )
+        self.model_path = self.profile.read_path(
+            self.profile.get(
+                "wake.porcupine.model_path", "porcupine/porcupine_params.pv"
+            )
+        )
+        self.keyword_paths = [
+            self.profile.read_path(
+                self.profile.get(
+                    "wake.porcupine.keyword_path", "porcupine/porcupine.ppn"
+                )
+            )
+        ]
+        self.sensitivities = [
+            float(self.profile.get("wake.porcupine.sensitivity", 0.5))
+        ]
+
+        self.preload: bool = self.config.get("preload", False)
+        self.audio_buffer: bytes = bytes()
+        self.chunk_size = 1024
+        self.handle = None
+
+        if self.preload:
+            try:
+                self.load_handle()
+            except Exception as e:
+                self._logger.exception("loading wake handle")
+
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        if isinstance(message, ListenForWakeWord):
+            try:
+                self.load_handle()
+                self.receivers.append(message.receiver or sender)
+                self.transition("listening")
+                if message.record:
+                    self.send(self.recorder, StartStreaming(self.myAddress))
+            except Exception as e:
+                self._logger.exception("loading wake handle")
+
+    def in_listening(self, message: Any, sender: RhasspyActor) -> None:
+        if isinstance(message, AudioData):
+            self.audio_buffer += message.data
+            num_chunks = len(self.audio_buffer) // self.chunk_size
+
+            if num_chunks > 0:
+                for i in range(num_chunks):
+                    chunk = self.audio_buffer[: self.chunk_size]
+                    chunk = struct.unpack_from(self.chunk_format, chunk)
+                    self.audio_buffer = self.audio_buffer[self.chunk_size :]
+
+                    # Process chunk
+                    keyword_index = self.handle.process(chunk)
+                    if keyword_index:
+                        # Pass downstream to receivers
+                        self._logger.debug(f"Hotword detected ({keyword_index})")
+                        result = WakeWordDetected(str(keyword_index))
+                        for receiver in self.receivers:
+                            self.send(receiver, result)
+
+        elif isinstance(message, WakeWordDetected):
+            # Pass downstream to receivers
+            self._logger.debug("Hotword detected (%s)" % message.name)
+            for receiver in self.receivers:
+                self.send(receiver, message)
+        elif isinstance(message, WakeWordNotDetected):
+            # Pass downstream to receivers
+            for receiver in self.receivers:
+                self.send(receiver, message)
+        elif isinstance(message, StopListeningForWakeWord):
+            self.receivers.remove(message.receiver or sender)
+            if len(self.receivers) == 0:
+                if message.record:
+                    self.send(self.recorder, StopStreaming(self.myAddress))
+
+                if self.handle is not None:
+                    self.handle.delete()
+                    self.handle = None
+
+                self.transition("started")
+
+    def load_handle(self):
+        if self.handle is None:
+            from porcupine import Porcupine
+
+            self.handle = Porcupine(
+                self.library_path,
+                self.model_path,
+                keyword_file_paths=self.keyword_paths,
+                sensitivities=self.sensitivities,
+            )
+
+            # 16-bit
+            self.chunk_size = self.handle.frame_length * 2
+            self.chunk_format = "h" * self.handle.frame_length
+            self._logger.debug(
+                f"Loaded porcupine (keyword={self.keyword_paths[0]}). Expecting sample rate={self.handle.sample_rate}, frame length={self.handle.frame_length}"
+            )
 
 
 # -----------------------------------------------------------------------------

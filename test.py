@@ -1,8 +1,10 @@
 import os
+import sys
 import json
 import tempfile
 import unittest
 import logging
+import argparse
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -18,14 +20,10 @@ class RhasspyTestCore:
     def __enter__(self):
         self.user_profiles_dir = tempfile.TemporaryDirectory()
         self.core = RhasspyCore(
-            self.profile_name,
-            self.system_profiles_dir,
-            self.user_profiles_dir.name,
-            do_logging=False,
+            self.profile_name, self.system_profiles_dir, self.user_profiles_dir.name
         )
         self.core.profile.set("wake.system", "dummy")
         self.core.start(preload=False)
-        self.core.train()
 
         if self.train:
             self.core.train()
@@ -43,22 +41,34 @@ class RhasspyTestCore:
 
 # -----------------------------------------------------------------------------
 
-PROFILES = ["en", "de", "es", "fr", "it", "nl", "ru"]
-# Not passing: vi, el, pt
-# Not tested: hi, zh
-TEST_WAV_PATH = {p: os.path.join("etc", "test", p, "test.wav") for p in PROFILES}
-TEST_JSON = {
-    p: json.load(open(os.path.join("etc", "test", p, "test.json"))) for p in PROFILES
-}
-
 
 class RhasspyTestCase(unittest.TestCase):
+    PROFILES = ["en", "de", "es", "fr", "it", "nl", "ru", "pt"]
+    # Not passing: vi, el (bad transcriptions)
+    # Not tested: hi, zh
+
+    # -------------------------------------------------------------------------
+
+    def __init__(self, *args, **kwargs):
+        self.profiles = RhasspyTestCase.PROFILES
+        self.test_wav_path = {
+            p: os.path.join("etc", "test", p, "test.wav") for p in self.profiles
+        }
+        self.test_json = {
+            p: json.load(open(os.path.join("etc", "test", p, "test.json")))
+            for p in self.profiles
+        }
+
+        unittest.TestCase.__init__(self, *args, **kwargs)
+
+    # -------------------------------------------------------------------------
+
     def test_transcribe(self):
         """speech -> text"""
-        for profile_name in PROFILES:
+        for profile_name in self.profiles:
             with RhasspyTestCore(profile_name) as core:
-                wav_path = TEST_WAV_PATH[profile_name]
-                test_info = TEST_JSON[profile_name]
+                wav_path = self.test_wav_path[profile_name]
+                test_info = self.test_json[profile_name]
 
                 with open(wav_path, "rb") as wav_file:
                     text = core.transcribe_wav(wav_file.read()).text
@@ -68,9 +78,9 @@ class RhasspyTestCase(unittest.TestCase):
 
     def test_recognize(self):
         """text -> intent"""
-        for profile_name in PROFILES:
+        for profile_name in self.profiles:
             with RhasspyTestCore(profile_name) as core:
-                test_info = TEST_JSON[profile_name]
+                test_info = self.test_json[profile_name]
                 intent = core.recognize_intent(test_info["text"]).intent
                 self.assertEqual(intent["intent"]["name"], test_info["intent"]["name"])
 
@@ -88,10 +98,10 @@ class RhasspyTestCase(unittest.TestCase):
 
     def test_training(self):
         """Test training"""
-        for profile_name in PROFILES:
+        for profile_name in self.profiles:
             with RhasspyTestCore(profile_name, train=False) as core:
-                wav_path = TEST_WAV_PATH[profile_name]
-                test_info = TEST_JSON[profile_name]
+                wav_path = self.test_wav_path[profile_name]
+                test_info = self.test_json[profile_name]
 
                 old_sentences_path = core.profile.read_path(
                     core.profile.get("speech_to_text.sentences_ini")
@@ -140,9 +150,9 @@ class RhasspyTestCase(unittest.TestCase):
     # -------------------------------------------------------------------------
 
     def test_pronounce(self):
-        for profile_name in PROFILES:
+        for profile_name in self.profiles:
             with RhasspyTestCore(profile_name) as core:
-                test_info = TEST_JSON[profile_name]
+                test_info = self.test_json[profile_name]
 
                 # Known word
                 known_word = test_info["words"]["known"]["word"]
@@ -169,4 +179,16 @@ class RhasspyTestCase(unittest.TestCase):
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    unittest.main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--profile", "-p", default=None, help="Only run tests for the given profile"
+    )
+    prog_name = sys.argv[0]
+    args, rest = parser.parse_known_args()
+
+    if args.profile:
+        logging.debug(f"Only running tests for {args.profile}")
+        RhasspyTestCase.PROFILES = [args.profile]
+
+    argv = [prog_name] + rest
+    unittest.main(argv=argv)

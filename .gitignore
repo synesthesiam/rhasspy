@@ -27,6 +27,9 @@ profiles/*/*.umdl
 profiles/*/flair/
 profiles/*/*.pb
 profiles/*/*.pb.params
+profiles/*/snowboy/
+profiles/*/precise/
+profiles/*/porcupine/
 
 adapt_config.json
 tagged_sentences.md

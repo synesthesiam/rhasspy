@@ -1,9 +1,6 @@
 {
     "language": "de",
     "name": "de",
-    "wake": {
-        "system": "snowboy"
-    },
     "speech_to_text": {
         "system": "pocketsphinx"
     },
@@ -21,6 +18,50 @@
         },
         "marytts": {
             "locale": "de-DE"
+        }
+    },
+    "download": {
+        "conditions": {
+            "speech_to_text.system": {
+                "pocketsphinx": {
+                    "acoustic_model": "cmusphinx-de-voxforge-5.2.tar.gz:cmusphinx-cont-voxforge-de-r20171217/model_parameters/voxforge.cd_cont_6000",
+                    "base_dictionary.txt": "cmusphinx-de-voxforge-5.2.tar.gz:cmusphinx-cont-voxforge-de-r20171217/etc/voxforge.dic",
+                    "g2p.fst": "de-g2p.tar.gz:g2p.fst"
+                }
+            },
+
+            "speech_to_text.pocketsphinx.mix_weight": {
+                ">0": {
+                    "base_language_model.txt": "cmusphinx-voxforge-de.lm.gz:cmusphinx-voxforge-de.lm"
+                }
+            },
+
+            "intent.system": {
+                "flair": {
+                    "flair/cache/embeddings/lm-mix-german-forward-v0.2rc.pt": "lm-mix-german-forward-v0.2rc.pt",
+                    "flair/cache/embeddings/lm-mix-german-backward-v0.2rc.pt": "lm-mix-german-backward-v0.2rc.pt"
+                }
+            }
+        },
+
+        "files": {
+            "cmusphinx-de-voxforge-5.2.tar.gz": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/cmusphinx-de-voxforge-5.2.tar.gz"
+            },
+            "cmusphinx-voxforge-de.lm.gz": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/cmusphinx-voxforge-de.lm.gz"
+            },
+            "de-g2p.tar.gz": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/de-g2p.tar.gz"
+            },
+            "lm-mix-german-forward-v0.2rc.pt": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/lm-mix-german-forward-v0.2rc.pt",
+                "cache": false
+            },
+            "lm-mix-german-backward-v0.2rc.pt": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/lm-mix-german-backward-v0.2rc.pt",
+                "cache": false
+            }
         }
     }
 }

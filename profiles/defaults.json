@@ -240,6 +240,73 @@
             "model": "snowboy.umdl",
             "sensitivity": 0.5
         },
+        "porcupine": {
+            "library_path": "porcupine/libpv_porcupine.so",
+            "model_path": "porcupine/porcupine_params.pv",
+            "keyword_path": "porcupine/porcupine.ppn",
+            "sensitivity": 0.5
+        },
         "system": "pocketsphinx"
+    },
+    "download": {
+        "cache_dir": "download",
+        "conditions": {
+            "wake.system": {
+                "snowboy": {
+                    "snowboy/snowboy.umdl": "snowboy.umdl"
+                },
+                "precise": {
+                    "precise/hey-mycroft-2.pb": "hey-mycroft-2.pb",
+                    "precise/hey-mycroft-2.pb.params": "hey-mycroft-2.pb.params"
+                },
+                "porcupine": {
+                    "porcupine/porcupine_params.pv": "porcupine_params.pv",
+                    "porcupine/libpv_porcupine.so": "libpv_porcupine.so",
+                    "porcupine/porcupine.ppn": "porcupine.ppn"
+                }
+            }
+        },
+        "files": {
+            "snowboy.umdl": {
+                "url": "https://github.com/Kitt-AI/snowboy/raw/master/resources/models/snowboy.umdl",
+                "cache": false
+            },
+            "hey-mycroft-2.pb": {
+                "url": "https://github.com/MycroftAI/precise-data/raw/models/hey-mycroft-2.pb",
+                "cache": false
+            },
+            "hey-mycroft-2.pb.params": {
+                "url": "https://github.com/MycroftAI/precise-data/raw/models/hey-mycroft-2.pb.params",
+                "cache": false
+            },
+            "porcupine_params.pv": {
+                "url": "https://github.com/Picovoice/Porcupine/blob/master/lib/common/porcupine_params.pv",
+                "cache": false
+            },
+            "porcupine.ppn": {
+                "cache": false,
+                "x86_64": {
+                    "url": "https://github.com/Picovoice/Porcupine/blob/master/resources/keyword_files/linux/porcupine_linux.ppn"
+                },
+                "armv7l": {
+                    "url": "https://github.com/Picovoice/Porcupine/blob/master/resources/keyword_files/raspberrypi/porcupine_raspberrypi.ppn"
+                },
+                "aarch64": {
+                    "url": "https://github.com/Picovoice/Porcupine/blob/master/resources/keyword_files/raspberrypi/porcupine_raspberrypi.ppn"
+                }
+            },
+            "libpv_porcupine.so": {
+                "cache": false,
+                "x86_64": {
+                    "url": "https://github.com/Picovoice/Porcupine/blob/master/lib/linux/x86_64/libpv_porcupine.so"
+                },
+                "armv7l": {
+                    "url": "https://github.com/Picovoice/Porcupine/blob/master/lib/raspberry-pi/cortex-a53/libpv_porcupine.so"
+                },
+                "aarch64": {
+                    "url": "https://github.com/Picovoice/Porcupine/blob/master/lib/raspberry-pi/cortex-a53/libpv_porcupine.so"
+                }
+            }
+        }
     }
 }

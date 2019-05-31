@@ -20,6 +20,7 @@ Rhasspy provides **offline, private solutions** to problems 1-4 using off-the-sh
     * [Pocketsphinx keyphrase](https://cmusphinx.github.io/wiki/tutoriallm/#using-keyword-lists-with-pocketsphinx)
     * [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise)
     * [snowboy](https://snowboy.kitt.ai)
+    * [porcupine](https://github.com/Picovoice/Porcupine)
 * **Command listener**
     * [webrtcvad](https://github.com/wiseman/py-webrtcvad)
 * **Speech to text**
@@ -29,6 +30,7 @@ Rhasspy provides **offline, private solutions** to problems 1-4 using off-the-sh
     * [OpenFST](https://www.openfst.org)
     * [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy)
     * [Mycroft Adapt](https://github.com/MycroftAI/adapt)
+    * [flair](http://github.com/zalandoresearch/flair)
     * [RasaNLU](https://rasa.com/)
 
 For problem 5 (fulfilling the speaker's intent), Rhasspy works with external home automation software, such as Home Assistant's built-in [automation capability](https://www.home-assistant.io/docs/automation/) or a [Node-RED flow](https://nodered.org). For each intent you define, Rhasspy emits a JSON event that can, for example, be used to do anything Home Assistant can do (toggle switches, call REST services, etc.). This means that Rhasspy will do very little out of the box compared to other voice assistants, but there are also be *no limits* to what can be done.
@@ -65,6 +67,7 @@ The table below summarizes language support across the various supporting techno
 | **Wake Word**          | [pocketsphinx](wake-word.md#pocketsphinx)      | &#x2713;               | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |          |          |
 |                        | [snowboy](wake-word.md#snowboy)                | *requires account*     | &#x2713; | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   |
 |                        | [precise](wake-word.md#mycroft-precise)        | &#x2713;               | &#x2713; | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   | &bull;   |
+|                        | [porcupine](wake-word.md#porcupine)            | &#x2713;               | &#x2713; |          |          |          |          |          |          |          |          |          |          |          |
 | **Speech to Text**     | [pocketsphinx](speech-to-text.md#pocketsphinx) | &#x2713;               | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |          |          |
 |                        | [kaldi](speech-to-text.md#kaldi)               | &#x2713;               |          |          |          |          |          |          |          |          |          |          | &#x2713; | &#x2713; |
 | **Intent Recognition** | [fsticuffs](intent-recognition.md#fsticuffs)   | &#x2713;               | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |

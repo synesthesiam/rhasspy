@@ -1,9 +1,6 @@
 {
     "language": "en",
     "name": "en",
-    "wake": {
-        "system": "snowboy"
-    },
     "speech_to_text": {
         "system": "pocketsphinx"
     },
@@ -21,6 +18,50 @@
         },
         "marytts": {
             "locale": "en-US"
+        }
+    },
+    "download": {
+        "conditions": {
+            "speech_to_text.system": {
+                "pocketsphinx": {
+                    "acoustic_model": "cmusphinx-en-us-5.2.tar.gz:cmusphinx-en-us-5.2",
+                    "base_dictionary.txt": "en-g2p.tar.gz:base_dictionary.txt",
+                    "g2p.fst": "en-g2p.tar.gz:g2p.fst"
+                }
+            },
+
+            "speech_to_text.pocketsphinx.mix_weight": {
+                ">0": {
+                    "base_language_model.txt": "en-70k-0.2-pruned.lm.gz:en-70k-0.2-pruned.lm"
+                }
+            },
+
+            "intent.system": {
+                "flair": {
+                    "flair/cache/embeddings/news-forward-0.4.1.pt": "news-forward-0.4.1.pt",
+                    "flair/cache/embeddings/news-backward-0.4.1.pt": "news-backward-0.4.1.pt"
+                }
+            }
+        },
+
+        "files": {
+            "cmusphinx-en-us-5.2.tar.gz": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/cmusphinx-en-us-5.2.tar.gz"
+            },
+            "en-70k-0.2-pruned.lm.gz": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/en-70k-0.2-pruned.lm.gz"
+            },
+            "en-g2p.tar.gz": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/en-g2p.tar.gz"
+            },
+            "news-forward-0.4.1.pt": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/news-forward-0.4.1.pt",
+                "cache": false
+            },
+            "news-backward-0.4.1.pt": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/news-backward-0.4.1.pt",
+                "cache": false
+            }
         }
     }
 }

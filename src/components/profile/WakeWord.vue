@@ -107,6 +107,28 @@
             <div class="form-group">
                 <div class="form-row">
                     <div class="form-check">
+                        <input class="form-check-input" type="radio" name="wake-system" id="wake-system-porcupine" value="porcupine" v-model="profile.wake.system">
+                        <label class="form-check-label" for="wake-system-porcupine">
+                            Use <a href="https://github.com/Picovoice/Porcupine">Porcupine</a> on this device
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="porcupine-model" class="col-form-label">Keyword File</label>
+                    <div class="col-sm-auto">
+                        <input id="porcupine-keyword" type="text" class="form-control" v-model="profile.wake.porcupine.keyword_path" :disabled="profile.wake.system != 'porcupine'">
+                    </div>
+                    <div class="col text-muted">
+                        Put keyword files in the <tt>porcupine</tt> directory in your profile
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-check">
                         <input class="form-check-input" type="radio" name="wake-system" id="wake-system-hermes" value="hermes" v-model="profile.wake.system">
                         <label class="form-check-label" for="wake-system-hermes">
                             Wake up on MQTT message (<a href="https://docs.snips.ai/ressources/hermes-protocol">Hermes protocol</a>)

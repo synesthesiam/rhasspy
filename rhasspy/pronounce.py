@@ -4,6 +4,7 @@ import re
 import logging
 import subprocess
 import tempfile
+from collections import defaultdict
 from typing import Dict, Tuple, List, Optional, Any
 
 from .actor import RhasspyActor
@@ -80,6 +81,7 @@ class PhonetisaurusPronounce(RhasspyActor):
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.speed = 80  # wpm for speaking
+        self.base_dict: Optional[Dict[str, List[str]]] = None
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, SpeakWord):
@@ -157,15 +159,27 @@ class PhonetisaurusPronounce(RhasspyActor):
             self.profile.get("speech_to_text.pocketsphinx.base_dictionary")
         )
 
+        # Load base dictionary once
+        if (self.base_dict is None) and os.path.exists(base_dictionary_path):
+            self.base_dict = defaultdict(list)
+            with open(base_dictionary_path, "r") as dictionary_file:
+                read_dict(dictionary_file, self.base_dict)
+
         custom_path = self.profile.read_path(
             self.profile.get("speech_to_text.pocketsphinx.custom_words")
         )
 
-        word_dict: Dict[str, List[str]] = {}
-        for word_dict_path in [base_dictionary_path, custom_path]:
-            if os.path.exists(word_dict_path):
-                with open(word_dict_path, "r") as dictionary_file:
-                    read_dict(dictionary_file, word_dict)
+        word_dict: Dict[str, List[str]] = defaultdict(list)
+        if os.path.exists(custom_path):
+            with open(custom_path, "r") as dictionary_file:
+                read_dict(dictionary_file, word_dict)
+
+        # Mix in base dictionary
+        if self.base_dict:
+            for word, prons in self.base_dict.items():
+                word_dict[word].extend(prons)
+        else:
+            self._logger.warning("Missing base dictionary")
 
         pronunciations = self._lookup_words(words, word_dict, n)
 

@@ -1,9 +1,6 @@
 {
     "language": "es",
     "name": "es",
-    "wake": {
-        "system": "snowboy"
-    },
     "speech_to_text": {
         "system": "pocketsphinx"
     },
@@ -18,6 +15,47 @@
                 "lm-es-forward-fast.pt",
                 "lm-es-backward-fast.pt"
             ]
+        }
+    },
+    "download": {
+        "conditions": {
+            "speech_to_text.system": {
+                "pocketsphinx": {
+                    "acoustic_model": "cmusphinx-es-5.2.tar.gz:cmusphinx-es-5.2/model_parameters/voxforge_es_sphinx.cd_ptm_4000/",
+                    "base_dictionary.txt": "cmusphinx-es-5.2.tar.gz:cmusphinx-es-5.2/etc/voxforge_es_sphinx.dic",
+                    "g2p.fst": "es-g2p.tar.gz:g2p.fst"
+                }
+            },
+
+            "speech_to_text.pocketsphinx.mix_weight": {
+                ">0": {
+                    "base_language_model.txt": "cmusphinx-es-5.2.tar.gz:cmusphinx-es-5.2/etc/es-20k.lm.gz:"
+                }
+            },
+
+            "intent.system": {
+                "flair": {
+                    "flair/cache/embeddings/lm-es-forward-fast.pt": "lm-es-forward-fast.pt",
+                    "flair/cache/embeddingslm-es-backward-fast.pt": "lm-es-backward-fast.pt"
+                }
+            }
+        },
+
+        "files": {
+            "cmusphinx-es-5.2.tar.gz": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-es/cmusphinx-es-5.2.tar.gz"
+            },
+            "es-g2p.tar.gz": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-es/es-g2p.tar.gz"
+            },
+            "lm-es-forward-fast.pt": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-es/lm-es-forward-fast.pt",
+                "cache": false
+            },
+            "lm-es-backward-fast.pt": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-es/lm-es-backward-fast.pt",
+                "cache": false
+            }
         }
     }
 }
