@@ -92,8 +92,6 @@ RUN chmod +x /run.sh
 
 COPY profiles/zh/profile.json \
      profiles/zh/custom_words.txt \
-     profiles/zh/download-profile.sh \
-     profiles/zh/check-profile.sh \
      profiles/zh/espeak_phonemes.txt \
      profiles/zh/phoneme_examples.txt \
      profiles/zh/frequent_words.txt \
@@ -103,8 +101,6 @@ COPY profiles/zh/profile.json \
 COPY profiles/hi/ \
      profiles/hi/profile.json \
      profiles/hi/custom_words.txt \
-     profiles/hi/download-profile.sh \
-     profiles/hi/check-profile.sh \
      profiles/hi/espeak_phonemes.txt \
      profiles/hi/phoneme_examples.txt \
      profiles/hi/frequent_words.txt \
@@ -113,8 +109,6 @@ COPY profiles/hi/ \
 
 COPY profiles/el/profile.json \
      profiles/el/custom_words.txt \
-     profiles/el/download-profile.sh \
-     profiles/el/check-profile.sh \
      profiles/el/espeak_phonemes.txt \
      profiles/el/phoneme_examples.txt \
      profiles/el/frequent_words.txt \
@@ -123,8 +117,6 @@ COPY profiles/el/profile.json \
 
 COPY profiles/de/profile.json \
      profiles/de/custom_words.txt \
-     profiles/de/download-profile.sh \
-     profiles/de/check-profile.sh \
      profiles/de/espeak_phonemes.txt \
      profiles/de/phoneme_examples.txt \
      profiles/de/frequent_words.txt \
@@ -133,8 +125,6 @@ COPY profiles/de/profile.json \
 
 COPY profiles/it/profile.json \
      profiles/it/custom_words.txt \
-     profiles/it/download-profile.sh \
-     profiles/it/check-profile.sh \
      profiles/it/espeak_phonemes.txt \
      profiles/it/phoneme_examples.txt \
      profiles/it/frequent_words.txt \
@@ -143,8 +133,6 @@ COPY profiles/it/profile.json \
 
 COPY profiles/es/profile.json \
      profiles/es/custom_words.txt \
-     profiles/es/download-profile.sh \
-     profiles/es/check-profile.sh \
      profiles/es/espeak_phonemes.txt \
      profiles/es/phoneme_examples.txt \
      profiles/es/frequent_words.txt \
@@ -153,8 +141,6 @@ COPY profiles/es/profile.json \
 
 COPY profiles/fr/profile.json \
      profiles/fr/custom_words.txt \
-     profiles/fr/download-profile.sh \
-     profiles/fr/check-profile.sh \
      profiles/fr/espeak_phonemes.txt \
      profiles/fr/phoneme_examples.txt \
      profiles/fr/frequent_words.txt \
@@ -163,8 +149,6 @@ COPY profiles/fr/profile.json \
 
 COPY profiles/ru/profile.json \
      profiles/ru/custom_words.txt \
-     profiles/ru/download-profile.sh \
-     profiles/ru/check-profile.sh \
      profiles/ru/espeak_phonemes.txt \
      profiles/ru/phoneme_examples.txt \
      profiles/ru/frequent_words.txt \
@@ -173,8 +157,6 @@ COPY profiles/ru/profile.json \
 
 COPY profiles/nl/profile.json \
      profiles/nl/custom_words.txt \
-     profiles/nl/download-profile.sh \
-     profiles/nl/check-profile.sh \
      profiles/nl/espeak_phonemes.txt \
      profiles/nl/phoneme_examples.txt \
      profiles/nl/frequent_words.txt \
@@ -183,8 +165,6 @@ COPY profiles/nl/profile.json \
 
 COPY profiles/vi/profile.json \
      profiles/vi/custom_words.txt \
-     profiles/vi/download-profile.sh \
-     profiles/vi/check-profile.sh \
      profiles/vi/espeak_phonemes.txt \
      profiles/vi/phoneme_examples.txt \
      profiles/vi/frequent_words.txt \
@@ -193,8 +173,6 @@ COPY profiles/vi/profile.json \
 
 COPY profiles/pt/profile.json \
      profiles/pt/custom_words.txt \
-     profiles/pt/download-profile.sh \
-     profiles/pt/check-profile.sh \
      profiles/pt/espeak_phonemes.txt \
      profiles/pt/phoneme_examples.txt \
      profiles/pt/frequent_words.txt \
@@ -203,8 +181,6 @@ COPY profiles/pt/profile.json \
 
 COPY profiles/en/profile.json \
      profiles/en/custom_words.txt \
-     profiles/en/download-profile.sh \
-     profiles/en/check-profile.sh \
      profiles/en/espeak_phonemes.txt \
      profiles/en/phoneme_examples.txt \
      profiles/en/frequent_words.txt \
