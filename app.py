@@ -178,12 +178,14 @@ def api_profiles() -> Response:
             if os.path.isdir(profile_dir):
                 profile_names.add(name)
 
-    downloaded = core.check_profile()
+    missing_files = core.check_profile()
+    downloaded = len(missing_files) == 0
     return jsonify(
         {
             "default_profile": core.profile.name,
             "profiles": sorted(list(profile_names)),
             "downloaded": downloaded,
+            "missing_files": missing_files
         }
     )
 

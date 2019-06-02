@@ -317,10 +317,10 @@ class RhasspyCore:
 
     # -------------------------------------------------------------------------
 
-    def check_profile(self) -> bool:
+    def check_profile(self) -> Dict[str, str]:
         """Returns True if the profile has all necessary files downloaded."""
         output_dir = self.profile.write_path()
-        downloaded = True
+        missing_files: Dict[str, str] = {}
 
         # Load configuration
         conditions = self.profile.get("download.conditions", {})
@@ -338,12 +338,9 @@ class RhasspyCore:
                     for dest_name in files_dict:
                         dest_path = os.path.join(output_dir, dest_name)
                         if not os.path.exists(dest_path):
-                            self._logger.debug(
-                                f"Missing {dest_path} because of {setting_name} {setting_value}"
-                            )
-                            downloaded = False
+                            missing_files[dest_path] = (setting_name, setting_value)
 
-        return downloaded
+        return missing_files
 
     def _get_compare_func(self, value: str):
         """Use mini-language to allow for profile setting value comparison."""

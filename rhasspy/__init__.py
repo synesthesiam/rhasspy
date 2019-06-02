@@ -300,6 +300,11 @@ def main() -> None:
         "--delete", action="store_true", help="Clear download cache before downloading"
     )
 
+    # check
+    check_parser = sub_parsers.add_parser(
+        "check", help="Check downloaded profile files"
+    )
+
     # -------------------------------------------------------------------------
 
     args = parser.parse_args()
@@ -398,18 +403,19 @@ def main() -> None:
             "text2speech": text2speech,
             "sleep": sleep,
             "download": download,
+            "check": check,
         }
 
         if not args.command in ["test-wake"]:
             # Automatically start core
             core.start()
 
-        if not args.no_check and args.command != "download":
+        if not args.no_check and (args.command not in ["check", "download"]):
             # Verify that profile has necessary files
-            downloaded = core.check_profile()
-            if not downloaded:
+            missing_files = core.check_profile()
+            if len(missing_files) > 0:
                 logger.fatal(
-                    f"Missing required files for {profile.name}. Please run download command and try again."
+                    f"Missing required files for {profile.name}: {missing_files.keys()}. Please run download command and try again."
                 )
                 sys.exit(1)
 
@@ -1180,6 +1186,16 @@ def sleep(core: RhasspyCore, profile: Profile, args: Any) -> None:
 def download(core: RhasspyCore, profile: Profile, args: Any) -> None:
     core.download_profile(delete=args.delete)
     print("OK")
+
+
+# -----------------------------------------------------------------------------
+# check: check profile files
+# -----------------------------------------------------------------------------
+
+
+def check(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    missing_files = core.check_profile()
+    json.dump(missing_files, sys.stdout, indent=4)
 
 
 # -----------------------------------------------------------------------------

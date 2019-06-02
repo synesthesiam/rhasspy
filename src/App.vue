@@ -96,6 +96,7 @@
                         <p>
                             Rhasspy will not work correctly until these files are downloaded.
                         </p>
+                        <tree-view :data="missingFiles"></tree-view>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -154,7 +155,9 @@
              rhasspyLog: '',
 
              problems: {},
-             numProblems: 0
+             numProblems: 0,
+
+             missingFiles: {}
          }
      },
 
@@ -206,7 +209,9 @@
              ProfileService.getProfiles()
                            .then(request => {
                                this.profiles = request.data.profiles
+                               this.missingFiles = {}
                                if (!request.data.downloaded) {
+                                   this.missingFiles = request.data.missing_files
                                    $("#download-modal").modal()
                                }
                            })
