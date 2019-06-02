@@ -80,7 +80,7 @@
 
         <!-- Profile download modal -->
         <div class="modal fade" id="download-modal" tabindex="-1" role="dialog" aria-labelledby="downloadModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
+            <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="downloadModalLabel">Download Profile</h5>
@@ -96,7 +96,7 @@
                         <p>
                             Rhasspy will not work correctly until these files are downloaded.
                         </p>
-                        <tree-view :data="missingFiles"></tree-view>
+                        <tree-view :data="missingFiles" :options="{ rootObjectKey: 'missing'}"></tree-view>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>

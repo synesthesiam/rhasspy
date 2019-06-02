@@ -397,6 +397,7 @@ class RhasspyCore:
         def download_file(url, filename):
             try:
                 self._logger.debug(f"Downloading {url} to {filename}")
+                os.makedirs(os.path.dirname(filename), exist_ok=True)
                 urllib.request.urlretrieve(url, filename)
             except Exception as e:
                 self._logger.exception(url)
