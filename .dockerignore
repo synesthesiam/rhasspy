@@ -3,7 +3,6 @@
 node_modules/
 __pycache__/
 test/
-dist/
 tools/
 etc/test/
 download/precise-engine/
