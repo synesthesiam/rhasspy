@@ -7,6 +7,7 @@ from urllib.parse import urljoin
 from typing import Dict, Any, Optional, Tuple, Type
 
 import pydash
+import requests
 
 from .actor import RhasspyActor
 from .profiles import Profile
@@ -145,29 +146,12 @@ class HomeAssistantIntentHandler(RhasspyActor):
         return intent
 
     def forward_intent(self, event_type: str, slots: Dict[str, Any]):
-        import requests
-
         # Base URL of Home Assistant server
         post_url = urljoin(self.hass_config["url"], "api/events/" + event_type)
-        headers = {}
-
-        # Security stuff
-        if ("access_token" in self.hass_config) and len(
-            self.hass_config["access_token"]
-        ) > 0:
-            # Use token from config
-            headers["Authorization"] = "Bearer %s" % self.hass_config["access_token"]
-        elif ("api_password" in self.hass_config) and len(
-            self.hass_config["api_password"]
-        ) > 0:
-            # Use API password (deprecated)
-            headers["X-HA-Access"] = self.hass_config["api_password"]
-        elif "HASSIO_TOKEN" in os.environ:
-            # Use token from hass.io
-            headers["Authorization"] = "Bearer %s" % os.environ["HASSIO_TOKEN"]
 
         # Send to Home Assistant
-        kwargs = {"headers": headers, "json": slots}
+        kwargs = self._get_request_kwargs()
+        kwargs["json"] = slots
 
         if self.pem_file is not None:
             kwargs["verify"] = self.pem_file
@@ -186,6 +170,31 @@ class HomeAssistantIntentHandler(RhasspyActor):
 
         return event_type, slots
 
+    def _get_request_kwargs(self):
+        headers = {}
+
+        # Security stuff
+        if ("access_token" in self.hass_config) and len(
+            self.hass_config["access_token"]
+        ) > 0:
+            # Use token from config
+            headers["Authorization"] = "Bearer %s" % self.hass_config["access_token"]
+        elif ("api_password" in self.hass_config) and len(
+            self.hass_config["api_password"]
+        ) > 0:
+            # Use API password (deprecated)
+            headers["X-HA-Access"] = self.hass_config["api_password"]
+        elif "HASSIO_TOKEN" in os.environ:
+            # Use token from hass.io
+            headers["Authorization"] = "Bearer %s" % os.environ["HASSIO_TOKEN"]
+
+        kwargs = {"headers": headers}
+
+        if self.pem_file is not None:
+            kwargs["verify"] = self.pem_file
+
+        return kwargs
+
     # -------------------------------------------------------------------------
 
     def get_problems(self) -> Dict[str, Any]:
@@ -193,7 +202,8 @@ class HomeAssistantIntentHandler(RhasspyActor):
         hass_url = self.hass_config["url"]
         try:
             url = urljoin(self.hass_config["url"], "/api/")
-            requests.get(url)
+            kwargs = self._get_request_kwargs()
+            requests.get(url, **kwargs)
         except:
             problems[
                 "Can't contact server"
