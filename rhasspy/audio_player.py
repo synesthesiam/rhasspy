@@ -151,8 +151,8 @@ class HermesAudioPlayer(RhasspyActor):
     """Sends audio data over MQTT via Hermes protocol"""
 
     def to_started(self, from_state: str) -> None:
-        self.site_id = self.profile.get("mqtt.site_id")
         self.mqtt = self.config["mqtt"]
+        self.site_ids = self.profile.get("mqtt.site_id", "default").split(",")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, PlayWavFile):
@@ -174,8 +174,11 @@ class HermesAudioPlayer(RhasspyActor):
 
     def play_data(self, wav_data: bytes) -> None:
         request_id = str(uuid.uuid4())
-        topic = "hermes/audioServer/%s/playBytes/%s" % (self.site_id, request_id)
-        self.send(self.mqtt, MqttPublish(topic, wav_data))
+
+        # Send to all site ids
+        for site_id in self.site_ids:
+            topic = f"hermes/audioServer/{site_id}/playBytes/{request_id}"
+            self.send(self.mqtt, MqttPublish(topic, wav_data))
 
     # -------------------------------------------------------------------------
 

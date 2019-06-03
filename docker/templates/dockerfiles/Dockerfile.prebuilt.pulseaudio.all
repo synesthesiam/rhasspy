@@ -17,27 +17,16 @@ RUN apt-get update && \
     apt-get install -y bash jq unzip \
                        python3 python3-pip python3-dev \
                        build-essential portaudio19-dev swig \
+                       libfst-dev libfst-tools \
                        libatlas-base-dev \
                        sox espeak flite alsa-utils \
                        git curl \
                        autoconf libtool automake bison \
                        sphinxbase-utils sphinxtrain
 
-COPY download/openfst-1.6.2-1_${BUILD_ARCH}.deb /
-RUN if [ "$BUILD_ARCH" != "aarch64" ]; then \
-        apt-get install -y libfst-dev libfst-tools; \
-        else \
-        dpkg -i /openfst-1.6.2-1_${BUILD_ARCH}.deb; \
-        rm /openfst*.deb; \
-    fi
-
-COPY download/phonetisaurus-2019.tar.gz /phonetisaurus.tar.gz
-RUN cd / && tar -xf phonetisaurus.tar.gz
-RUN cd /phonetisaurus && \
-    ./configure && \
-    make -j $MAKE_THREADS && \
-    make install && \
-    rm -rf /phonetisaurus*
+COPY download/phonetisaurus-2019_${BUILD_ARCH}.deb /phonetisaurus.deb
+RUN dpkg -i /phonetisaurus.deb && \
+    rm /phonetisaurus.deb
 
 # Install Opengrm
 COPY download/opengrm-ngram-1.3.3.tar.gz /
@@ -93,15 +82,32 @@ RUN ldconfig
 RUN find / -name bw -exec cp '{}' /usr/bin/ \;
 RUN find / -name mllr_solve -exec cp '{}' /usr/bin/ \;
 
-ENV RHASSPY_APP /usr/share/rhasspy
+RUN apt-get install -y pulseaudio
+COPY etc/pulseaudio.client.conf /etc/pulse/client.conf
+
+# Create new user
+ENV UNAME=rhasspy
+RUN export UNAME=$UNAME UID=1000 GID=1000 && \
+    mkdir -p "/home/${UNAME}" && \
+    echo "${UNAME}:x:${UID}:${GID}:${UNAME} User,,,:/home/${UNAME}:/bin/bash" >> /etc/passwd && \
+    echo "${UNAME}:x:${UID}:" >> /etc/group && \
+    mkdir -p /etc/sudoers.d && \
+    echo "${UNAME} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${UNAME} && \
+    chmod 0440 /etc/sudoers.d/${UNAME} && \
+    chown ${UID}:${GID} -R /home/${UNAME} && \
+    gpasswd -a ${UNAME} audio
+
+ENV RHASSPY_APP /home/${UNAME}
 
 # Copy script to run
 COPY docker/run.sh /run.sh
 RUN chmod +x /run.sh
 
+# Switch to new user
+USER $UNAME
+ENV HOME /home/${UNAME}
 
-
-COPY profiles/en/ ${RHASSPY_APP}/profiles/en/
+PROFILES
 
 COPY profiles/defaults.json ${RHASSPY_APP}/profiles/
 COPY docker/rhasspy ${RHASSPY_APP}/bin/

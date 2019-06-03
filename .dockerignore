@@ -1,16 +1,25 @@
 .git/
 .venv/
 node_modules/
+__pycache__/
 test/
+dist/
+tools/
+etc/test/
+download/precise-engine/
+download/kaldi/
+opt/
+
 etc/homeassistant/config/.storage
 examples/typical/home-assistant/config/.storage
 examples/typical-intent/home-assistant/config/.storage
 examples/client-server/home-assistant/config/.storage
 examples/mqtt-hermes/home-assistant/config/.storage
 
-base_dictionary.txt
-base_language_model.txt
-acoustic_model/
+profiles/*/base_dictionary.txt
+profiles/*/base_language_model.txt
+profiles/*/acoustic_model/
+profiles/*/g2p.fst
 
 profiles/en-kaldi/
 profiles/en-zamia/
