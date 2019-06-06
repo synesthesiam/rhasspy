@@ -1,3 +1,4 @@
+from io import StringIO
 import os
 import json
 import logging
@@ -217,11 +218,12 @@ class RasaIntentTrainer(RhasspyActor):
 
         # Create training YAML file
         with tempfile.NamedTemporaryFile(
-            suffix=".yml", mode="w+", delete=False
+            suffix=".json", mode="w+", delete=False
         ) as training_file:
-            print('language: "%s"\n' % language, file=training_file)
-            print('pipeline: "pretrained_embeddings_spacy"\n', file=training_file)
-            print("data: |", file=training_file)
+
+            training_config = StringIO()
+            training_config.write('language: "%s"\n' % language)
+            training_config.write('pipeline: "pretrained_embeddings_spacy"\n')
 
             # Write markdown directly into YAML.
             # Because reasons.
@@ -239,18 +241,31 @@ class RasaIntentTrainer(RhasspyActor):
                         blank_line = True
 
             # Do training via HTTP API
-            training_url = urljoin(url, "train")
+            training_url = urljoin(url, "model/train")
             training_file.seek(0)
             with open(training_file.name, "rb") as training_data:
+
+                training_body = {
+                    "config": training_config.getvalue(),
+                    "nlu": training_data.read().decode("utf-8")
+                }
+                training_config.close()
+
                 response = requests.post(
                     training_url,
-                    data=training_data,
-                    params={"project": project_name},
-                    headers={"Content-Type": "application/x-yml"},
+                    data=json.dumps(training_body),
+                    params=json.dumps({"project": project_name}),
+                    headers={"Content-Type": "application/json"},
                 )
 
             self._logger.debug(f"POSTed training data to {training_url}")
-            response.raise_for_status()
+
+            try:
+                response.raise_for_status()
+            except:
+                # RASA gives quite helpful error messages, so extract them from the response.
+                raise Exception(f"{response.reason}: {json.loads(response.content)['message']}")
+
 
 
 # -----------------------------------------------------------------------------
