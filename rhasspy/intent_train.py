@@ -174,7 +174,7 @@ class RasaIntentTrainer(RhasspyActor):
         language = self.profile.get("language", "en")
         rasa_config = self.profile.get("intent.rasa", {})
 
-        url = rasa_config.get("url", "http://locahost:5005")
+        url = rasa_config.get("url", "http://localhost:5005")
         project_name = rasa_config.get("project_name", "rhasspy")
 
         # Create markdown examples

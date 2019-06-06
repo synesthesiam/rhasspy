@@ -371,7 +371,7 @@ class RasaIntentRecognizer(RhasspyActor):
 
     def to_started(self, from_state: str) -> None:
         rasa_config = self.profile.get("intent.rasa", {})
-        url = rasa_config.get("url", "http://locahost:5005")
+        url = rasa_config.get("url", "http://localhost:5005")
         self.project_name = rasa_config.get(
             "project_name", "rhasspy_%s" % self.profile.name
         )
