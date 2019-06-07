@@ -405,7 +405,9 @@ class RasaIntentRecognizer(RhasspyActor):
             response.raise_for_status()
         except:
             # RASA gives quite helpful error messages, so extract them from the response.
-            raise Exception(f"{response.reason}: {json.loads(response.content)['message']}")
+            raise Exception(
+                f"{response.reason}: {json.loads(response.content)['message']}"
+            )
 
         return response.json()
 

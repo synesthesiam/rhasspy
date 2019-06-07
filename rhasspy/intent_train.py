@@ -247,7 +247,7 @@ class RasaIntentTrainer(RhasspyActor):
 
                 training_body = {
                     "config": training_config.getvalue(),
-                    "nlu": training_data.read().decode("utf-8")
+                    "nlu": training_data.read().decode("utf-8"),
                 }
                 training_config.close()
 
@@ -264,8 +264,9 @@ class RasaIntentTrainer(RhasspyActor):
                 response.raise_for_status()
             except:
                 # RASA gives quite helpful error messages, so extract them from the response.
-                raise Exception(f"{response.reason}: {json.loads(response.content)['message']}")
-
+                raise Exception(
+                    f"{response.reason}: {json.loads(response.content)['message']}"
+                )
 
 
 # -----------------------------------------------------------------------------
