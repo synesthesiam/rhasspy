@@ -95,7 +95,7 @@ See `rhasspy.intent.FlairRecognizer` for details.
 
 ## RasaNLU
 
-Recognizes intents **remotely** using a [Rasa NLU](https://rasa.com/) server. You must [install a Rasa NLU server](https://rasa.com/docs/rasa/user-guide/installation/) somewhere that Rhasspy can access. Works well when you have a large number of sentences (thousands to hundreds of thousands) and need to handle sentences *and* words not seen during training.
+Recognizes intents **remotely** using a [Rasa NLU](https://rasa.com/) server. You must [install a Rasa NLU server](https://rasa.com/docs/rasa/user-guide/installation/) somewhere that Rhasspy can access. Works well when you have a large number of sentences (thousands to hundreds of thousands) and need to handle sentences *and* words not seen during training. This needs Rasa 1.0 or higher.
 
 Add to your [profile](profiles.md):
 
