@@ -52,7 +52,7 @@ const profileDefaults = {
         "rasa": {
             "examples_markdown": "intent_examples.md",
             "project_name": "rhasspy",
-            "url": "http://localhost:5000/"
+            "url": "http://localhost:5005/"
         },
         "remote": {
             "url": "http://my-server:12101/api/text-to-intent"

@@ -78,7 +78,7 @@ Rhasspy features a comprehensive HTTP API available at `/api`, documented with [
 * `/api/text-to-speech`
     * POST text and have Rhasspy speak it
     
-See `public/swagger.yaml` in Rhasspy's repository for all available endpoints, or visit `/api` on your Rhasspy web server (e.g., [http://locahost:12101/api](http://localhost:12101/api)).
+See `public/swagger.yaml` in Rhasspy's repository for all available endpoints, or visit `/api` on your Rhasspy web server (e.g., [http://localhost:12101/api](http://localhost:12101/api)).
 
 ## Secure Hosting with HTTPS
 
@@ -94,7 +94,7 @@ After answering the series of questions, you should have `cert.pem` and `key.pem
 
     <RHASSPY COMMAND> --ssl cert.pem key.pem
     
-The web interface will now be available at [https://localhost:12101](https://locahost:12101) and the web socket events at `wss://localhost:12101/api/events/intent`
+The web interface will now be available at [https://localhost:12101](https://localhost:12101) and the web socket events at `wss://localhost:12101/api/events/intent`
 
 In Hass.IO, you will need to set the following options via the web interface or in your JSON configuration:
 

@@ -109,7 +109,7 @@ All available profile sections and settings are listed below:
     * `remote` - configuration for remote Rhasspy server
         * `url` - URL to POST text to for intent recognition (e.g., `http://your-rhasspy-server:12101/api/text-to-intent`)
     * `rasa` - configuration for [rasaNLU](https://rasa.com/) based intent recognizer
-        * `url` - URL of remote rasaNLU server (e.g., `http://localhost:5000/`)
+        * `url` - URL of remote rasaNLU server (e.g., `http://localhost:5005/`)
         * `examples_markdown` - Markdown file to generate with intents/example sentences
         * `project_name` - name of project to generate during training
     * `adapt` - configuration for [Mycroft Adapt](https://github.com/MycroftAI/adapt) based intent recognizer

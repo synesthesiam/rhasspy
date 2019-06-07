@@ -27,7 +27,7 @@
     "intent": {
         "system": "fuzzywuzzy",
         "rasa": {
-            "url": "http://localhost:5000/"
+            "url": "http://localhost:5005/"
         },
         "remote": {
             "url": "http://my-server:12101/api/text-to-intent"

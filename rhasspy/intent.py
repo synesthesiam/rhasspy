@@ -371,11 +371,11 @@ class RasaIntentRecognizer(RhasspyActor):
 
     def to_started(self, from_state: str) -> None:
         rasa_config = self.profile.get("intent.rasa", {})
-        url = rasa_config.get("url", "http://locahost:5000")
+        url = rasa_config.get("url", "http://localhost:5005")
         self.project_name = rasa_config.get(
             "project_name", "rhasspy_%s" % self.profile.name
         )
-        self.parse_url = urljoin(url, "parse")
+        self.parse_url = urljoin(url, "model/parse")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, RecognizeIntent):
@@ -398,10 +398,14 @@ class RasaIntentRecognizer(RhasspyActor):
         import requests
 
         response = requests.post(
-            self.parse_url, json={"q": text, "project": self.project_name}
+            self.parse_url, json={"text": text, "project": self.project_name}
         )
 
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except:
+            # RASA gives quite helpful error messages, so extract them from the response.
+            raise Exception(f"{response.reason}: {json.loads(response.content)['message']}")
 
         return response.json()
 
