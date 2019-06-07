@@ -317,7 +317,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                     # (text, intent, slots)
                     best_text, best_intent, best_entities = choices[best_text]
 
-                    # Try to match RasaNLU format for future compatibility
+                    # Try to match Rasa NLU format for future compatibility
                     return {
                         "text": best_text,
                         "intent": {"name": best_intent, "confidence": confidence},
@@ -361,7 +361,7 @@ def _get_best_fuzzy(text, sentences):
 
 
 # -----------------------------------------------------------------------------
-# RasaNLU Intent Recognizer (HTTP API)
+# Rasa NLU Intent Recognizer (HTTP API)
 # https://rasa.com/
 # -----------------------------------------------------------------------------
 
@@ -469,7 +469,7 @@ class AdaptIntentRecognizer(RhasspyActor):
                     key = key[len(entity_prefix) :]
                     slots[key] = value
 
-            # Try to match RasaNLU format for future compatibility
+            # Try to match Rasa NLU format for future compatibility
             return {
                 "text": text,
                 "intent": {

@@ -148,7 +148,7 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
 
 
 # -----------------------------------------------------------------------------
-# RasaNLU Intent Trainer (HTTP API)
+# Rasa NLU Intent Trainer (HTTP API)
 # https://rasa.com/
 # -----------------------------------------------------------------------------
 
