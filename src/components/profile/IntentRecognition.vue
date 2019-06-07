@@ -106,14 +106,14 @@
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="intent-system" id="intent-system-rasa" value="rasa" v-model="profile.intent.system">
                         <label class="form-check-label" for="intent-system-rasa">
-                            Use remote <a href="https://rasa.com/docs/nlu/">RasaNLU</a> server
+                            Use remote <a href="https://rasa.com/docs/nlu/">Rasa NLU</a> server
                         </label>
                     </div>
                 </div>
             </div>
             <div class="form-group">
                 <div class="form-row">
-                    <label for="rasa-intent-url" class="col-form-label">RasaNLU URL</label>
+                    <label for="rasa-intent-url" class="col-form-label">Rasa NLU URL</label>
                     <div class="col">
                         <input id="rasa-intent-url" type="text" class="form-control" v-model="profile.intent.rasa.url" :disabled="profile.intent.system != 'rasa'">
                     </div>

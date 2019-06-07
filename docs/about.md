@@ -34,7 +34,7 @@ The following tools/libraries help to support Rhasspy:
 * [Python 3](https://www.python.org)
 * [OpenFST](http://www.openfst.org) (intent recognition)
 * [Opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary) (language modeling)
-* [RasaNLU](https://rasa.com/) (intent recognition)
+* [Rasa NLU](https://rasa.com/) (intent recognition)
 * [sphinxtrain](https://github.com/cmusphinx/sphinxtrain) (acoustic model tuning)
 * [snowboy](https://snowboy.kitt.ai) (wake word)
 * [Sox](http://sox.sourceforge.net) (WAV conversion)
