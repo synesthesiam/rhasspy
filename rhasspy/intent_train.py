@@ -67,7 +67,7 @@ def get_intent_trainer_class(
             # Use flair locally
             return FlairIntentTrainer
         elif recognizer_system == "rasa":
-            # Use rasaNLU remotely
+            # Use Rasa NLU remotely
             return RasaIntentTrainer
         elif recognizer_system == "command":
             # Use command-line intent trainer
@@ -82,7 +82,7 @@ def get_intent_trainer_class(
         # Use Mycroft Adapt locally
         return AdaptIntentTrainer
     elif trainer_system == "rasa":
-        # Use rasaNLU remotely
+        # Use Rasa NLU remotely
         return RasaIntentTrainer
     elif trainer_system == "flair":
         # Use flair RNN locally
@@ -154,7 +154,7 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
 
 
 class RasaIntentTrainer(RhasspyActor):
-    """Uses rasaNLU HTTP API to train a recognizer."""
+    """Uses Rasa NLU HTTP API to train a recognizer."""
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, TrainIntent):
@@ -263,7 +263,7 @@ class RasaIntentTrainer(RhasspyActor):
             try:
                 response.raise_for_status()
             except:
-                # RASA gives quite helpful error messages, so extract them from the response.
+                # Rasa gives quite helpful error messages, so extract them from the response.
                 raise Exception(f"{response.reason}: {json.loads(response.content)['message']}")
 
 

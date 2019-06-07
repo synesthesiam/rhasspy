@@ -108,8 +108,8 @@ All available profile sections and settings are listed below:
         * `min_confidence` - minimum confidence required for intent to be converted to a JSON event (0-1)
     * `remote` - configuration for remote Rhasspy server
         * `url` - URL to POST text to for intent recognition (e.g., `http://your-rhasspy-server:12101/api/text-to-intent`)
-    * `rasa` - configuration for [rasaNLU](https://rasa.com/) based intent recognizer
-        * `url` - URL of remote rasaNLU server (e.g., `http://localhost:5005/`)
+    * `rasa` - configuration for [Rasa NLU](https://rasa.com/) based intent recognizer
+        * `url` - URL of remote Rasa NLU server (e.g., `http://localhost:5005/`)
         * `examples_markdown` - Markdown file to generate with intents/example sentences
         * `project_name` - name of project to generate during training
     * `adapt` - configuration for [Mycroft Adapt](https://github.com/MycroftAI/adapt) based intent recognizer

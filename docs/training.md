@@ -38,7 +38,7 @@ For step (4), Rhasspy can use a [variety of intent recognition systems](intent-r
 
 and provided as training material to the intent recognition system. The [fuzzywuzzy](intent-recognition.md#fuzzywuzzy) system, for example, simply saves the JSON file and, during recognition, finds the closest matching sentence according to the [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance). The [default intent recognizer](intent-recognition.md#fsticuffs) interacts directly with the finite state transducer(s) generated in step (1) and, while less tolerant of errors than `fuzzywuzzy`, is significantly faster for large sets of voice commands (i.e., millions).
 
-More sophisticated systems like [rasaNLU](intent-recognition.md#rasanlu) use machine learning techniques to classify sentences by intent and assign slota (entity) values. These systems are much better at recognizing sentences not seen during training, but can take minutes to hours to train.
+More sophisticated systems like [Rasa NLU](intent-recognition.md#rasanlu) use machine learning techniques to classify sentences by intent and assign slota (entity) values. These systems are much better at recognizing sentences not seen during training, but can take minutes to hours to train.
 
 ## sentences.ini
 
@@ -65,7 +65,7 @@ Compared to JSON, YAML, etc., there is minimal syntactic overhead for the purpos
 3. You cannot share commonly *repeated phrases* across sentences or intents.
 4. There is no way to *tag phrases* so the intent recognizer knows the values for an intent's slots (e.g., color).
 
-Each of these shortcomings are addressed by considering the space between intent headings (`[Intent 1]`, etc.) as a **grammar** that will *generate* tagged sentences in [rasaNLU's training data format](https://rasa.com/docs/nlu/dataformat/#markdown-format). The generated sentences, stripped of their tags, are used as input to [opengrm](https://www.opengrm.org) to produce a language model for [pocketsphinx](https://github.com/cmusphinx/pocketsphinx) or [Kaldi](https://kaldi-asr.org). The tagged sentences are then used to train an intent recognizer.
+Each of these shortcomings are addressed by considering the space between intent headings (`[Intent 1]`, etc.) as a **grammar** that will *generate* tagged sentences in [Rasa NLU's training data format](https://rasa.com/docs/rasa/nlu/training-data-format/). The generated sentences, stripped of their tags, are used as input to [opengrm](https://www.opengrm.org) to produce a language model for [pocketsphinx](https://github.com/cmusphinx/pocketsphinx) or [Kaldi](https://kaldi-asr.org). The tagged sentences are then used to train an intent recognizer.
 
 ### Optional Words
 

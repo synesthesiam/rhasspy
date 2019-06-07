@@ -590,7 +590,7 @@ def train_profile(core: RhasspyCore, profile: Profile, args: Any) -> None:
 #             # Write intent (with transcription)
 #             intent_path = os.path.join(dir_path, '%s-%03d.wav.json' % (wav_prefix, wav_num))
 #             with open(intent_path, 'w') as intent_file:
-#                 # Use rasaNLU format
+#                 # Use Rasa NLU format
 #                 intent = {
 #                     'text': sentence,
 #                     'intent': { 'name': intent_name },
