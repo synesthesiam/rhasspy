@@ -196,6 +196,7 @@ class RasaIntentTrainer(RhasspyActor):
                 elif sym.startswith("__begin__"):
                     strings.append("[")
                 elif sym.startswith("__end__"):
+                    strings[-1] = strings[-1].strip()
                     tag = sym[7:]
                     strings.append(f"]({tag})")
                     strings.append(" ")
