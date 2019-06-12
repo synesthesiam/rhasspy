@@ -1,4 +1,4 @@
-from io import StringIO
+#!/usr/bin/env python3
 import os
 import json
 import logging
@@ -9,6 +9,7 @@ import shutil
 import time
 import random
 import copy
+from io import StringIO
 from urllib.parse import urljoin
 from collections import defaultdict, Counter
 from typing import Dict, List, Set, Any, Optional, Type
@@ -211,11 +212,11 @@ class RasaIntentTrainer(RhasspyActor):
         with open(examples_md_path, "w") as examples_md_file:
             for intent_name, intent_sents in sentences_by_intent.items():
                 # Rasa Markdown training format
-                print("## intent:%s" % intent_name, file=examples_md_file)
+                print(f"## intent:{intent_name}", file=examples_md_file)
                 for intent_sent in intent_sents:
                     print("-", intent_sent, file=examples_md_file)
 
-                print("", file=examples_md_file)
+                    print("", file=examples_md_file)
 
         # Create training YAML file
         with tempfile.NamedTemporaryFile(
@@ -522,7 +523,7 @@ class FlairIntentTrainer(RhasspyActor):
 
         # Generate examples
         class_sentences = []
-        ner_sentences = defaultdict(list)
+        ner_sentences: Dict[str, List[Sentence]] = defaultdict(list)
         for intent_name, intent_sents in sentences_by_intent.items():
             num_repeats = max(1, lcm_sentences // len(intent_sents))
             for intent_sent in intent_sents:

@@ -535,6 +535,11 @@ class FlairRecognizer(RhasspyActor):
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
 
+        try:
+            from flair.models import TextClassifier, SequenceTagger
+        except:
+            pass
+
         self.class_model: Optional[TextClassifier] = None
         self.ner_models: Optional[Dict[str, SequenceTagger]] = None
         self.intent_map: Optional[Dict[str, str]] = None
@@ -570,6 +575,7 @@ class FlairRecognizer(RhasspyActor):
         intent = empty_intent()
         sentence = Sentence(text)
 
+        assert self.intent_map is not None
         if self.class_model is not None:
             self.class_model.predict(sentence)
             assert len(sentence.labels) > 0, "No intent predicted"
@@ -584,6 +590,7 @@ class FlairRecognizer(RhasspyActor):
 
         intent["intent"]["name"] = self.intent_map[intent_id]
 
+        assert self.ner_models is not None
         if intent_id in self.ner_models:
             # Predict entities
             self.ner_models[intent_id].predict(sentence)

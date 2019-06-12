@@ -9,7 +9,7 @@ import platform
 import gzip
 from collections import defaultdict
 import concurrent.futures
-from typing import List, Dict, Optional, Any, Callable, Tuple, Union
+from typing import List, Dict, Optional, Any, Callable, Tuple, Union, Set
 
 import pydash
 
@@ -320,7 +320,7 @@ class RhasspyCore:
     def check_profile(self) -> Dict[str, str]:
         """Returns True if the profile has all necessary files downloaded."""
         output_dir = self.profile.write_path()
-        missing_files: Dict[str, str] = {}
+        missing_files: Dict[str, Any] = {}
 
         # Load configuration
         conditions = self.profile.get("download.conditions", {})
@@ -345,17 +345,17 @@ class RhasspyCore:
     def _get_compare_func(self, value: str):
         """Use mini-language to allow for profile setting value comparison."""
         if value.startswith(">="):
-            value = float(value[2:])
-            return lambda v: v >= value
+            f_value = float(value[2:])
+            return lambda v: v >= f_value
         elif value.startswith("<="):
-            value = float(value[2:])
-            return lambda v: v <= value
+            f_value = float(value[2:])
+            return lambda v: v <= f_value
         elif value.startswith(">"):
-            value = float(value[1:])
-            return lambda v: v > value
+            f_value = float(value[1:])
+            return lambda v: v > f_value
         elif value.startswith("<"):
-            value = float(value[1:])
-            return lambda v: v < value
+            f_value = float(value[1:])
+            return lambda v: v < f_value
         elif value.startswith("!"):
             return lambda v: v != value
         else:
@@ -391,8 +391,8 @@ class RhasspyCore:
         conditions = self.profile.get("download.conditions", {})
         all_files = self.profile.get("download.files", {})
         files_to_copy = {}
-        files_to_extract = defaultdict(list)
-        files_to_download = set()
+        files_to_extract: Dict[str, List[Any]] = defaultdict(list)
+        files_to_download: Set[str] = set()
 
         def download_file(url, filename):
             try:
@@ -513,7 +513,7 @@ class RhasspyCore:
                 unpack(temp_dir)
 
                 for dest_path, src_extract in extract_paths:
-                    src_exclude = []
+                    src_exclude: Dict[str, List[str]] = {}
                     if "!" in src_extract:
                         extract_parts = src_extract.split("!")
                         src_extract = extract_parts[0]

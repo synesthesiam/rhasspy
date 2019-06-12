@@ -464,6 +464,7 @@ class PreciseWakeListener(RhasspyActor):
                 num_chunks = len(self.audio_buffer) // self.chunk_size
 
                 if num_chunks > 0:
+                    assert self.stream is not None
                     self.prediction_sem = threading.Semaphore()
                     for i in range(num_chunks):
                         chunk = self.audio_buffer[: self.chunk_size]
@@ -621,7 +622,7 @@ class HermesWakeListener(RhasspyActor):
                 # Check site ID
                 payload = json.loads(message.payload.decode())
                 payload_site_id = payload.get("siteId", "")
-                if payload_site_id in self.site_ids:
+                if payload_site_id not in self.site_ids:
                     self._logger.debug(
                         "Got detected message, but wrong site id (%s)" % payload_site_id
                     )
@@ -703,9 +704,10 @@ class PorcupineWakeListener(RhasspyActor):
             num_chunks = len(self.audio_buffer) // self.chunk_size
 
             if num_chunks > 0:
+                assert self.handle is not None
                 for i in range(num_chunks):
                     chunk = self.audio_buffer[: self.chunk_size]
-                    chunk = struct.unpack_from(self.chunk_format, chunk)
+                    chunk = bytes(struct.unpack_from(self.chunk_format, chunk))
                     self.audio_buffer = self.audio_buffer[self.chunk_size :]
 
                     # Process chunk

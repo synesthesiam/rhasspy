@@ -157,7 +157,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
             kwargs["verify"] = self.pem_file
 
         response = requests.post(post_url, **kwargs)
-        self._logger.debug("POSTed intent to %s with headers=%s" % (post_url, headers))
+        self._logger.debug(f"POSTed intent to {post_url}")
         response.raise_for_status()
 
     # -------------------------------------------------------------------------
