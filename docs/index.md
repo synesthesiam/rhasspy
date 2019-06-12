@@ -31,7 +31,7 @@ Rhasspy provides **offline, private solutions** to problems 1-4 using off-the-sh
     * [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy)
     * [Mycroft Adapt](https://github.com/MycroftAI/adapt)
     * [flair](http://github.com/zalandoresearch/flair)
-    * [RasaNLU](https://rasa.com/)
+    * [Rasa NLU](https://rasa.com/)
 
 For problem 5 (fulfilling the speaker's intent), Rhasspy works with external home automation software, such as Home Assistant's built-in [automation capability](https://www.home-assistant.io/docs/automation/) or a [Node-RED flow](https://nodered.org). For each intent you define, Rhasspy emits a JSON event that can, for example, be used to do anything Home Assistant can do (toggle switches, call REST services, etc.). This means that Rhasspy will do very little out of the box compared to other voice assistants, but there are also be *no limits* to what can be done.
 

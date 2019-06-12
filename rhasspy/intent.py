@@ -64,7 +64,7 @@ def get_recognizer_class(system: str) -> Type[RhasspyActor]:
         # Use Mycroft Adapt locally
         return AdaptIntentRecognizer
     elif system == "rasa":
-        # Use rasaNLU remotely
+        # Use Rasa NLU remotely
         return RasaIntentRecognizer
     elif system == "remote":
         # Use remote rhasspy server
@@ -317,7 +317,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                     # (text, intent, slots)
                     best_text, best_intent, best_entities = choices[best_text]
 
-                    # Try to match RasaNLU format for future compatibility
+                    # Try to match Rasa NLU format for future compatibility
                     return {
                         "text": best_text,
                         "intent": {"name": best_intent, "confidence": confidence},
@@ -361,13 +361,13 @@ def _get_best_fuzzy(text, sentences):
 
 
 # -----------------------------------------------------------------------------
-# RasaNLU Intent Recognizer (HTTP API)
+# Rasa NLU Intent Recognizer (HTTP API)
 # https://rasa.com/
 # -----------------------------------------------------------------------------
 
 
 class RasaIntentRecognizer(RhasspyActor):
-    """Uses rasaNLU HTTP API to recognize intents."""
+    """Uses Rasa NLU HTTP API to recognize intents."""
 
     def to_started(self, from_state: str) -> None:
         rasa_config = self.profile.get("intent.rasa", {})
@@ -404,7 +404,7 @@ class RasaIntentRecognizer(RhasspyActor):
         try:
             response.raise_for_status()
         except:
-            # RASA gives quite helpful error messages, so extract them from the response.
+            # Rasa gives quite helpful error messages, so extract them from the response.
             raise Exception(
                 f"{response.reason}: {json.loads(response.content)['message']}"
             )
@@ -469,7 +469,7 @@ class AdaptIntentRecognizer(RhasspyActor):
                     key = key[len(entity_prefix) :]
                     slots[key] = value
 
-            # Try to match RasaNLU format for future compatibility
+            # Try to match Rasa NLU format for future compatibility
             return {
                 "text": text,
                 "intent": {
