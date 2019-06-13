@@ -707,7 +707,7 @@ class PorcupineWakeListener(RhasspyActor):
                 assert self.handle is not None
                 for i in range(num_chunks):
                     chunk = self.audio_buffer[: self.chunk_size]
-                    chunk = bytes(struct.unpack_from(self.chunk_format, chunk))
+                    chunk = struct.unpack_from(self.chunk_format, chunk)
                     self.audio_buffer = self.audio_buffer[self.chunk_size :]
 
                     # Process chunk
