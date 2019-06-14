@@ -159,7 +159,7 @@ Add to your [profile](profiles.md):
 }
 ```
 
-For compatibility with other services and Rhasspy components, it's best to return 16 Khz, 16-bit mono WAV data.
+For compatibility with other services and Rhasspy components, it's best to return 16 kHz, 16-bit mono WAV data.
 
 See `rhasspy.tts.CommandSentenceSpeaker` for details.
 

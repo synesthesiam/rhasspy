@@ -189,7 +189,7 @@ If you run Rhasspy through [Docker](installation.md#docker), the [rhasspy-cli](h
 Put this script in your `~/bin` directory so that you can refer to it as `rhasspy-cli` from any directory.
 By default, it will look for profiles in `$XDG_CONFIG_FILE/rhasspy/profiles`, which is probably `~/.config/rhasspy/profiles` (see [XDG specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) for more information).
     
-**Beware**: the `rhasspy-cli` script run under your user accout and grants Rhasspy **write access to your home directory**.
+**Beware**: the `rhasspy-cli` script runs under your user account and grants Rhasspy **write access to your home directory**.
 This is needed to save files during the training process, and to avoid those files being owned by `root`.
 The [rhasspy-cli-ro](https://github.com/synesthesiam/rhasspy/blob/master/bin/rhasspy-cli-ro) script can be used for read only operations, such as speech to text or intent handling, but cannot make any changes to your file system.
 
@@ -250,7 +250,7 @@ For `rhasspy-cli --profile <PROFILE_NAME> <COMMAND> <ARGUMENTS>`, `<COMMAND>` ca
 
 ### Profile Operations
 
-Print the complete JSON for the Enlgish profile with:
+Print the complete JSON for the English profile with:
 
     rhasspy-cli --profile en info
     
