@@ -82,7 +82,7 @@ See `public/swagger.yaml` in Rhasspy's repository for all available endpoints, o
 
 ## Secure Hosting with HTTPS
 
-If you need to access Rhasspy's web interface/API through HTTPS (formally SSL), you can provide a certificate and key file via command-line parameters or the Hass.IO configuration.
+If you need to access Rhasspy's web interface/API through HTTPS (formally SSL), you can provide a certificate and key file via command-line parameters or the Hass.io configuration.
 
 If you're running Rhasspy via Docker or in a virtual environment, add `--ssl <CERT_FILE> <KEY_FILE>` to the command-line arguments where `<CERT_FILE>` is your SSL certificate and `<KEY_FILE>` is your SSL key file.
 
@@ -96,7 +96,7 @@ After answering the series of questions, you should have `cert.pem` and `key.pem
     
 The web interface will now be available at [https://localhost:12101](https://localhost:12101) and the web socket events at `wss://localhost:12101/api/events/intent`
 
-In Hass.IO, you will need to set the following options via the web interface or in your JSON configuration:
+In Hass.io, you will need to set the following options via the web interface or in your JSON configuration:
 
   * `ssl`: `true`
   * `certfile`: `cert.pem`
