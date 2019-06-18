@@ -3,7 +3,7 @@
 Rhasspy should run in a variety of software environments, including:
 
 * Within a [Docker](https://www.docker.com/) container
-* As a [Hass.IO add-on](https://www.home-assistant.io/addons/)
+* As a [Hass.io add-on](https://www.home-assistant.io/addons/)
 * Inside a [Python virtual environment](https://docs.python-guide.org/dev/virtualenvs/)
 
 ### Docker
@@ -45,9 +45,9 @@ If you're using [docker compose](https://docs.docker.com/compose/), add the foll
             - "/dev/snd:/dev/snd"
         command: --user-profiles /profiles --profile en
 
-### Hass.IO
+### Hass.io
 
-The second easiest was to install Rhasspy is as a [Hass.IO add-on](https://www.home-assistant.io/addons/). Following the [installation instructions for Hass.IO](https://www.home-assistant.io/hassio/installation/) before proceeding.
+The second easiest was to install Rhasspy is as a [Hass.io add-on](https://www.home-assistant.io/addons/). Following the [installation instructions for Hass.io](https://www.home-assistant.io/hassio/installation/) before proceeding.
 
 To install the add-on, add my [Hass.IO Add-On Repository](https://github.com/synesthesiam/hassio-addons) in the Add-On Store, refresh, then install the "Rhasspy Assistant" under “Synesthesiam Hass.IO Add-Ons” (all the way at the bottom of the Add-On Store screen).
 
@@ -59,7 +59,7 @@ Watch the system log for a message like `Build 8e35c251/armhf-addon-rhasspy:2.11
 
 Before starting the add-on, make sure to give it access to your microphone and speakers:
 
-![Audio settings for Hass.IO](img/hass-io-audio.png)
+![Audio settings for Hass.io](img/hass-io-audio.png)
 
 
 ### Virtual Environment

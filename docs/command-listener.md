@@ -124,7 +124,7 @@ Add to your [profile](profiles.md):
 
 When awake, Rhasspy normally listens for voice commands from the microphone and waits for silence by using [webrtcvad](https://github.com/wiseman/py-webrtcvad). You can call a custom program that will listen for a voice command and simply return the recorded WAV audio data to Rhasspy.
 
-When Rhasspy wakes up, your program will be called with the given arguments. The program's output should be WAV data with the recorded voice command (Rhasspy will automatically convert this to 16-bit 16Khz mono if necessary).
+When Rhasspy wakes up, your program will be called with the given arguments. The program's output should be WAV data with the recorded voice command (Rhasspy will automatically convert this to 16-bit 16 kHz mono if necessary).
 
 The following environment variables are available to your program:
 

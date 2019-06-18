@@ -82,7 +82,7 @@ See `public/swagger.yaml` in Rhasspy's repository for all available endpoints, o
 
 ## Secure Hosting with HTTPS
 
-If you need to access Rhasspy's web interface/API through HTTPS (formally SSL), you can provide a certificate and key file via command-line parameters or the Hass.IO configuration.
+If you need to access Rhasspy's web interface/API through HTTPS (formally SSL), you can provide a certificate and key file via command-line parameters or the Hass.io configuration.
 
 If you're running Rhasspy via Docker or in a virtual environment, add `--ssl <CERT_FILE> <KEY_FILE>` to the command-line arguments where `<CERT_FILE>` is your SSL certificate and `<KEY_FILE>` is your SSL key file.
 
@@ -96,7 +96,7 @@ After answering the series of questions, you should have `cert.pem` and `key.pem
     
 The web interface will now be available at [https://localhost:12101](https://localhost:12101) and the web socket events at `wss://localhost:12101/api/events/intent`
 
-In Hass.IO, you will need to set the following options via the web interface or in your JSON configuration:
+In Hass.io, you will need to set the following options via the web interface or in your JSON configuration:
 
   * `ssl`: `true`
   * `certfile`: `cert.pem`
@@ -189,7 +189,7 @@ If you run Rhasspy through [Docker](installation.md#docker), the [rhasspy-cli](h
 Put this script in your `~/bin` directory so that you can refer to it as `rhasspy-cli` from any directory.
 By default, it will look for profiles in `$XDG_CONFIG_FILE/rhasspy/profiles`, which is probably `~/.config/rhasspy/profiles` (see [XDG specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) for more information).
     
-**Beware**: the `rhasspy-cli` script run under your user accout and grants Rhasspy **write access to your home directory**.
+**Beware**: the `rhasspy-cli` script runs under your user account and grants Rhasspy **write access to your home directory**.
 This is needed to save files during the training process, and to avoid those files being owned by `root`.
 The [rhasspy-cli-ro](https://github.com/synesthesiam/rhasspy/blob/master/bin/rhasspy-cli-ro) script can be used for read only operations, such as speech to text or intent handling, but cannot make any changes to your file system.
 
@@ -250,7 +250,7 @@ For `rhasspy-cli --profile <PROFILE_NAME> <COMMAND> <ARGUMENTS>`, `<COMMAND>` ca
 
 ### Profile Operations
 
-Print the complete JSON for the Enlgish profile with:
+Print the complete JSON for the English profile with:
 
     rhasspy-cli --profile en info
     

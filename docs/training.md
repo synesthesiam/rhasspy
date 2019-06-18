@@ -2,7 +2,7 @@
 
 Rhasspy is designed to recognize only the specific set of voice commands that [you provide](#sentencesini). These commands are categorized by **intent**, and may contain variable **slots** or **entities**, such as the color and name of a light.
 
-During the training process, Rhasspy simulataneously trains *both* a speech and intent recognizer. The speech recognizer converts voice commands to text, and the intent recognizer converts text to JSON events. Combined, they enable a low power, offline system like a Raspberry Pi to understand and respond to your voice commands.
+During the training process, Rhasspy simultaneously trains *both* a speech and intent recognizer. The speech recognizer converts voice commands to text, and the intent recognizer converts text to JSON events. Combined, they enable a low power, offline system like a Raspberry Pi to understand and respond to your voice commands.
 
 ## How It Works
 
@@ -38,7 +38,7 @@ For step (4), Rhasspy can use a [variety of intent recognition systems](intent-r
 
 and provided as training material to the intent recognition system. The [fuzzywuzzy](intent-recognition.md#fuzzywuzzy) system, for example, simply saves the JSON file and, during recognition, finds the closest matching sentence according to the [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance). The [default intent recognizer](intent-recognition.md#fsticuffs) interacts directly with the finite state transducer(s) generated in step (1) and, while less tolerant of errors than `fuzzywuzzy`, is significantly faster for large sets of voice commands (i.e., millions).
 
-More sophisticated systems like [Rasa NLU](intent-recognition.md#rasanlu) use machine learning techniques to classify sentences by intent and assign slota (entity) values. These systems are much better at recognizing sentences not seen during training, but can take minutes to hours to train.
+More sophisticated systems like [Rasa NLU](intent-recognition.md#rasanlu) use machine learning techniques to classify sentences by intent and assign slot (entity) values. These systems are much better at recognizing sentences not seen during training, but can take minutes to hours to train.
 
 ## sentences.ini
 
@@ -180,7 +180,7 @@ In the `SetLightColor` example above, the color names are stored in `sentences.i
 
     colors = (red | green | blue)
 
-Ths is convenient when the list of colors is small, changes infrequently, and does not depend on an external service.
+This is convenient when the list of colors is small, changes infrequently, and does not depend on an external service.
 But what if this was a list of movie names that were stored on your [Kodi Home Theater](https://kodi.tv)?
 
     movies = ("Primer" | "Moon" | "Chronicle" | "Timecrimes" | "Mulholland Drive" | ... )
@@ -399,7 +399,7 @@ During training, Rhasspy can **mix** this large, open ended language model with 
 
 ![Diagram of Rhasspy's training process](img/training.svg)
 
-To see the effect of language model mixing, consder a simple `sentences.ini` file:
+To see the effect of language model mixing, consider a simple `sentences.ini` file:
 
 ```
 [ChangeLightState]
@@ -433,7 +433,7 @@ $ rhasspy-cli --profile en \
 OK
 ```
 
-Note that training will take **significantly** longer because of the size of the base langauge model. Now, let's test our two WAV files:
+Note that training will take **significantly** longer because of the size of the base language model. Now, let's test our two WAV files:
 
 ```
 $ rhasspy-cli --profile en wav2text < turn_on_living_room_lamp.wav

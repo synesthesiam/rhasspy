@@ -23,7 +23,7 @@ The default location for each of these directories is:
     * User profile location is `$HOME/.config/rhasspy/profiles`
 * Docker
     * System profile location is either `/usr/share/rhasspy/profiles` (ALSA) or `/home/rhasspy/profiles` (PulseAudio)
-    * User profile location **must** be explicity set and mapped to a volume:
+    * User profile location **must** be explicitly set and mapped to a volume:
         * `docker run ... -v /path/to/profiles:/profiles synesthesiam/rhasspy-server --user-profiles /profiles`
 
 ### Example

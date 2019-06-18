@@ -42,7 +42,7 @@ When Rhasspy starts, it creates a pocketsphinx decoder with the following attrib
 
 The `mllr_matrix` file is intended for advanced users who want to [tune/adapt their acoustic models](https://cmusphinx.github.io/wiki/tutorialadapt). This can increase the performance of Rhasspy's speech recognition for a specific user/microphone/acoustic environment.
 
-Pocketsphinx allows Rhasspy to support Enlgish (en), German (de), Dutch (nl), Spanish (es), Italian (it), French (fr), Greek (el), Russian (ru), Hindi (hi), and Mandarin (zh).
+Pocketsphinx allows Rhasspy to support English (en), German (de), Dutch (nl), Spanish (es), Italian (it), French (fr), Greek (el), Russian (ru), Hindi (hi), and Mandarin (zh).
 
 See `rhasspy.stt.PocketsphinxDecoder` for details.
 
@@ -93,7 +93,7 @@ Add to your [profile](profiles.md):
 }
 ```
 
-During speech recognition, 16-bit 16Khz mono WAV data will be POST-ed to the endpoint with the `Content-Type` set to `audio/wav`. A `text/plain` response with the transcription is expected back. An additional `profile` query argument is sent with the current profile name, so the POST URL is effectively something like `http://remote-server:12101/api/speech-to-text?profile=en`.
+During speech recognition, 16-bit 16 kHz mono WAV data will be POST-ed to the endpoint with the `Content-Type` set to `audio/wav`. A `text/plain` response with the transcription is expected back. An additional `profile` query argument is sent with the current profile name, so the POST URL is effectively something like `http://remote-server:12101/api/speech-to-text?profile=en`.
 
 See `rhasspy.stt.RemoteDecoder` for details.
 
@@ -115,7 +115,7 @@ Add to your [profile](profiles.md):
 }
 ```
 
-When a voice command is received, Rhasspy will call your program and push the recorded WAV data (16-bit 16 Khz mono) to standard in. Your program should print the text transcription to standard out.
+When a voice command is received, Rhasspy will call your program and push the recorded WAV data (16-bit 16 kHz mono) to standard in. Your program should print the text transcription to standard out.
 
 The following environment variables are available to your program:
 
