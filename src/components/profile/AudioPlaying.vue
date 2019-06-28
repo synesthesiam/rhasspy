@@ -56,6 +56,36 @@
                     </div>
                 </div>
             </div>
+            <hr>
+            <div class="form-group">
+                <div class="form-row bg-info text-white pt-2 pl-2">
+                    <h4>Sounds</h4>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <p class="text-muted">WAV files to play when Rhasspy wakes up and is finished recording a voice command.</p>
+                </div>
+                <div class="form-row">
+                    <p class="text-muted">Use <tt>${RHASSPY_PROFILE_DIR}</tt> for your profile directory.</p>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="sounds-wake" class="col-form-label">Wake WAV</label>
+                    <div class="col">
+                        <input id="sounds-wake" type="text" class="form-control" v-model="profile.sounds.wake">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="sounds-recorded" class="col-form-label">Recorded WAV</label>
+                    <div class="col">
+                        <input id="sounds-recorded" type="text" class="form-control" v-model="profile.sounds.recorded">
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>

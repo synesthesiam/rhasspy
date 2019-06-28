@@ -1,3 +1,4 @@
+import os
 import json
 from datetime import timedelta
 from typing import Dict, Any, Optional, List, Type
@@ -253,7 +254,7 @@ class DialogueManager(RhasspyActor):
         self.send(self.wake, StopListeningForWakeWord())
 
         # Wake up beep
-        wav_path = self.profile.get("sounds.wake", None)
+        wav_path = os.path.expandvars(self.profile.get("sounds.wake", None))
         if wav_path is not None:
             self.send(self.player, PlayWavFile(wav_path))
 
@@ -263,7 +264,7 @@ class DialogueManager(RhasspyActor):
     def in_awake(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, VoiceCommand):
             # Recorded beep
-            wav_path = self.profile.get("sounds.recorded", None)
+            wav_path = os.path.expandvars(self.profile.get("sounds.recorded", None))
             if wav_path is not None:
                 self.send(self.player, PlayWavFile(wav_path))
 
