@@ -335,6 +335,13 @@ paths:
           text/plain:
             schema:
               type: string
+      parameters:
+      - in: query
+        name: repeat
+        description: 'True if Rhasspy should repeat the last spoken sentence'
+        schema:
+          type: boolean
+          default: false
       responses:
         '200':
           description: OK

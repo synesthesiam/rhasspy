@@ -185,7 +185,7 @@ def api_profiles() -> Response:
             "default_profile": core.profile.name,
             "profiles": sorted(list(profile_names)),
             "downloaded": downloaded,
-            "missing_files": missing_files
+            "missing_files": missing_files,
         }
     )
 
@@ -645,14 +645,20 @@ def api_unknown_words() -> Response:
 
 # -----------------------------------------------------------------------------
 
+last_sentence = ""
+
 
 @app.route("/api/text-to-speech", methods=["POST"])
 def api_text_to_speech() -> str:
     """Speaks a sentence with text to speech system"""
-    sentence = request.data.decode().strip()
+    global last_sentence
+    repeat = request.args.get("repeat", "false").strip().lower() == "true"
+    sentence = last_sentence if repeat else request.data.decode().strip()
 
     assert core is not None
     core.speak_sentence(sentence)
+
+    last_sentence = sentence
 
     return sentence
 
