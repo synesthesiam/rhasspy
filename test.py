@@ -44,7 +44,7 @@ class RhasspyTestCore:
 
 class RhasspyTestCase(unittest.TestCase):
     PROFILES = ["en", "de", "es", "fr", "it", "nl", "ru", "pt"]
-    # Not passing: vi, el (bad transcriptions)
+    # Not passing: vi, el, sv (bad transcriptions)
     # Not tested: hi, zh
 
     # -------------------------------------------------------------------------

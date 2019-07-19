@@ -1,0 +1,20 @@
+{
+    "text": "stäng av garaget ljuset",
+    "intent": {
+        "name": "ChangeLightState"
+    },
+    "entities": {
+        "name": "garaget ljuset",
+        "state": "off"
+    },
+    "words": {
+        "known": {
+            "word": "klockan",
+            "phonemes": "k l ol s k abl n"
+        },
+        "unknown": {
+            "word": "klockanklacken",
+            "phonemes": "k l ol s k abl n k l a k el n"
+        }
+    }
+}
