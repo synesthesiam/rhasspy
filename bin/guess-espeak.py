@@ -34,7 +34,7 @@ def main():
             if len(line) == 0:
                 continue
 
-            parts = re.split(r"[ ]+", line)
+            parts = re.split(r"[\t ]+", line)
             word = parts[0].lower()
 
             if ("(" in word) or (word in freq_phonemes):

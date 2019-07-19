@@ -29,7 +29,7 @@ def main():
             if len(line) == 0:
                 continue
 
-            parts = re.split(r"[ ]+", line)
+            parts = re.split(r"[\t ]+", line)
             word = parts[0]
 
             if "(" in word:
