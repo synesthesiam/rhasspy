@@ -551,6 +551,7 @@ class KaldiSpeechTrainer(PocketsphinxSpeechTrainer):
 
         self.model_dir = self.profile.read_path(model_dir_name)
         self.train_command = [
+            "bash",
             self.profile.read_path(model_dir_name, "train.sh"),
             self.kaldi_dir,
             self.model_dir,

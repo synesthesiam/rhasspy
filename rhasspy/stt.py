@@ -319,6 +319,7 @@ class KaldiDecoder(RhasspyActor):
             self.model_dir, self.profile.get("speech_to_text.kaldi.graph_dir", "graph")
         )
         self.decode_command = [
+            "bash",
             self.profile.read_path(model_dir_name, "decode.sh"),
             self.kaldi_dir,
             self.model_dir,
