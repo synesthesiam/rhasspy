@@ -246,7 +246,7 @@
             "keyword_path": "porcupine/porcupine.ppn",
             "sensitivity": 0.5
         },
-        "system": "pocketsphinx"
+        "system": "dummy"
     },
     "download": {
         "cache_dir": "download",
