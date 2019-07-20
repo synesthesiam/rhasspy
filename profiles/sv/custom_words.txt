@@ -1,3 +1,11 @@
-garaget g a r abl j el t
+garage g a r abl j el
+kalt k a l t
+släck s l ael k
+sovrumslampa s oc v r uxl m s l a m p abl
 stäng s t ae ng
-vardagslampan v abl dr a g s l a m p abl n
+stängd s t ae ng d
+temperaturen t ae m p e r abl t uxl r el n
+tänd t ael n d
+varmt v a r m t
+vardagsrumslampan v abl dr a g s r uxl m s l a m p abl n
+garagelampan g a r a j el l a m p abl n

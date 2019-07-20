@@ -1,11 +1,9 @@
 {
-    "text": "stäng av garaget ljuset",
+    "text": "är garage dörren öppen",
     "intent": {
-        "name": "ChangeLightState"
+        "name": "GetGarageState"
     },
     "entities": {
-        "name": "garaget ljuset",
-        "state": "off"
     },
     "words": {
         "known": {
