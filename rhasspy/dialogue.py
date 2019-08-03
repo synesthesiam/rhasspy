@@ -532,7 +532,12 @@ class DialogueManager(RhasspyActor):
             if message.system is not None:
                 recorder_class = get_microphone_class(message.system)
 
-            mics = recorder_class.get_microphones()
+            try:
+                mics = recorder_class.get_microphones()
+            except Exception e:
+                self._logger.exception("get_microphones")
+                mics = {}
+
             self.send(sender, mics)
         elif isinstance(message, TestMicrophones):
             # Get working microphones
