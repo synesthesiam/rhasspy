@@ -534,7 +534,7 @@ class DialogueManager(RhasspyActor):
 
             try:
                 mics = recorder_class.get_microphones()
-            except Exception e:
+            except Exception as e:
                 self._logger.exception("get_microphones")
                 mics = {}
 
