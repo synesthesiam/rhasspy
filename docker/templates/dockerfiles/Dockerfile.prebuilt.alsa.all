@@ -204,5 +204,6 @@ COPY *.py ${RHASSPY_APP}/
 COPY rhasspy/*.py ${RHASSPY_APP}/rhasspy/
 
 ENV CONFIG_PATH /data/options.json
+ENV KALDI_PREFIX /opt/kaldi
 
 ENTRYPOINT ["/run.sh"]
