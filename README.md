@@ -7,7 +7,7 @@ Rhasspy (pronounced RAH-SPEE) is an offline, [multilingual](#supported-languages
 * [Hass.IO Add-On Repository](https://github.com/synesthesiam/hassio-addons)
 * [Discussion](https://community.home-assistant.io/t/rhasspy-offline-voice-assistant-toolkit/60862)
 
-Rhasspy transforms voice commands into [JSON](https://json.org) events that can trigger actions in home automation software, like [Home Assistant automations](https://www.home-assistant.io/docs/automation/trigger/#event-trigger) or [Node-RED flows](https://rhasspy.readthedocs.io/en/latest/usage/#node-red). You define custom voice commands in a [profile](profiles.md) using a [specialized template syntax](https://rhasspy.readthedocs.io/en/latest/training/#sentencesini), and Rhasspy takes care of the rest.
+Rhasspy transforms voice commands into [JSON](https://json.org) events that can trigger actions in home automation software, like [Home Assistant automations](https://www.home-assistant.io/docs/automation/trigger/#event-trigger) or [Node-RED flows](https://rhasspy.readthedocs.io/en/latest/usage/#node-red). You define custom voice commands in a [profile](https://rhasspy.readthedocs.io/en/latest/profiles/) using a [specialized template syntax](https://rhasspy.readthedocs.io/en/latest/training/#sentencesini), and Rhasspy takes care of the rest.
 
 To run Rhasspy with the English (en) profile using Docker:
 
