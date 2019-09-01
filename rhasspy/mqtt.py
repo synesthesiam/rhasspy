@@ -76,7 +76,7 @@ class HermesMqtt(RhasspyActor):
             self.site_id = "default"
 
         self.host = self.profile.get("mqtt.host", "localhost")
-        self.port = self.profile.get("mqtt.port", 1883)
+        self.port = int(self.profile.get("mqtt.port", 1883))
         self.username = self.profile.get("mqtt.username", "")
         self.password = self.profile.get("mqtt.password", None)
         self.reconnect_sec = self.profile.get("mqtt.reconnect_sec", 5)
