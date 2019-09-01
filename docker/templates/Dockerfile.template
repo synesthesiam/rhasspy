@@ -49,6 +49,6 @@ PROFILES
 RHASSPY_CODE
 
 ENV CONFIG_PATH /data/options.json
-ENV KALDI_PREFIX /opt/kaldi
+ENV KALDI_PREFIX /opt
 
 ENTRYPOINT ["/run.sh"]
