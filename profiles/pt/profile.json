@@ -2,20 +2,10 @@
     "language": "pt",
     "name": "pt",
     "speech_to_text": {
-        "kaldi": {
-            "compatible": true
-        },
-        "pocketsphinx": {
-            "compatible": false
-        },
-        "system": "kaldi"
-    },
-    "wake": {
-        "pocketsphinx": {
-            "compatible": false
-        }
+        "system": "pocketsphinx"
     },
     "intent": {
+        "system": "fuzzywuzzy",
         "flair": {
             "embeddings": [
                 "lm-pt-forward.pt",
@@ -31,8 +21,8 @@
     "download": {
         "conditions": {
             "speech_to_text.system": {
-                "kaldi": {
-                    "model": "portuguese.zip:portuguese",
+                "pocketsphinx": {
+                    "acoustic_model": "pt_br-synesthesiam.tar.gz:pt-synesthesiam.cd_cont_200",
                     "base_dictionary.txt": "portuguese_g2p.zip:PO/base.dict",
                     "g2p.fst": "portuguese_g2p.zip:PO/model.fst"
                 }
@@ -53,8 +43,8 @@
         },
 
         "files": {
-            "portuguese.zip": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-pt/portuguese.zip"
+            "pt_br-synesthesiam.tar.gz": {
+                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-pt/pt_br-synesthesiam.tar.gz"
             },
             "portuguese_arpa.tar.gz": {
                 "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-pt/portuguese_arpa.tar.gz"
