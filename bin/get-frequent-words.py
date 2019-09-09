@@ -28,6 +28,8 @@ def main():
         "hin": "hi",
         "ell": "el",
         "por": "pt",
+        "swe": "sv",
+        "cat": "ca",
     }
 
     for language in languages:
