@@ -187,14 +187,6 @@ COPY profiles/sv/profile.json \
      profiles/sv/sentences.ini \
      profiles/sv/stop_words.txt ${RHASSPY_APP}/profiles/sv/
 
-COPY profiles/ca/profile.json \
-     profiles/ca/custom_words.txt \
-     profiles/ca/espeak_phonemes.txt \
-     profiles/ca/phoneme_examples.txt \
-     profiles/ca/frequent_words.txt \
-     profiles/ca/sentences.ini \
-     profiles/ca/stop_words.txt ${RHASSPY_APP}/profiles/ca/
-
 COPY profiles/en/profile.json \
      profiles/en/custom_words.txt \
      profiles/en/espeak_phonemes.txt \
