@@ -1,45 +1,38 @@
-A agir A Z I+ RR
-A+ abre A+ B R IX
-AX acha A+ SCH AX
-A~ andy A~ D I+
-A~+ anda A~+ D AX
-B bala B A+ L AX
-D cada K A+ D AX
-DJ dias DJ I+ AX S
-E alex A L E SCH
-E+ anel A N E+ W
-E~ trem T R E~ I~
-E~+ além A L E~+ I~
-F café K A F E+
-G algo A+ W G UX
-I feio F E+ I UX
-I+ aqui A K I+
-IX arte A+ RR TJ IX
-I~ quem K E~+ I~
-I~+ hein E I~+
-K boca B O+ K AX
-L aula A+ U L AX
-LJ ilha I+ LJ AX
-M alma A+ W M AX
-N anna A~+ N AX
-NJ banho B A~+ NJ UX
-O josé Z O Z E+
-O+ amor A M O+ RR
-O~ jason Z A+ Z O~ W~
-O~+ bons B O~+ S
-P após A P O+ S
-R cara K A+ R AX
-RR amar A M A+ RR
-S anos A~+ N UX S
-SCH acho A+ SCH UX
-T alta A+ W T AX
-TJ bate B A+ TJ IX
-U juiz Z U I+ S
-U+ azul A Z U+ W
-UX alto A+ W T UX
-U~ função F U~ S A~+ W~
-U~+ algum A W G U~+
-V alvo A+ W V UX
-W mail M A I+ W
-W~ ação A S A~+ W~
-Z anjo A~+ Z UX
+E anel a n E w
+J banho b a~ J u
+L ilha i L a
+O após a p O s
+R arma a R m a
+S acha a S a
+X agir a Z i X
+Z anjo a~ Z u
+a abra a b r a
+a~ ação a s a~ w~
+b abre a b r i
+d adam a d a~ w~
+dZ andy a~ dZ i
+e alex a l e k s
+e~ além a l e~ j~
+f café k a f E
+g água a g w a
+i arte a X tS i
+i~ cima s i~ m a
+j aqui a k j
+j~ cães k a~ j~ s
+k boca b o k a
+l aula a w l a
+m alma a w m a
+n anna a~ n a
+o amor a m o X
+o~ bons b o~ s
+p copa k o p a
+r área a r e a
+s anos a~ n u s
+t alta a w t a
+tS bate b a tS i
+u acho a S u
+u~ duma d u~ m a
+v alvo a w v u
+w algo a w g u
+w~ chão S a~ w~
+z azul a z u w
