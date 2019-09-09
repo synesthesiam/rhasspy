@@ -4,10 +4,10 @@ Rhasspy's primary function is convert voice commands to JSON events. The first s
 
 The following table summarizes language support for the various speech to text systems:
 
-| System                                         | en       | de       | es       | fr       | it       | nl       | ru       | el       | hi       | zh       | vi       | pt       |
-| ------                                         | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  |
-| [pocketsphinx](speech-to-text.md#pocketsphinx) | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |          |          |
-| [kaldi](speech-to-text.md#kaldi)               |          |          |          |          |          |          |          |          |          |          | &#x2713; | &#x2713; |
+| System                                         | en       | de       | es       | fr       | it       | nl       | ru       | el       | hi       | zh       | vi       | pt       | ca       |
+| ------                                         | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  |
+| [pocketsphinx](speech-to-text.md#pocketsphinx) | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |          | &#x2713; | &#x2713; |
+| [kaldi](speech-to-text.md#kaldi)               |          |          |          |          |          |          |          |          |          |          | &#x2713; |          |          |
 
 ## Pocketsphinx
 
