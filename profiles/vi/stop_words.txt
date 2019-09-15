@@ -1,1942 +1,1942 @@
-a lô
-a ha
+a_lô
+a_ha
 ai
-ai ai
-ai nấy
-ai đó
+ai_ai
+ai_nấy
+ai_đó
 alô
 amen
 anh
-anh ấy
+anh_ấy
 ba
-ba ba
-ba bản
-ba cùng
-ba họ
-ba ngày
-ba ngôi
-ba tăng
-bao giờ
-bao lâu
-bao nhiêu
-bao nả
-bay biến
+ba_ba
+ba_bản
+ba_cùng
+ba_họ
+ba_ngày
+ba_ngôi
+ba_tăng
+bao_giờ
+bao_lâu
+bao_nhiêu
+bao_nả
+bay_biến
 biết
-biết bao
-biết bao nhiêu
-biết chắc
-biết chừng nào
-biết mình
-biết mấy
-biết thế
-biết trước
-biết việc
-biết đâu
-biết đâu chừng
-biết đâu đấy
-biết được
+biết_bao
+biết_bao_nhiêu
+biết_chắc
+biết_chừng_nào
+biết_mình
+biết_mấy
+biết_thế
+biết_trước
+biết_việc
+biết_đâu
+biết_đâu_chừng
+biết_đâu_đấy
+biết_được
 buổi
-buổi làm
-buổi mới
-buổi ngày
-buổi sớm
+buổi_làm
+buổi_mới
+buổi_ngày
+buổi_sớm
 bà
-bà ấy
+bà_ấy
 bài
-bài bác
-bài bỏ
-bài cái
+bài_bác
+bài_bỏ
+bài_cái
 bác
 bán
-bán cấp
-bán dạ
-bán thế
-bây bẩy
-bây chừ
-bây giờ
-bây nhiêu
+bán_cấp
+bán_dạ
+bán_thế
+bây_bẩy
+bây_chừ
+bây_giờ
+bây_nhiêu
 bèn
 béng
 bên
-bên bị
-bên có
-bên cạnh
+bên_bị
+bên_có
+bên_cạnh
 bông
 bước
-bước khỏi
-bước tới
-bước đi
+bước_khỏi
+bước_tới
+bước_đi
 bạn
 bản
-bản bộ
-bản riêng
-bản thân
-bản ý
-bất chợt
-bất cứ
-bất giác
-bất kì
-bất kể
-bất kỳ
-bất luận
-bất ngờ
-bất nhược
-bất quá
-bất quá chỉ
-bất thình lình
-bất tử
-bất đồ
+bản_bộ
+bản_riêng
+bản_thân
+bản_ý
+bất_chợt
+bất_cứ
+bất_giác
+bất_kì
+bất_kể
+bất_kỳ
+bất_luận
+bất_ngờ
+bất_nhược
+bất_quá
+bất_quá_chỉ
+bất_thình_lình
+bất_tử
+bất_đồ
 bấy
-bấy chầy
-bấy chừ
-bấy giờ
-bấy lâu
-bấy lâu nay
-bấy nay
-bấy nhiêu
-bập bà bập bõm
-bập bõm
-bắt đầu
-bắt đầu từ
+bấy_chầy
+bấy_chừ
+bấy_giờ
+bấy_lâu
+bấy_lâu_nay
+bấy_nay
+bấy_nhiêu
+bập_bà_bập_bõm
+bập_bõm
+bắt_đầu
+bắt_đầu_từ
 bằng
-bằng cứ
-bằng không
-bằng người
-bằng nhau
-bằng như
-bằng nào
-bằng nấy
-bằng vào
-bằng được
-bằng ấy
+bằng_cứ
+bằng_không
+bằng_người
+bằng_nhau
+bằng_như
+bằng_nào
+bằng_nấy
+bằng_vào
+bằng_được
+bằng_ấy
 bển
 bệt
 bị
-bị chú
-bị vì
+bị_chú
+bị_vì
 bỏ
-bỏ bà
-bỏ cha
-bỏ cuộc
-bỏ không
-bỏ lại
-bỏ mình
-bỏ mất
-bỏ mẹ
-bỏ nhỏ
-bỏ quá
-bỏ ra
-bỏ riêng
-bỏ việc
-bỏ xa
+bỏ_bà
+bỏ_cha
+bỏ_cuộc
+bỏ_không
+bỏ_lại
+bỏ_mình
+bỏ_mất
+bỏ_mẹ
+bỏ_nhỏ
+bỏ_quá
+bỏ_ra
+bỏ_riêng
+bỏ_việc
+bỏ_xa
 bỗng
-bỗng chốc
-bỗng dưng
-bỗng không
-bỗng nhiên
-bỗng nhưng
-bỗng thấy
-bỗng đâu
+bỗng_chốc
+bỗng_dưng
+bỗng_không
+bỗng_nhiên
+bỗng_nhưng
+bỗng_thấy
+bỗng_đâu
 bộ
-bộ thuộc
-bộ điều
-bội phần
+bộ_thuộc
+bộ_điều
+bội_phần
 bớ
 bởi
-bởi ai
-bởi chưng
-bởi nhưng
-bởi sao
-bởi thế
-bởi thế cho nên
-bởi tại
-bởi vì
-bởi vậy
-bởi đâu
+bởi_ai
+bởi_chưng
+bởi_nhưng
+bởi_sao
+bởi_thế
+bởi_thế_cho_nên
+bởi_tại
+bởi_vì
+bởi_vậy
+bởi_đâu
 bức
 cao
-cao lâu
-cao ráo
-cao răng
-cao sang
-cao số
-cao thấp
-cao thế
-cao xa
+cao_lâu
+cao_ráo
+cao_răng
+cao_sang
+cao_số
+cao_thấp
+cao_thế
+cao_xa
 cha
-cha chả
-chao ôi
-chia sẻ
+cha_chả
+chao_ôi
+chia_sẻ
 chiếc
 cho
-cho biết
-cho chắc
-cho hay
-cho nhau
-cho nên
-cho rằng
-cho rồi
-cho thấy
-cho tin
-cho tới
-cho tới khi
-cho về
-cho ăn
-cho đang
-cho được
-cho đến
-cho đến khi
-cho đến nỗi
+cho_biết
+cho_chắc
+cho_hay
+cho_nhau
+cho_nên
+cho_rằng
+cho_rồi
+cho_thấy
+cho_tin
+cho_tới
+cho_tới_khi
+cho_về
+cho_ăn
+cho_đang
+cho_được
+cho_đến
+cho_đến_khi
+cho_đến_nỗi
 choa
-chu cha
-chui cha
+chu_cha
+chui_cha
 chung
-chung cho
-chung chung
-chung cuộc
-chung cục
-chung nhau
-chung qui
-chung quy
-chung quy lại
-chung ái
+chung_cho
+chung_chung
+chung_cuộc
+chung_cục
+chung_nhau
+chung_qui
+chung_quy
+chung_quy_lại
+chung_ái
 chuyển
-chuyển tự
-chuyển đạt
+chuyển_tự
+chuyển_đạt
 chuyện
-chuẩn bị
-chành chạnh
-chí chết
+chuẩn_bị
+chành_chạnh
+chí_chết
 chính
-chính bản
-chính giữa
-chính là
-chính thị
-chính điểm
-chùn chùn
-chùn chũn
+chính_bản
+chính_giữa
+chính_là
+chính_thị
+chính_điểm
+chùn_chùn
+chùn_chũn
 chú
-chú dẫn
-chú khách
-chú mày
-chú mình
+chú_dẫn
+chú_khách
+chú_mày
+chú_mình
 chúng
-chúng mình
-chúng ta
-chúng tôi
-chúng ông
-chăn chắn
+chúng_mình
+chúng_ta
+chúng_tôi
+chúng_ông
+chăn_chắn
 chăng
-chăng chắc
-chăng nữa
+chăng_chắc
+chăng_nữa
 chơi
-chơi họ
+chơi_họ
 chưa
-chưa bao giờ
-chưa chắc
-chưa có
-chưa cần
-chưa dùng
-chưa dễ
-chưa kể
-chưa tính
-chưa từng
-chầm chập
+chưa_bao_giờ
+chưa_chắc
+chưa_có
+chưa_cần
+chưa_dùng
+chưa_dễ
+chưa_kể
+chưa_tính
+chưa_từng
+chầm_chập
 chậc
 chắc
-chắc chắn
-chắc dạ
-chắc hẳn
-chắc lòng
-chắc người
-chắc vào
-chắc ăn
-chẳng lẽ
-chẳng những
-chẳng nữa
-chẳng phải
-chết nỗi
-chết thật
-chết tiệt
+chắc_chắn
+chắc_dạ
+chắc_hẳn
+chắc_lòng
+chắc_người
+chắc_vào
+chắc_ăn
+chẳng_lẽ
+chẳng_những
+chẳng_nữa
+chẳng_phải
+chết_nỗi
+chết_thật
+chết_tiệt
 chỉ
-chỉ chính
-chỉ có
-chỉ là
-chỉ tên
+chỉ_chính
+chỉ_có
+chỉ_là
+chỉ_tên
 chỉn
 chị
-chị bộ
-chị ấy
+chị_bộ
+chị_ấy
 chịu
-chịu chưa
-chịu lời
-chịu tốt
-chịu ăn
+chịu_chưa
+chịu_lời
+chịu_tốt
+chịu_ăn
 chọn
-chọn bên
-chọn ra
-chốc chốc
+chọn_bên
+chọn_ra
+chốc_chốc
 chớ
-chớ chi
-chớ gì
-chớ không
-chớ kể
-chớ như
+chớ_chi
+chớ_gì
+chớ_không
+chớ_kể
+chớ_như
 chợt
-chợt nghe
-chợt nhìn
+chợt_nghe
+chợt_nhìn
 chủn
 chứ
-chứ ai
-chứ còn
-chứ gì
-chứ không
-chứ không phải
-chứ lại
-chứ lị
-chứ như
-chứ sao
-coi bộ
-coi mòi
+chứ_ai
+chứ_còn
+chứ_gì
+chứ_không
+chứ_không_phải
+chứ_lại
+chứ_lị
+chứ_như
+chứ_sao
+coi_bộ
+coi_mòi
 con
-con con
-con dạ
-con nhà
-con tính
-cu cậu
+con_con
+con_dạ
+con_nhà
+con_tính
+cu_cậu
 cuối
-cuối cùng
-cuối điểm
+cuối_cùng
+cuối_điểm
 cuốn
 cuộc
 càng
-càng càng
-càng hay
-cá nhân
+càng_càng
+càng_hay
+cá_nhân
 các
-các cậu
+các_cậu
 cách
-cách bức
-cách không
-cách nhau
-cách đều
+cách_bức
+cách_không
+cách_nhau
+cách_đều
 cái
-cái gì
-cái họ
-cái đã
-cái đó
-cái ấy
-câu hỏi
+cái_gì
+cái_họ
+cái_đã
+cái_đó
+cái_ấy
+câu_hỏi
 cây
-cây nước
+cây_nước
 còn
-còn như
-còn nữa
-còn thời gian
-còn về
+còn_như
+còn_nữa
+còn_thời_gian
+còn_về
 có
-có ai
-có chuyện
-có chăng
-có chăng là
-có chứ
-có cơ
-có dễ
-có họ
-có khi
-có ngày
-có người
-có nhiều
-có nhà
-có phải
-có số
-có tháng
-có thế
-có thể
-có vẻ
-có ý
-có ăn
-có điều
-có điều kiện
-có đáng
-có đâu
-có được
-cóc khô
+có_ai
+có_chuyện
+có_chăng
+có_chăng_là
+có_chứ
+có_cơ
+có_dễ
+có_họ
+có_khi
+có_ngày
+có_người
+có_nhiều
+có_nhà
+có_phải
+có_số
+có_tháng
+có_thế
+có_thể
+có_vẻ
+có_ý
+có_ăn
+có_điều
+có_điều_kiện
+có_đáng
+có_đâu
+có_được
+cóc_khô
 cô
-cô mình
-cô quả
-cô tăng
-cô ấy
-công nhiên
+cô_mình
+cô_quả
+cô_tăng
+cô_ấy
+công_nhiên
 cùng
-cùng chung
-cùng cực
-cùng nhau
-cùng tuổi
-cùng tột
-cùng với
-cùng ăn
+cùng_chung
+cùng_cực
+cùng_nhau
+cùng_tuổi
+cùng_tột
+cùng_với
+cùng_ăn
 căn
-căn cái
-căn cắt
-căn tính
+căn_cái
+căn_cắt
+căn_tính
 cũng
-cũng như
-cũng nên
-cũng thế
-cũng vậy
-cũng vậy thôi
-cũng được
+cũng_như
+cũng_nên
+cũng_thế
+cũng_vậy
+cũng_vậy_thôi
+cũng_được
 cơ
-cơ chỉ
-cơ chừng
-cơ cùng
-cơ dẫn
-cơ hồ
-cơ hội
-cơ mà
+cơ_chỉ
+cơ_chừng
+cơ_cùng
+cơ_dẫn
+cơ_hồ
+cơ_hội
+cơ_mà
 cơn
 cả
-cả nghe
-cả nghĩ
-cả ngày
-cả người
-cả nhà
-cả năm
-cả thảy
-cả thể
-cả tin
-cả ăn
-cả đến
-cảm thấy
-cảm ơn
+cả_nghe
+cả_nghĩ
+cả_ngày
+cả_người
+cả_nhà
+cả_năm
+cả_thảy
+cả_thể
+cả_tin
+cả_ăn
+cả_đến
+cảm_thấy
+cảm_ơn
 cấp
-cấp số
-cấp trực tiếp
+cấp_số
+cấp_trực_tiếp
 cần
-cần cấp
-cần gì
-cần số
-cật lực
-cật sức
+cần_cấp
+cần_gì
+cần_số
+cật_lực
+cật_sức
 cậu
-cổ lai
-cụ thể
-cụ thể là
-cụ thể như
+cổ_lai
+cụ_thể
+cụ_thể_là
+cụ_thể_như
 của
-của ngọt
-của tin
+của_ngọt
+của_tin
 cứ
-cứ như
-cứ việc
-cứ điểm
-cực lực
+cứ_như
+cứ_việc
+cứ_điểm
+cực_lực
 do
-do vì
-do vậy
-do đó
+do_vì
+do_vậy
+do_đó
 duy
-duy chỉ
-duy có
+duy_chỉ
+duy_có
 dài
-dài lời
-dài ra
+dài_lời
+dài_ra
 dành
-dành dành
+dành_dành
 dào
 dì
 dù
-dù cho
-dù dì
-dù gì
-dù rằng
-dù sao
+dù_cho
+dù_dì
+dù_gì
+dù_rằng
+dù_sao
 dùng
-dùng cho
-dùng hết
-dùng làm
-dùng đến
+dùng_cho
+dùng_hết
+dùng_làm
+dùng_đến
 dưới
-dưới nước
+dưới_nước
 dạ
-dạ bán
-dạ con
-dạ dài
-dạ dạ
-dạ khách
-dần dà
-dần dần
-dầu sao
+dạ_bán
+dạ_con
+dạ_dài
+dạ_dạ
+dạ_khách
+dần_dà
+dần_dần
+dầu_sao
 dẫn
 dẫu
-dẫu mà
-dẫu rằng
-dẫu sao
+dẫu_mà
+dẫu_rằng
+dẫu_sao
 dễ
-dễ dùng
-dễ gì
-dễ khiến
-dễ nghe
-dễ ngươi
-dễ như chơi
-dễ sợ
-dễ sử dụng
-dễ thường
-dễ thấy
-dễ ăn
-dễ đâu
-dở chừng
+dễ_dùng
+dễ_gì
+dễ_khiến
+dễ_nghe
+dễ_ngươi
+dễ_như_chơi
+dễ_sợ
+dễ_sử_dụng
+dễ_thường
+dễ_thấy
+dễ_ăn
+dễ_đâu
+dở_chừng
 dữ
-dữ cách
+dữ_cách
 em
-em em
-giá trị
-giá trị thực tế
+em_em
+giá_trị
+giá_trị_thực_tế
 giảm
-giảm chính
-giảm thấp
-giảm thế
+giảm_chính
+giảm_thấp
+giảm_thế
 giống
-giống người
-giống nhau
-giống như
+giống_người
+giống_nhau
+giống_như
 giờ
-giờ lâu
-giờ này
-giờ đi
-giờ đây
-giờ đến
+giờ_lâu
+giờ_này
+giờ_đi
+giờ_đây
+giờ_đến
 giữ
-giữ lấy
-giữ ý
+giữ_lấy
+giữ_ý
 giữa
-giữa lúc
+giữa_lúc
 gây
-gây cho
-gây giống
-gây ra
-gây thêm
+gây_cho
+gây_giống
+gây_ra
+gây_thêm
 gì
-gì gì
-gì đó
+gì_gì
+gì_đó
 gần
-gần bên
-gần hết
-gần ngày
-gần như
-gần xa
-gần đây
-gần đến
+gần_bên
+gần_hết
+gần_ngày
+gần_như
+gần_xa
+gần_đây
+gần_đến
 gặp
-gặp khó khăn
-gặp phải
+gặp_khó_khăn
+gặp_phải
 gồm
 hay
-hay biết
-hay hay
-hay không
-hay là
-hay làm
-hay nhỉ
-hay nói
-hay sao
-hay tin
-hay đâu
+hay_biết
+hay_hay
+hay_không
+hay_là
+hay_làm
+hay_nhỉ
+hay_nói
+hay_sao
+hay_tin
+hay_đâu
 hiểu
-hiện nay
-hiện tại
-hoàn toàn
+hiện_nay
+hiện_tại
+hoàn_toàn
 hoặc
-hoặc là
+hoặc_là
 hãy
-hãy còn
+hãy_còn
 hơn
-hơn cả
-hơn hết
-hơn là
-hơn nữa
-hơn trước
-hầu hết
+hơn_cả
+hơn_hết
+hơn_là
+hơn_nữa
+hơn_trước
+hầu_hết
 hết
-hết chuyện
-hết cả
-hết của
-hết nói
-hết ráo
-hết rồi
-hết ý
+hết_chuyện
+hết_cả
+hết_của
+hết_nói
+hết_ráo
+hết_rồi
+hết_ý
 họ
-họ gần
-họ xa
+họ_gần
+họ_xa
 hỏi
-hỏi lại
-hỏi xem
-hỏi xin
-hỗ trợ
+hỏi_lại
+hỏi_xem
+hỏi_xin
+hỗ_trợ
 khi
-khi khác
-khi không
-khi nào
-khi nên
-khi trước
+khi_khác
+khi_không
+khi_nào
+khi_nên
+khi_trước
 khiến
 khoảng
-khoảng cách
-khoảng không
+khoảng_cách
+khoảng_không
 khá
-khá tốt
+khá_tốt
 khác
-khác gì
-khác khác
-khác nhau
-khác nào
-khác thường
-khác xa
+khác_gì
+khác_khác
+khác_nhau
+khác_nào
+khác_thường
+khác_xa
 khách
 khó
-khó biết
-khó chơi
-khó khăn
-khó làm
-khó mở
-khó nghe
-khó nghĩ
-khó nói
-khó thấy
-khó tránh
+khó_biết
+khó_chơi
+khó_khăn
+khó_làm
+khó_mở
+khó_nghe
+khó_nghĩ
+khó_nói
+khó_thấy
+khó_tránh
 không
-không ai
-không bao giờ
-không bao lâu
-không biết
-không bán
-không chỉ
-không còn
-không có
-không có gì
-không cùng
-không cần
-không cứ
-không dùng
-không gì
-không hay
-không khỏi
-không kể
-không ngoài
-không nhận
-không những
-không phải
-không phải không
-không thể
-không tính
-không điều kiện
-không được
-không đầy
-không để
-khẳng định
+không_ai
+không_bao_giờ
+không_bao_lâu
+không_biết
+không_bán
+không_chỉ
+không_còn
+không_có
+không_có_gì
+không_cùng
+không_cần
+không_cứ
+không_dùng
+không_gì
+không_hay
+không_khỏi
+không_kể
+không_ngoài
+không_nhận
+không_những
+không_phải
+không_phải_không
+không_thể
+không_tính
+không_điều_kiện
+không_được
+không_đầy
+không_để
+khẳng_định
 khỏi
-khỏi nói
+khỏi_nói
 kể
-kể cả
-kể như
-kể tới
-kể từ
-liên quan
+kể_cả
+kể_như
+kể_tới
+kể_từ
+liên_quan
 loại
-loại từ
+loại_từ
 luôn
-luôn cả
-luôn luôn
-luôn tay
+luôn_cả
+luôn_luôn
+luôn_tay
 là
-là cùng
-là là
-là nhiều
-là phải
-là thế nào
-là vì
-là ít
+là_cùng
+là_là
+là_nhiều
+là_phải
+là_thế_nào
+là_vì
+là_ít
 làm
-làm bằng
-làm cho
-làm dần dần
-làm gì
-làm lòng
-làm lại
-làm lấy
-làm mất
-làm ngay
-làm như
-làm nên
-làm ra
-làm riêng
-làm sao
-làm theo
-làm thế nào
-làm tin
-làm tôi
-làm tăng
-làm tại
-làm tắp lự
-làm vì
-làm đúng
-làm được
+làm_bằng
+làm_cho
+làm_dần_dần
+làm_gì
+làm_lòng
+làm_lại
+làm_lấy
+làm_mất
+làm_ngay
+làm_như
+làm_nên
+làm_ra
+làm_riêng
+làm_sao
+làm_theo
+làm_thế_nào
+làm_tin
+làm_tôi
+làm_tăng
+làm_tại
+làm_tắp_lự
+làm_vì
+làm_đúng
+làm_được
 lâu
-lâu các
-lâu lâu
-lâu nay
-lâu ngày
+lâu_các
+lâu_lâu
+lâu_nay
+lâu_ngày
 lên
-lên cao
-lên cơn
-lên mạnh
-lên ngôi
-lên nước
-lên số
-lên xuống
-lên đến
+lên_cao
+lên_cơn
+lên_mạnh
+lên_ngôi
+lên_nước
+lên_số
+lên_xuống
+lên_đến
 lòng
-lòng không
+lòng_không
 lúc
-lúc khác
-lúc lâu
-lúc nào
-lúc này
-lúc sáng
-lúc trước
-lúc đi
-lúc đó
-lúc đến
-lúc ấy
-lý do
+lúc_khác
+lúc_lâu
+lúc_nào
+lúc_này
+lúc_sáng
+lúc_trước
+lúc_đi
+lúc_đó
+lúc_đến
+lúc_ấy
+lý_do
 lượng
-lượng cả
-lượng số
-lượng từ
+lượng_cả
+lượng_số
+lượng_từ
 lại
-lại bộ
-lại cái
-lại còn
-lại giống
-lại làm
-lại người
-lại nói
-lại nữa
-lại quả
-lại thôi
-lại ăn
-lại đây
+lại_bộ
+lại_cái
+lại_còn
+lại_giống
+lại_làm
+lại_người
+lại_nói
+lại_nữa
+lại_quả
+lại_thôi
+lại_ăn
+lại_đây
 lấy
-lấy có
-lấy cả
-lấy giống
-lấy làm
-lấy lý do
-lấy lại
-lấy ra
-lấy ráo
-lấy sau
-lấy số
-lấy thêm
-lấy thế
-lấy vào
-lấy xuống
-lấy được
-lấy để
+lấy_có
+lấy_cả
+lấy_giống
+lấy_làm
+lấy_lý_do
+lấy_lại
+lấy_ra
+lấy_ráo
+lấy_sau
+lấy_số
+lấy_thêm
+lấy_thế
+lấy_vào
+lấy_xuống
+lấy_được
+lấy_để
 lần
-lần khác
-lần lần
-lần nào
-lần này
-lần sang
-lần sau
-lần theo
-lần trước
-lần tìm
+lần_khác
+lần_lần
+lần_nào
+lần_này
+lần_sang
+lần_sau
+lần_theo
+lần_trước
+lần_tìm
 lớn
-lớn lên
-lớn nhỏ
+lớn_lên
+lớn_nhỏ
 lời
-lời chú
-lời nói
+lời_chú
+lời_nói
 mang
-mang lại
-mang mang
-mang nặng
-mang về
+mang_lại
+mang_mang
+mang_nặng
+mang_về
 muốn
 mà
-mà cả
-mà không
-mà lại
-mà thôi
-mà vẫn
+mà_cả
+mà_không
+mà_lại
+mà_thôi
+mà_vẫn
 mình
 mạnh
 mất
-mất còn
+mất_còn
 mọi
-mọi giờ
-mọi khi
-mọi lúc
-mọi người
-mọi nơi
-mọi sự
-mọi thứ
-mọi việc
+mọi_giờ
+mọi_khi
+mọi_lúc
+mọi_người
+mọi_nơi
+mọi_sự
+mọi_thứ
+mọi_việc
 mối
 mỗi
-mỗi lúc
-mỗi lần
-mỗi một
-mỗi ngày
-mỗi người
+mỗi_lúc
+mỗi_lần
+mỗi_một
+mỗi_ngày
+mỗi_người
 một
-một cách
-một cơn
-một khi
-một lúc
-một số
-một vài
-một ít
+một_cách
+một_cơn
+một_khi
+một_lúc
+một_số
+một_vài
+một_ít
 mới
-mới hay
-mới rồi
-mới đây
+mới_hay
+mới_rồi
+mới_đây
 mở
-mở mang
-mở nước
-mở ra
+mở_mang
+mở_nước
+mở_ra
 mợ
 mức
 nay
 ngay
-ngay bây giờ
-ngay cả
-ngay khi
-ngay khi đến
-ngay lúc
-ngay lúc này
-ngay lập tức
-ngay thật
-ngay tức khắc
-ngay tức thì
-ngay từ
+ngay_bây_giờ
+ngay_cả
+ngay_khi
+ngay_khi_đến
+ngay_lúc
+ngay_lúc_này
+ngay_lập_tức
+ngay_thật
+ngay_tức_khắc
+ngay_tức_thì
+ngay_từ
 nghe
-nghe chừng
-nghe hiểu
-nghe không
-nghe lại
-nghe nhìn
-nghe như
-nghe nói
-nghe ra
-nghe rõ
-nghe thấy
-nghe tin
-nghe trực tiếp
-nghe đâu
-nghe đâu như
-nghe được
+nghe_chừng
+nghe_hiểu
+nghe_không
+nghe_lại
+nghe_nhìn
+nghe_như
+nghe_nói
+nghe_ra
+nghe_rõ
+nghe_thấy
+nghe_tin
+nghe_trực_tiếp
+nghe_đâu
+nghe_đâu_như
+nghe_được
 nghen
-nghiễm nhiên
+nghiễm_nhiên
 nghĩ
-nghĩ lại
-nghĩ ra
-nghĩ tới
-nghĩ xa
-nghĩ đến
+nghĩ_lại
+nghĩ_ra
+nghĩ_tới
+nghĩ_xa
+nghĩ_đến
 nghỉm
 ngoài
-ngoài này
-ngoài ra
-ngoài xa
+ngoài_này
+ngoài_ra
+ngoài_xa
 ngoải
 nguồn
 ngày
-ngày càng
-ngày cấp
-ngày giờ
-ngày ngày
-ngày nào
-ngày này
-ngày nọ
-ngày qua
-ngày rày
-ngày tháng
-ngày xưa
-ngày xửa
-ngày đến
-ngày ấy
+ngày_càng
+ngày_cấp
+ngày_giờ
+ngày_ngày
+ngày_nào
+ngày_này
+ngày_nọ
+ngày_qua
+ngày_rày
+ngày_tháng
+ngày_xưa
+ngày_xửa
+ngày_đến
+ngày_ấy
 ngôi
-ngôi nhà
-ngôi thứ
-ngõ hầu
-ngăn ngắt
+ngôi_nhà
+ngôi_thứ
+ngõ_hầu
+ngăn_ngắt
 ngươi
 người
-người hỏi
-người khác
-người khách
-người mình
-người nghe
-người người
-người nhận
+người_hỏi
+người_khác
+người_khách
+người_mình
+người_nghe
+người_người
+người_nhận
 ngọn
-ngọn nguồn
+ngọn_nguồn
 ngọt
 ngồi
-ngồi bệt
-ngồi không
-ngồi sau
-ngồi trệt
-ngộ nhỡ
+ngồi_bệt
+ngồi_không
+ngồi_sau
+ngồi_trệt
+ngộ_nhỡ
 nhanh
-nhanh lên
-nhanh tay
+nhanh_lên
+nhanh_tay
 nhau
-nhiên hậu
+nhiên_hậu
 nhiều
-nhiều ít
-nhiệt liệt
-nhung nhăng
+nhiều_ít
+nhiệt_liệt
+nhung_nhăng
 nhà
-nhà chung
-nhà khó
-nhà làm
-nhà ngoài
-nhà ngươi
-nhà tôi
-nhà việc
-nhân dịp
-nhân tiện
+nhà_chung
+nhà_khó
+nhà_làm
+nhà_ngoài
+nhà_ngươi
+nhà_tôi
+nhà_việc
+nhân_dịp
+nhân_tiện
 nhé
 nhìn
-nhìn chung
-nhìn lại
-nhìn nhận
-nhìn theo
-nhìn thấy
-nhìn xuống
+nhìn_chung
+nhìn_lại
+nhìn_nhận
+nhìn_theo
+nhìn_thấy
+nhìn_xuống
 nhóm
-nhón nhén
+nhón_nhén
 như
-như ai
-như chơi
-như không
-như là
-như nhau
-như quả
-như sau
-như thường
-như thế
-như thế nào
-như thể
-như trên
-như trước
-như tuồng
-như vậy
-như ý
+như_ai
+như_chơi
+như_không
+như_là
+như_nhau
+như_quả
+như_sau
+như_thường
+như_thế
+như_thế_nào
+như_thể
+như_trên
+như_trước
+như_tuồng
+như_vậy
+như_ý
 nhưng
-nhưng mà
-nhược bằng
+nhưng_mà
+nhược_bằng
 nhất
-nhất loạt
-nhất luật
-nhất là
-nhất mực
-nhất nhất
-nhất quyết
-nhất sinh
-nhất thiết
-nhất thì
-nhất tâm
-nhất tề
-nhất đán
-nhất định
+nhất_loạt
+nhất_luật
+nhất_là
+nhất_mực
+nhất_nhất
+nhất_quyết
+nhất_sinh
+nhất_thiết
+nhất_thì
+nhất_tâm
+nhất_tề
+nhất_đán
+nhất_định
 nhận
-nhận biết
-nhận họ
-nhận làm
-nhận nhau
-nhận ra
-nhận thấy
-nhận việc
-nhận được
+nhận_biết
+nhận_họ
+nhận_làm
+nhận_nhau
+nhận_ra
+nhận_thấy
+nhận_việc
+nhận_được
 nhằm
-nhằm khi
-nhằm lúc
-nhằm vào
-nhằm để
+nhằm_khi
+nhằm_lúc
+nhằm_vào
+nhằm_để
 nhỉ
 nhỏ
-nhỏ người
+nhỏ_người
 nhớ
-nhớ bập bõm
-nhớ lại
-nhớ lấy
-nhớ ra
+nhớ_bập_bõm
+nhớ_lại
+nhớ_lấy
+nhớ_ra
 nhờ
-nhờ chuyển
-nhờ có
-nhờ nhờ
-nhờ đó
-nhỡ ra
+nhờ_chuyển
+nhờ_có
+nhờ_nhờ
+nhờ_đó
+nhỡ_ra
 những
-những ai
-những khi
-những là
-những lúc
-những muốn
-những như
+những_ai
+những_khi
+những_là
+những_lúc
+những_muốn
+những_như
 nào
-nào cũng
-nào hay
-nào là
-nào phải
-nào đâu
-nào đó
+nào_cũng
+nào_hay
+nào_là
+nào_phải
+nào_đâu
+nào_đó
 này
-này nọ
+này_nọ
 nên
-nên chi
-nên chăng
-nên làm
-nên người
-nên tránh
+nên_chi
+nên_chăng
+nên_làm
+nên_người
+nên_tránh
 nó
 nóc
 nói
-nói bông
-nói chung
-nói khó
-nói là
-nói lên
-nói lại
-nói nhỏ
-nói phải
-nói qua
-nói ra
-nói riêng
-nói rõ
-nói thêm
-nói thật
-nói toẹt
-nói trước
-nói tốt
-nói với
-nói xa
-nói ý
-nói đến
-nói đủ
+nói_bông
+nói_chung
+nói_khó
+nói_là
+nói_lên
+nói_lại
+nói_nhỏ
+nói_phải
+nói_qua
+nói_ra
+nói_riêng
+nói_rõ
+nói_thêm
+nói_thật
+nói_toẹt
+nói_trước
+nói_tốt
+nói_với
+nói_xa
+nói_ý
+nói_đến
+nói_đủ
 năm
-năm tháng
+năm_tháng
 nơi
-nơi nơi
+nơi_nơi
 nước
-nước bài
-nước cùng
-nước lên
-nước nặng
-nước quả
-nước xuống
-nước ăn
-nước đến
+nước_bài
+nước_cùng
+nước_lên
+nước_nặng
+nước_quả
+nước_xuống
+nước_ăn
+nước_đến
 nấy
 nặng
-nặng căn
-nặng mình
-nặng về
+nặng_căn
+nặng_mình
+nặng_về
 nếu
-nếu có
-nếu cần
-nếu không
-nếu mà
-nếu như
-nếu thế
-nếu vậy
-nếu được
+nếu_có
+nếu_cần
+nếu_không
+nếu_mà
+nếu_như
+nếu_thế
+nếu_vậy
+nếu_được
 nền
 nọ
 nớ
-nức nở
+nức_nở
 nữa
-nữa khi
-nữa là
-nữa rồi
-oai oái
+nữa_khi
+nữa_là
+nữa_rồi
+oai_oái
 oái
 pho
 phè
-phè phè
+phè_phè
 phía
-phía bên
-phía bạn
-phía dưới
-phía sau
-phía trong
-phía trên
-phía trước
+phía_bên
+phía_bạn
+phía_dưới
+phía_sau
+phía_trong
+phía_trên
+phía_trước
 phóc
 phót
-phù hợp
-phăn phắt
-phương chi
+phù_hợp
+phăn_phắt
+phương_chi
 phải
-phải biết
-phải chi
-phải chăng
-phải cách
-phải cái
-phải giờ
-phải khi
-phải không
-phải lại
-phải lời
-phải người
-phải như
-phải rồi
-phải tay
+phải_biết
+phải_chi
+phải_chăng
+phải_cách
+phải_cái
+phải_giờ
+phải_khi
+phải_không
+phải_lại
+phải_lời
+phải_người
+phải_như
+phải_rồi
+phải_tay
 phần
-phần lớn
-phần nhiều
-phần nào
-phần sau
-phần việc
+phần_lớn
+phần_nhiều
+phần_nào
+phần_sau
+phần_việc
 phắt
-phỉ phui
+phỉ_phui
 phỏng
-phỏng như
-phỏng nước
-phỏng theo
-phỏng tính
+phỏng_như
+phỏng_nước
+phỏng_theo
+phỏng_tính
 phốc
 phụt
 phứt
 qua
-qua chuyện
-qua khỏi
-qua lại
-qua lần
-qua ngày
-qua tay
-qua thì
-qua đi
-quan trọng
-quan trọng vấn đề
-quan tâm
+qua_chuyện
+qua_khỏi
+qua_lại
+qua_lần
+qua_ngày
+qua_tay
+qua_thì
+qua_đi
+quan_trọng
+quan_trọng_vấn_đề
+quan_tâm
 quay
-quay bước
-quay lại
-quay số
-quay đi
+quay_bước
+quay_lại
+quay_số
+quay_đi
 quá
-quá bán
-quá bộ
-quá giờ
-quá lời
-quá mức
-quá nhiều
-quá tay
-quá thì
-quá tin
-quá trình
-quá tuổi
-quá đáng
-quá ư
+quá_bán
+quá_bộ
+quá_giờ
+quá_lời
+quá_mức
+quá_nhiều
+quá_tay
+quá_thì
+quá_tin
+quá_trình
+quá_tuổi
+quá_đáng
+quá_ư
 quả
-quả là
-quả thật
-quả thế
-quả vậy
+quả_là
+quả_thật
+quả_thế
+quả_vậy
 quận
 ra
-ra bài
-ra bộ
-ra chơi
-ra gì
-ra lại
-ra lời
-ra ngôi
-ra người
-ra sao
-ra tay
-ra vào
-ra ý
-ra điều
-ra đây
-ren rén
-riu ríu
+ra_bài
+ra_bộ
+ra_chơi
+ra_gì
+ra_lại
+ra_lời
+ra_ngôi
+ra_người
+ra_sao
+ra_tay
+ra_vào
+ra_ý
+ra_điều
+ra_đây
+ren_rén
+riu_ríu
 riêng
-riêng từng
+riêng_từng
 riệt
 rày
 ráo
-ráo cả
-ráo nước
-ráo trọi
+ráo_cả
+ráo_nước
+ráo_trọi
 rén
-rén bước
+rén_bước
 rích
-rón rén
+rón_rén
 rõ
-rõ là
-rõ thật
-rút cục
+rõ_là
+rõ_thật
+rút_cục
 răng
-răng răng
+răng_răng
 rất
-rất lâu
+rất_lâu
 rằng
-rằng là
-rốt cuộc
-rốt cục
+rằng_là
+rốt_cuộc
+rốt_cục
 rồi
-rồi nữa
-rồi ra
-rồi sao
-rồi sau
-rồi tay
-rồi thì
-rồi xem
-rồi đây
+rồi_nữa
+rồi_ra
+rồi_sao
+rồi_sau
+rồi_tay
+rồi_thì
+rồi_xem
+rồi_đây
 rứa
-sa sả
+sa_sả
 sang
-sang năm
-sang sáng
-sang tay
+sang_năm
+sang_sáng
+sang_tay
 sao
-sao bản
-sao bằng
-sao cho
-sao vậy
-sao đang
+sao_bản
+sao_bằng
+sao_cho
+sao_vậy
+sao_đang
 sau
-sau chót
-sau cuối
-sau cùng
-sau hết
-sau này
-sau nữa
-sau sau
-sau đây
-sau đó
+sau_chót
+sau_cuối
+sau_cùng
+sau_hết
+sau_này
+sau_nữa
+sau_sau
+sau_đây
+sau_đó
 so
-so với
-song le
+so_với
+song_le
 suýt
-suýt nữa
+suýt_nữa
 sáng
-sáng ngày
-sáng rõ
-sáng thế
-sáng ý
+sáng_ngày
+sáng_rõ
+sáng_thế
+sáng_ý
 sì
-sì sì
+sì_sì
 sất
 sắp
-sắp đặt
+sắp_đặt
 sẽ
-sẽ biết
-sẽ hay
+sẽ_biết
+sẽ_hay
 số
-số cho biết
-số cụ thể
-số loại
-số là
-số người
-số phần
-số thiếu
-sốt sột
+số_cho_biết
+số_cụ_thể
+số_loại
+số_là
+số_người
+số_phần
+số_thiếu
+sốt_sột
 sớm
-sớm ngày
-sở dĩ
-sử dụng
+sớm_ngày
+sở_dĩ
+sử_dụng
 sự
-sự thế
-sự việc
+sự_thế
+sự_việc
 tanh
-tanh tanh
+tanh_tanh
 tay
-tay quay
-tha hồ
-tha hồ chơi
-tha hồ ăn
-than ôi
+tay_quay
+tha_hồ
+tha_hồ_chơi
+tha_hồ_ăn
+than_ôi
 thanh
-thanh ba
-thanh chuyển
-thanh không
-thanh thanh
-thanh tính
-thanh điều kiện
-thanh điểm
-thay đổi
-thay đổi tình trạng
+thanh_ba
+thanh_chuyển
+thanh_không
+thanh_thanh
+thanh_tính
+thanh_điều_kiện
+thanh_điểm
+thay_đổi
+thay_đổi_tình_trạng
 theo
-theo bước
-theo như
-theo tin
-thi thoảng
+theo_bước
+theo_như
+theo_tin
+thi_thoảng
 thiếu
-thiếu gì
-thiếu điểm
+thiếu_gì
+thiếu_điểm
 thoạt
-thoạt nghe
-thoạt nhiên
+thoạt_nghe
+thoạt_nhiên
 thoắt
 thuần
-thuần ái
+thuần_ái
 thuộc
-thuộc bài
-thuộc cách
-thuộc lại
-thuộc từ
+thuộc_bài
+thuộc_cách
+thuộc_lại
+thuộc_từ
 thà
-thà là
-thà rằng
-thành ra
-thành thử
-thái quá
+thà_là
+thà_rằng
+thành_ra
+thành_thử
+thái_quá
 tháng
-tháng ngày
-tháng năm
-tháng tháng
+tháng_ngày
+tháng_năm
+tháng_tháng
 thêm
-thêm chuyện
-thêm giờ
-thêm vào
+thêm_chuyện
+thêm_giờ
+thêm_vào
 thì
-thì giờ
-thì là
-thì phải
-thì ra
-thì thôi
-thình lình
+thì_giờ
+thì_là
+thì_phải
+thì_ra
+thì_thôi
+thình_lình
 thích
-thích cứ
-thích thuộc
-thích tự
-thích ý
+thích_cứ
+thích_thuộc
+thích_tự
+thích_ý
 thím
 thôi
-thôi việc
-thúng thắng
-thương ôi
+thôi_việc
+thúng_thắng
+thương_ôi
 thường
-thường bị
-thường hay
-thường khi
-thường số
-thường sự
-thường thôi
-thường thường
-thường tính
-thường tại
-thường xuất hiện
-thường đến
-thảo hèn
-thảo nào
+thường_bị
+thường_hay
+thường_khi
+thường_số
+thường_sự
+thường_thôi
+thường_thường
+thường_tính
+thường_tại
+thường_xuất_hiện
+thường_đến
+thảo_hèn
+thảo_nào
 thấp
-thấp cơ
-thấp thỏm
-thấp xuống
+thấp_cơ
+thấp_thỏm
+thấp_xuống
 thấy
-thấy tháng
+thấy_tháng
 thẩy
 thậm
-thậm chí
-thậm cấp
-thậm từ
+thậm_chí
+thậm_cấp
+thậm_từ
 thật
-thật chắc
-thật là
-thật lực
-thật quả
-thật ra
-thật sự
-thật thà
-thật tốt
-thật vậy
+thật_chắc
+thật_là
+thật_lực
+thật_quả
+thật_ra
+thật_sự
+thật_thà
+thật_tốt
+thật_vậy
 thế
-thế chuẩn bị
-thế là
-thế lại
-thế mà
-thế nào
-thế nên
-thế ra
-thế sự
-thế thì
-thế thôi
-thế thường
-thế thế
-thế à
-thế đó
+thế_chuẩn_bị
+thế_là
+thế_lại
+thế_mà
+thế_nào
+thế_nên
+thế_ra
+thế_sự
+thế_thì
+thế_thôi
+thế_thường
+thế_thế
+thế_à
+thế_đó
 thếch
-thỉnh thoảng
+thỉnh_thoảng
 thỏm
 thốc
-thốc tháo
+thốc_tháo
 thốt
-thốt nhiên
-thốt nói
-thốt thôi
+thốt_nhiên
+thốt_nói
+thốt_thôi
 thộc
-thời gian
-thời gian sử dụng
-thời gian tính
-thời điểm
-thục mạng
+thời_gian
+thời_gian_sử_dụng
+thời_gian_tính
+thời_điểm
+thục_mạng
 thứ
-thứ bản
-thứ đến
+thứ_bản
+thứ_đến
 thửa
-thực hiện
-thực hiện đúng
-thực ra
-thực sự
-thực tế
-thực vậy
+thực_hiện
+thực_hiện_đúng
+thực_ra
+thực_sự
+thực_tế
+thực_vậy
 tin
-tin thêm
-tin vào
-tiếp theo
-tiếp tục
-tiếp đó
-tiện thể
+tin_thêm
+tin_vào
+tiếp_theo
+tiếp_tục
+tiếp_đó
+tiện_thể
 toà
-toé khói
+toé_khói
 toẹt
 trong
-trong khi
-trong lúc
-trong mình
-trong ngoài
-trong này
-trong số
-trong vùng
-trong đó
-trong ấy
+trong_khi
+trong_lúc
+trong_mình
+trong_ngoài
+trong_này
+trong_số
+trong_vùng
+trong_đó
+trong_ấy
 tránh
-tránh khỏi
-tránh ra
-tránh tình trạng
-tránh xa
+tránh_khỏi
+tránh_ra
+tránh_tình_trạng
+tránh_xa
 trên
-trên bộ
-trên dưới
+trên_bộ
+trên_dưới
 trước
-trước hết
-trước khi
-trước kia
-trước nay
-trước ngày
-trước nhất
-trước sau
-trước tiên
-trước tuổi
-trước đây
-trước đó
+trước_hết
+trước_khi
+trước_kia
+trước_nay
+trước_ngày
+trước_nhất
+trước_sau
+trước_tiên
+trước_tuổi
+trước_đây
+trước_đó
 trả
-trả của
-trả lại
-trả ngay
-trả trước
-trếu tráo
+trả_của
+trả_lại
+trả_ngay
+trả_trước
+trếu_tráo
 trển
 trệt
-trệu trạo
+trệu_trạo
 trỏng
-trời đất ơi
-trở thành
-trừ phi
-trực tiếp
-trực tiếp làm
+trời_đất_ơi
+trở_thành
+trừ_phi
+trực_tiếp
+trực_tiếp_làm
 tuy
-tuy có
-tuy là
-tuy nhiên
-tuy rằng
-tuy thế
-tuy vậy
-tuy đã
-tuyệt nhiên
-tuần tự
-tuốt luốt
-tuốt tuồn tuột
-tuốt tuột
+tuy_có
+tuy_là
+tuy_nhiên
+tuy_rằng
+tuy_thế
+tuy_vậy
+tuy_đã
+tuyệt_nhiên
+tuần_tự
+tuốt_luốt
+tuốt_tuồn_tuột
+tuốt_tuột
 tuổi
-tuổi cả
-tuổi tôi
-tà tà
+tuổi_cả
+tuổi_tôi
+tà_tà
 tên
-tên chính
-tên cái
-tên họ
-tên tự
+tên_chính
+tên_cái
+tên_họ
+tên_tự
 tênh
-tênh tênh
+tênh_tênh
 tìm
-tìm bạn
-tìm cách
-tìm hiểu
-tìm ra
-tìm việc
-tình trạng
+tìm_bạn
+tìm_cách
+tìm_hiểu
+tìm_ra
+tìm_việc
+tình_trạng
 tính
-tính cách
-tính căn
-tính người
-tính phỏng
-tính từ
-tít mù
-tò te
+tính_cách
+tính_căn
+tính_người
+tính_phỏng
+tính_từ
+tít_mù
+tò_te
 tôi
-tôi con
-tông tốc
-tù tì
-tăm tắp
+tôi_con
+tông_tốc
+tù_tì
+tăm_tắp
 tăng
-tăng chúng
-tăng cấp
-tăng giảm
-tăng thêm
-tăng thế
+tăng_chúng
+tăng_cấp
+tăng_giảm
+tăng_thêm
+tăng_thế
 tại
-tại lòng
-tại nơi
-tại sao
-tại tôi
-tại vì
-tại đâu
-tại đây
-tại đó
+tại_lòng
+tại_nơi
+tại_sao
+tại_tôi
+tại_vì
+tại_đâu
+tại_đây
+tại_đó
 tạo
-tạo cơ hội
-tạo nên
-tạo ra
-tạo ý
-tạo điều kiện
+tạo_cơ_hội
+tạo_nên
+tạo_ra
+tạo_ý
+tạo_điều_kiện
 tấm
-tấm bản
-tấm các
+tấm_bản
+tấm_các
 tấn
-tấn tới
-tất cả
-tất cả bao nhiêu
-tất thảy
-tất tần tật
-tất tật
-tập trung
+tấn_tới
+tất_cả
+tất_cả_bao_nhiêu
+tất_thảy
+tất_tần_tật
+tất_tật
+tập_trung
 tắp
-tắp lự
-tắp tắp
+tắp_lự
+tắp_tắp
 tọt
-tỏ ra
-tỏ vẻ
-tốc tả
-tối ư
+tỏ_ra
+tỏ_vẻ
+tốc_tả
+tối_ư
 tốt
-tốt bạn
-tốt bộ
-tốt hơn
-tốt mối
-tốt ngày
+tốt_bạn
+tốt_bộ
+tốt_hơn
+tốt_mối
+tốt_ngày
 tột
-tột cùng
+tột_cùng
 tớ
 tới
-tới gần
-tới mức
-tới nơi
-tới thì
-tức thì
-tức tốc
+tới_gần
+tới_mức
+tới_nơi
+tới_thì
+tức_thì
+tức_tốc
 từ
-từ căn
-từ giờ
-từ khi
-từ loại
-từ nay
-từ thế
-từ tính
-từ tại
-từ từ
-từ ái
-từ điều
-từ đó
-từ ấy
+từ_căn
+từ_giờ
+từ_khi
+từ_loại
+từ_nay
+từ_thế
+từ_tính
+từ_tại
+từ_từ
+từ_ái
+từ_điều
+từ_đó
+từ_ấy
 từng
-từng cái
-từng giờ
-từng nhà
-từng phần
-từng thời gian
-từng đơn vị
-từng ấy
+từng_cái
+từng_giờ
+từng_nhà
+từng_phần
+từng_thời_gian
+từng_đơn_vị
+từng_ấy
 tự
-tự cao
-tự khi
-tự lượng
-tự tính
-tự tạo
-tự vì
-tự ý
-tự ăn
-tựu trung
+tự_cao
+tự_khi
+tự_lượng
+tự_tính
+tự_tạo
+tự_vì
+tự_ý
+tự_ăn
+tựu_trung
 veo
-veo veo
+veo_veo
 việc
-việc gì
-vung thiên địa
-vung tàn tán
-vung tán tàn
+việc_gì
+vung_thiên_địa
+vung_tàn_tán
+vung_tán_tàn
 và
 vài
-vài ba
-vài người
-vài nhà
-vài nơi
-vài tên
-vài điều
+vài_ba
+vài_người
+vài_nhà
+vài_nơi
+vài_tên
+vài_điều
 vào
-vào gặp
-vào khoảng
-vào lúc
-vào vùng
-vào đến
+vào_gặp
+vào_khoảng
+vào_lúc
+vào_vùng
+vào_đến
 vâng
-vâng chịu
-vâng dạ
-vâng vâng
-vâng ý
+vâng_chịu
+vâng_dạ
+vâng_vâng
+vâng_ý
 vèo
-vèo vèo
+vèo_vèo
 vì
-vì chưng
-vì rằng
-vì sao
-vì thế
-vì vậy
-ví bằng
-ví dù
-ví phỏng
-ví thử
-vô hình trung
-vô kể
-vô luận
-vô vàn
+vì_chưng
+vì_rằng
+vì_sao
+vì_thế
+vì_vậy
+ví_bằng
+ví_dù
+ví_phỏng
+ví_thử
+vô_hình_trung
+vô_kể
+vô_luận
+vô_vàn
 vùng
-vùng lên
-vùng nước
-văng tê
+vùng_lên
+vùng_nước
+văng_tê
 vượt
-vượt khỏi
-vượt quá
-vạn nhất
-vả chăng
-vả lại
-vấn đề
-vấn đề quan trọng
+vượt_khỏi
+vượt_quá
+vạn_nhất
+vả_chăng
+vả_lại
+vấn_đề
+vấn_đề_quan_trọng
 vẫn
-vẫn thế
+vẫn_thế
 vậy
-vậy là
-vậy mà
-vậy nên
-vậy ra
-vậy thì
-vậy ư
+vậy_là
+vậy_mà
+vậy_nên
+vậy_ra
+vậy_thì
+vậy_ư
 về
-về không
-về nước
-về phần
-về sau
-về tay
-vị trí
-vị tất
-vốn dĩ
+về_không
+về_nước
+về_phần
+về_sau
+về_tay
+vị_trí
+vị_tất
+vốn_dĩ
 với
-với lại
-với nhau
+với_lại
+với_nhau
 vở
 vụt
 vừa
-vừa khi
-vừa lúc
-vừa mới
-vừa qua
-vừa rồi
-vừa vừa
+vừa_khi
+vừa_lúc
+vừa_mới
+vừa_qua
+vừa_rồi
+vừa_vừa
 xa
-xa cách
-xa gần
-xa nhà
-xa tanh
-xa tắp
-xa xa
-xa xả
+xa_cách
+xa_gần
+xa_nhà
+xa_tanh
+xa_tắp
+xa_xa
+xa_xả
 xem
-xem lại
-xem ra
-xem số
+xem_lại
+xem_ra
+xem_số
 xin
-xin gặp
-xin vâng
-xiết bao
-xon xón
-xoành xoạch
+xin_gặp
+xin_vâng
+xiết_bao
+xon_xón
+xoành_xoạch
 xoét
 xoẳn
 xoẹt
-xuất hiện
-xuất kì bất ý
-xuất kỳ bất ý
+xuất_hiện
+xuất_kì_bất_ý
+xuất_kỳ_bất_ý
 xuể
 xuống
-xăm xúi
-xăm xăm
-xăm xắm
-xảy ra
-xềnh xệch
+xăm_xúi
+xăm_xăm
+xăm_xắm
+xảy_ra
+xềnh_xệch
 xệp
-xử lý
-yêu cầu
+xử_lý
+yêu_cầu
 à
-à này
-à ơi
+à_này
+à_ơi
 ào
-ào vào
-ào ào
+ào_vào
+ào_ào
 á
-á à
+á_à
 ái
-ái chà
-ái dà
+ái_chà
+ái_dà
 áng
-áng như
-âu là
+áng_như
+âu_là
 ít
-ít biết
-ít có
-ít hơn
-ít khi
-ít lâu
-ít nhiều
-ít nhất
-ít nữa
-ít quá
-ít ra
-ít thôi
-ít thấy
-ô hay
-ô hô
-ô kê
-ô kìa
-ôi chao
-ôi thôi
+ít_biết
+ít_có
+ít_hơn
+ít_khi
+ít_lâu
+ít_nhiều
+ít_nhất
+ít_nữa
+ít_quá
+ít_ra
+ít_thôi
+ít_thấy
+ô_hay
+ô_hô
+ô_kê
+ô_kìa
+ôi_chao
+ôi_thôi
 ông
-ông nhỏ
-ông tạo
-ông từ
-ông ấy
-ông ổng
+ông_nhỏ
+ông_tạo
+ông_từ
+ông_ấy
+ông_ổng
 úi
-úi chà
-úi dào
+úi_chà
+úi_dào
 ý
-ý chừng
-ý da
-ý hoặc
+ý_chừng
+ý_da
+ý_hoặc
 ăn
-ăn chung
-ăn chắc
-ăn chịu
-ăn cuộc
-ăn hết
-ăn hỏi
-ăn làm
-ăn người
-ăn ngồi
-ăn quá
-ăn riêng
-ăn sáng
-ăn tay
-ăn trên
-ăn về
+ăn_chung
+ăn_chắc
+ăn_chịu
+ăn_cuộc
+ăn_hết
+ăn_hỏi
+ăn_làm
+ăn_người
+ăn_ngồi
+ăn_quá
+ăn_riêng
+ăn_sáng
+ăn_tay
+ăn_trên
+ăn_về
 đang
-đang tay
-đang thì
+đang_tay
+đang_thì
 điều
-điều gì
-điều kiện
+điều_gì
+điều_kiện
 điểm
-điểm chính
-điểm gặp
-điểm đầu tiên
-đành đạch
+điểm_chính
+điểm_gặp
+điểm_đầu_tiên
+đành_đạch
 đáng
-đáng kể
-đáng lí
-đáng lý
-đáng lẽ
-đáng số
-đánh giá
-đánh đùng
-đáo để
+đáng_kể
+đáng_lí
+đáng_lý
+đáng_lẽ
+đáng_số
+đánh_giá
+đánh_đùng
+đáo_để
 đâu
-đâu có
-đâu cũng
-đâu như
-đâu nào
-đâu phải
-đâu đâu
-đâu đây
-đâu đó
+đâu_có
+đâu_cũng
+đâu_như
+đâu_nào
+đâu_phải
+đâu_đâu
+đâu_đây
+đâu_đó
 đây
-đây này
-đây rồi
-đây đó
+đây_này
+đây_rồi
+đây_đó
 đã
-đã hay
-đã không
-đã là
-đã lâu
-đã thế
-đã vậy
-đã đủ
+đã_hay
+đã_không
+đã_là
+đã_lâu
+đã_thế
+đã_vậy
+đã_đủ
 đó
-đó đây
+đó_đây
 đúng
-đúng ngày
-đúng ra
-đúng tuổi
-đúng với
-đơn vị
+đúng_ngày
+đúng_ra
+đúng_tuổi
+đúng_với
+đơn_vị
 đưa
-đưa cho
-đưa chuyện
-đưa em
-đưa ra
-đưa tay
-đưa tin
-đưa tới
-đưa vào
-đưa về
-đưa xuống
-đưa đến
+đưa_cho
+đưa_chuyện
+đưa_em
+đưa_ra
+đưa_tay
+đưa_tin
+đưa_tới
+đưa_vào
+đưa_về
+đưa_xuống
+đưa_đến
 được
-được cái
-được lời
-được nước
-được tin
-đại loại
-đại nhân
-đại phàm
-đại để
+được_cái
+được_lời
+được_nước
+được_tin
+đại_loại
+đại_nhân
+đại_phàm
+đại_để
 đạt
-đảm bảo
-đầu tiên
+đảm_bảo
+đầu_tiên
 đầy
-đầy năm
-đầy phè
-đầy tuổi
-đặc biệt
+đầy_năm
+đầy_phè
+đầy_tuổi
+đặc_biệt
 đặt
-đặt làm
-đặt mình
-đặt mức
-đặt ra
-đặt trước
-đặt để
+đặt_làm
+đặt_mình
+đặt_mức
+đặt_ra
+đặt_trước
+đặt_để
 đến
-đến bao giờ
-đến cùng
-đến cùng cực
-đến cả
-đến giờ
-đến gần
-đến hay
-đến khi
-đến lúc
-đến lời
-đến nay
-đến ngày
-đến nơi
-đến nỗi
-đến thì
-đến thế
-đến tuổi
-đến xem
-đến điều
-đến đâu
+đến_bao_giờ
+đến_cùng
+đến_cùng_cực
+đến_cả
+đến_giờ
+đến_gần
+đến_hay
+đến_khi
+đến_lúc
+đến_lời
+đến_nay
+đến_ngày
+đến_nơi
+đến_nỗi
+đến_thì
+đến_thế
+đến_tuổi
+đến_xem
+đến_điều
+đến_đâu
 đều
-đều bước
-đều nhau
-đều đều
+đều_bước
+đều_nhau
+đều_đều
 để
-để cho
-để giống
-để không
-để lòng
-để lại
-để mà
-để phần
-để được
-để đến nỗi
-đối với
-đồng thời
+để_cho
+để_giống
+để_không
+để_lòng
+để_lại
+để_mà
+để_phần
+để_được
+để_đến_nỗi
+đối_với
+đồng_thời
 đủ
-đủ dùng
-đủ nơi
-đủ số
-đủ điều
-đủ điểm
+đủ_dùng
+đủ_nơi
+đủ_số
+đủ_điều
+đủ_điểm
 ơ
-ơ hay
-ơ kìa
+ơ_hay
+ơ_kìa
 ơi
-ơi là
+ơi_là
 ư
 ạ
-ạ ơi
+ạ_ơi
 ấy
-ấy là
-ầu ơ
+ấy_là
+ầu_ơ
 ắt
-ắt hẳn
-ắt là
-ắt phải
-ắt thật
-ối dào
-ối giời
-ối giời ơi
+ắt_hẳn
+ắt_là
+ắt_phải
+ắt_thật
+ối_dào
+ối_giời
+ối_giời_ơi
 ồ
-ồ ồ
+ồ_ồ
 ổng
 ớ
-ớ này
+ớ_này
 ờ
-ờ ờ
+ờ_ờ
 ở
-ở lại
-ở như
-ở nhờ
-ở năm
-ở trên
-ở vào
-ở đây
-ở đó
-ở được
+ở_lại
+ở_như
+ở_nhờ
+ở_năm
+ở_trên
+ở_vào
+ở_đây
+ở_đó
+ở_được
 ủa
-ứ hự
-ứ ừ
+ứ_hự
+ứ_ừ
 ừ
-ừ nhé
-ừ thì
-ừ ào
-ừ ừ
+ừ_nhé
+ừ_thì
+ừ_ào
+ừ_ừ
 ử
