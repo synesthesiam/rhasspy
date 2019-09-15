@@ -103,6 +103,7 @@ All available profile sections and settings are listed below:
     * `fsticuffs` - configuration for [OpenFST-based](https://www.openfst.org) intent recognizer
         * `intent_fst` - path to generated finite state transducer with all intents combined
         * `ignore_unknown_words` - true if words not in the FST symbol table should be ignored
+        * `fuzzy` - true if text is matching in a fuzzy manner, skipping words in `stop_words.txt`
     * `fuzzywuzzy` - configuration for simplistic [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) based intent recognizer
         * `examples_json` - JSON file with intents/example sentences
         * `min_confidence` - minimum confidence required for intent to be converted to a JSON event (0-1)

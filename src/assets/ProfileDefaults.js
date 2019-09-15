@@ -40,7 +40,8 @@ const profileDefaults = {
     "intent": {
         "fsticuffs": {
             "intent_fst": "intent.fst",
-            "ignore_unknown_words": true
+            "ignore_unknown_words": true,
+            "fuzzy": true
         },
         "adapt": {
             "stop_words": "stop_words.txt"

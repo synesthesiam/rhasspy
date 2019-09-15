@@ -24,10 +24,13 @@ Add to your [profile](profiles.md):
   "system": "fsticuffs",
   "fsticuffs": {
     "intent_fst": "intent.fst",
-    "ignore_unknown_words": true
+    "ignore_unknown_words": true,
+    "fuzzy": true
   }
 }
 ```
+
+By default, fuzzy mathing is enabled (`fuzzy` is true). This allows `fsticuffs` to be less strict when matching text, skipping over any words in `stop_words.txt`, and handling repeated words gracefully. Words must still appear in the correct order according to `sentences.ini`, but additional words will not cause a recognition failure.
 
 When `ignore_unknown_words` is true, any word outside of `sentences.ini` is simply ignored. This allows a lot more sentences to be accepted, but may cause unexpected results when used with arbitrary input from text chat.
 

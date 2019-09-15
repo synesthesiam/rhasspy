@@ -17,3 +17,4 @@ google-cloud-texttospeech
 pyopenssl
 bs4
 html5lib
+networkx>=2.0

@@ -51,7 +51,8 @@
         },
         "fsticuffs": {
             "intent_fst": "intent.fst",
-            "ignore_unknown_words": true
+            "ignore_unknown_words": true,
+            "fuzzy": true
         },
         "flair": {
             "cache_dir": "flair/cache",

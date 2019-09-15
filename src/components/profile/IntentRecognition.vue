@@ -22,6 +22,17 @@
                         </label>
                     </div>
                 </div>
+
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <input type="checkbox" id="fsticuffs-fuzzy" v-model="profile.intent.fsticuffs.fuzzy" :disabled="profile.intent.system != 'fsticuffs'">
+
+                    <label for="fsticuffs-fuzzy" class="col-form-label">Fuzzy text matching</label>
+                </div>
+                <div class="form-row" v-if="profile.intent.fsticuffs.fuzzy">
+                    <p class="text-muted">Expecting words to ignore in <tt>{{ this.profile.intent.adapt.stop_words }}</tt></p>
+                </div>
             </div>
             <hr>
             <div class="form-group">
