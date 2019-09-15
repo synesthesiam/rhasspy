@@ -22,6 +22,11 @@
             "compatible": false
         }
     },
+    "text_to_speech": {
+        "wavenet": {
+            "language_code": "sv-SE"
+        }
+    },
     "download": {
         "conditions": {
             "speech_to_text.system": {
