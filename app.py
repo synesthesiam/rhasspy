@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# Monkey patch using gevent
+from gevent import monkey
+monkey.patch_all()
+
 import os
 import logging
 import sys
@@ -830,6 +835,9 @@ def add_ws_event(event_type: int, text: str):
     with ws_locks[event_type]:
         for queue in ws_queues[event_type].values():
             queue.put(text)
+
+    # Yield to main loop
+    gevent.sleep(0)
 
 
 logging.root.addHandler(
