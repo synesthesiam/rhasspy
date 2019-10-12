@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
 
-# Monkey patch using gevent
-from gevent import monkey
-monkey.patch_all()
-
 import os
 import logging
 import sys
