@@ -496,11 +496,11 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                 for intent_name, intent_examples in self.examples.items():
                     sentences = []
                     for example in intent_examples:
-                        example_text = example["text"]
+                        example_text = example.get("raw_text", example["text"])
+                        logging.debug(example_text)
                         choices[example_text] = (
                             example_text,
-                            intent_name,
-                            example["entities"],
+                            example,
                         )
                         sentences.append(example_text)
 
@@ -521,14 +521,11 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                 confidence = (best_score / 100) if best_score else 1
                 if confidence >= self.min_confidence:
                     # (text, intent, slots)
-                    best_text, best_intent, best_entities = choices[best_text]
+                    best_text, best_intent = choices[best_text]
 
-                    # Try to match Rasa NLU format for future compatibility
-                    return {
-                        "text": best_text,
-                        "intent": {"name": best_intent, "confidence": confidence},
-                        "entities": best_entities,
-                    }
+                    # Update confidence and return example intent
+                    best_intent["intent"]["confidence"] = confidence
+                    return best_intent
                 else:
                     self._logger.warning(
                         f"Intent did not meet confidence threshold: {confidence} < {self.min_confidence}"
