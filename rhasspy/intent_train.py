@@ -324,7 +324,7 @@ class AdaptIntentTrainer(RhasspyActor):
             # Process sentences for this intent
             for intent_sent in intent_sents:
                 sentence, slots, word_tokens = (
-                    intent_sent["text"],
+                    intent_sent.get("raw_text", intent_sent["text"]),
                     intent_sent["entities"],
                     intent_sent["tokens"],
                 )
