@@ -51,6 +51,9 @@
                  .then(request => this.$parent.alert(request.data, 'success'))
                  .then(() => {
                      this.$parent.endAsync()
+                     if (confirm("Sentences saved. Train Rhasspy?")) {
+                         this.$parent.train()
+                     }
                      this.sentencesDirty = false
                  })
                  .catch(err => this.$parent.error(err))
