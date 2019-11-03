@@ -707,6 +707,7 @@ class StdinAudioRecorder(RhasspyActor):
 # HTTP Stream Recorder
 # -----------------------------------------------------------------------------
 
+
 class HTTPStreamServer(BaseHTTPRequestHandler):
     def __init__(self, *args, recorder=None, **kwargs):
         self.recorder = recorder
@@ -750,6 +751,7 @@ class HTTPStreamServer(BaseHTTPRequestHandler):
         except Exception as e:
             self.recorder._logger.exception("do_POST")
 
+
 class HTTPAudioRecorder(RhasspyActor, BaseHTTPRequestHandler):
     """Records audio from HTTP stream."""
 
@@ -761,13 +763,14 @@ class HTTPAudioRecorder(RhasspyActor, BaseHTTPRequestHandler):
         self.port = 12333
         self.host = "127.0.0.1"
 
-        self.chunk_size = 960
-
         self.server = None
         self.server_thread = None
 
     def to_started(self, from_state: str) -> None:
         if self.server is None:
+            self.host = str(self.profile.get("microphone.http.host", self.host))
+            self.port = int(self.profile.get("microphone.http.port", self.port))
+
             # Start web server
             def make_server(*args, **kwargs):
                 return HTTPStreamServer(*args, recorder=self, **kwargs)

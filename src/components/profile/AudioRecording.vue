@@ -77,6 +77,32 @@
                     </div>
                 </div>
             </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="profile.microphone.system" id="audio-system-http" value="http" v-model="profile.microphone.system">
+                        <label class="form-check-label" for="audio-system-http">
+                            Get microphone input remotely with HTTP (assumes <a href="https://en.wikipedia.org/wiki/Chunked_transfer_encoding">chunked transfer encoding</a>)
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="microphone-http-host" class="col-form-label">Host</label>
+                    <div class="col-sm-auto">
+                        <input id="microphone-http-host" type="text" class="form-control" v-model="profile.microphone.http.host" :disabled="profile.microphone.system != 'http'">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="microphone-http-port" class="col-form-label">Port</label>
+                    <div class="col-sm-auto">
+                        <input id="microphone-http-port" type="text" class="form-control" v-model="profile.microphone.http.port" :disabled="profile.microphone.system != 'http'">
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
