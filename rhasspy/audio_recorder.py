@@ -9,9 +9,11 @@ import wave
 import io
 import re
 import audioop
+from uuid import uuid4
 from queue import Queue
 from typing import Dict, Any, Callable, Optional, List, Type
 from collections import defaultdict
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 from .actor import RhasspyActor
 from .utils import convert_wav
@@ -55,7 +57,7 @@ class StopRecordingToBuffer:
 
 
 def get_microphone_class(system: str) -> Type[RhasspyActor]:
-    assert system in ["arecord", "pyaudio", "dummy", "hermes", "stdin"], (
+    assert system in ["arecord", "pyaudio", "dummy", "hermes", "stdin", "http"], (
         "Unknown microphone system: %s" % system
     )
 
@@ -71,6 +73,9 @@ def get_microphone_class(system: str) -> Type[RhasspyActor]:
     elif system == "stdin":
         # Use STDIN
         return StdinAudioRecorder
+    elif system == "http":
+        # Use HTTP
+        return HTTPAudioRecorder
 
     # Use dummy recorder as a fallback
     return DummyAudioRecorder
@@ -695,4 +700,129 @@ class StdinAudioRecorder(RhasspyActor):
 
     @classmethod
     def test_microphones(cls, chunk_size: int) -> Dict[Any, Any]:
+        return {}
+
+
+# -----------------------------------------------------------------------------
+# HTTP Stream Recorder
+# -----------------------------------------------------------------------------
+
+class HTTPStreamServer(BaseHTTPRequestHandler):
+    def __init__(self, *args, recorder=None, **kwargs):
+        self.recorder = recorder
+        BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
+
+    def do_POST(self):
+        try:
+            self.recorder._logger.debug("Receiving audio data")
+            num_bytes = 0
+            f = open("/tmp/test.raw", "wb")
+
+            while True:
+                # Assume chunked transfer encoding
+                chunk_size = int(self.rfile.readline().strip(), 16)
+                if chunk_size == 0:
+                    break
+
+                audio_chunk = self.rfile.read(chunk_size)
+
+                # Consume \r\n
+                self.rfile.read(2)
+
+                num_bytes += len(audio_chunk)
+                message = AudioData(audio_chunk)
+                f.write(audio_chunk)
+                f.flush()
+
+                # Forward to subscribers
+                for receiver in self.recorder.receivers:
+                    self.recorder.send(receiver, message)
+
+                # Append to buffers
+                for buffer_name in self.recorder.buffers:
+                    self.recorder.buffers[buffer_name] += message.data
+
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(str(num_bytes).encode())
+            self.wfile.flush()
+            self.wfile.close()
+        except Exception as e:
+            self.recorder._logger.exception("do_POST")
+
+class HTTPAudioRecorder(RhasspyActor, BaseHTTPRequestHandler):
+    """Records audio from HTTP stream."""
+
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.receivers: List[RhasspyActor] = []
+        self.buffers: Dict[str, bytes] = defaultdict(bytes)
+
+        self.port = 12333
+        self.host = "127.0.0.1"
+
+        self.chunk_size = 960
+
+        self.server = None
+        self.server_thread = None
+
+    def to_started(self, from_state: str) -> None:
+        if self.server is None:
+            # Start web server
+            def make_server(*args, **kwargs):
+                return HTTPStreamServer(*args, recorder=self, **kwargs)
+
+            def server_proc(server):
+                server.serve_forever()
+
+            self.server = HTTPServer((self.host, self.port), make_server)
+            self.server_thread = threading.Thread(
+                target=server_proc, daemon=True, args=(self.server,)
+            )
+            self.server_thread.start()
+
+            self._logger.debug(
+                f"Listening for HTTP audio stream at http://{self.host}:{self.port}"
+            )
+
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        if isinstance(message, StartStreaming):
+            self.receivers.append(message.receiver or sender)
+            self.transition("recording")
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+            self.transition("recording")
+
+    def in_recording(self, message: Any, sender: RhasspyActor) -> None:
+        if isinstance(message, StartStreaming):
+            self.receivers.append(message.receiver or sender)
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+        elif isinstance(message, StopStreaming):
+            if message.receiver is None:
+                # Clear all receivers
+                self.receivers.clear()
+            else:
+                self.receivers.remove(message.receiver)
+        elif isinstance(message, StopRecordingToBuffer):
+            if message.buffer_name is None:
+                # Clear all buffers
+                self.buffers.clear()
+            else:
+                # Respond with buffer
+                buffer = self.buffers.pop(message.buffer_name, bytes())
+                self.send(message.receiver or sender, AudioData(buffer))
+
+        # Check to see if anyone is still listening
+        if (len(self.receivers) == 0) and (len(self.buffers) == 0):
+            self.transition("started")
+
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def get_microphones(self) -> Dict[Any, Any]:
+        return {}
+
+    @classmethod
+    def test_microphones(self, chunk_size: int) -> Dict[Any, Any]:
         return {}
