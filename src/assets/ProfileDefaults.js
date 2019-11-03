@@ -84,6 +84,10 @@ const profileDefaults = {
         "stdin": {
             "auto_start": true,
             "chunk_size": 960
+        },
+        "http": {
+            "host": "127.0.0.1",
+            "port": 12333
         }
     },
     "mqtt": {

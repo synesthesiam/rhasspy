@@ -78,6 +78,25 @@ Set `mqtt.site_id` to match your Snips.AI siteId.
 
 See `rhasspy.audio_recorder.HermesAudioRecorder` for details.
 
+## HTTP Stream
+
+Accepts chunks of 16-bit 16Khz mono audio via an HTTP POST stream (assumes [chunked transfer encoding](https://en.wikipedia.org/wiki/Chunked_transfer_encoding)).
+
+Add to your [profile](profiles.md):
+
+```json
+"microphone": {
+  "system": "http",
+  "http": {
+    "host": "127.0.0.1",
+    "port": 12333
+  }
+}
+```
+Note that `microphone.http.port` must be different than Rhasspy's webserver port (usually 12101).
+
+See `rhasspy.audio_recorder.HTTPAudioRecorder` for details.
+
 
 ## Dummy
 
