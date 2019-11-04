@@ -89,7 +89,8 @@
         },
         "http": {
             "host": "127.0.0.1",
-            "port": 12333
+            "port": 12333,
+            "stop_after": "never"
         },
         "system": "pyaudio"
     },

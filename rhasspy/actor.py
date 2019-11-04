@@ -67,6 +67,7 @@ class RhasspyActor:
         self._state_method: Optional[Callable[[Any, RhasspyActor], None]] = None
         self._transitions: bool = False
         self._lock = RhasspyActor.shared_lock
+        self._actors = []
 
     # -------------------------------------------------------------------------
 
@@ -77,6 +78,9 @@ class RhasspyActor:
         return self
 
     def stop(self, block=True):
+        for child_actor in self._actors:
+            child_actor.stop(block=block)
+
         self.send(self, ActorExitRequest())
         if block:
             self._thread.join()
@@ -131,7 +135,9 @@ class RhasspyActor:
             actor.queue.put({"sender": self, "message": message})
 
     def createActor(self, cls):
-        return cls().start()
+        child_actor = cls().start()
+        self._actors.append(child_actor)
+        return child_actor
 
     @property
     def myAddress(self):

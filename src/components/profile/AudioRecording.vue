@@ -103,6 +103,32 @@
                     </div>
                 </div>
             </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="microphone-http-stop-never" id="microphone-http-stop-never" value="never" v-model="profile.microphone.http.stop_after">
+                        <label class="form-check-label" :disabled="profile.microphone.system != 'http'" for="microphone-http-stop-never">
+                            Stream Forever
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="microphone-http-stop-text" id="microphone-http-stop-text" value="text" v-model="profile.microphone.http.stop_after">
+                        <label class="form-check-label" :disabled="profile.microphone.system != 'http'" for="microphone-http-stop-text">
+                            Stop After Speech Transcription
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="microphone-http-stop-intent" id="microphone-http-stop-intent" value="intent" v-model="profile.microphone.http.stop_after">
+                        <label class="form-check-label" :disabled="profile.microphone.system != 'http'" for="microphone-http-stop-intent">
+                            Stop After Intent Recognition
+                        </label>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>

@@ -195,6 +195,7 @@ All available profile sections and settings are listed below:
     * `http` - configuration for HTTP audio stream
         * `host` - hostname or IP address of HTTP audio server (default 127.0.0.1)
         * `port` - port to receive audio stream on (default 12333)
+        * `stop_after` - one of "never", "text", or "intent" ([see documentation](audio-recorder.md#http-stream))
     * `hermes` - configuration for MQTT "microphone" ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
         * Subscribes to WAV data from `hermes/audioServer/<SITE_ID>/audioFrame`
         * Requires MQTT to be enabled

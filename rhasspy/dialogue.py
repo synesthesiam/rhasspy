@@ -25,6 +25,7 @@ from .audio_recorder import (
     StopRecordingToBuffer,
     AudioData,
     get_microphone_class,
+    HTTPAudioRecorder
 )
 from .audio_player import PlayWavFile, PlayWavData, WavPlayed, get_sound_class
 from .stt import TranscribeWav, WavTranscription, get_decoder_class
@@ -284,6 +285,10 @@ class DialogueManager(RhasspyActor):
             # text -> intent
             self._logger.debug(f"{message.text} (confidence={message.confidence})")
 
+            if self.recorder_class == HTTPAudioRecorder:
+                # Forward to audio recorder
+                self.send(self.recorder, message)
+
             # Send to MQTT
             payload = json.dumps(
                 {
@@ -315,6 +320,10 @@ class DialogueManager(RhasspyActor):
 
     def in_recognizing(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, IntentRecognized):
+            if self.recorder_class == HTTPAudioRecorder:
+                # Forward to audio recorder
+                self.send(self.recorder, message)
+
             # Handle intent
             self._logger.debug(message.intent)
             if message.handle:

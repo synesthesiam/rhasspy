@@ -9,6 +9,7 @@ import wave
 import io
 import re
 import audioop
+import json
 from uuid import uuid4
 from queue import Queue
 from typing import Dict, Any, Callable, Optional, List, Type
@@ -18,6 +19,8 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from .actor import RhasspyActor
 from .utils import convert_wav
 from .mqtt import MqttSubscribe, MqttMessage
+from .stt import WavTranscription
+from .intent import IntentRecognized
 
 # -----------------------------------------------------------------------------
 # Events
@@ -713,16 +716,26 @@ class HTTPStreamServer(BaseHTTPRequestHandler):
         self.recorder = recorder
         BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 
+    def do_GET(self):
+        text = self.recorder.get_response or ""
+
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(text.encode())
+
     def do_POST(self):
         try:
             self.recorder._logger.debug("Receiving audio data")
             num_bytes = 0
-            f = open("/tmp/test.raw", "wb")
 
             while True:
                 # Assume chunked transfer encoding
-                chunk_size = int(self.rfile.readline().strip(), 16)
-                if chunk_size == 0:
+                chunk_size_str = self.rfile.readline().strip()
+                if len(chunk_size_str) == 0:
+                    break
+
+                chunk_size = int(chunk_size_str, 16)
+                if chunk_size <= 0:
                     break
 
                 audio_chunk = self.rfile.read(chunk_size)
@@ -732,8 +745,6 @@ class HTTPStreamServer(BaseHTTPRequestHandler):
 
                 num_bytes += len(audio_chunk)
                 message = AudioData(audio_chunk)
-                f.write(audio_chunk)
-                f.flush()
 
                 # Forward to subscribers
                 for receiver in self.recorder.receivers:
@@ -743,11 +754,17 @@ class HTTPStreamServer(BaseHTTPRequestHandler):
                 for buffer_name in self.recorder.buffers:
                     self.recorder.buffers[buffer_name] += message.data
 
+                if (self.recorder.stop_after != "never") and (
+                    self.recorder.get_response is not None
+                ):
+                    # Stop
+                    self.send_response(200)
+                    self.end_headers()
+                    return
+
             self.send_response(200)
             self.end_headers()
             self.wfile.write(str(num_bytes).encode())
-            self.wfile.flush()
-            self.wfile.close()
         except Exception as e:
             self.recorder._logger.exception("do_POST")
 
@@ -762,11 +779,19 @@ class HTTPAudioRecorder(RhasspyActor, BaseHTTPRequestHandler):
 
         self.port = 12333
         self.host = "127.0.0.1"
+        self.stop_after = "never"
 
         self.server = None
         self.server_thread = None
+        self.get_response = None
 
     def to_started(self, from_state: str) -> None:
+        self.stop_after = str(
+            self.profile.get("microphone.http.stop_after", "never")
+        ).lower()
+
+        self.get_response = None
+
         if self.server is None:
             self.host = str(self.profile.get("microphone.http.host", self.host))
             self.port = int(self.profile.get("microphone.http.port", self.port))
@@ -775,13 +800,17 @@ class HTTPAudioRecorder(RhasspyActor, BaseHTTPRequestHandler):
             def make_server(*args, **kwargs):
                 return HTTPStreamServer(*args, recorder=self, **kwargs)
 
-            def server_proc(server):
-                server.serve_forever()
+            def server_proc():
+                try:
+                    self.server = HTTPServer((self.host, self.port), make_server)
 
-            self.server = HTTPServer((self.host, self.port), make_server)
-            self.server_thread = threading.Thread(
-                target=server_proc, daemon=True, args=(self.server,)
-            )
+                    # Can't use serve_forever because it will *never* stop.
+                    while self.server is not None:
+                        self.server.handle_request()
+                except Exception as e:
+                    self._logger.exception("server_proc")
+
+            self.server_thread = threading.Thread(target=server_proc, daemon=True)
             self.server_thread.start()
 
             self._logger.debug(
@@ -795,6 +824,12 @@ class HTTPAudioRecorder(RhasspyActor, BaseHTTPRequestHandler):
         elif isinstance(message, StartRecordingToBuffer):
             self.buffers[message.buffer_name] = bytes()
             self.transition("recording")
+        elif isinstance(message, WavTranscription):
+            if self.stop_after == "text":
+                self.get_response = message.text
+        elif isinstance(message, IntentRecognized):
+            if self.stop_after == "intent":
+                self.get_response = json.dumps(message.intent)
 
     def in_recording(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, StartStreaming):
@@ -819,6 +854,24 @@ class HTTPAudioRecorder(RhasspyActor, BaseHTTPRequestHandler):
         # Check to see if anyone is still listening
         if (len(self.receivers) == 0) and (len(self.buffers) == 0):
             self.transition("started")
+
+    def to_stopped(self, from_state: str) -> None:
+        import requests
+
+        try:
+            if self.server is not None:
+                self.server = None
+
+                # Absoultely *ridiculous* workaround to stop the HTTPServer.
+                # The shutdown() method doesn't work.
+                # server_close() doesn't work.
+                # socket.close() doesn't work.
+                requests.get(f"http://{self.host}:{self.port}")
+
+                self.server_thread.join()
+                self.server_thread = None
+        except Exception as e:
+            self._logger.exception("to_stopped")
 
     # -------------------------------------------------------------------------
 

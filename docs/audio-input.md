@@ -89,10 +89,14 @@ Add to your [profile](profiles.md):
   "system": "http",
   "http": {
     "host": "127.0.0.1",
-    "port": 12333
+    "port": 12333,
+    "stop_after": "never"
   }
 }
 ```
+
+Set `microphone.http.stop_after` to one of "never", "text", or "intent". When set to "never", you can continously stream (chunked) audio into Rhasspy across multiple voice commands. When set to "text" or "intent", the stream will be closed when the first voice command has been transcribed ("text") or recognized ("intent"). Once closed, you can perform an HTTP GET request to the stream URL to retrieve the result (text for transcriptions or JSON for intent).
+
 Note that `microphone.http.port` must be different than Rhasspy's webserver port (usually 12101).
 
 See `rhasspy.audio_recorder.HTTPAudioRecorder` for details.
