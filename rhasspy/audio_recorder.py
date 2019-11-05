@@ -725,12 +725,13 @@ class HTTPStreamServer(BaseHTTPRequestHandler):
 
     def do_POST(self):
         try:
+            self.recorder.get_response = None
             self.recorder._logger.debug("Receiving audio data")
             num_bytes = 0
 
             while True:
                 # Assume chunked transfer encoding
-                chunk_size_str = self.rfile.readline().strip()
+                chunk_size_str = self.rfile.readline().decode().strip()
                 if len(chunk_size_str) == 0:
                     break
 
