@@ -174,6 +174,13 @@ class RhasspyCore:
     def recognize_intent(self, text: str) -> IntentRecognized:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
+            # Fix casing
+            dict_casing = self.profile.get("speech_to_text.dictionary_casing", "")
+            if dict_casing == "lower":
+                text = text.lower()
+            elif dict_casing == "upper":
+                text = text.upper()
+
             result = sys.ask(self.dialogue_manager, RecognizeIntent(text, handle=False))
             assert isinstance(result, IntentRecognized), result
 

@@ -8,7 +8,8 @@
         "pocketsphinx": {
             "compatible": false
         },
-        "system": "kaldi"
+        "system": "kaldi",
+        "dictionary_casing": "lower"
     },
     "wake": {
         "pocketsphinx": {

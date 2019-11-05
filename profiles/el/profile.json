@@ -3,7 +3,8 @@
     "name": "el",
     "speech_to_text": {
         "g2p_casing": "lower",
-        "system": "pocketsphinx"
+        "system": "pocketsphinx",
+        "dictionary_casing": "lower"
     },
     "intent": {
         "flair": {

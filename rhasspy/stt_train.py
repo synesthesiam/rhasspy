@@ -116,7 +116,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         self.unknown_words: Dict[str, Dict[str, Any]] = {}
         self.receiver: Optional[RhasspyActor] = None
 
-        self.sentence_casing = self.profile.get("training.sentences.casing", "")
+        self.dictionary_casing = self.profile.get("speech_to_text.dictionary_casing", "")
         self.dictionary_upper: bool = self.profile.get(
             "speech_to_text.dictionary_upper", False
         )
@@ -296,7 +296,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
                 self._logger.debug(f"Adding words from keyphrase: {wake_keyphrase}")
                 _, wake_tokens = sanitize_sentence(
                     wake_keyphrase,
-                    self.sentence_casing,
+                    self.dictionary_casing,
                     self.replace_patterns,
                     self.split_pattern,
                 )
@@ -616,7 +616,7 @@ class CommandSpeechTrainer(RhasspyActor):
 
         self.command = [program] + arguments
 
-        self.sentence_casing = self.profile.get("training.sentences.casing", "")
+        self.dictionary_casing = self.profile.get("speech_to_text.dictionary_casing", "")
         tokenizer = self.profile.get("training.tokenizer", "regex")
         regex_config = self.profile.get(f"training.{tokenizer}", {})
         self.replace_patterns = regex_config.get("replace", [])

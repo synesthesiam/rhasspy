@@ -2,7 +2,8 @@
     "language": "pt",
     "name": "pt",
     "speech_to_text": {
-        "system": "pocketsphinx"
+        "system": "pocketsphinx",
+        "dictionary_casing": "lower"
     },
     "intent": {
         "system": "fuzzywuzzy",

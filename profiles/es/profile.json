@@ -2,7 +2,8 @@
     "language": "es",
     "name": "es",
     "speech_to_text": {
-        "system": "pocketsphinx"
+        "system": "pocketsphinx",
+        "dictionary_casing": "lower"
     },
     "text_to_speech": {
         "wavenet": {

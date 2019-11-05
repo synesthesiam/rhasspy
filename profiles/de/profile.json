@@ -2,7 +2,8 @@
     "language": "de",
     "name": "de",
     "speech_to_text": {
-        "system": "pocketsphinx"
+        "system": "pocketsphinx",
+        "dictionary_casing": "lower"
     },
     "intent": {
         "flair": {
