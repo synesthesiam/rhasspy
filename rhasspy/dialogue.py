@@ -376,7 +376,7 @@ class DialogueManager(RhasspyActor):
                 str(self.profile.read_path(".doit.db")),
             ]
 
-            train_profile(Path(self.profile.read_path()), self.profile.json)
+            train_profile(Path(self.profile.read_path()), self.profile)
             self.transition("training_intent")
 
             intent_fst_path = self.profile.read_path(

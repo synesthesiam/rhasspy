@@ -376,11 +376,11 @@ def ppath(
     profile, profile_dir: Path, query: str, default: Optional[str] = None
 ) -> Optional[Path]:
     """Returns a Path from a profile or a default Path relative to the profile directory."""
-    result = pydash.get(profile, query)
+    result = profile.get(query)
     if result is None:
         if default is not None:
-            result = profile_dir / Path(default)
+            result = Path(profile.read_path(default))
     else:
-        result = profile_dir / result
+        result = Path(profile.read_path(result))
 
     return result

@@ -29,6 +29,7 @@ from rhasspy.train.jsgf2fst import (
 
 from rhasspy.train.ini_jsgf import make_grammars
 from rhasspy.train.vocab_dict import make_dict, FORMAT_CMU, FORMAT_JULIUS
+from rhasspy.profiles import Profile
 from rhasspy.utils import ppath as utils_ppath, read_dict
 
 logger = logging.getLogger("train")
@@ -36,14 +37,14 @@ logger = logging.getLogger("train")
 # -----------------------------------------------------------------------------
 
 
-def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
+def train_profile(profile_dir: Path, profile: Profile) -> None:
 
     # Compact
     def ppath(query, default=None):
         return utils_ppath(profile, profile_dir, query, default)
 
     # Inputs
-    stt_system = pydash.get(profile, "speech_to_text.system")
+    stt_system = profile.get("speech_to_text.system")
     stt_prefix = f"speech_to_text.{stt_system}"
 
     # intent_whitelist = ppath("training.intent-whitelist", "intent_whitelist")
@@ -55,20 +56,19 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     base_language_model_fst = ppath(
         f"{stt_prefix}.base_language_model_fst", "base_language_model.fst"
     )
-    base_language_model_weight = float(
-        pydash.get(profile, f"{stt_prefix}.mix_weight", 0)
-    )
+    base_language_model_weight = float(profile.get(f"{stt_prefix}.mix_weight", 0))
     custom_words = ppath(f"{stt_prefix}.custom_words_file", "custom_words.txt")
     g2p_model = ppath(f"{stt_prefix}.g2p_model", "g2p.fst")
     acoustic_model_type = stt_system
 
     if acoustic_model_type == "pocketsphinx":
         acoustic_model = ppath(f"{stt_prefix}.acoustic-model", "acoustic_model")
+        kaldi_dir = None
     elif acoustic_model_type == "kaldi":
-        kaldi_dir = ppath(f"{stt_prefix}.kaldi_dir", "/opt/kaldi")
-        acoustic_model = kaldi_dir / pydash.get(
-            profile, f"{stt_prefix}.model_dir", "model"
+        kaldi_dir = Path(
+            os.path.expandvars(profile.get(f"{stt_prefix}.kaldi_dir", "/opt/kaldi"))
         )
+        acoustic_model = ppath(f"{stt_prefix}.model_dir", "model")
     else:
         assert False, f"Unknown acoustic model type: {acoustic_model_type}"
 
@@ -91,7 +91,7 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
     kaldi_graph_dir = acoustic_model / pydash.get(
         profile, f"{stt_prefix}.graph", "graph"
     )
-    kaldi_model_type = pydash.get(profile, f"{stt_prefix}.model_type", "gmm")
+    kaldi_model_type = profile.get(f"{stt_prefix}.model_type", "gmm")
 
     # Outputs
     dictionary = ppath(f"{stt_prefix}.dictionary", "dictionary.txt")
@@ -505,17 +505,12 @@ def train_profile(profile_dir: Path, profile: Dict[str, Any]) -> None:
                 "targets": [kaldi_graph_dir / "HCLG.fst"],
                 "actions": [
                     [
-                        "kaldi-train",
-                        "--model-type",
-                        kaldi_model_type,
-                        "--model-dir",
-                        acoustic_model,
-                        "--dictionary",
-                        dictionary,
-                        "--language-model",
-                        language_model,
-                        "--graph-dir",
-                        kaldi_graph_dir,
+                        "bash",
+                        str(acoustic_model / "train.sh"),
+                        str(kaldi_dir),
+                        str(acoustic_model),
+                        str(dictionary),
+                        str(language_model),
                     ]
                 ],
             }
