@@ -373,14 +373,15 @@ def sample_sentences_by_intent(
 
 
 def ppath(
-    profile, profile_dir: Path, query: str, default: Optional[str] = None
+    profile,
+    profile_dir: Path,
+    query: str,
+    default: Optional[str] = None,
+    write: bool = False,
 ) -> Optional[Path]:
     """Returns a Path from a profile or a default Path relative to the profile directory."""
-    result = profile.get(query)
-    if result is None:
-        if default is not None:
-            result = Path(profile.read_path(default))
-    else:
-        result = Path(profile.read_path(result))
+    result = profile.get(query, default)
+    if write:
+        return Path(profile.write_path(result))
 
-    return result
+    return Path(profile.read_path(result))

@@ -16,7 +16,16 @@
                 </div>
                 <div class="navbar-container ml-auto">
                     <span title="Profile name" class="badge badge-primary ml-2" style="font-size: 1em">{{ this.profile.name }}</span>
-                    <button class="btn btn-success ml-2" @click="train" :disabled="this.training" title="Re-train current profile">Train</button>
+                    <div class="btn-group">
+                        <button class="btn btn-success ml-2" @click="train(false)" :disabled="this.training" title="Re-train current profile">Train</button>
+                        <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="#" @click="train(true)">Clear Cache</a>
+                        </div>
+                    </div>
+
                     <button class="btn btn-warning ml-2" @click="wakeup" title="Make Rhasspy listen for a voice command">Wake</button>
                     <button class="btn btn-danger ml-2" @click="restart" :disabled="this.restarting" title="Restart Rhasspy server">Restart</button>
                 </div>
@@ -226,10 +235,10 @@
                            .catch(err => this.error(err))
          },
 
-         train: function() {
+         train: function(noCache) {
              this.beginAsync()
              this.training = true
-             LanguageModelService.train()
+             LanguageModelService.train(noCache)
                                  .then(request => this.alert(request.data, 'success'))
                                  .catch(err => this.error(err))
                                  .then(() => {

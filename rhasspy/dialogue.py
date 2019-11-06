@@ -373,7 +373,7 @@ class DialogueManager(RhasspyActor):
             sys.argv = [
                 sys.argv[0],
                 "--db-file",
-                str(self.profile.read_path(".doit.db")),
+                str(self.profile.write_path(".doit.db")),
             ]
 
             train_profile(Path(self.profile.read_path()), self.profile)

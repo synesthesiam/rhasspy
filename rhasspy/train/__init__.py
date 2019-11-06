@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Dict, Set, Iterable, Any, List
 from collections import deque
 
-import pydash
 import pywrapfst as fst
 import networkx as nx
 import doit
@@ -40,8 +39,8 @@ logger = logging.getLogger("train")
 def train_profile(profile_dir: Path, profile: Profile) -> None:
 
     # Compact
-    def ppath(query, default=None):
-        return utils_ppath(profile, profile_dir, query, default)
+    def ppath(query, default=None, write=False):
+        return utils_ppath(profile, profile_dir, query, default, write=write)
 
     # Inputs
     stt_system = profile.get("speech_to_text.system")
@@ -73,35 +72,31 @@ def train_profile(profile_dir: Path, profile: Profile) -> None:
         assert False, f"Unknown acoustic model type: {acoustic_model_type}"
 
     # ignore/upper/lower
-    word_casing = pydash.get(
-        profile, "speech_to_text.dictionary_casing", "ignore"
-    ).lower()
+    word_casing = profile.get("speech_to_text.dictionary_casing", "ignore").lower()
 
     # default/ignore/upper/lower
-    g2p_word_casing = pydash.get(
-        profile, "speech_to_text.g2p_casing", word_casing
-    ).lower()
+    g2p_word_casing = profile.get("speech_to_text.g2p_casing", word_casing).lower()
 
     # all/first
-    dict_merge_rule = pydash.get(
-        profile, "speech_to_text.dictionary_merge_rule", "all"
-    ).lower()
+    dict_merge_rule = profile.get("speech_to_text.dictionary_merge_rule", "all").lower()
 
     # Kaldi
-    kaldi_graph_dir = acoustic_model / pydash.get(
-        profile, f"{stt_prefix}.graph", "graph"
-    )
+    kaldi_graph_dir = acoustic_model / profile.get(f"{stt_prefix}.graph", "graph")
     kaldi_model_type = profile.get(f"{stt_prefix}.model_type", "gmm")
 
     # Outputs
-    dictionary = ppath(f"{stt_prefix}.dictionary", "dictionary.txt")
-    language_model = ppath(f"{stt_prefix}.language_model", "language_model.txt")
-    intent_fst = ppath("intent.fsticiffs.intent_fst", "intent.fst")
-    vocab = ppath(f"{stt_prefix}.vocabulary", "vocab.txt")
-    unknown_words = ppath(f"{stt_prefix}.unknown_words", "unknown.txt")
-    grammar_dir = ppath("speech_to_text.grammars_dir", "grammars")
-    fsts_dir = ppath("speech_to_text.fsts_dir", "fsts")
-    slots_dir = ppath("speech_to_text.slots_dir", "slots")
+    dictionary = ppath(f"{stt_prefix}.dictionary", "dictionary.txt", write=True)
+    language_model = ppath(
+        f"{stt_prefix}.language_model", "language_model.txt", write=True
+    )
+    intent_fst = ppath("intent.fsticiffs.intent_fst", "intent.fst", write=True)
+    vocab = ppath(f"{stt_prefix}.vocabulary", "vocab.txt", write=True)
+    unknown_words = ppath(
+        f"{stt_prefix}.unknown_words", "unknown_words.txt", write=True
+    )
+    grammar_dir = ppath("speech_to_text.grammars_dir", "grammars", write=True)
+    fsts_dir = ppath("speech_to_text.fsts_dir", "fsts", write=True)
+    slots_dir = ppath("speech_to_text.slots_dir", "slots", write=True)
 
     # -----------------------------------------------------------------------------
 
@@ -422,12 +417,14 @@ def train_profile(profile_dir: Path, profile: Profile) -> None:
 
                 # Append to dictionary and custom words
                 with open(custom_words, "a") as words_file:
-                    for line in g2p_proc.stdout:
-                        line = line.decode().strip()
-                        word, phonemes = re.split(r"\s+", line, maxsplit=1)
-                        word = g2p_transform(word)
-                        print(word, phonemes, file=dictionary_file)
-                        print(word, phonemes, file=words_file)
+                    with open(unknown_words, "w") as unknown_words_file:
+                        for line in g2p_proc.stdout:
+                            line = line.decode().strip()
+                            word, phonemes = re.split(r"\s+", line, maxsplit=1)
+                            word = g2p_transform(word)
+                            print(word, phonemes, file=dictionary_file)
+                            print(word, phonemes, file=words_file)
+                            print(word, phonemes, file=unknown_words_file)
 
     @create_after(executed="vocab")
     def task_vocab_dict():
@@ -446,53 +443,6 @@ def train_profile(profile_dir: Path, profile: Profile) -> None:
             "targets": [dictionary],
             "actions": [(do_dict, [dictionary_paths])],
         }
-
-    def do_marytts_dict(map_path, targets):
-        # Load phoneme map
-        phoneme_map = dict(
-            re.split(r"\s+", line.strip(), maxsplit=1)
-            for line in map_path.read_text().splitlines()
-        )
-
-        # Create directory for dictionary
-        dict_path = Path(targets[0])
-        dict_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Read in custom speech dictionary
-        with open(custom_words, "r") as custom_words_file:
-            custom_dict = read_dict(custom_words_file)
-
-        # Write custom MaryTTS dictionary
-        with open(dict_path, "w") as dict_file:
-            for word, prons in custom_dict.items():
-                # Only use first pronunciation
-                dict_phonemes = re.split(r"\s+", prons[0])
-
-                # Map to MaryTTS phonemes
-                marytts_phonemes = [phoneme_map[p] for p in dict_phonemes]
-                phoneme_str = " ".join(marytts_phonemes)
-
-                print(word, "|", phoneme_str, file=dict_file)
-
-    @create_after(executed="vocab_dict")
-    def task_marytts_dict():
-        """Creates custom pronunciation dictionary for MaryTTS."""
-        marytts_map_path = ppath(
-            "text-to-speech.marytts.phoneme-map", "marytts_phonemes.txt"
-        )
-
-        marytts_dict_path = ppath("text-to-speech.marytts.dictionary-file") or ""
-
-        if (
-            custom_words.exists()
-            and marytts_map_path.exists()
-            and (len(str(marytts_dict_path)) > 0)
-        ):
-            return {
-                "file_dep": [custom_words, marytts_map_path],
-                "targets": [marytts_dict_path],
-                "actions": [(do_marytts_dict, [marytts_map_path])],
-            }
 
     # -----------------------------------------------------------------------------
 

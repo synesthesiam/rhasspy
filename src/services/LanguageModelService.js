@@ -10,8 +10,14 @@ export default {
         return Api().get('/api/sentences')
     },
 
-    train() {
-        return new Api().post('/api/train', '')
+    train(noCache) {
+        var params = {}
+        if (noCache) {
+            params['nocache'] = 'true'
+        }
+
+        return new Api().post('/api/train', '',
+                              { params: params })
     },
 
     reload() {

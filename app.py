@@ -469,7 +469,17 @@ def api_custom_words():
 
 @app.route("/api/train", methods=["POST"])
 def api_train() -> str:
+    no_cache = request.args.get("nocache", "false").lower() == "true"
+
     assert core is not None
+
+    if no_cache:
+        # Delete doit database
+        db_path = core.profile.write_path(".doit.db")
+        if os.path.exists(db_path):
+            logger.debug("Clearing training cache")
+            os.unlink(db_path)
+
     start_time = time.time()
     logger.info("Starting training")
 
