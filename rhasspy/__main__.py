@@ -1,2 +1,2 @@
-from rhasspy. import main
+from rhasspy import main
 main()
