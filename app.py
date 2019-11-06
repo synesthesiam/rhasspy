@@ -19,6 +19,7 @@ import time
 import atexit
 from uuid import uuid4
 from collections import defaultdict
+from pathlib import Path
 from typing import Any, Union, Tuple, Dict, List
 
 from flask import (
@@ -40,8 +41,6 @@ from gevent.queue import Queue as GQueue
 from gevent.lock import RLock
 from geventwebsocket.handler import WebSocketHandler
 
-
-from jsgf2fst import read_slots
 
 from rhasspy.profiles import Profile
 from rhasspy.core import RhasspyCore
@@ -707,9 +706,20 @@ def api_slots() -> Union[str, Response]:
         return "OK"
 
     # Load slots values
-    slots_dir = core.profile.read_path(core.profile.get("speech_to_text.slots_dir"))
+    slots_dir = Path(
+        core.profile.read_path(core.profile.get("speech_to_text.slots_dir"))
+    )
 
-    return jsonify(read_slots(slots_dir))
+    # Read slots into dictionary
+    slots_dict = {}
+    for slot_file_path in slots_dir.glob("*"):
+        if slot_file_path.is_file():
+            slot_name = slot_file_path.name
+            slots_dict[slot_name] = [
+                line.strip() for line in slot_file_path.read_text().splitlines()
+            ]
+
+    return jsonify(slots_dict)
 
 
 @app.route("/api/slots/<name>", methods=["GET", "POST"])

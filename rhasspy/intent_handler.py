@@ -9,8 +9,8 @@ from typing import Dict, Any, Optional, Tuple, Type
 import pydash
 import requests
 
-from .actor import RhasspyActor
-from .profiles import Profile
+from rhasspy.actor import RhasspyActor
+from rhasspy.profiles import Profile
 
 # -----------------------------------------------------------------------------
 

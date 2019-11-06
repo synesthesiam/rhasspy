@@ -10,9 +10,9 @@ import concurrent.futures
 from urllib.parse import urljoin
 from typing import Dict, Any, Optional, Tuple, List, Set, Type
 
-from .actor import RhasspyActor
-from .profiles import Profile
-from .utils import empty_intent
+from rhasspy.actor import RhasspyActor
+from rhasspy.profiles import Profile
+from rhasspy.utils import empty_intent
 
 # -----------------------------------------------------------------------------
 # Events
@@ -185,7 +185,7 @@ class FsticuffsRecognizer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def recognize(self, text: str) -> Dict[str, Any]:
-        from jsgf2fst import fstaccept
+        from rhasspy.train.jsgf2fst import fstaccept
 
         # Assume lower case, white-space separated tokens
         tokens = re.split("\s+", text.lower())
@@ -202,7 +202,7 @@ class FsticuffsRecognizer(RhasspyActor):
         return intents[0]
 
     def recognize_fuzzy(self, text: str, eps: str = "<eps>") -> Dict[str, Any]:
-        from jsgf2fst import fstaccept, symbols2intent
+        from rhasspy.train.jsgf2fst import fstaccept, symbols2intent
 
         # Assume lower case, white-space separated tokens
         tokens = re.split("\s+", text)

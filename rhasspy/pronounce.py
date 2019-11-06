@@ -7,9 +7,9 @@ import tempfile
 from collections import defaultdict
 from typing import Dict, Tuple, List, Optional, Any
 
-from .actor import RhasspyActor
-from .utils import read_dict, load_phoneme_map
-from .profiles import Profile
+from rhasspy.actor import RhasspyActor
+from rhasspy.utils import read_dict, load_phoneme_map
+from rhasspy.profiles import Profile
 
 # -----------------------------------------------------------------------------
 # Events

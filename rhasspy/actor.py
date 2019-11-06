@@ -9,7 +9,7 @@ try:
 except:
     from time import sleep
 
-from .profiles import Profile
+from rhasspy.profiles import Profile
 
 # -----------------------------------------------------------------------------
 

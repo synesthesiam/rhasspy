@@ -12,8 +12,8 @@ from collections import defaultdict
 
 import pydash
 
-from .actor import RhasspyActor
-from .intent import IntentRecognized
+from rhasspy.actor import RhasspyActor
+from rhasspy.intent import IntentRecognized
 
 # -----------------------------------------------------------------------------
 # Events

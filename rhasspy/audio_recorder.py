@@ -16,11 +16,11 @@ from typing import Dict, Any, Callable, Optional, List, Type
 from collections import defaultdict
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-from .actor import RhasspyActor
-from .utils import convert_wav
-from .mqtt import MqttSubscribe, MqttMessage
-from .stt import WavTranscription
-from .intent import IntentRecognized
+from rhasspy.actor import RhasspyActor
+from rhasspy.utils import convert_wav
+from rhasspy.mqtt import MqttSubscribe, MqttMessage
+from rhasspy.stt import WavTranscription
+from rhasspy.intent import IntentRecognized
 
 # -----------------------------------------------------------------------------
 # Events

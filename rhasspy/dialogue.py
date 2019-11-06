@@ -1,9 +1,13 @@
 import os
+import sys
 import json
 from datetime import timedelta
+from pathlib import Path
 from typing import Dict, Any, Optional, List, Type
 
-from .actor import (
+import pywrapfst as fst
+
+from rhasspy.actor import (
     RhasspyActor,
     ConfigureEvent,
     Configured,
@@ -12,42 +16,44 @@ from .actor import (
     WakeupMessage,
     ChildActorExited,
 )
-from .wake import (
+from rhasspy.wake import (
     ListenForWakeWord,
     StopListeningForWakeWord,
     WakeWordDetected,
     WakeWordNotDetected,
     get_wake_class,
 )
-from .command_listener import ListenForCommand, VoiceCommand, get_command_class
-from .audio_recorder import (
+from rhasspy.command_listener import ListenForCommand, VoiceCommand, get_command_class
+from rhasspy.audio_recorder import (
     StartRecordingToBuffer,
     StopRecordingToBuffer,
     AudioData,
     get_microphone_class,
-    HTTPAudioRecorder
+    HTTPAudioRecorder,
 )
-from .audio_player import PlayWavFile, PlayWavData, WavPlayed, get_sound_class
-from .stt import TranscribeWav, WavTranscription, get_decoder_class
-from .stt_train import (
+from rhasspy.audio_player import PlayWavFile, PlayWavData, WavPlayed, get_sound_class
+from rhasspy.stt import TranscribeWav, WavTranscription, get_decoder_class
+from rhasspy.stt_train import (
     TrainSpeech,
     SpeechTrainingComplete,
     SpeechTrainingFailed,
     get_speech_trainer_class,
 )
-from .intent import RecognizeIntent, IntentRecognized, get_recognizer_class
-from .intent_train import (
+from rhasspy.intent import RecognizeIntent, IntentRecognized, get_recognizer_class
+from rhasspy.intent_train import (
     TrainIntent,
     IntentTrainingComplete,
     IntentTrainingFailed,
     get_intent_trainer_class,
 )
-from .intent_handler import HandleIntent, IntentHandled, get_intent_handler_class
-from .train import GenerateSentences, SentencesGenerated, SentenceGenerationFailed
-from .pronounce import GetWordPhonemes, SpeakWord, GetWordPronunciations
-from .tts import SpeakSentence, get_speech_class
-from .mqtt import MqttPublish
-from .utils import buffer_to_wav
+from rhasspy.intent_handler import HandleIntent, IntentHandled, get_intent_handler_class
+
+# from rhasspy.train import GenerateSentences, SentencesGenerated, SentenceGenerationFailed
+from rhasspy.train import train_profile
+from rhasspy.pronounce import GetWordPhonemes, SpeakWord, GetWordPronunciations
+from rhasspy.tts import SpeakSentence, get_speech_class
+from rhasspy.mqtt import MqttPublish
+from rhasspy.utils import buffer_to_wav
 
 # -----------------------------------------------------------------------------
 
@@ -146,7 +152,7 @@ class DialogueManager(RhasspyActor):
         self._logger.debug("Loading MQTT first")
 
         # MQTT client *first*
-        from .mqtt import HermesMqtt
+        from rhasspy.mqtt import HermesMqtt
 
         self.mqtt_class = HermesMqtt
         self.mqtt = self.createActor(self.mqtt_class)
@@ -359,26 +365,53 @@ class DialogueManager(RhasspyActor):
     # Training
     # -------------------------------------------------------------------------
 
-    def in_training_sentences(self, message: Any, sender: RhasspyActor) -> None:
-        if isinstance(message, SentencesGenerated):
-            # Train speech system
-            self.transition("training_speech")
-            self.send(self.speech_trainer, TrainSpeech(message.intent_fst))
-        elif isinstance(message, SentenceGenerationFailed):
-            self.transition("ready")
-            self.send(self.training_receiver, ProfileTrainingFailed(message.reason))
-        else:
-            self.handle_forward(message, sender)
+    def to_training_sentences(self, from_state: str) -> None:
+        # Use doit to train
+        saved_argv = sys.argv
+        try:
+            # Store doit database in profile directory
+            sys.argv = [
+                sys.argv[0],
+                "--db-file",
+                str(self.profile.read_path(".doit.db")),
+            ]
 
-    def in_training_speech(self, message: Any, sender: RhasspyActor) -> None:
-        if isinstance(message, SpeechTrainingComplete):
+            train_profile(Path(self.profile.read_path()), self.profile.json)
             self.transition("training_intent")
-            self.send(self.intent_trainer, TrainIntent(message.intent_fst))
-        elif isinstance(message, SpeechTrainingFailed):
+
+            intent_fst_path = self.profile.read_path(
+                self.profile.get("intent.fsticuffs.intent_fst", "intent.fst")
+            )
+
+            intent_fst = fst.Fst.read(str(intent_fst_path))
+            self.send(self.intent_trainer, TrainIntent(intent_fst))
+        except Exception as e:
             self.transition("ready")
-            self.send(self.training_receiver, ProfileTrainingFailed(message.reason))
-        else:
-            self.handle_forward(message, sender)
+            self.send(self.training_receiver, ProfileTrainingFailed(str(e)))
+        finally:
+            # Restore sys.argv
+            sys.argv = saved_argv
+
+    # def in_training_sentences(self, message: Any, sender: RhasspyActor) -> None:
+    #     if isinstance(message, SentencesGenerated):
+    #         # Train speech system
+    #         self.transition("training_speech")
+    #         self.send(self.speech_trainer, TrainSpeech(message.intent_fst))
+    #     elif isinstance(message, SentenceGenerationFailed):
+    #         self.transition("ready")
+    #         self.send(self.training_receiver, ProfileTrainingFailed(message.reason))
+    #     else:
+    #         self.handle_forward(message, sender)
+
+    # def in_training_speech(self, message: Any, sender: RhasspyActor) -> None:
+    #     if isinstance(message, SpeechTrainingComplete):
+    #         self.transition("training_intent")
+    #         self.send(self.intent_trainer, TrainIntent(message.intent_fst))
+    #     elif isinstance(message, SpeechTrainingFailed):
+    #         self.transition("ready")
+    #         self.send(self.training_receiver, ProfileTrainingFailed(message.reason))
+    #     else:
+    #         self.handle_forward(message, sender)
 
     def in_training_intent(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, IntentTrainingComplete):
@@ -503,7 +536,7 @@ class DialogueManager(RhasspyActor):
             self.send(self.wake, StopListeningForWakeWord())
             self.training_receiver = message.receiver or sender
             self.transition("training_sentences")
-            self.send(self.sentence_generator, GenerateSentences())
+            # self.send(self.sentence_generator, GenerateSentences())
         elif isinstance(message, StartRecordingToBuffer):
             # Record WAV
             self.send(self.recorder, message)
@@ -642,20 +675,20 @@ class DialogueManager(RhasspyActor):
         forward_to_hass = self.profile.get("handle.forward_to_hass", False)
         if (handler_system != "hass") and forward_to_hass:
             # Create a separate actor just for home assistant
-            from .intent_handler import HomeAssistantIntentHandler
+            from rhasspy.intent_handler import HomeAssistantIntentHandler
 
             self.hass_handler = self.createActor(HomeAssistantIntentHandler)
 
         self.actors["hass_handler"] = self.hass_handler
 
         # Sentence generator
-        from .train import JsgfSentenceGenerator
+        # from rhasspy.train import JsgfSentenceGenerator
 
-        self.sentence_generator_class = JsgfSentenceGenerator
-        self.sentence_generator: RhasspyActor = self.createActor(
-            self.sentence_generator_class
-        )
-        self.actors["sentence_generator"] = self.sentence_generator
+        # self.sentence_generator_class = JsgfSentenceGenerator
+        # self.sentence_generator: RhasspyActor = self.createActor(
+        #     self.sentence_generator_class
+        # )
+        # self.actors["sentence_generator"] = self.sentence_generator
 
         # Speech trainer
         speech_trainer_system = self.profile.get(
@@ -678,7 +711,7 @@ class DialogueManager(RhasspyActor):
         self.actors["intent_trainer"] = self.intent_trainer
 
         # Word pronouncer
-        from .pronounce import PhonetisaurusPronounce
+        from rhasspy.pronounce import PhonetisaurusPronounce
 
         self.word_pronouncer_class = PhonetisaurusPronounce
         self.word_pronouncer: RhasspyActor = self.createActor(

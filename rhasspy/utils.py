@@ -13,10 +13,11 @@ import concurrent.futures
 import threading
 import tempfile
 import subprocess
-from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple
+from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple, Callable, Set
+from pathlib import Path
 
-from jsgf2fst import fstprintall, symbols2intent
 import pywrapfst as fst
+import pydash
 
 # -----------------------------------------------------------------------------
 
@@ -37,34 +38,55 @@ class FunctionLoggingHandler(logging.Handler):
 
 
 def read_dict(
-    dict_file: Iterable[str], word_dict: Optional[Dict[str, List[str]]] = None
+    dict_file: Iterable[str],
+    word_dict: Optional[Dict[str, List[str]]] = None,
+    transform: Optional[Callable[[str], str]] = None,
+    silence_words: Optional[Set[str]] = None,
 ) -> Dict[str, List[str]]:
     """
-    Loads a CMU word dictionary, optionally into an existing Python dictionary.
+    Loads a CMU/Julius word dictionary, optionally into an existing Python dictionary.
     """
     if word_dict is None:
         word_dict = {}
 
-    for line in dict_file:
+    for i, line in enumerate(dict_file):
         line = line.strip()
         if len(line) == 0:
             continue
 
         try:
             # Use explicit whitespace (avoid 0xA0)
-            word, pronounce = re.split(r"[ \t]+", line, maxsplit=1)
+            parts = re.split(r"[ \t]+", line)
+            word = parts[0]
+
+            # Skip Julius extras
+            parts = [p for p in parts[1:] if p[0] not in ["[", "@"]]
 
             idx = word.find("(")
             if idx > 0:
                 word = word[:idx]
 
-            pronounce = pronounce.strip()
-            if word in word_dict:
-                word_dict[word].append(pronounce)
+            if "+" in word:
+                # Julius format word1+word2
+                words = word.split("+")
             else:
-                word_dict[word] = [pronounce]
+                words = [word]
+
+            for word in words:
+                # Don't transform silence words
+                if transform and (
+                    (silence_words is None) or (word not in silence_words)
+                ):
+                    word = transform(word)
+
+                pronounce = " ".join(parts)
+
+                if word in word_dict:
+                    word_dict[word].append(pronounce)
+                else:
+                    word_dict[word] = [pronounce]
         except Exception as e:
-            logging.warning(f"read_dict: {e}")
+            logger.warning(f"read_dict: {e} (line {i+1})")
 
     return word_dict
 
@@ -296,6 +318,8 @@ def grouper(iterable, n, fillvalue=None):
 
 
 def make_sentences_by_intent(intent_fst: fst.Fst) -> Dict[str, Any]:
+    from rhasspy.train.jsgf2fst import fstprintall, symbols2intent
+
     # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
     sentences_by_intent: Dict[str, Any] = defaultdict(list)
 
@@ -313,6 +337,8 @@ def make_sentences_by_intent(intent_fst: fst.Fst) -> Dict[str, Any]:
 def sample_sentences_by_intent(
     intent_fst_paths: Dict[str, str], num_samples: int
 ) -> Dict[str, Any]:
+    from rhasspy.train.jsgf2fst import fstprintall, symbols2intent
+
     def sample_sentences(intent_name: str, intent_fst_path: str):
         rand_fst = fst.Fst.read_from_string(
             subprocess.check_output(
@@ -341,3 +367,20 @@ def sample_sentences_by_intent(
         sentences_by_intent[intent_name] = future.result()
 
     return sentences_by_intent
+
+
+# -----------------------------------------------------------------------------
+
+
+def ppath(
+    profile, profile_dir: Path, query: str, default: Optional[str] = None
+) -> Optional[Path]:
+    """Returns a Path from a profile or a default Path relative to the profile directory."""
+    result = pydash.get(profile, query)
+    if result is None:
+        if default is not None:
+            result = profile_dir / Path(default)
+    else:
+        result = profile_dir / result
+
+    return result

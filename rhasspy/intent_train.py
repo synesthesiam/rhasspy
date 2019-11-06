@@ -14,8 +14,8 @@ from urllib.parse import urljoin
 from collections import defaultdict, Counter
 from typing import Dict, List, Set, Any, Optional, Type
 
-from .actor import RhasspyActor
-from .utils import make_sentences_by_intent, lcm, sample_sentences_by_intent
+from rhasspy.actor import RhasspyActor
+from rhasspy.utils import make_sentences_by_intent, lcm, sample_sentences_by_intent
 
 # -----------------------------------------------------------------------------
 # Events
@@ -169,7 +169,7 @@ class RasaIntentTrainer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def train(self, intent_fst) -> None:
-        from jsgf2fst import fstprintall
+        from rhasspy.train.jsgf2fst import fstprintall
         import requests
 
         # Load settings
@@ -292,7 +292,7 @@ class AdaptIntentTrainer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def train(self, intent_fst) -> None:
-        from jsgf2fst import fstprintall, symbols2intent
+        from rhasspy.train.jsgf2fst import fstprintall, symbols2intent
 
         # Load "stop" words (common words that are excluded from training)
         stop_words: Set[str] = set()

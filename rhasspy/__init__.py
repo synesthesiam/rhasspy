@@ -26,14 +26,14 @@ try:
 except:
     pass
 
-from .core import RhasspyCore
-from .actor import ConfigureEvent, Configured, ActorSystem, RhasspyActor
-from .profiles import Profile
-from .utils import buffer_to_wav, maybe_convert_wav
-from .audio_recorder import AudioData, StartStreaming, StopStreaming
-from .audio_player import DummyAudioPlayer
-from .dialogue import DialogueManager
-from .wake import (
+from rhasspy.core import RhasspyCore
+from rhasspy.actor import ConfigureEvent, Configured, ActorSystem, RhasspyActor
+from rhasspy.profiles import Profile
+from rhasspy.utils import buffer_to_wav, maybe_convert_wav
+from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
+from rhasspy.audio_player import DummyAudioPlayer
+from rhasspy.dialogue import DialogueManager
+from rhasspy.wake import (
     PocketsphinxWakeListener,
     ListenForWakeWord,
     StopListeningForWakeWord,
@@ -318,7 +318,7 @@ def main() -> None:
     default_settings = Profile.load_defaults(args.system_profiles)
 
     # Create rhasspy core
-    from .core import RhasspyCore
+    from rhasspy.core import RhasspyCore
 
     core = RhasspyCore(args.profile, args.system_profiles, args.user_profiles)
 

@@ -7,9 +7,9 @@ import tempfile
 import subprocess
 from typing import Any, Optional, Tuple, Type, Dict
 
-from .actor import RhasspyActor
-from .profiles import Profile
-from .utils import convert_wav
+from rhasspy.actor import RhasspyActor
+from rhasspy.profiles import Profile
+from rhasspy.utils import convert_wav
 
 # -----------------------------------------------------------------------------
 
