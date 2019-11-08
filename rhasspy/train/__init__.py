@@ -396,7 +396,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> None:
                 # Generate single pronunciation guesses
                 logger.debug("Guessing pronunciations for unknown word(s)")
 
-                g2p_proc = subprocess.Popen(
+                g2p_output = subprocess.check_output(
                     [
                         "phonetisaurus-apply",
                         "--model",
@@ -406,7 +406,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> None:
                         "--nbest",
                         "1",
                     ],
-                    stdout=subprocess.PIPE,
+                    universal_newlines=True,
                 )
 
                 g2p_transform = lambda w: w
@@ -418,8 +418,8 @@ def train_profile(profile_dir: Path, profile: Profile) -> None:
                 # Append to dictionary and custom words
                 with open(custom_words, "a") as words_file:
                     with open(unknown_words, "w") as unknown_words_file:
-                        for line in g2p_proc.stdout:
-                            line = line.decode().strip()
+                        for line in g2p_output.splitlines():
+                            line = line.strip()
                             word, phonemes = re.split(r"\s+", line, maxsplit=1)
                             word = g2p_transform(word)
                             print(word, phonemes, file=dictionary_file)

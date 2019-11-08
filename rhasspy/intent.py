@@ -10,6 +10,9 @@ import concurrent.futures
 from urllib.parse import urljoin
 from typing import Dict, Any, Optional, Tuple, List, Set, Type
 
+import networkx as nx
+import pywrapfst as fst
+
 from rhasspy.actor import RhasspyActor
 from rhasspy.profiles import Profile
 from rhasspy.utils import empty_intent
@@ -147,7 +150,7 @@ class FsticuffsRecognizer(RhasspyActor):
         self.graph: Optional[Any] = None
         self.words: Set[str] = set()
         self.stop_words: Set[str] = set()
-        self.fuzzy:bool = True
+        self.fuzzy: bool = True
 
     def to_started(self, from_state: str) -> None:
         self.preload: bool = self.config.get("preload", False)
@@ -252,7 +255,7 @@ class FsticuffsRecognizer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def _get_symbols_and_costs(
-        intent_graph,
+        intent_graph: nx.MultiDiGraph,
         tokens: List[str],
         stop_words: Set[str] = set(),
         eps: str = "<eps>",
@@ -306,32 +309,33 @@ class FsticuffsRecognizer(RhasspyActor):
                     if out_label.startswith("__label__"):
                         next_intent = out_label[9:]
 
-                    if in_label in stop_words:
-                        # Only consume token if it matches (no penalty if not)
+                    if in_label != eps:
                         if (len(next_in_tokens) > 0) and (
                             in_label == next_in_tokens[0]
                         ):
-                            next_in_tokens.pop(0)
-
-                        if out_label != eps:
-                            next_out_tokens.append(out_label)
-                    elif in_label != eps:
-                        # Consume non-matching tokens and increase cost
-                        while (len(next_in_tokens) > 0) and (
-                            in_label != next_in_tokens[0]
-                        ):
-                            next_in_tokens.pop(0)
-                            next_cost += 1
-
-                        if len(next_in_tokens) > 0:
-                            # Consume matching token
+                            # Consume matching token immediately
                             next_in_tokens.pop(0)
 
                             if out_label != eps:
                                 next_out_tokens.append(out_label)
                         else:
-                            # No matching token
-                            continue
+                            # Consume non-matching tokens and increase cost unless stop word
+                            while (len(next_in_tokens) > 0) and (
+                                in_label != next_in_tokens[0]
+                            ):
+                                bad_token = next_in_tokens.pop(0)
+                                if bad_token not in stop_words:
+                                    next_cost += 1
+
+                            if len(next_in_tokens) > 0:
+                                # Consume matching token
+                                next_in_tokens.pop(0)
+
+                                if out_label != eps:
+                                    next_out_tokens.append(out_label)
+                            else:
+                                # No matching token
+                                continue
                     else:
                         # Consume epsilon
                         if out_label != eps:
@@ -351,10 +355,7 @@ class FsticuffsRecognizer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def _fst_to_graph(the_fst):
-        import pywrapfst as fst
-        import networkx as nx
-
+    def _fst_to_graph(the_fst: fst.Fst) -> nx.MultiDiGraph:
         """Converts a finite state transducer to a directed graph."""
         zero_weight = fst.Weight.Zero(the_fst.weight_type())
         in_symbols = the_fst.input_symbols()
@@ -498,10 +499,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                     for example in intent_examples:
                         example_text = example.get("raw_text", example["text"])
                         logging.debug(example_text)
-                        choices[example_text] = (
-                            example_text,
-                            example,
-                        )
+                        choices[example_text] = (example_text, example)
                         sentences.append(example_text)
 
                     future = executor.submit(_get_best_fuzzy, text, sentences)

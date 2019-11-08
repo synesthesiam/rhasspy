@@ -103,7 +103,6 @@ def make_dict(
 
         # Write unknown words
         if unknown_path:
-
             with open(unknown_path, "w") as unknown_file:
                 for word in unknown_words:
                     print(word, file=unknown_file)
