@@ -10,6 +10,8 @@ import io
 import re
 import audioop
 import json
+import socket
+import shlex
 from uuid import uuid4
 from queue import Queue
 from typing import Dict, Any, Callable, Optional, List, Type
@@ -60,9 +62,15 @@ class StopRecordingToBuffer:
 
 
 def get_microphone_class(system: str) -> Type[RhasspyActor]:
-    assert system in ["arecord", "pyaudio", "dummy", "hermes", "stdin", "http"], (
-        "Unknown microphone system: %s" % system
-    )
+    assert system in [
+        "arecord",
+        "pyaudio",
+        "dummy",
+        "hermes",
+        "stdin",
+        "http",
+        "gstreamer",
+    ], ("Unknown microphone system: %s" % system)
 
     if system == "arecord":
         # Use arecord locally
@@ -79,6 +87,9 @@ def get_microphone_class(system: str) -> Type[RhasspyActor]:
     elif system == "http":
         # Use HTTP
         return HTTPAudioRecorder
+    elif system == "gstreamer":
+        # Use GStreamer
+        return GStreamerAudioRecorder
 
     # Use dummy recorder as a fallback
     return DummyAudioRecorder
@@ -871,6 +882,142 @@ class HTTPAudioRecorder(RhasspyActor, BaseHTTPRequestHandler):
 
                 self.server_thread.join()
                 self.server_thread = None
+        except Exception as e:
+            self._logger.exception("to_stopped")
+
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def get_microphones(self) -> Dict[Any, Any]:
+        return {}
+
+    @classmethod
+    def test_microphones(self, chunk_size: int) -> Dict[Any, Any]:
+        return {}
+
+
+# -----------------------------------------------------------------------------
+# GStreamer Recorder
+# -----------------------------------------------------------------------------
+
+
+class GStreamerAudioRecorder(RhasspyActor, BaseHTTPRequestHandler):
+    """Records audio from gstreamer."""
+
+    DEFAULT_PIPELINE = (
+        "udpsrc port=12333"
+        + " ! rawaudioparse use-sink-caps=false format=pcm pcm-format=s16le sample-rate=16000 num-channels=1"
+        + " ! queue"
+        + " ! audioconvert"
+        + " ! audioresample"
+    )
+
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.receivers: List[RhasspyActor] = []
+        self.buffers: Dict[str, bytes] = defaultdict(bytes)
+
+        self.gstreamer_proc = None
+        self.gstreamer_thread = None
+        self.chunk_size = 960
+
+    def to_started(self, from_state: str) -> None:
+        if self.gstreamer_proc is None:
+            self.command = (
+                ["gst-launch-1.0"]
+                + shlex.split(
+                    str(
+                        self.profile.get(
+                            "microphone.gstreamer.pipeline",
+                            GStreamerAudioRecorder.DEFAULT_PIPELINE,
+                        )
+                    )
+                )
+                + ["!", "fdsink", "fd=1"]
+            )
+
+            self.chunk_size = int(
+                self.profile.get("microphone.gstreamer.chunk_size", self.chunk_size)
+            )
+
+            def gstreamer_thread_proc():
+                try:
+                    self._logger.debug(self.command)
+                    self.gstreamer_proc = subprocess.Popen(
+                        self.command, stdout=subprocess.PIPE
+                    )
+
+                    first_audio = True
+
+                    while True:
+                        chunk = self.gstreamer_proc.stdout.read(self.chunk_size)
+                        if len(chunk) > 0:
+                            if first_audio:
+                                self._logger.debug("Receiving audio")
+                                first_audio = False
+
+                            message = AudioData(chunk)
+
+                            # Forward to subscribers
+                            for receiver in self.receivers:
+                                self.send(receiver, message)
+
+                            # Append to buffers
+                            for buffer_name in self.buffers:
+                                self.buffers[buffer_name] += message.data
+                        else:
+                            # Avoid 100% CPU
+                            time.sleep(0.01)
+                except Exception as e:
+                    if self.gstreamer_proc is not None:
+                        self._logger.exception("gstreamer_thread")
+
+            self.gstreamer_thread = threading.Thread(
+                target=gstreamer_thread_proc, daemon=True
+            )
+            self.gstreamer_thread.start()
+
+            self._logger.debug(f"Listening for GStreamer audio")
+
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        if isinstance(message, StartStreaming):
+            self.receivers.append(message.receiver or sender)
+            self.transition("recording")
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+            self.transition("recording")
+
+    def in_recording(self, message: Any, sender: RhasspyActor) -> None:
+        if isinstance(message, StartStreaming):
+            self.receivers.append(message.receiver or sender)
+        elif isinstance(message, StartRecordingToBuffer):
+            self.buffers[message.buffer_name] = bytes()
+        elif isinstance(message, StopStreaming):
+            if message.receiver is None:
+                # Clear all receivers
+                self.receivers.clear()
+            else:
+                self.receivers.remove(message.receiver)
+        elif isinstance(message, StopRecordingToBuffer):
+            if message.buffer_name is None:
+                # Clear all buffers
+                self.buffers.clear()
+            else:
+                # Respond with buffer
+                buffer = self.buffers.pop(message.buffer_name, bytes())
+                self.send(message.receiver or sender, AudioData(buffer))
+
+        # Check to see if anyone is still listening
+        if (len(self.receivers) == 0) and (len(self.buffers) == 0):
+            self.transition("started")
+
+    def to_stopped(self, from_state: str) -> None:
+        try:
+            if self.gstreamer_proc is not None:
+                proc = self.gstreamer_proc
+                self.gstreamer_proc = None
+                proc.terminate()
+                proc.wait()
         except Exception as e:
             self._logger.exception("to_stopped")
 
