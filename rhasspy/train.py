@@ -100,6 +100,10 @@ class JsgfSentenceGenerator(RhasspyActor):
         # Load all grammars
         grammars = []
         for f_name in os.listdir(grammars_dir):
+            if not f_name.endswith(".gram"):
+                self._logger.debug(f"Skipping {f_name}")
+                continue
+
             self._logger.debug(f"Parsing JSGF grammar {f_name}")
             grammar = parser.parse_grammar_file(os.path.join(grammars_dir, f_name))
             grammars.append(grammar)

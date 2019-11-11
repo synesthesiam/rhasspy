@@ -25,7 +25,7 @@ from .audio_recorder import (
     StopRecordingToBuffer,
     AudioData,
     get_microphone_class,
-    HTTPAudioRecorder
+    HTTPAudioRecorder,
 )
 from .audio_player import PlayWavFile, PlayWavData, WavPlayed, get_sound_class
 from .stt import TranscribeWav, WavTranscription, get_decoder_class
