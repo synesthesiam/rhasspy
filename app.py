@@ -753,6 +753,12 @@ def api_slots_by_name(name: str) -> Union[str, Response]:
 
 # -----------------------------------------------------------------------------
 
+@app.route("/api/ping")
+def api_ping() -> str:
+    """Used to force gevent loop on flask thread to run."""
+    return "pong"
+
+# -----------------------------------------------------------------------------
 
 @app.errorhandler(Exception)
 def handle_error(err) -> Tuple[str, int]:
@@ -835,7 +841,6 @@ def add_ws_event(event_type: int, text: str):
     # Yield to main loop
     gevent.sleep(0)
 
-
 logging.root.addHandler(
     FunctionLoggingHandler(lambda msg: add_ws_event(WS_EVENT_LOG, msg))
 )
@@ -857,6 +862,9 @@ class WebSocketObserver(RhasspyActor):
             intent_json = json.dumps(message.intent)
             self._logger.debug(intent_json)
             add_ws_event(WS_EVENT_INTENT, intent_json)
+
+            # Really silly way of forcing gevent loop on main thread to run...
+            requests.get(f"http://{args.host}:{args.port}/api/ping")
 
 
 @sockets.route("/api/events/intent")
