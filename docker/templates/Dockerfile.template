@@ -36,6 +36,8 @@ RUN ldconfig
 RUN find / -name bw -exec cp '{}' /usr/bin/ \;
 RUN find / -name mllr_solve -exec cp '{}' /usr/bin/ \;
 
+GSTREAMER
+
 PULSEAUDIO
 
 # Copy script to run

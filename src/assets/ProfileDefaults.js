@@ -88,7 +88,10 @@ const profileDefaults = {
         "http": {
             "host": "127.0.0.1",
             "port": 12333
-        }
+        },
+        "gstreamer": {
+            "pipeline": "udpsrc port=12333 ! rawaudioparse use-sink-caps=false format=pcm pcm-format=s16le sample-rate=16000 num-channels=1 ! queue ! audioconvert ! audioresample"
+        },
     },
     "mqtt": {
         "enabled": false,
@@ -243,6 +246,12 @@ const profileDefaults = {
         "command": {
             "program": "$RHASSPY_BASE_DIR/bin/mock-commands/sleep.sh",
             "arguments": []
+        },
+        "porcupine": {
+            "library_path": "porcupine/libpv_porcupine.so",
+            "model_path": "porcupine/porcupine_params.pv",
+            "keyword_path": "porcupine/porcupine.ppn",
+            "sensitivity": 0.5
         },
         "system": "pocketsphinx"
     }

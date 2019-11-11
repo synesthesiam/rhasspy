@@ -101,6 +101,43 @@ Note that `microphone.http.port` must be different than Rhasspy's webserver port
 
 See `rhasspy.audio_recorder.HTTPAudioRecorder` for details.
 
+## GStreamer
+
+Receives audio chunks via stdout from a [GStreamer](https://gstreamer.freedesktop.org/) pipeline.
+
+Add to your [profile](profiles.md):
+
+```json
+"microphone": {
+  "system": "gstreamer",
+  "gstreamer": {
+    "pipeline": "...",
+  }
+}
+```
+
+Set `microphone.gstreamer.pipeline` to your GStreamer pipeline **without a sink** (this will be added by Rhasspy). By default, the pipeline is:
+
+```
+udpsrc port=12333 ! rawaudioparse use-sink-caps=false format=pcm pcm-format=s16le sample-rate=16000 num-channels=1 ! queue ! audioconvert ! audioresample
+```
+
+which "simply" receives raw 16-bit 16khz audio chunks via UDP port 12333. You could stream microphone audio to Rhasspy from another machine by running the following terminal command:
+
+```bash
+gst-launch-1.0 \
+    autoaudiosrc ! \
+    audioconvert ! \
+    audioresample ! \
+    audio/x-raw, rate=16000, channels=1, format=S16LE ! \
+    udpsink host=RHASSPY_SERVER port=12333
+```
+
+where `RHASSPY_SERVER` is the hostname of your Rhasspy server (e.g., `localhost`).
+
+The Rhasspy Docker images contains the ["good" plugin](https://gstreamer.freedesktop.org/data/doc/gstreamer/head/gst-plugins-good-plugins/html/) set for GStreamer, which includes a wide variety of ways to stream/transform audio.
+
+See `rhasspy.audio_recorder.GStreamerAudioRecorder` for details.
 
 ## Dummy
 

@@ -77,6 +77,7 @@
                     </div>
                 </div>
             </div>
+            <hr>
             <div class="form-group">
                 <div class="form-row">
                     <div class="form-check">
@@ -127,6 +128,35 @@
                             Stop After Intent Recognition
                         </label>
                     </div>
+                </div>
+            </div>
+            <hr>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="profile.microphone.system" id="audio-system-gstreamer" value="gstreamer" v-model="profile.microphone.system">
+                        <label class="form-check-label" for="audio-system-gstreamer">
+                            Get microphone input from a <a href="https://gstreamer.freedesktop.org/">GStreamer pipeline</a>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label class="form-label" for="gstreamer-pipeline">Pipeline</label>
+                    <div class="col">
+                        <textarea id="gstreamer-pipeline" class="form-control" type="text" rows="3" v-model="profile.microphone.gstreamer.pipeline" :disabled="profile.microphone.system != 'gstreamer'"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <p class="text-muted">Keep pipeline on a single line. Rhasspy will run the following command:</p>
+                </div>
+                <div class="form-row">
+                    <p class="text-muted">
+                        <tt>gst-launch-1.0 {{ profile.microphone.gstreamer.pipeline }} ! fdsink fd=1</tt>
+                    </p>
                 </div>
             </div>
         </div>

@@ -82,6 +82,9 @@ RUN ldconfig
 RUN find / -name bw -exec cp '{}' /usr/bin/ \;
 RUN find / -name mllr_solve -exec cp '{}' /usr/bin/ \;
 
+# Install gstreamer and plugins
+apt-get install -y gstreamer1.0-tools gstreamer1.0-plugins-good
+
 RUN apt-get install -y pulseaudio
 COPY etc/pulseaudio.client.conf /etc/pulse/client.conf
 
