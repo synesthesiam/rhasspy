@@ -229,39 +229,44 @@ class HermesMqtt(RhasspyActor):
 
     def publish_intent(self, intent: Dict[str, Any]) -> None:
         intent_name = pydash.get(intent, "intent.name", "")
-        if len(intent_name) == 0:
-            self._logger.warning("Empty intent. Not forwarding to MQTT")
-            return
+        not_recognized = len(intent_name) == 0
 
         assert self.client is not None
 
-        # Publish using Rhasspy protocol
-        topic = f"rhasspy/intent/{intent_name}"
-        payload = json.dumps({ev["entity"]: ev["value"] for ev in intent["entities"]})
-        self.client.publish(topic, payload)
+        if not_recognized:
+            # Publish using Hermes protocol
+            topic = "hermes/nlu/intentNotRecognized"
+            payload = json.dumps({"sessionId": "", "input": intent.get("text", "")})
+        else:
+            # Publish using Rhasspy protocol
+            topic = f"rhasspy/intent/{intent_name}"
+            payload = json.dumps(
+                {ev["entity"]: ev["value"] for ev in intent["entities"]}
+            )
+            self.client.publish(topic, payload)
 
-        # Publish using Hermes protocol
-        topic = f"hermes/intent/{intent_name}"
-        payload = json.dumps(
-            {
-                "sessionId": "",
-                "siteId": self.site_id,
-                "input": intent.get("text", ""),
-                "intent": {
-                    "intentName": intent_name,
-                    "confidenceScore": pydash.get(intent, "intent.confidence", 1),
-                },
-                "slots": [
-                    {
-                        "slotName": ev["entity"],
-                        "confidence": 1,
-                        "value": {"kind": ev["entity"], "value": ev["value"]},
-                        "rawValue": ev["value"],
-                    }
-                    for ev in intent.get("entities", [])
-                ],
-            }
-        ).encode()
+            # Publish using Hermes protocol
+            topic = f"hermes/intent/{intent_name}"
+            payload = json.dumps(
+                {
+                    "sessionId": "",
+                    "siteId": self.site_id,
+                    "input": intent.get("text", ""),
+                    "intent": {
+                        "intentName": intent_name,
+                        "confidenceScore": pydash.get(intent, "intent.confidence", 1),
+                    },
+                    "slots": [
+                        {
+                            "slotName": ev["entity"],
+                            "confidence": 1,
+                            "value": {"kind": ev["entity"], "value": ev["value"]},
+                            "rawValue": ev["value"],
+                        }
+                        for ev in intent.get("entities", [])
+                    ],
+                }
+            ).encode()
 
         self.client.publish(topic, payload)
         self._logger.debug(f"Published intent to {topic}")

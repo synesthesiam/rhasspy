@@ -689,7 +689,7 @@ class DialogueManager(RhasspyActor):
         # Configure actors
         self.wait_actors: Dict[str, RhasspyActor] = {}
         for name, actor in self.actors.items():
-            if actor in [self.mqtt]:
+            if (actor is None) or (actor in [self.mqtt]):
                 continue  # skip
 
             self.send(
