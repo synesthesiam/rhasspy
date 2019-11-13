@@ -1,21 +1,63 @@
 #!/usr/bin/env bash
+this_dir="$( cd "$( dirname "$0" )" && pwd )"
+
+# -----------------------------------------------------------------------------
+# Command-line Arguments
+# -----------------------------------------------------------------------------
+
+. "${this_dir}/etc/shflags"
+
+DEFINE_string 'venv' "${this_dir}/.venv" 'Path to create virtual environment'
+DEFINE_string 'download-dir' "${this_dir}/download" 'Directory to cache downloaded files'
+DEFINE_boolean 'system' true 'Install system dependencies'
+DEFINE_boolean 'flair' true 'Install flair'
+DEFINE_boolean 'precise' true 'Install Mycroft Precise'
+DEFINE_boolean 'adapt' true 'Install Mycroft Adapt'
+DEFINE_boolean 'google' true 'Install Google Text to Speech'
+DEFINE_boolean 'kaldi' true 'Install Kaldi'
+DEFINE_boolean 'offline' false "Don't download anything"
+DEFINE_integer 'make-threads' 4 'Number of threads to use with make' 'j'
+
+FLAGS "$@" || exit $?
+eval set -- "${FLAGS_ARGV}"
+
+# -----------------------------------------------------------------------------
+# Default Settings
+# -----------------------------------------------------------------------------
+
 set -e
 
-# Process command-line arguments
-no_flair="no"
-for arg in "$@"; do
-    shift
-    case "${arg}" in
-        "--no-flair") no_flair="yes" ;;
-    esac
-done
-
-# Directory of *this* script
-DIR="$( cd "$( dirname "$0" )" && pwd )"
-
-# Place where downloaded artifacts are stored
-download_dir="${DIR}/download"
+venv="${FLAGS_venv}"
+download_dir="${FLAGS_download_dir}"
 mkdir -p "${download_dir}"
+
+if [[ "${FLAGS_system}" -eq "${FLAGS_FALSE}" ]]; then
+    no_system='true'
+fi
+
+if [[ "${FLAGS_flair}" -eq "${FLAGS_FALSE}" ]]; then
+    no_flair='true'
+fi
+
+if [[ "${FLAGS_precise}" -eq "${FLAGS_FALSE}" ]]; then
+    no_precise='true'
+fi
+
+if [[ "${FLAGS_adapt}" -eq "${FLAGS_FALSE}" ]]; then
+    no_adapt='true'
+fi
+
+if [[ "${FLAGS_kaldi}" -eq "${FLAGS_FALSE}" ]]; then
+    no_kaldi='true'
+fi
+
+if [[ "${FLAGS_offline}" -eq "${FLAGS_TRUE}" ]]; then
+    offline='true'
+fi
+
+make_threads="${FLAGS_make_threads}"
+
+# -----------------------------------------------------------------------------
 
 # CPU architecture
 CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
@@ -43,20 +85,37 @@ function cleanup {
 trap cleanup EXIT
 
 # -----------------------------------------------------------------------------
+
+function maybe_download {
+    if [[ ! -f "$2" ]]; then
+        if [[ ! -z "${offline}" ]]; then
+            echo "Need to download $1 but offline."
+            exit 1
+        fi
+
+        mkdir -p "$(dirname "$2")"
+        curl -sSfL -o "$2" "$1"
+        echo "$1 => $2"
+    fi
+}
+
+# -----------------------------------------------------------------------------
 # Debian dependencies
 # -----------------------------------------------------------------------------
 
-echo "Installing system dependencies (${FRIENDLY_ARCH})"
-sudo apt-get update
-sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
-     python \
-     build-essential autoconf autoconf-archive libtool automake bison \
-     sox espeak flite swig portaudio19-dev \
-     libatlas-base-dev \
-     gfortran \
-     sphinxbase-utils sphinxtrain pocketsphinx \
-     jq checkinstall unzip xz-utils \
-     curl
+if [[ -z "${no_system}" ]]; then
+    echo "Installing system dependencies (${FRIENDLY_ARCH})"
+    sudo apt-get update
+    sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
+         python \
+         build-essential autoconf autoconf-archive libtool automake bison \
+         sox espeak flite swig portaudio19-dev \
+         libatlas-base-dev \
+         gfortran \
+         sphinxbase-utils sphinxtrain pocketsphinx \
+         jq checkinstall unzip xz-utils \
+         curl
+fi
 
 # -----------------------------------------------------------------------------
 # Python 3.6
@@ -70,15 +129,13 @@ if [[ -z "$(which python3.6)" ]]; then
          libexpat1-dev liblzma-dev zlib1g-dev
 
     python_file="${download_dir}/Python-3.6.8.tar.xz"
-    if [[ ! -f "${python_file}" ]]; then
-        python_url='https://www.python.org/ftp/python/3.6.8/Python-3.6.8.tar.xz'
-        curl -sSfL -o "${python_file}" "${python_url}"
-    fi
+    python_url='https://www.python.org/ftp/python/3.6.8/Python-3.6.8.tar.xz'
+    maybe_download "${python_url}" "${python_file}"
 
     tar -C "${temp_dir}" -xf "${python_file}"
     cd "${temp_dir}/Python-3.6.8" && \
         ./configure && \
-        make -j 4 && \
+        make -j "${make_threads}" && \
         sudo make altinstall
 fi
 
@@ -87,58 +144,89 @@ fi
 # -----------------------------------------------------------------------------
 
 echo "Downloading dependencies"
-bash download-dependencies.sh "${CPU_ARCH}"
+download_args=()
+if [[ ! -z "${offline}" ]]; then
+    download_args+=('--offline')
+fi
+
+if [[ ! -z "${no_precise}" ]]; then
+    download_args+=('--noprecise')
+fi
+
+if [[ ! -z "${no_kaldi}" ]]; then
+    download_args+=('--nokaldi')
+fi
+
+bash download-dependencies.sh "${download_args[@]}"
 
 # -----------------------------------------------------------------------------
 # Virtual environment
 # -----------------------------------------------------------------------------
 
-cd "${DIR}"
+cd "${this_dir}"
 
 PYTHON="python3.6"
-VENV_PATH="${DIR}/.venv"
-echo "${VENV_PATH}"
+echo "${venv}"
 
-echo "Removing existing virtual environment"
-rm -rf "${VENV_PATH}"
+if [[ -d "${venv}" ]]; then
+    echo "Removing existing virtual environment"
+    rm -rf "${venv}"
+fi
 
 echo "Creating new virtual environment"
-mkdir -p "${VENV_PATH}"
-"${PYTHON}" -m venv "${VENV_PATH}"
+mkdir -p "${venv}"
+"${PYTHON}" -m venv "${venv}"
 
 # Extract Rhasspy tools
 rhasspy_tools_file="${download_dir}/rhasspy-tools_${FRIENDLY_ARCH}.tar.gz"
 echo "Extracting tools (${rhasspy_tools_file})"
-tar -C "${VENV_PATH}" -xf "${rhasspy_tools_file}"
+tar -C "${venv}" -xf "${rhasspy_tools_file}"
 
 # Force .venv/lib to be used
-export LD_LIBRARY_PATH="${VENV_PATH}/lib:${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH="${venv}/lib:${LD_LIBRARY_PATH}"
 
 # shellcheck source=/dev/null
-source "${VENV_PATH}/bin/activate"
+source "${venv}/bin/activate"
 
 echo "Installing Python requirements"
 "${PYTHON}" -m pip install wheel
 "${PYTHON}" -m pip install requests
 
-openfst_url='https://github.com/synesthesiam/jsgf2fst/releases/download/v0.1.0/openfst-1.6.1.tar.gz'
-INCLUDE_DIR="${VENV_PATH}/include" LIBRARY_DIR="${VENV_PATH}/lib" \
-	           "${PYTHON}" -m pip install "${openfst_url}"
-
 # pytorch is not available on ARM
 case "${CPU_ARCH}" in
     armv7l|arm64v8)
-	    no_flair="yes" ;;
+	    no_flair="true" ;;
 esac
 
-requirements_file="${DIR}/requirements.txt"
+requirements_file="${temp_dir}/requirements.txt"
+cp "${this_dir}/requirements.txt" "${requirements_file}"
+
+# Exclude requirements
 if [[ ! -z "${no_flair}" ]]; then
     echo "Excluding flair from virtual environment"
-    grep -v flair "${requirements_file}" > "${temp_dir}/requirements.txt"
-    requirements_file="${temp_dir}/requirements.txt"
+    sed -i '/^flair/d' "${requirements_file}"
 fi
 
-"${PYTHON}" -m pip install -r "${requirements_file}"
+if [[ ! -z "${no_precise}" ]]; then
+    echo "Excluding Mycroft Precise from virtual environment"
+    sed -i '/^precise-runner/d' "${requirements_file}"
+fi
+
+if [[ ! -z "${no_adapt}" ]]; then
+    echo "Excluding Mycroft Adapt from virtual environment"
+    sed -i '/^adapt-parser/d' "${requirements_file}"
+fi
+
+if [[ ! -z "${no_google}" ]]; then
+    echo "Excluding Google Text to Speech from virtual environment"
+    sed -i '/^google-cloud-texttospeech/d' "${requirements_file}"
+fi
+
+"${PYTHON}" -m pip install \
+            --global-option=build_ext \
+            --global-option="-I${venv}/include" \
+            --global-option="-L${venv}/lib" \
+            -r "${requirements_file}"
 
 # -----------------------------------------------------------------------------
 # Pocketsphinx for Python
@@ -165,14 +253,14 @@ esac
 # Mycroft Precise
 # -----------------------------------------------------------------------------
 
-if [[ -z "$(which precise-engine)" ]]; then
+if [[ -z "${no_precise}" && -z "$(which precise-engine)" ]]; then
     case "${CPU_ARCH}" in
         x86_64|armv7l)
             echo "Installing Mycroft Precise"
             precise_file="${download_dir}/precise-engine_0.3.0_${CPU_ARCH}.tar.gz"
-            precise_install="${VENV_PATH}/lib"
+            precise_install="${venv}/lib"
             tar -C "${precise_install}" -xf "${precise_file}"
-            ln -s "${precise_install}/precise-engine/precise-engine" "${VENV_PATH}/bin/precise-engine"
+            ln -s "${precise_install}/precise-engine/precise-engine" "${venv}/bin/precise-engine"
             ;;
 
         *)
@@ -184,10 +272,12 @@ fi
 # Kaldi
 # -----------------------------------------------------------------------------
 
-kaldi_file="${download_dir}/kaldi_${FRIENDLY_ARCH}.tar.gz"
-echo "Installing Kaldi (${kaldi_file})"
-mkdir -p "${DIR}/opt"
-tar -C "${DIR}/opt" -xf "${kaldi_file}"
+if [[ -z "${no_kaldi}" ]]; then
+    kaldi_file="${download_dir}/kaldi_${FRIENDLY_ARCH}.tar.gz"
+    echo "Installing Kaldi (${kaldi_file})"
+    mkdir -p "${this_dir}/opt"
+    tar -C "${this_dir}/opt" -xf "${kaldi_file}"
+fi
 
 # -----------------------------------------------------------------------------
 # Web Interface
@@ -195,7 +285,7 @@ tar -C "${DIR}/opt" -xf "${kaldi_file}"
 
 rhasspy_web_file="${download_dir}/rhasspy-web-dist.tar.gz"
 echo "Extracting web interface (${rhasspy_web_file})"
-tar -C "${DIR}" -xf "${rhasspy_web_file}"
+tar -C "${this_dir}" -xf "${rhasspy_web_file}"
 
 # -----------------------------------------------------------------------------
 
