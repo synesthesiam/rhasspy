@@ -3,10 +3,8 @@
         <form class="form" v-on:submit.prevent="getIntent">
             <div class="form-group">
                 <div class="form-row text-muted">
-                    <p>You can test Rhasspy from here by pressing and holding the "Hold to Record" button, speaking a command, then releasing the button.</p>
+                    <p>Press and hold the "Hold to Record" button, speaking a command, then release the button to test.</p>
                 </div>
-            </div>
-            <div class="form-group">
                 <div class="form-row">
                     <div class="col-auto">
                         <button type="button" class="btn"
@@ -83,7 +81,7 @@
                 </div>
             </div>
             <div class="form-group">
-                <div class="form-row mt-5">
+                <div class="form-row mt-3">
                     <div class="col-auto">
                         <input type="checkbox" id="sendHass" v-model="sendHass"
                                title="If checked, forward all recognized intents to Home Assistant">
@@ -92,9 +90,18 @@
                 </div>
             </div>
             <hr />
-            <div class="form-group">
-                <div class="form-row mt-5">
+            <div class="form-group mt-1" v-if="jsonSource != null">
+                <div class="form-row" v-if="jsonSource.intent.name.length > 0">
+                    <div class="badge badge-danger">{{ jsonSource.intent.name }}</div>
+                </div>
+                <div class="form-row" v-if="jsonSource.intent.name.length > 0">
+                    <ul class="mt-1">
+                        <li v-for="(value, key) in jsonSource.slots">{{ value }} <span class="badge badge-primary">{{ key }}</span></li>
+                    </ul>
+                </div>
+                <div class="form-row mt-3">
                     <div>
+                        <p class="text-muted mb-2">Raw Intent JSON</p>
                         <tree-view :data="jsonSource"
                                    :options='{ rootObjectKey: "intent" }'
                                    :hidden="!jsonSource"></tree-view>
