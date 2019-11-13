@@ -40,6 +40,8 @@
                     <a class="nav-link" id="language-tab" data-toggle="tab" href="#language" role="tab" aria-controls="language" aria-selected="false">Sentences</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" id="slots-tab" data-toggle="tab" href="#slots" role="tab" aria-controls="pronounce" aria-selected="true">Slots</a>
+                <li class="nav-item">
                     <a class="nav-link" id="pronounce-tab" data-toggle="tab" href="#pronounce" role="tab" aria-controls="pronounce" aria-selected="true">Words</a>
                 </li>
                 <li class="nav-item">
@@ -58,6 +60,9 @@
                 </div>
                 <div class="tab-pane fade" id="language" role="tabpanel" aria-labelledby="language-tab">
                     <TrainLanguageModel />
+                </div>
+                <div class="tab-pane fade" id="slots" role="tabpanel" aria-labelledby="slots-tab">
+                    <Slots />
                 </div>
                 <div class="tab-pane fade" id="pronounce" role="tabpanel" aria-labelledby="pronounce-tab">
                     <LookupPronounce :unknownWords="unknownWords" />
@@ -130,6 +135,7 @@
  import ProfileSettings from './components/ProfileSettings.vue'
  import Problems from './components/Problems.vue'
  import RhasspyLog from './components/RhasspyLog.vue'
+ import Slots from './components/Slots.vue'
 
  import ProfileDefaults from '@/assets/ProfileDefaults'
 
@@ -141,7 +147,8 @@
          TranscribeSpeech,
          ProfileSettings,
          Problems,
-         RhasspyLog
+         RhasspyLog,
+         Slots
      },
 
      data: function() {

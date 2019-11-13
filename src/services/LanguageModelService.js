@@ -10,6 +10,15 @@ export default {
         return Api().get('/api/sentences')
     },
 
+    update_slots(slots) {
+        return Api().post('/api/slots', slots,
+                          { headers: { 'Content-Type': 'application/json' } })
+    },
+
+    getSlots() {
+        return Api().get('/api/slots')
+    },
+
     train(noCache) {
         var params = {}
         if (noCache) {
