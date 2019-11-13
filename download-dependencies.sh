@@ -1,12 +1,63 @@
 #!/usr/bin/env bash
+this_dir="$( cd "$( dirname "$0" )" && pwd )"
+CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
+
+# -----------------------------------------------------------------------------
+# Command-line Arguments
+# -----------------------------------------------------------------------------
+
+. "${this_dir}/etc/shflags"
+
+DEFINE_string 'download-dir' "${this_dir}/download" 'Directory to cache downloaded files'
+DEFINE_boolean 'precise' true 'Install Mycroft Precise'
+DEFINE_boolean 'kaldi' true 'Install Kaldi'
+DEFINE_boolean 'offline' false "Don't download anything"
+DEFINE_boolean 'all-cpu' false 'Download dependencies for all CPU architectures'
+
+FLAGS "$@" || exit $?
+eval set -- "${FLAGS_ARGV}"
+
+# -----------------------------------------------------------------------------
+# Default Settings
+# -----------------------------------------------------------------------------
+
 set -e
 
-# Directory of *this* script
-DIR="$( cd "$( dirname "$0" )" && pwd )"
-
-# Place where downloaded artifacts are stored
-download_dir="${DIR}/download"
+download_dir="${FLAGS_download_dir}"
 mkdir -p "${download_dir}"
+
+if [[ "${FLAGS_offline}" -eq "${FLAGS_TRUE}" ]]; then
+    offline='true'
+fi
+
+if [[ "${FLAGS_all_cpu}" -eq "${FLAGS_TRUE}" ]]; then
+    all_cpu='true'
+fi
+
+if [[ "${FLAGS_precise}" -eq "${FLAGS_FALSE}" ]]; then
+    no_precise='true'
+fi
+
+if [[ "${FLAGS_kaldi}" -eq "${FLAGS_FALSE}" ]]; then
+    no_kaldi='true'
+fi
+
+# -----------------------------------------------------------------------------
+
+function maybe_download {
+    if [[ ! -f "$2" ]]; then
+        if [[ ! -z "${offline}" ]]; then
+            echo "Need to download $1 but offline."
+            exit 1
+        fi
+
+        mkdir -p "$(dirname "$2")"
+        curl -sSfL -o "$2" "$1"
+        echo "$1 => $2"
+    fi
+}
+
+# -----------------------------------------------------------------------------
 
 declare -A CPU_TO_FRIENDLY
 CPU_TO_FRIENDLY["x86_64"]="amd64"
@@ -14,12 +65,12 @@ CPU_TO_FRIENDLY["armv7l"]="armhf"
 CPU_TO_FRIENDLY["arm64v8"]="aarch64"
 
 # CPU architecture
-if [[ -z "$1" ]]; then
+if [[ ! -z "${all_cpu}" ]]; then
     CPU_ARCHS=("x86_64" "armv7l" "arm64v8")
     FRIENDLY_ARCHS=("amd64" "armhf" "aarch64")
 else
-    CPU_ARCHS=("$1")
-    FRIENDLY_ARCHS=("${CPU_TO_FRIENDLY[$1]}")
+    CPU_ARCHS=("${CPU_ARCH}")
+    FRIENDLY_ARCHS=("${CPU_TO_FRIENDLY[${CPU_ARCH}]}")
 fi
 
 # -----------------------------------------------------------------------------
@@ -31,11 +82,8 @@ do
     rhasspy_files=("rhasspy-tools_${FRIENDLY_ARCH}.tar.gz" "rhasspy-web-dist.tar.gz")
     for rhasspy_file_name in "${rhasspy_files}"; do
         rhasspy_file="${download_dir}/${rhasspy_file_name}"
-        if [[ ! -f "${rhasspy_file}" ]]; then
-            rhasspy_file_url="https://github.com/synesthesiam/rhasspy/releases/download/v2.0/${rhasspy_file_name}"
-            echo "Downloading ${rhasspy_file} (${rhasspy_file_url})"
-            curl -sSfL -o "${rhasspy_file}" "${rhasspy_file_url}"
-        fi
+        rhasspy_file_url="https://github.com/synesthesiam/rhasspy/releases/download/v2.0/${rhasspy_file_name}"
+        maybe_download "${rhasspy_file_url}" "${rhasspy_file}"
     done
 done
 
@@ -44,75 +92,46 @@ done
 # -----------------------------------------------------------------------------
 
 pocketsphinx_file="${download_dir}/pocketsphinx-python.tar.gz"
-if [[ ! -f "${pocketsphinx_file}" ]]; then
-    pocketsphinx_url='https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz'
-    echo "Downloading pocketsphinx (${pocketsphinx_url})"
-    curl -sSfL -o "${pocketsphinx_file}" "${pocketsphinx_url}"
-fi
-
-# -----------------------------------------------------------------------------
-# jsgf2fst
-# -----------------------------------------------------------------------------
-
-jsgf2fst_file="${download_dir}/jsgf2fst-0.1.0.tar.gz"
-if [[ ! -f "${jsgf2fst_file}" ]]; then
-    jsgf2fst_url='https://github.com/synesthesiam/jsgf2fst/releases/download/v0.1.0/jsgf2fst-0.1.0.tar.gz'
-    echo "Downloading jsgf2fst (${jsgf2fst_url})"
-    curl -sSfL -o "${jsgf2fst_file}" "${jsgf2fst_url}"
-fi
+pocketsphinx_url='https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz'
+maybe_download "${pocketsphinx_url}" "${pocketsphinx_file}"
 
 # -----------------------------------------------------------------------------
 # Snowboy
 # -----------------------------------------------------------------------------
 
 snowboy_file="${download_dir}/snowboy-1.3.0.tar.gz"
-if [[ ! -f "${snowboy_file}" ]]; then
-    snowboy_url='https://github.com/Kitt-AI/snowboy/archive/v1.3.0.tar.gz'
-    echo "Downloading snowboy (${snowboy_url})"
-    curl -sSfL -o "${snowboy_file}" "${snowboy_url}"
-fi
+snowboy_url='https://github.com/Kitt-AI/snowboy/archive/v1.3.0.tar.gz'
+maybe_download "${snowboy_url}" "${snowboy_file}"
 
 # -----------------------------------------------------------------------------
 # Mycroft Precise
 # -----------------------------------------------------------------------------
 
-for CPU_ARCH in "${CPU_ARCHS}";
-do
-    case $CPU_ARCH in
-        x86_64|armv7l)
-            precise_file="${download_dir}/precise-engine_0.3.0_${CPU_ARCH}.tar.gz"
-            if [[ ! -f "${precise_file}" ]]; then
+if [[ -z "${no_precise}" ]]; then
+    for CPU_ARCH in "${CPU_ARCHS}";
+    do
+        case $CPU_ARCH in
+            x86_64|armv7l)
+                precise_file="${download_dir}/precise-engine_0.3.0_${CPU_ARCH}.tar.gz"
                 precise_url="https://github.com/MycroftAI/mycroft-precise/releases/download/v0.3.0/precise-engine_0.3.0_${CPU_ARCH}.tar.gz"
-                echo "Downloading Mycroft Precise (${precise_url})"
-                curl -sSfL -o "${precise_file}" "${precise_url}"
-            fi
-    esac
-done
+                maybe_download "${precise_url}" "${precise_file}"
+        esac
+    done
+fi
 
 # -----------------------------------------------------------------------------
 # Kaldi
 # -----------------------------------------------------------------------------
 
-for FRIENDLY_ARCH in "${FRIENDLY_ARCHS}"
-do
-    # Install pre-built package
-    kaldi_file="${download_dir}/kaldi_${FRIENDLY_ARCH}.tar.gz"
-    if [[ ! -f "${kaldi_file}" ]]; then
+if [[ -z "${no_kaldi}" ]]; then
+    for FRIENDLY_ARCH in "${FRIENDLY_ARCHS}"
+    do
+        # Install pre-built package
+        kaldi_file="${download_dir}/kaldi_${FRIENDLY_ARCH}.tar.gz"
         kaldi_url="https://github.com/synesthesiam/kaldi-docker/releases/download/v1.0/kaldi_${FRIENDLY_ARCH}.tar.gz"
-        echo "Downloading kaldi (${kaldi_url})"
-        curl -sSfL -o "${kaldi_file}" "${kaldi_url}"
-    fi
-done
-
-# -----------------------------------------------------------------------------
-# Web Interface
-# -----------------------------------------------------------------------------
-
-rhasspy_web_file="${download_dir}/rhasspy-web-dist.tar.gz"
-rhasspy_web_url="https://github.com/synesthesiam/rhasspy/releases/download/v2.0/rhasspy-web-dist.tar.gz"
-echo "Downloading web interface (${rhasspy_web_url})"
-curl -sSfL -o "${rhasspy_web_file}" "${rhasspy_web_url}"
-
+        maybe_download "${kaldi_url}" "${kaldi_file}"
+    done
+fi
 
 # -----------------------------------------------------------------------------
 

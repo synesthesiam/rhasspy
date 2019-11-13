@@ -680,14 +680,15 @@ def api_text_to_speech() -> str:
 def api_slots() -> Union[str, Response]:
     """Get the values of all slots"""
     assert core is not None
-    overwrite_all = request.args.get("overwrite_all", "false").lower() == "true"
-    new_slot_values = json.loads(request.data)
 
-    slots_dir = core.profile.read_path(
-        core.profile.get("speech_to_text.slots_dir", "slots")
+    slots_dir = Path(
+        core.profile.read_path(core.profile.get("speech_to_text.slots_dir"))
     )
 
     if request.method == "POST":
+        overwrite_all = request.args.get("overwrite_all", "false").lower() == "true"
+        new_slot_values = json.loads(request.data)
+
         if overwrite_all:
             # Remote existing values first
             for name in new_slot_values.keys():
@@ -714,11 +715,6 @@ def api_slots() -> Union[str, Response]:
                         print(value, file=slots_file)
 
         return "OK"
-
-    # Load slots values
-    slots_dir = Path(
-        core.profile.read_path(core.profile.get("speech_to_text.slots_dir"))
-    )
 
     # Read slots into dictionary
     slots_dict = {}
