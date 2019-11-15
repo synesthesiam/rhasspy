@@ -16,8 +16,11 @@ import subprocess
 from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple, Callable, Set
 from pathlib import Path
 
+from num2words import num2words
 import pywrapfst as fst
 import pydash
+
+WHITESPACE_PATTERN = re.compile(r"\s+")
 
 # -----------------------------------------------------------------------------
 
@@ -385,3 +388,38 @@ def ppath(
         return Path(profile.write_path(result))
 
     return Path(profile.read_path(result))
+
+
+# -----------------------------------------------------------------------------
+
+
+def numbers_to_words(
+    sentence: str, language: Optional[str] = None, add_substitution: bool = False
+) -> str:
+    """Replaces numbers with words in a sentence. Optionally substitues number back in."""
+    words = WHITESPACE_PATTERN.split(sentence)
+    changed = False
+    for i, word in enumerate(words):
+        try:
+            number = float(word)
+
+            # 75 -> seventy-five -> seventy five
+            words[i] = num2words(number, lang=language).replace("-", " ")
+
+            if add_substitution:
+                # Empty substitution for everything but last word.
+                # seventy five -> seventy: five:75
+                number_words = [w + ":" for w in WHITESPACE_PATTERN.split(words[i])]
+                number_words[-1] += word
+                words[i] = " ".join(number_words)
+
+            changed = True
+        except ValueError:
+            pass  # not a number
+        except NotImplementedError:
+            break  # unsupported language
+
+    if not changed:
+        return sentence
+
+    return " ".join(words)

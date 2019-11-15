@@ -19,3 +19,4 @@ html5lib
 networkx>=2.0
 doit
 openfst==1.6.9
+num2words

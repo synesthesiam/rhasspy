@@ -22,6 +22,7 @@ from rhasspy.intent import IntentRecognized
 from rhasspy.intent_handler import IntentHandled
 from rhasspy.pronounce import WordPronunciations, WordPhonemes, WordSpoken
 from rhasspy.tts import SentenceSpoken
+from rhasspy.utils import numbers_to_words
 from rhasspy.dialogue import (
     DialogueManager,
     GetMicrophones,
@@ -180,6 +181,15 @@ class RhasspyCore:
                 text = text.lower()
             elif dict_casing == "upper":
                 text = text.upper()
+
+            # Replace numbers
+            if self.profile.get("intent.replace_numbers", True):
+                language = self.profile.get("language", "")
+                if len(language) == 0:
+                    language = None
+
+                # 75 -> seventy five
+                text = numbers_to_words(text, language=language)
 
             result = sys.ask(self.dialogue_manager, RecognizeIntent(text, handle=False))
             assert isinstance(result, IntentRecognized), result
