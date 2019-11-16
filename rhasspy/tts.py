@@ -9,9 +9,9 @@ from typing import Any, Optional, Type, Dict
 
 import requests
 
-from .actor import RhasspyActor, ConfigureEvent, Configured
-from .profiles import Profile
-from .audio_player import PlayWavData, WavPlayed
+from rhasspy.actor import RhasspyActor, ConfigureEvent, Configured
+from rhasspy.profiles import Profile
+from rhasspy.audio_player import PlayWavData, WavPlayed
 
 # -----------------------------------------------------------------------------
 

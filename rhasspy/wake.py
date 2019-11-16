@@ -11,11 +11,11 @@ import struct
 from uuid import uuid4
 from typing import Optional, Any, List, Dict, Type
 
-from .actor import RhasspyActor
-from .profiles import Profile
-from .audio_recorder import StartStreaming, StopStreaming, AudioData
-from .mqtt import MqttSubscribe, MqttMessage
-from .utils import ByteStream, read_dict
+from rhasspy.actor import RhasspyActor
+from rhasspy.profiles import Profile
+from rhasspy.audio_recorder import StartStreaming, StopStreaming, AudioData
+from rhasspy.mqtt import MqttSubscribe, MqttMessage
+from rhasspy.utils import ByteStream, read_dict
 
 # -----------------------------------------------------------------------------
 

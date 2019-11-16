@@ -7,8 +7,8 @@ import tempfile
 import uuid
 from typing import Any, Dict, Optional, Type
 
-from .actor import RhasspyActor
-from .mqtt import MqttPublish
+from rhasspy.actor import RhasspyActor
+from rhasspy.mqtt import MqttPublish
 
 # -----------------------------------------------------------------------------
 # Events

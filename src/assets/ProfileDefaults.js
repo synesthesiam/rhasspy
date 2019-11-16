@@ -243,6 +243,12 @@ const profileDefaults = {
             "chunk_size": 960,
             "apply_frontend": false
         },
+        "porcupine": {
+            "library_path": "porcupine/libpv_porcupine.so",
+            "model_path": "porcupine/porcupine_params.pv",
+            "keyword_path": "porcupine/porcupine.ppn",
+            "sensitivity": 0.5
+        },
         "command": {
             "program": "$RHASSPY_BASE_DIR/bin/mock-commands/sleep.sh",
             "arguments": []

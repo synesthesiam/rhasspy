@@ -6,7 +6,7 @@ from typing import List, Dict, Mapping, Any
 
 import pydash
 
-from .utils import recursive_update
+from rhasspy.utils import recursive_update
 
 # -----------------------------------------------------------------------------
 

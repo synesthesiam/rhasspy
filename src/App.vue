@@ -16,7 +16,16 @@
                 </div>
                 <div class="navbar-container ml-auto">
                     <span title="Profile name" class="badge badge-primary ml-2" style="font-size: 1em">{{ this.profile.name }}</span>
-                    <button class="btn btn-success ml-2" @click="train" :disabled="this.training" title="Re-train current profile">Train</button>
+                    <div class="btn-group">
+                        <button class="btn btn-success ml-2" @click="train(false)" :disabled="this.training" title="Re-train current profile">Train</button>
+                        <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="#" @click="train(true)">Clear Cache</a>
+                        </div>
+                    </div>
+
                     <button class="btn btn-warning ml-2" @click="wakeup" title="Make Rhasspy listen for a voice command">Wake</button>
                     <button class="btn btn-danger ml-2" @click="restart" :disabled="this.restarting" title="Restart Rhasspy server">Restart</button>
                 </div>
@@ -30,6 +39,8 @@
                 <li class="nav-item">
                     <a class="nav-link" id="language-tab" data-toggle="tab" href="#language" role="tab" aria-controls="language" aria-selected="false">Sentences</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="slots-tab" data-toggle="tab" href="#slots" role="tab" aria-controls="pronounce" aria-selected="true">Slots</a>
                 <li class="nav-item">
                     <a class="nav-link" id="pronounce-tab" data-toggle="tab" href="#pronounce" role="tab" aria-controls="pronounce" aria-selected="true">Words</a>
                 </li>
@@ -49,6 +60,9 @@
                 </div>
                 <div class="tab-pane fade" id="language" role="tabpanel" aria-labelledby="language-tab">
                     <TrainLanguageModel />
+                </div>
+                <div class="tab-pane fade" id="slots" role="tabpanel" aria-labelledby="slots-tab">
+                    <Slots />
                 </div>
                 <div class="tab-pane fade" id="pronounce" role="tabpanel" aria-labelledby="pronounce-tab">
                     <LookupPronounce :unknownWords="unknownWords" />
@@ -121,6 +135,7 @@
  import ProfileSettings from './components/ProfileSettings.vue'
  import Problems from './components/Problems.vue'
  import RhasspyLog from './components/RhasspyLog.vue'
+ import Slots from './components/Slots.vue'
 
  import ProfileDefaults from '@/assets/ProfileDefaults'
 
@@ -132,7 +147,8 @@
          TranscribeSpeech,
          ProfileSettings,
          Problems,
-         RhasspyLog
+         RhasspyLog,
+         Slots
      },
 
      data: function() {
@@ -226,10 +242,10 @@
                            .catch(err => this.error(err))
          },
 
-         train: function() {
+         train: function(noCache) {
              this.beginAsync()
              this.training = true
-             LanguageModelService.train()
+             LanguageModelService.train(noCache)
                                  .then(request => this.alert(request.data, 'success'))
                                  .catch(err => this.error(err))
                                  .then(() => {

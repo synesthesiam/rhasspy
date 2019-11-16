@@ -10,8 +10,23 @@ export default {
         return Api().get('/api/sentences')
     },
 
-    train() {
-        return new Api().post('/api/train', '')
+    update_slots(slots) {
+        return Api().post('/api/slots', slots,
+                          { headers: { 'Content-Type': 'application/json' } })
+    },
+
+    getSlots() {
+        return Api().get('/api/slots')
+    },
+
+    train(noCache) {
+        var params = {}
+        if (noCache) {
+            params['nocache'] = 'true'
+        }
+
+        return new Api().post('/api/train', '',
+                              { params: params })
     },
 
     reload() {

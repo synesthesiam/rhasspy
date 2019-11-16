@@ -14,15 +14,16 @@ from typing import List, Dict, Optional, Any, Callable, Tuple, Union, Set
 import pydash
 
 # Internal imports
-from .actor import ConfigureEvent, ActorSystem, RhasspyActor
-from .profiles import Profile
-from .audio_recorder import AudioData, StartRecordingToBuffer, StopRecordingToBuffer
-from .stt import WavTranscription
-from .intent import IntentRecognized
-from .intent_handler import IntentHandled
-from .pronounce import WordPronunciations, WordPhonemes, WordSpoken
-from .tts import SentenceSpoken
-from .dialogue import (
+from rhasspy.actor import ConfigureEvent, ActorSystem, RhasspyActor
+from rhasspy.profiles import Profile
+from rhasspy.audio_recorder import AudioData, StartRecordingToBuffer, StopRecordingToBuffer
+from rhasspy.stt import WavTranscription
+from rhasspy.intent import IntentRecognized
+from rhasspy.intent_handler import IntentHandled
+from rhasspy.pronounce import WordPronunciations, WordPhonemes, WordSpoken
+from rhasspy.tts import SentenceSpoken
+from rhasspy.utils import numbers_to_words
+from rhasspy.dialogue import (
     DialogueManager,
     GetMicrophones,
     TestMicrophones,
@@ -180,6 +181,15 @@ class RhasspyCore:
                 text = text.lower()
             elif dict_casing == "upper":
                 text = text.upper()
+
+            # Replace numbers
+            if self.profile.get("intent.replace_numbers", True):
+                language = self.profile.get("language", "")
+                if len(language) == 0:
+                    language = None
+
+                # 75 -> seventy five
+                text = numbers_to_words(text, language=language)
 
             result = sys.ask(self.dialogue_manager, RecognizeIntent(text, handle=False))
             assert isinstance(result, IntentRecognized), result

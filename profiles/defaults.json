@@ -71,6 +71,7 @@
         "remote": {
             "url": "http://my-server:12101/api/text-to-intent"
         },
+        "replace_numbers": true,
         "system": "fsticuffs"
     },
     "language": "",

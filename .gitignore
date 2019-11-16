@@ -30,6 +30,8 @@ profiles/*/*.pb.params
 profiles/*/snowboy/
 profiles/*/precise/
 profiles/*/porcupine/
+.doit.db
+vocab.txt
 
 adapt_config.json
 tagged_sentences.md

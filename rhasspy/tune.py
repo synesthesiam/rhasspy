@@ -6,7 +6,7 @@ import logging
 import shutil
 from typing import Dict, Any
 
-from .profiles import Profile
+from rhasspy.profiles import Profile
 
 # -----------------------------------------------------------------------------
 

@@ -19,6 +19,7 @@ import time
 import atexit
 from uuid import uuid4
 from collections import defaultdict
+from pathlib import Path
 from typing import Any, Union, Tuple, Dict, List
 
 from flask import (
@@ -40,8 +41,6 @@ from gevent.queue import Queue as GQueue
 from gevent.lock import RLock
 from geventwebsocket.handler import WebSocketHandler
 
-
-from jsgf2fst import read_slots
 
 from rhasspy.profiles import Profile
 from rhasspy.core import RhasspyCore
@@ -470,7 +469,17 @@ def api_custom_words():
 
 @app.route("/api/train", methods=["POST"])
 def api_train() -> str:
+    no_cache = request.args.get("nocache", "false").lower() == "true"
+
     assert core is not None
+
+    if no_cache:
+        # Delete doit database
+        db_path = core.profile.write_path(".doit.db")
+        if os.path.exists(db_path):
+            logger.debug("Clearing training cache")
+            os.unlink(db_path)
+
     start_time = time.time()
     logger.info("Starting training")
 
@@ -671,14 +680,15 @@ def api_text_to_speech() -> str:
 def api_slots() -> Union[str, Response]:
     """Get the values of all slots"""
     assert core is not None
-    overwrite_all = request.args.get("overwrite_all", "false").lower() == "true"
-    new_slot_values = json.loads(request.data)
 
-    slots_dir = core.profile.read_path(
-        core.profile.get("speech_to_text.slots_dir", "slots")
+    slots_dir = Path(
+        core.profile.read_path(core.profile.get("speech_to_text.slots_dir"))
     )
 
     if request.method == "POST":
+        overwrite_all = request.args.get("overwrite_all", "false").lower() == "true"
+        new_slot_values = json.loads(request.data)
+
         if overwrite_all:
             # Remote existing values first
             for name in new_slot_values.keys():
@@ -706,10 +716,16 @@ def api_slots() -> Union[str, Response]:
 
         return "OK"
 
-    # Load slots values
-    slots_dir = core.profile.read_path(core.profile.get("speech_to_text.slots_dir"))
+    # Read slots into dictionary
+    slots_dict = {}
+    for slot_file_path in slots_dir.glob("*"):
+        if slot_file_path.is_file():
+            slot_name = slot_file_path.name
+            slots_dict[slot_name] = [
+                line.strip() for line in slot_file_path.read_text().splitlines()
+            ]
 
-    return jsonify(read_slots(slots_dir))
+    return jsonify(slots_dict)
 
 
 @app.route("/api/slots/<name>", methods=["GET", "POST"])
