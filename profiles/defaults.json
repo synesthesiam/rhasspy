@@ -125,7 +125,6 @@
         },
         "dictionary_casing": "",
         "g2p_casing": "",
-        "g2p_model": "g2p.fst",
         "grammars_dir": "grammars",
         "fsts_dir": "fsts",
         "kaldi": {
@@ -140,7 +139,8 @@
             "model_dir": "model",
             "unknown_words": "unknown_words.txt",
             "mix_weight": 0.0,
-            "mix_fst": "mixed.fst"
+            "mix_fst": "mixed.fst",
+            "g2p_model": "g2p.fst"
         },
         "pocketsphinx": {
             "acoustic_model": "acoustic_model",
@@ -154,7 +154,8 @@
             "mllr_matrix": "acoustic_model_mllr",
             "unknown_words": "unknown_words.txt",
             "mix_weight": 0.0,
-            "mix_fst": "mixed.fst"
+            "mix_fst": "mixed.fst",
+            "g2p_model": "g2p.fst"
         },
         "remote": {
             "url": "http://my-server:12101/api/speech-to-text"

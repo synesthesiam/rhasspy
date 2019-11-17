@@ -56,7 +56,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> None:
         f"{stt_prefix}.base_language_model_fst", "base_language_model.fst"
     )
     base_language_model_weight = float(profile.get(f"{stt_prefix}.mix_weight", 0))
-    custom_words = ppath(f"{stt_prefix}.custom_words_file", "custom_words.txt")
+    custom_words = ppath(f"{stt_prefix}.custom_words", "custom_words.txt")
     g2p_model = ppath(f"{stt_prefix}.g2p_model", "g2p.fst")
     acoustic_model_type = stt_system
 
@@ -82,7 +82,6 @@ def train_profile(profile_dir: Path, profile: Profile) -> None:
 
     # Kaldi
     kaldi_graph_dir = acoustic_model / profile.get(f"{stt_prefix}.graph", "graph")
-    kaldi_model_type = profile.get(f"{stt_prefix}.model_type", "gmm")
 
     # Outputs
     dictionary = ppath(f"{stt_prefix}.dictionary", "dictionary.txt", write=True)

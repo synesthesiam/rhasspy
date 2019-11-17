@@ -232,8 +232,9 @@ class PhonetisaurusPronounce(RhasspyActor):
         # Guess pronunciations for unknown word
         if len(unknown_words) > 0:
             # Path to phonetisaurus FST
+            speech_system = self.profile.get("speech_to_text.system", "pocketsphinx")
             g2p_path = self.profile.read_path(
-                self.profile.get("speech_to_text.g2p_model")
+                self.profile.get(f"speech_to_text.{speech_system}.g2p_model", "g2p.fst")
             )
 
             g2p_casing = self.profile.get("speech_to_text.g2p_casing", "").lower()

@@ -1,0 +1,10 @@
+diff a/src/components/ProfileSettings.vue b/src/components/ProfileSettings.vue	(rejected hunks)
+@@ -103,7 +103,7 @@
+                  .then(() => {
+                      this.$parent.endAsync()
+                      if (confirm("Settings saved. Restart Rhasspy?")) {
+-                         this.$parent.restart()
++                         this.$parent.train()
+                      }
+                  })
+                  .catch(err => this.$parent.error(err))
