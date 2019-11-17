@@ -83,6 +83,9 @@ class PhonetisaurusPronounce(RhasspyActor):
         self.speed = 80  # wpm for speaking
         self.base_dict: Optional[Dict[str, List[str]]] = None
 
+    def to_started(self, from_state: str) -> None:
+        self.speech_system = self.profile.get("speech_to_text.system", "pocketsphinx")
+
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, SpeakWord):
             espeak_phonemes, wav_data = self.speak(message.word)
@@ -156,7 +159,7 @@ class PhonetisaurusPronounce(RhasspyActor):
 
         # Load base and custom dictionaries
         base_dictionary_path = self.profile.read_path(
-            self.profile.get("speech_to_text.pocketsphinx.base_dictionary")
+            self.profile.get(f"speech_to_text.{self.speech_system}.base_dictionary")
         )
 
         # Load base dictionary once
@@ -166,7 +169,7 @@ class PhonetisaurusPronounce(RhasspyActor):
                 read_dict(dictionary_file, self.base_dict)
 
         custom_path = self.profile.read_path(
-            self.profile.get("speech_to_text.pocketsphinx.custom_words")
+            self.profile.get(f"speech_to_text.{self.speech_system}.custom_words")
         )
 
         word_dict: Dict[str, List[str]] = defaultdict(list)
@@ -232,9 +235,10 @@ class PhonetisaurusPronounce(RhasspyActor):
         # Guess pronunciations for unknown word
         if len(unknown_words) > 0:
             # Path to phonetisaurus FST
-            speech_system = self.profile.get("speech_to_text.system", "pocketsphinx")
             g2p_path = self.profile.read_path(
-                self.profile.get(f"speech_to_text.{speech_system}.g2p_model", "g2p.fst")
+                self.profile.get(
+                    f"speech_to_text.{self.speech_system}.g2p_model", "g2p.fst"
+                )
             )
 
             g2p_casing = self.profile.get("speech_to_text.g2p_casing", "").lower()

@@ -516,9 +516,15 @@ def api_restart() -> str:
 @app.route("/api/speech-to-text", methods=["POST"])
 def api_speech_to_text() -> str:
     """speech -> text"""
+    no_header = request.args.get("noheader", "false").lower() == "true"
     assert core is not None
+
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
     wav_data = request.data
+    if no_header:
+        # Wrap in WAV
+        wav_data = buffer_to_wav(wav_data)
+
     return core.transcribe_wav(wav_data).text
 
 
@@ -700,6 +706,9 @@ def api_slots() -> Union[str, Response]:
                         logger.exception("api_slots")
 
         for name, values in new_slot_values.items():
+            if isinstance(values, str):
+                values = [values]
+
             slots_path = core.profile.write_path(
                 core.profile.get("speech_to_text.slots_dir", "slots"), f"{name}"
             )
@@ -769,12 +778,15 @@ def api_slots_by_name(name: str) -> Union[str, Response]:
 
 # -----------------------------------------------------------------------------
 
+
 @app.route("/api/ping")
 def api_ping() -> str:
     """Used to force gevent loop on flask thread to run."""
     return "pong"
 
+
 # -----------------------------------------------------------------------------
+
 
 @app.errorhandler(Exception)
 def handle_error(err) -> Tuple[str, int]:
@@ -856,6 +868,7 @@ def add_ws_event(event_type: int, text: str):
 
     # Yield to main loop
     gevent.sleep(0)
+
 
 logging.root.addHandler(
     FunctionLoggingHandler(lambda msg: add_ws_event(WS_EVENT_LOG, msg))
