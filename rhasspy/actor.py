@@ -1,13 +1,10 @@
+import asyncio
 import logging
 import threading
 import time
 import queue
 from typing import List, Callable, Optional, Any, Dict
-
-try:
-    from gevent import sleep
-except:
-    from time import sleep
+from time import sleep
 
 from rhasspy.profiles import Profile
 
@@ -178,9 +175,6 @@ class RhasspyActor:
         if self._transitions and (self._parent is not None):
             self.send(self._parent, StateTransition(self._name, from_state, to_state))
 
-        # Yield execution
-        sleep(0)
-
     def __repr__(self):
         return self._name
 
@@ -197,15 +191,22 @@ class InboxActor(RhasspyActor):
     def __init__(self):
         super().__init__()
         self.receive_event = threading.Event()
+        self.async_receive_event = asyncio.Event()
+        self.loop = asyncio.get_event_loop()
         self.message = None
 
     def on_receive(self, message_dict):
         self.message = message_dict["message"]
         self.receive_event.set()
+        self.loop.call_soon_threadsafe(self.async_receive_event.set)
 
     def ask(self, actor, message, timeout=None):
         self.tell(actor, message)
         return self.listen(timeout=timeout)
+
+    async def async_ask(self, actor, message, timeout=None):
+        self.tell(actor, message)
+        return await self.async_listen(timeout=timeout)
 
     def tell(self, actor, message):
         actor.queue.put({"sender": self, "message": message})
@@ -214,6 +215,12 @@ class InboxActor(RhasspyActor):
         self.message = None
         self.receive_event.wait(timeout=timeout)
         self.receive_event.clear()
+        return self.message
+
+    async def async_listen(self, timeout=None):
+        self.message = None
+        await asyncio.wait_for(self.async_receive_event.wait(), timeout)
+        self.async_receive_event.clear()
         return self.message
 
     def __enter__(self):

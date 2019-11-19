@@ -106,7 +106,8 @@ function maybe_download {
 if [[ -z "${no_system}" ]]; then
     echo "Installing system dependencies (${FRIENDLY_ARCH})"
     sudo apt-get update
-    sudo apt-get install -y python3 python3-pip python3-venv python3-dev \
+    sudo apt-get install --no-install-recommends --yes \
+         python3 python3-pip python3-venv python3-dev \
          python \
          build-essential autoconf autoconf-archive libtool automake bison \
          sox espeak flite swig portaudio19-dev \
@@ -123,7 +124,8 @@ fi
 
 if [[ -z "$(which python3.6)" ]]; then
     echo "Installing Python 3.6 from source. This is going to take a LONG time."
-    sudo apt-get install -y tk-dev libncurses5-dev libncursesw5-dev \
+    sudo apt-get install --no-install-recommends --yes \
+         tk-dev libncurses5-dev libncursesw5-dev \
          libreadline6-dev libdb5.3-dev libgdbm-dev \
          libsqlite3-dev libssl-dev libbz2-dev \
          libexpat1-dev liblzma-dev zlib1g-dev

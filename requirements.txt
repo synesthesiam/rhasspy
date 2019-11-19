@@ -1,7 +1,3 @@
-Flask
-flask-swagger-ui
-flask_cors
-Flask-Sockets
 pydash
 requests
 paho-mqtt
@@ -20,3 +16,6 @@ networkx>=2.0
 doit
 openfst==1.6.9
 num2words
+quart
+quart-cors
+aiohttp
