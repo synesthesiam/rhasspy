@@ -1,17 +1,17 @@
-import os
-import subprocess
-import tempfile
 import hashlib
 import json
+import os
 import shutil
+import subprocess
+import tempfile
+from typing import Any, Dict, Optional, Type
 from urllib.parse import urljoin
-from typing import Any, Optional, Type, Dict
 
 import requests
 
-from rhasspy.actor import RhasspyActor, ConfigureEvent, Configured
-from rhasspy.profiles import Profile
+from rhasspy.actor import Configured, ConfigureEvent, RhasspyActor
 from rhasspy.audio_player import PlayWavData, WavPlayed
+from rhasspy.profiles import Profile
 
 # -----------------------------------------------------------------------------
 
@@ -391,9 +391,7 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
             "text_to_speech.wavenet.url",
             "https://texttospeech.googleapis.com/v1/text:synthesize",
         )
-        self.voice = self.profile.get(
-            "text_to_speech.wavenet.voice", "Wavenet-C"
-        )
+        self.voice = self.profile.get("text_to_speech.wavenet.voice", "Wavenet-C")
         self.gender = self.profile.get("text_to_speech.wavenet.gender", "FEMALE")
         self.sample_rate = int(
             self.profile.get("text_to_speech.wavenet.sample_rate", 22050)

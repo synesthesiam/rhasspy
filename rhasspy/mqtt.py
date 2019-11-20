@@ -1,14 +1,14 @@
 import io
 import json
 import logging
+import socket
+import threading
+import time
 import uuid
 import wave
-import time
-import threading
-import socket
-from queue import Queue
-from typing import Dict, Any, Optional, List
 from collections import defaultdict
+from queue import Queue
+from typing import Any, Dict, List, Optional
 
 import pydash
 

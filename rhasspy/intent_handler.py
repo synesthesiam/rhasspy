@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-import os
-import logging
 import json
+import logging
+import os
 import subprocess
+from typing import Any, Dict, Optional, Tuple, Type
 from urllib.parse import urljoin
-from typing import Dict, Any, Optional, Tuple, Type
 
 import pydash
 import requests

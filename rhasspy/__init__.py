@@ -1,24 +1,41 @@
 #!/usr/bin/env python3
+import argparse
+import io
+import itertools
+import json
 import logging
+
+# Configure logging
+import logging.config
+import math
+import os
+import random
+import sys
+import tempfile
+import threading
+import time
+import wave
+from typing import Any, Dict, List, Optional, Set
+
+import pydash
+
+from rhasspy.actor import ActorSystem, Configured, ConfigureEvent, RhasspyActor
+from rhasspy.audio_player import DummyAudioPlayer
+from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
+from rhasspy.core import RhasspyCore
+from rhasspy.dialogue import DialogueManager
+from rhasspy.profiles import Profile
+from rhasspy.utils import buffer_to_wav, maybe_convert_wav
+from rhasspy.wake import (
+    ListenForWakeWord,
+    PocketsphinxWakeListener,
+    StopListeningForWakeWord,
+    WakeWordDetected,
+    WakeWordNotDetected,
+)
 
 logger = logging.getLogger("rhasspy")
 
-import sys
-import os
-import io
-import json
-import argparse
-import threading
-import tempfile
-import random
-import time
-import itertools
-import wave
-import math
-import random
-from typing import Any, List, Optional, Dict, Set
-
-import pydash
 
 try:
     # Need to import here because they screw with logging
@@ -26,24 +43,6 @@ try:
 except:
     pass
 
-from rhasspy.core import RhasspyCore
-from rhasspy.actor import ConfigureEvent, Configured, ActorSystem, RhasspyActor
-from rhasspy.profiles import Profile
-from rhasspy.utils import buffer_to_wav, maybe_convert_wav
-from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
-from rhasspy.audio_player import DummyAudioPlayer
-from rhasspy.dialogue import DialogueManager
-from rhasspy.wake import (
-    PocketsphinxWakeListener,
-    ListenForWakeWord,
-    StopListeningForWakeWord,
-    WakeWordDetected,
-    WakeWordNotDetected,
-)
-
-
-# Configure logging
-import logging.config
 
 logging.config.dictConfig(
     {

@@ -1,11 +1,12 @@
-import os
 import io
+import logging
+import os
+import subprocess
+import tempfile
 import time
 import wave
-import logging
-import tempfile
-import subprocess
-from typing import Any, Optional, Tuple, Type, Dict
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple, Type
 
 from rhasspy.actor import RhasspyActor
 from rhasspy.profiles import Profile
@@ -304,8 +305,10 @@ class KaldiDecoder(RhasspyActor):
     """Kaldi based decoder"""
 
     def to_started(self, from_state: str) -> None:
-        self.kaldi_dir = os.path.expandvars(
-            self.profile.get("speech_to_text.kaldi.kaldi_dir", "/opt/kaldi")
+        self.kaldi_dir = Path(
+            os.path.expandvars(
+                self.profile.get("speech_to_text.kaldi.kaldi_dir", "/opt/kaldi")
+            )
         )
 
         model_dir_name = self.profile.get(
@@ -313,14 +316,17 @@ class KaldiDecoder(RhasspyActor):
             self.profile.get("speech_to_text.kaldi.model_dir", "model"),
         )
 
-        self.model_dir = self.profile.read_path(model_dir_name)
+        self.model_dir = Path(self.profile.read_path(model_dir_name))
 
-        self.graph_dir = os.path.join(
-            self.model_dir, self.profile.get("speech_to_text.kaldi.graph_dir", "graph")
+        self.graph_dir = self.model_dir / self.profile.get(
+            "speech_to_text.kaldi.graph_dir", "graph"
         )
+
+        self.decode_path = Path(self.profile.read_path(model_dir_name, "decode.sh"))
+
         self.decode_command = [
             "bash",
-            self.profile.read_path(model_dir_name, "decode.sh"),
+            self.decode_path,
             self.kaldi_dir,
             self.model_dir,
             self.graph_dir,
@@ -376,6 +382,22 @@ class KaldiDecoder(RhasspyActor):
         except Exception as e:
             self._logger.exception("transcribe_wav")
             return ""
+
+    def get_problems(self) -> Dict[str, Any]:
+        problems: Dict[str, Any] = {}
+
+        if not self.kaldi_dir.is_dir():
+            problems[
+                "Missing Kaldi"
+            ] = f"Kaldi not found at {self.kaldi_dir}. See http://kaldi-asr.org"
+
+        hclg_path = self.graph_dir / "HCLG.fst"
+        if not hclg_path.is_file():
+            problems[
+                "Missing HCLG.fst"
+            ] = f"Graph not found at {hclg_path}. Did you train your profile?"
+
+        return problems
 
 
 # -----------------------------------------------------------------------------

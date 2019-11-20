@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import os
 import re
-import logging
 import subprocess
-import tempfile
 import uuid
 from typing import Any, Dict, Optional, Type
 

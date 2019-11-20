@@ -1,21 +1,47 @@
+import json
 import os
 import sys
-import json
 from datetime import timedelta
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Type
+from typing import Any, Dict, Optional
 
 import pywrapfst as fst
 
 from rhasspy.actor import (
-    RhasspyActor,
-    ConfigureEvent,
-    Configured,
-    StateTransition,
     ActorExitRequest,
-    WakeupMessage,
     ChildActorExited,
+    Configured,
+    ConfigureEvent,
+    RhasspyActor,
+    StateTransition,
+    WakeupMessage,
 )
+from rhasspy.audio_player import PlayWavData, PlayWavFile, WavPlayed, get_sound_class
+from rhasspy.audio_recorder import (
+    AudioData,
+    HTTPAudioRecorder,
+    StartRecordingToBuffer,
+    StopRecordingToBuffer,
+    get_microphone_class,
+)
+from rhasspy.command_listener import ListenForCommand, VoiceCommand, get_command_class
+from rhasspy.intent import IntentRecognized, RecognizeIntent, get_recognizer_class
+from rhasspy.intent_handler import HandleIntent, IntentHandled, get_intent_handler_class
+from rhasspy.intent_train import (
+    IntentTrainingComplete,
+    IntentTrainingFailed,
+    TrainIntent,
+    get_intent_trainer_class,
+)
+from rhasspy.mqtt import MqttPublish
+from rhasspy.pronounce import GetWordPhonemes, GetWordPronunciations, SpeakWord
+from rhasspy.stt import TranscribeWav, WavTranscription, get_decoder_class
+from rhasspy.stt_train import get_speech_trainer_class
+
+# from rhasspy.train import GenerateSentences, SentencesGenerated, SentenceGenerationFailed
+from rhasspy.train import train_profile
+from rhasspy.tts import SpeakSentence, get_speech_class
+from rhasspy.utils import buffer_to_wav
 from rhasspy.wake import (
     ListenForWakeWord,
     StopListeningForWakeWord,
@@ -23,37 +49,6 @@ from rhasspy.wake import (
     WakeWordNotDetected,
     get_wake_class,
 )
-from rhasspy.command_listener import ListenForCommand, VoiceCommand, get_command_class
-from rhasspy.audio_recorder import (
-    StartRecordingToBuffer,
-    StopRecordingToBuffer,
-    AudioData,
-    get_microphone_class,
-    HTTPAudioRecorder,
-)
-from rhasspy.audio_player import PlayWavFile, PlayWavData, WavPlayed, get_sound_class
-from rhasspy.stt import TranscribeWav, WavTranscription, get_decoder_class
-from rhasspy.stt_train import (
-    TrainSpeech,
-    SpeechTrainingComplete,
-    SpeechTrainingFailed,
-    get_speech_trainer_class,
-)
-from rhasspy.intent import RecognizeIntent, IntentRecognized, get_recognizer_class
-from rhasspy.intent_train import (
-    TrainIntent,
-    IntentTrainingComplete,
-    IntentTrainingFailed,
-    get_intent_trainer_class,
-)
-from rhasspy.intent_handler import HandleIntent, IntentHandled, get_intent_handler_class
-
-# from rhasspy.train import GenerateSentences, SentencesGenerated, SentenceGenerationFailed
-from rhasspy.train import train_profile
-from rhasspy.pronounce import GetWordPhonemes, SpeakWord, GetWordPronunciations
-from rhasspy.tts import SpeakSentence, get_speech_class
-from rhasspy.mqtt import MqttPublish
-from rhasspy.utils import buffer_to_wav
 
 # -----------------------------------------------------------------------------
 

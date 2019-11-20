@@ -1,28 +1,23 @@
 #!/usr/bin/env python3
-import os
-import sys
-import logging
+import audioop
+import io
+import json
+import re
+import shlex
 import subprocess
+import sys
 import threading
 import time
 import wave
-import io
-import re
-import audioop
-import json
-import socket
-import shlex
-from uuid import uuid4
-from queue import Queue
-from typing import Dict, Any, Callable, Optional, List, Type
 from collections import defaultdict
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Any, Dict, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.utils import convert_wav
-from rhasspy.mqtt import MqttSubscribe, MqttMessage
-from rhasspy.stt import WavTranscription
 from rhasspy.intent import IntentRecognized
+from rhasspy.mqtt import MqttMessage, MqttSubscribe
+from rhasspy.stt import WavTranscription
+from rhasspy.utils import convert_wav
 
 # -----------------------------------------------------------------------------
 # Events
@@ -142,7 +137,7 @@ class PyAudioRecorder(RhasspyActor):
         if self.device_index is not None:
             try:
                 self.device_index = int(self.device_index)
-            except:
+            except Exception:
                 self.device_index = -1
 
             if self.device_index < 0:
@@ -292,7 +287,6 @@ class PyAudioRecorder(RhasspyActor):
 
                 try:
                     # read audio
-                    data_format = audio.get_format_from_width(2)  # 16-bit
                     pyaudio_stream = audio.open(
                         input_device_index=device_index,
                         channels=1,

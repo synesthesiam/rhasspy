@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-import os
-import sys
-import re
+import concurrent.futures
 import json
 import logging
-import subprocess
+import os
+import re
 import shutil
-import concurrent.futures
+import subprocess
+import sys
+from typing import Any, Dict, List, Optional, Set, Tuple, Type
 from urllib.parse import urljoin
-from typing import Dict, Any, Optional, Tuple, List, Set, Type
 
 import networkx as nx
 import pywrapfst as fst

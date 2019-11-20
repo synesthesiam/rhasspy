@@ -1,63 +1,58 @@
 import asyncio
-import os
-import sys
+import gzip
 import logging
-import subprocess
+import os
+import platform
 import shutil
 import tempfile
-import urllib.request
-import platform
-import gzip
 from collections import defaultdict
-import concurrent.futures
-from typing import List, Dict, Optional, Any, Callable, Tuple, Union, Set
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Union
 
 import aiohttp
-import pydash
 
 # Internal imports
-from rhasspy.actor import ConfigureEvent, ActorSystem, RhasspyActor
-from rhasspy.profiles import Profile
+from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.audio_recorder import (
     AudioData,
     StartRecordingToBuffer,
     StopRecordingToBuffer,
 )
-from rhasspy.stt import WavTranscription
-from rhasspy.intent import IntentRecognized
-from rhasspy.intent_handler import IntentHandled
-from rhasspy.pronounce import WordPronunciations, WordPhonemes, WordSpoken
-from rhasspy.tts import SentenceSpoken
-from rhasspy.utils import numbers_to_words
 from rhasspy.dialogue import (
     DialogueManager,
+    GetActorStates,
     GetMicrophones,
-    TestMicrophones,
+    GetProblems,
+    GetSpeakers,
+    GetVoiceCommand,
+    GetWordPhonemes,
+    GetWordPronunciations,
+    HandleIntent,
     ListenForCommand,
     ListenForWakeWord,
-    WakeWordDetected,
-    WakeWordNotDetected,
-    TrainProfile,
-    ProfileTrainingFailed,
-    GetWordPhonemes,
-    SpeakWord,
-    GetWordPronunciations,
-    TranscribeWav,
+    MqttPublish,
     PlayWavData,
     PlayWavFile,
-    RecognizeIntent,
-    HandleIntent,
+    Problems,
     ProfileTrainingComplete,
     ProfileTrainingFailed,
-    MqttPublish,
-    GetVoiceCommand,
-    VoiceCommand,
-    GetActorStates,
-    GetSpeakers,
+    RecognizeIntent,
     SpeakSentence,
-    GetProblems,
-    Problems,
+    SpeakWord,
+    TestMicrophones,
+    TrainProfile,
+    TranscribeWav,
+    VoiceCommand,
+    WakeWordDetected,
+    WakeWordNotDetected,
 )
+from rhasspy.intent import IntentRecognized
+from rhasspy.intent_handler import IntentHandled
+from rhasspy.profiles import Profile
+from rhasspy.pronounce import WordPhonemes, WordPronunciations, WordSpoken
+from rhasspy.stt import WavTranscription
+from rhasspy.tts import SentenceSpoken
+from rhasspy.utils import numbers_to_words
 
 # -----------------------------------------------------------------------------
 
@@ -125,7 +120,7 @@ class RhasspyCore:
 
             # Block until ready
             if block:
-                result = await sys.async_listen(timeout)
+                await sys.async_listen(timeout)
 
     # -------------------------------------------------------------------------
 
@@ -139,7 +134,7 @@ class RhasspyCore:
     async def test_microphones(self, system: Optional[str] = None) -> Dict[Any, Any]:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.async_ask(self.dialogue_manager, TestMicrophones(system))
+            result = await sys.async_ask(self.dialogue_manager, TestMicrophones(system))
             assert isinstance(result, dict), result
             return result
 
@@ -236,7 +231,7 @@ class RhasspyCore:
     async def stop_recording_wav(self, buffer_name: str = "") -> AudioData:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = await self.actor_system.async_ask(
+            result = await sys.async_ask(
                 self.dialogue_manager, StopRecordingToBuffer(buffer_name)
             )
             assert isinstance(result, AudioData), result
@@ -313,7 +308,7 @@ class RhasspyCore:
     async def wakeup_and_wait(self) -> Union[WakeWordDetected, WakeWordNotDetected]:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.async_ask(self.dialogue_manager, ListenForWakeWord())
+            result = await sys.async_ask(self.dialogue_manager, ListenForWakeWord())
             assert isinstance(result, WakeWordDetected) or isinstance(
                 result, WakeWordNotDetected
             ), result
@@ -325,7 +320,7 @@ class RhasspyCore:
     async def get_actor_states(self) -> Dict[str, str]:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.async_ask(self.dialogue_manager, GetActorStates())
+            result = await sys.async_ask(self.dialogue_manager, GetActorStates())
             assert isinstance(result, dict), result
             return result
 
@@ -369,7 +364,9 @@ class RhasspyCore:
 
             # Compare setting values
             for setting_value, files_dict in conditions[setting_name].items():
-                compare_func = lambda v1, v2: v1 == v2
+
+                def compare_func(v1, v2):
+                    return v1 == v2
 
                 if compare_func(setting_value, real_value):
                     # Check if file needs to be downloaded
@@ -466,9 +463,7 @@ class RhasspyCore:
                             # File is an archive
                             src_name, src_extract = src_name.split(":", maxsplit=1)
                             src_path = os.path.join(download_dir, src_name)
-                            files_to_extract[src_path].append(
-                                (dest_path, src_extract)
-                            )
+                            files_to_extract[src_path].append((dest_path, src_extract))
                         else:
                             # Just a regular file
                             src_path = os.path.join(download_dir, src_name)
@@ -477,9 +472,7 @@ class RhasspyCore:
                         # Get download/cache info for file
                         src_info = all_files.get(src_name, None)
                         if src_info is None:
-                            self._logger.error(
-                                f"No entry for download file {src_name}"
-                            )
+                            self._logger.error(f"No entry for download file {src_name}")
                             continue
 
                         if not src_info.get("cache", True):
@@ -506,8 +499,12 @@ class RhasspyCore:
                                     continue
 
                             # Schedule file for download
-                            if not src_url in files_to_download:
-                                download_tasks.append(self.loop.create_task(download_file(src_url, src_path)))
+                            if src_url not in files_to_download:
+                                download_tasks.append(
+                                    self.loop.create_task(
+                                        download_file(src_url, src_path)
+                                    )
+                                )
                                 files_to_download.add(src_url)
 
         # Wait for downloads to complete
@@ -545,12 +542,19 @@ class RhasspyCore:
                 if src_path.endswith(ext):
                     known_format = True
 
-            unpack = lambda temp_dir: shutil.unpack_archive(src_path, temp_dir)
+            def unpack_default(temp_dir):
+                return shutil.unpack_archive(src_path, temp_dir)
+
+            def unpack_gz(temp_dir):
+                return self._unpack_gz(src_path, temp_dir)
+
+            unpack = unpack_default
+
             if not known_format:
                 # Handle special archives
                 if src_path.endswith(".gz"):
                     # Single file compressed with gzip
-                    unpack = lambda temp_dir: self._unpack_gz(src_path, temp_dir)
+                    unpack = unpack_gz
                 else:
                     # Very bad situation
                     self._logger.warning(
@@ -596,7 +600,9 @@ class RhasspyCore:
                     if os.path.isdir(extract_path):
                         ignore = None
                         if len(src_exclude) > 0:
-                            ignore = lambda cur_dir, filenames: src_exclude[cur_dir]
+
+                            def ignore(cur_dir, filenames):
+                                return src_exclude[cur_dir]
 
                         shutil.copytree(extract_path, dest_path, ignore=ignore)
                     else:

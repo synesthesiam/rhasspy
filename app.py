@@ -1,51 +1,37 @@
 #!/usr/bin/env python3
-import asyncio
-import os
-import logging
-import sys
-import subprocess
-import json
-import re
-import gzip
-import time
-import io
-import wave
-import tempfile
-import threading
-import functools
 import argparse
-import shlex
-import time
+import asyncio
 import atexit
-from uuid import uuid4
-from collections import defaultdict
+import json
+import logging
+import os
+import re
+import time
 from pathlib import Path
-from typing import Any, Union, Tuple, Dict, List
+from typing import Any, List, Tuple, Union
+from uuid import uuid4
 
 from quart import (
     Quart,
-    request,
     Response,
     jsonify,
+    request,
     safe_join,
     send_file,
     send_from_directory,
     websocket,
 )
 from quart_cors import cors
-import pydash
 
-from rhasspy.profiles import Profile
+from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
-from rhasspy.actor import RhasspyActor, ActorSystem, ConfigureEvent
 from rhasspy.dialogue import ProfileTrainingFailed
 from rhasspy.intent import IntentRecognized
 from rhasspy.utils import (
-    recursive_update,
-    recursive_remove,
+    FunctionLoggingHandler,
     buffer_to_wav,
     load_phoneme_examples,
-    FunctionLoggingHandler,
+    recursive_remove,
 )
 
 # -----------------------------------------------------------------------------
@@ -111,7 +97,7 @@ core = None
 
 # We really, *really* want shutdown to be called
 @atexit.register
-def shutdown(*args: Any, **kwargs: Any) -> None:
+def shutdown(*_args: Any, **kwargs: Any) -> None:
     global core
     if core is not None:
         loop.run_until_complete(loop.create_task(core.shutdown()))
@@ -138,7 +124,7 @@ async def start_rhasspy() -> None:
     for key, value in args.set:
         try:
             value = json.loads(value)
-        except:
+        except Exception:
             pass
 
         logger.debug("Profile: {0}={1}".format(key, value))
@@ -291,8 +277,8 @@ async def api_profile() -> Union[str, Response]:
         # Local settings only
         profile_path = Path(core.profile.read_path("profile.json"))
         return send_file(profile_path)  # , mimetype="application/json")
-    else:
-        return jsonify(core.profile.json)
+
+    return jsonify(core.profile.json)
 
 
 # -----------------------------------------------------------------------------
@@ -346,10 +332,10 @@ async def api_pronounce() -> Union[Response, str]:
     if download:
         # Return WAV
         return Response(wav_data)  # , mimetype="audio/wav")
-    else:
-        # Play through speakers
-        core.play_wav_data(wav_data)
-        return espeak_phonemes
+
+    # Play through speakers
+    core.play_wav_data(wav_data)
+    return espeak_phonemes
 
 
 # -----------------------------------------------------------------------------
@@ -714,7 +700,7 @@ async def api_slots() -> Union[str, Response]:
                 if slots_path.exists():
                     try:
                         slots_path.unlink()
-                    except:
+                    except Exception:
                         logger.exception("api_slots")
 
         for name, values in new_slot_values.items():
@@ -768,7 +754,7 @@ def api_slots_by_name(name: str) -> Union[str, Response]:
             if slots_path.exists():
                 try:
                     slots_path.unlink()
-                except:
+                except Exception:
                     logger.exception("api_slots_by_name")
 
         slots_path = Path(
@@ -787,9 +773,12 @@ def api_slots_by_name(name: str) -> Union[str, Response]:
         return f"Wrote {len(request.data)} byte(s) to {slots_path}"
 
     # Load slots values
-    slot_values = read_slots(slots_dir)
+    slot_values = []
+    slot_file_path = slots_dir / name
+    if slot_file_path.is_file():
+        slot_values = [line.strip() for line in slot_file_path.read_text().splitlines()]
 
-    return "\n".join(slot_values.get(name, []))
+    return jsonify(slot_values)
 
 
 # -----------------------------------------------------------------------------
@@ -914,7 +903,7 @@ async def api_events_intent(ws) -> None:
         while True:
             text = await q.get()
             await websocket.send(text)
-    except Exception as e:
+    except Exception:
         logger.exception("api_events_intent")
 
     # Remove queue
@@ -933,7 +922,7 @@ async def api_events_log() -> None:
         while True:
             text = await q.get()
             await websocket.send(text)
-    except Exception as e:
+    except Exception:
         logger.exception("api_events_log")
 
     # Remove queue
@@ -949,7 +938,7 @@ loop.run_until_complete(start_rhasspy())
 
 # Start web server
 if args.ssl is not None:
-    logger.debug(f"Using SSL with certfile, keyfile = {args.ssl}")
+    logger.debug("Using SSL with certfile, keyfile = %s", args.ssl)
     certfile = args.ssl[0]
     keyfile = args.ssl[1]
     protocol = "https"
@@ -958,7 +947,7 @@ else:
     keyfile = None
     protocol = "http"
 
-logger.debug(f"Starting web server at {protocol}://{args.host}:{args.port}")
+logger.debug("Starting web server at %s://%s:%s", protocol, args.host, args.port)
 
 try:
     app.run(host=args.host, port=args.port, certfile=certfile, keyfile=keyfile)

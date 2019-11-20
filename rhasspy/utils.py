@@ -1,24 +1,24 @@
-import os
-import re
+import collections
+import concurrent.futures
+import gzip
 import io
-import wave
-import logging
-import math
 import itertools
 import json
-import gzip
-import collections
-from collections import defaultdict
-import concurrent.futures
-import threading
-import tempfile
+import logging
+import math
+import os
+import re
 import subprocess
-from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple, Callable, Set
+import tempfile
+import threading
+import wave
+from collections import defaultdict
 from pathlib import Path
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
-from num2words import num2words
-import pywrapfst as fst
 import pydash
+import pywrapfst as fst
+from num2words import num2words
 
 WHITESPACE_PATTERN = re.compile(r"\s+")
 

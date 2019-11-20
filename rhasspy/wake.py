@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-import os
-import threading
-import logging
 import json
+import logging
+import os
 import re
-import time
-import subprocess
 import shutil
 import struct
+import subprocess
+import threading
+import time
+from typing import Any, Dict, List, Optional, Type
 from uuid import uuid4
-from typing import Optional, Any, List, Dict, Type
 
 from rhasspy.actor import RhasspyActor
+from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
+from rhasspy.mqtt import MqttMessage, MqttSubscribe
 from rhasspy.profiles import Profile
-from rhasspy.audio_recorder import StartStreaming, StopStreaming, AudioData
-from rhasspy.mqtt import MqttSubscribe, MqttMessage
 from rhasspy.utils import ByteStream, read_dict
 
 # -----------------------------------------------------------------------------

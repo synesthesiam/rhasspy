@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-import os
+import copy
 import json
 import logging
-import tempfile
-import subprocess
+import os
+import random
 import re
 import shutil
+import subprocess
+import tempfile
 import time
-import random
-import copy
+from collections import Counter, defaultdict
 from io import StringIO
+from typing import Any, Dict, List, Optional, Set, Type
 from urllib.parse import urljoin
-from collections import defaultdict, Counter
-from typing import Dict, List, Set, Any, Optional, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.utils import make_sentences_by_intent, lcm, sample_sentences_by_intent
+from rhasspy.utils import lcm, make_sentences_by_intent, sample_sentences_by_intent
 
 # -----------------------------------------------------------------------------
 # Events

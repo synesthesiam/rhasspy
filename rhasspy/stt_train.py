@@ -1,13 +1,13 @@
+import json
+import logging
 import os
 import re
-import tempfile
-import subprocess
-import logging
 import shutil
-import json
+import subprocess
+import tempfile
 import time
 from collections import defaultdict
-from typing import Dict, List, Any, Tuple, Set, Optional, Type
+from typing import Any, Dict, List, Optional, Set, Tuple, Type
 
 import pywrapfst as fst
 
@@ -15,8 +15,8 @@ from rhasspy.actor import RhasspyActor
 from rhasspy.profiles import Profile
 from rhasspy.pronounce import (
     GetWordPronunciations,
-    WordPronunciations,
     PronunciationFailed,
+    WordPronunciations,
 )
 from rhasspy.utils import read_dict, sanitize_sentence
 

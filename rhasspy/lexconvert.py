@@ -3275,7 +3275,10 @@ def checkSetting(formatName, settingName, default=""):
     return lexFormats[formatName].get(("settings", settingName), default)
 
 
-import subprocess, sys, re, os
+import os
+import re
+import subprocess
+import sys
 
 cached_sourceName, cached_destName, cached_dict = None, None, None
 

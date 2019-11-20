@@ -1,19 +1,15 @@
-import os
-import io
-import math
-import logging
-import threading
-import wave
-import queue
 import json
-import uuid
+import math
+import os
 import subprocess
+import threading
+import uuid
 from datetime import timedelta
-from typing import Optional, Any, Tuple, Dict, Type
+from typing import Any, Optional, Tuple, Type
 
 from rhasspy.actor import RhasspyActor, WakeupMessage
-from rhasspy.audio_recorder import StartStreaming, StopStreaming, AudioData
-from rhasspy.mqtt import MqttSubscribe, MqttMessage
+from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
+from rhasspy.mqtt import MqttMessage, MqttSubscribe
 from rhasspy.utils import convert_wav
 
 # -----------------------------------------------------------------------------

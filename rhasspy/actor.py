@@ -1,10 +1,9 @@
 import asyncio
 import logging
+import queue
 import threading
 import time
-import queue
-from typing import List, Callable, Optional, Any, Dict
-from time import sleep
+from typing import Any, Callable, Dict, Optional
 
 from rhasspy.profiles import Profile
 
@@ -122,7 +121,7 @@ class RhasspyActor:
                     self._logger.warn(
                         "Unhandled message in state %s: %s", self._state, message
                     )
-        except:
+        except Exception:
             self._logger.exception("receiveMessage")
 
     # -------------------------------------------------------------------------

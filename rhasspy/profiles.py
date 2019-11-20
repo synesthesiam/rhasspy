@@ -1,8 +1,8 @@
-import os
-import json
 import collections
+import json
 import logging
-from typing import List, Dict, Mapping, Any
+import os
+from typing import Any, Dict, List, Mapping
 
 import pydash
 
