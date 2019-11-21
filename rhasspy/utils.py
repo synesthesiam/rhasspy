@@ -3,24 +3,21 @@ import concurrent.futures
 import gzip
 import io
 import itertools
-import json
 import logging
 import math
-import os
 import re
 import subprocess
-import tempfile
 import threading
 import wave
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
-import pydash
 import pywrapfst as fst
 from num2words import num2words
 
 WHITESPACE_PATTERN = re.compile(r"\s+")
+_LOGGER = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
@@ -89,7 +86,7 @@ def read_dict(
                 else:
                     word_dict[word] = [pronounce]
         except Exception as e:
-            logger.warning(f"read_dict: {e} (line {i+1})")
+            _LOGGER.warning(f"read_dict: {e} (line {i+1})")
 
     return word_dict
 
@@ -201,7 +198,7 @@ def load_phoneme_examples(path: str) -> Dict[str, Dict[str, str]]:
             if (len(line) == 0) or line.startswith("#"):
                 continue  # skip blanks and comments
 
-            parts = re.split("\s+", line)
+            parts = split_whitespace(line)
             examples[parts[0]] = {"word": parts[1], "phonemes": " ".join(parts[2:])}
 
     return examples
@@ -216,7 +213,7 @@ def load_phoneme_map(path: str) -> Dict[str, str]:
             if (len(line) == 0) or line.startswith("#"):
                 continue  # skip blanks and comments
 
-            parts = re.split("\s+", line, maxsplit=1)
+            parts = split_whitespace(line, maxsplit=1)
             phonemes[parts[0]] = parts[1]
 
     return phonemes
@@ -352,7 +349,6 @@ def sample_sentences_by_intent(
         sentences: List[Dict[str, Any]] = []
         for symbols in fstprintall(rand_fst, exclude_meta=False):
             intent = symbols2intent(symbols)
-            intent_name = intent["intent"]["name"]
             sentences.append(intent)
 
         return sentences
@@ -397,7 +393,7 @@ def numbers_to_words(
     sentence: str, language: Optional[str] = None, add_substitution: bool = False
 ) -> str:
     """Replaces numbers with words in a sentence. Optionally substitues number back in."""
-    words = WHITESPACE_PATTERN.split(sentence)
+    words = split_whitespace(sentence)
     changed = False
     for i, word in enumerate(words):
         try:
@@ -409,7 +405,7 @@ def numbers_to_words(
             if add_substitution:
                 # Empty substitution for everything but last word.
                 # seventy five -> seventy: five:75
-                number_words = [w + ":" for w in WHITESPACE_PATTERN.split(words[i])]
+                number_words = [w + ":" for w in split_whitespace(words[i])]
                 number_words[-1] += word
                 words[i] = " ".join(number_words)
 
@@ -423,3 +419,8 @@ def numbers_to_words(
         return sentence
 
     return " ".join(words)
+
+
+def split_whitespace(s: str, **kwargs):
+    """Split a string by whitespace of any type/length."""
+    return WHITESPACE_PATTERN.split(s, **kwargs)

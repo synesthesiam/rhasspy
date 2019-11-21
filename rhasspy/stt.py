@@ -1,5 +1,4 @@
 import io
-import logging
 import os
 import subprocess
 import tempfile
@@ -9,7 +8,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.profiles import Profile
 from rhasspy.utils import convert_wav
 
 # -----------------------------------------------------------------------------
@@ -108,7 +106,7 @@ class PocketsphinxDecoder(RhasspyActor):
                         text, confidence=confidence, handle=message.handle
                     ),
                 )
-            except:
+            except Exception:
                 self._logger.exception("transcribing wav")
 
                 # Send empty transcription back
@@ -160,7 +158,6 @@ class PocketsphinxDecoder(RhasspyActor):
     def transcribe_wav(self, wav_data: bytes) -> Tuple[str, float]:
         # Ensure 16-bit 16Khz mono
         assert self.decoder is not None
-        data_size = len(wav_data)
         with io.BytesIO(wav_data) as wav_io:
             with wave.open(wav_io, "rb") as wav_file:
                 rate, width, channels = (
@@ -212,7 +209,7 @@ class PocketsphinxDecoder(RhasspyActor):
 
         try:
             import pocketsphinx
-        except:
+        except Exception:
             problems[
                 "Missing pocketsphinx"
             ] = "pocketsphinx Python library not installed. Try pip3 install pocketsphinx"

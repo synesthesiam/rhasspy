@@ -1,24 +1,13 @@
 import json
-import logging
 import os
-import re
-import shutil
 import subprocess
-import tempfile
-import time
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Set, Tuple, Type
+from typing import Any, Dict, List, Optional, Type
 
 import pywrapfst as fst
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.profiles import Profile
-from rhasspy.pronounce import (
-    GetWordPronunciations,
-    PronunciationFailed,
-    WordPronunciations,
-)
-from rhasspy.utils import read_dict, sanitize_sentence
+from rhasspy.train.jsgf2fst import symbols2intent, fstprintall
 
 # -----------------------------------------------------------------------------
 # Events
@@ -200,9 +189,7 @@ class CommandSpeechTrainer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def train(self, sentences_by_intent):
-        from jsgf2fst import fstprintall
-
+    def train(self, intent_fst: fst.Fst):
         self._logger.debug(self.command)
 
         try:
@@ -218,5 +205,5 @@ class CommandSpeechTrainer(RhasspyActor):
             input = json.dumps(sentences_by_intent).encode()
 
             subprocess.run(self.command, input=input, check=True)
-        except:
+        except Exception:
             self._logger.exception("train")

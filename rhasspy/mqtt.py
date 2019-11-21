@@ -1,11 +1,7 @@
-import io
 import json
-import logging
 import socket
 import threading
 import time
-import uuid
-import wave
 from collections import defaultdict
 from queue import Queue
 from typing import Any, Dict, List, Optional
@@ -118,7 +114,7 @@ class HermesMqtt(RhasspyActor):
                         ret = self.client.connect(self.host, self.port)
 
                     success = True
-                except:
+                except Exception:
                     self._logger.exception("connecting")
                     if self.reconnect_sec > 0:
                         self._logger.debug(
@@ -207,7 +203,7 @@ class HermesMqtt(RhasspyActor):
         try:
             self._logger.info("Connected to %s:%s" % (self.host, self.port))
             self.send(self.myAddress, MqttConnected())
-        except:
+        except Exception:
             self._logger.exception("on_connect")
 
     def on_disconnect(self, client, userdata, flags, rc):
@@ -215,14 +211,14 @@ class HermesMqtt(RhasspyActor):
             self._logger.warn("Disconnected")
             self.connected = False
             self.send(self.myAddress, MqttDisconnected())
-        except:
+        except Exception:
             self._logger.exception("on_disconnect")
 
     def on_message(self, client, userdata, msg):
         try:
             self.message_queue.put(MqttMessage(msg.topic, msg.payload))
             self.send(self.myAddress, MessageReady())
-        except:
+        except Exception:
             self._logger.exception("on_message")
 
     # -------------------------------------------------------------------------
@@ -278,7 +274,7 @@ class HermesMqtt(RhasspyActor):
         s = socket.socket()
         try:
             s.connect((self.host, self.port))
-        except:
+        except Exception:
             problems[
                 "Can't connect to server"
             ] = f"Unable to connect to your MQTT server at {self.host}:{self.port}. Is it running?"

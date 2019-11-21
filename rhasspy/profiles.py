@@ -1,8 +1,7 @@
-import collections
 import json
 import logging
 import os
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, List
 
 import pydash
 
@@ -110,7 +109,7 @@ class Profile:
                 dir_path = os.path.split(full_path)[0]
                 os.makedirs(dir_path, exist_ok=True)
                 return full_path
-            except:
+            except Exception:
                 logger.exception("Unable to write to %s" % full_path)
 
         # Use base dir
@@ -128,7 +127,7 @@ class Profile:
             try:
                 os.makedirs(dir_path, exist_ok=True)
                 return dir_path
-            except:
+            except Exception:
                 logger.exception("Unable to create %s" % dir_path)
 
         # Use base dir

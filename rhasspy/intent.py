@@ -6,7 +6,6 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 from typing import Any, Dict, List, Optional, Set, Tuple, Type
 from urllib.parse import urljoin
 
@@ -14,7 +13,6 @@ import networkx as nx
 import pywrapfst as fst
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.profiles import Profile
 from rhasspy.utils import empty_intent
 
 # -----------------------------------------------------------------------------
@@ -191,7 +189,7 @@ class FsticuffsRecognizer(RhasspyActor):
         from rhasspy.train.jsgf2fst import fstaccept
 
         # Assume lower case, white-space separated tokens
-        tokens = re.split("\s+", text.lower())
+        tokens = re.split(r"\s+", text.lower())
 
         if self.profile.get("intent.fsticuffs.ignore_unknown_words", True):
             tokens = [w for w in tokens if w in self.words]
@@ -205,10 +203,10 @@ class FsticuffsRecognizer(RhasspyActor):
         return intents[0]
 
     def recognize_fuzzy(self, text: str, eps: str = "<eps>") -> Dict[str, Any]:
-        from rhasspy.train.jsgf2fst import fstaccept, symbols2intent
+        from rhasspy.train.jsgf2fst import symbols2intent
 
         # Assume lower case, white-space separated tokens
-        tokens = re.split("\s+", text)
+        tokens = re.split(r"\s+", text)
 
         if self.profile.get("intent.fsticuffs.ignore_unknown_words", True):
             # Filter tokens
@@ -428,7 +426,7 @@ class FsticuffsRecognizer(RhasspyActor):
 
         try:
             import pywrapfst as fst
-        except:
+        except Exception:
             problems[
                 "openfst not installed"
             ] = "openfst Python library not installed. Try pip3 install openfst"
@@ -609,7 +607,7 @@ class RasaIntentRecognizer(RhasspyActor):
 
         try:
             response.raise_for_status()
-        except:
+        except Exception:
             # Rasa gives quite helpful error messages, so extract them from the response.
             raise Exception(
                 f"{response.reason}: {json.loads(response.content)['message']}"
@@ -743,7 +741,7 @@ class FlairRecognizer(RhasspyActor):
 
         try:
             from flair.models import TextClassifier, SequenceTagger
-        except:
+        except Exception:
             pass
 
         self.class_model: Optional[TextClassifier] = None

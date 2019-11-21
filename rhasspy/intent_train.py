@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-import copy
 import json
-import logging
 import os
 import random
 import re
@@ -264,7 +262,7 @@ class RasaIntentTrainer(RhasspyActor):
 
             try:
                 response.raise_for_status()
-            except:
+            except Exception:
                 # Rasa gives quite helpful error messages, so extract them from the response.
                 raise Exception(
                     f"{response.reason}: {json.loads(response.content)['message']}"
@@ -292,8 +290,6 @@ class AdaptIntentTrainer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def train(self, intent_fst) -> None:
-        from rhasspy.train.jsgf2fst import fstprintall, symbols2intent
-
         # Load "stop" words (common words that are excluded from training)
         stop_words: Set[str] = set()
         stop_words_path = self.profile.read_path("stop_words.txt")
@@ -323,7 +319,7 @@ class AdaptIntentTrainer(RhasspyActor):
 
             # Process sentences for this intent
             for intent_sent in intent_sents:
-                sentence, slots, word_tokens = (
+                _, slots, word_tokens = (
                     intent_sent.get("raw_text", intent_sent["text"]),
                     intent_sent["entities"],
                     intent_sent["tokens"],
@@ -339,7 +335,7 @@ class AdaptIntentTrainer(RhasspyActor):
                 for entity_name, entity_values in slot_entities.items():
                     # Prefix entity name with intent name
                     entity_name = "{0}.{1}".format(intent_name, entity_name)
-                    if not entity_name in entities:
+                    if entity_name not in entities:
                         entities[entity_name] = set()
 
                     entities[entity_name].update(entity_values)
@@ -470,8 +466,7 @@ class FlairIntentTrainer(RhasspyActor):
         os.makedirs(ner_data_dir, exist_ok=True)
 
         # Convert FST to training data
-        class_data_path = os.path.join(class_data_dir, "train.txt")
-        ner_data_path = os.path.join(ner_data_dir, "train.txt")
+        # ----------------------------
 
         # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
         sentences_by_intent: Dict[str, Any] = {}
@@ -699,5 +694,5 @@ class CommandIntentTrainer(RhasspyActor):
             input = json.dumps({sentences_by_intent}).encode()
 
             subprocess.run(self.command, input=input, check=True)
-        except:
+        except Exception:
             self._logger.exception("train")

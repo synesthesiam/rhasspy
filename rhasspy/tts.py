@@ -11,7 +11,6 @@ import requests
 
 from rhasspy.actor import Configured, ConfigureEvent, RhasspyActor
 from rhasspy.audio_player import PlayWavData, WavPlayed
-from rhasspy.profiles import Profile
 
 # -----------------------------------------------------------------------------
 
@@ -115,7 +114,7 @@ class EspeakSentenceSpeaker(RhasspyActor):
             self._logger.debug(espeak_cmd)
 
             return subprocess.check_output(espeak_cmd)
-        except:
+        except Exception:
             self._logger.exception("speak")
             return bytes()
 
@@ -167,7 +166,7 @@ class FliteSentenceSpeaker(RhasspyActor):
             self._logger.debug(flite_cmd)
 
             return subprocess.check_output(flite_cmd)
-        except:
+        except Exception:
             self._logger.exception("speak")
             return bytes()
 
@@ -228,7 +227,7 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
             self._logger.debug(pico_cmd)
 
             return subprocess.check_output(pico_cmd)
-        except:
+        except Exception:
             self._logger.exception("speak")
             return bytes()
 
@@ -256,7 +255,7 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
             "text_to_speech.marytts.url", "http://localhost:59125"
         )
 
-        if not "process" in self.url:
+        if "process" not in self.url:
             self.url = urljoin(self.url, "process")
 
         self.voice = self.profile.get("text_to_speech.marytts.voice", None)
@@ -298,7 +297,7 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
             result = requests.get(self.url, params=params)
             result.raise_for_status()
             return result.content
-        except:
+        except Exception:
             self._logger.exception("speak")
             return bytes()
 
@@ -312,7 +311,7 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
                 url = url[:-8]
 
             requests.get(url)
-        except:
+        except Exception:
             problems[
                 "Can't contact server"
             ] = f"Unable to reach your MaryTTS server at {self.url}. Is it running?"
@@ -361,7 +360,7 @@ class CommandSentenceSpeaker(RhasspyActor):
             # text -> STDIN -> STDOUT -> WAV
             return subprocess.check_output(self.command, input=sentence.encode())
 
-        except:
+        except Exception:
             self._logger.exception("speak")
             return bytes()
 

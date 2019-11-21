@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+"""Support for microphone and audio streaming input."""
 import audioop
 import io
 import json
@@ -25,27 +25,37 @@ from rhasspy.utils import convert_wav
 
 
 class AudioData:
+    """Raw 16-bit 16Khz audio data."""
+
     def __init__(self, data: bytes, **kwargs: Any) -> None:
         self.data = data
         self.info = kwargs
 
 
 class StartStreaming:
+    """Tells microphone to begin recording. Emits AudioData chunks."""
+
     def __init__(self, receiver: Optional[RhasspyActor] = None) -> None:
         self.receiver = receiver
 
 
 class StopStreaming:
+    """Tells microphone to stop recording."""
+
     def __init__(self, receiver: Optional[RhasspyActor] = None) -> None:
         self.receiver = receiver
 
 
 class StartRecordingToBuffer:
+    """Tells microphone to record audio data to named buffer."""
+
     def __init__(self, buffer_name: str) -> None:
         self.buffer_name = buffer_name
 
 
 class StopRecordingToBuffer:
+    """Tells microphone to stop recording to buffer and emit AudioData."""
+
     def __init__(
         self, buffer_name: str, receiver: Optional[RhasspyActor] = None
     ) -> None:
@@ -57,6 +67,7 @@ class StopRecordingToBuffer:
 
 
 def get_microphone_class(system: str) -> Type[RhasspyActor]:
+    """Get class type for profile microphone."""
     assert system in [
         "arecord",
         "pyaudio",
@@ -70,19 +81,24 @@ def get_microphone_class(system: str) -> Type[RhasspyActor]:
     if system == "arecord":
         # Use arecord locally
         return ARecordAudioRecorder
-    elif system == "pyaudio":
+
+    if system == "pyaudio":
         # Use PyAudio locally
         return PyAudioRecorder
-    elif system == "hermes":
+
+    if system == "hermes":
         # Use MQTT
         return HermesAudioRecorder
-    elif system == "stdin":
+
+    if system == "stdin":
         # Use STDIN
         return StdinAudioRecorder
-    elif system == "http":
+
+    if system == "http":
         # Use HTTP
         return HTTPAudioRecorder
-    elif system == "gstreamer":
+
+    if system == "gstreamer":
         # Use GStreamer
         return GStreamerAudioRecorder
 
@@ -96,20 +112,22 @@ def get_microphone_class(system: str) -> Type[RhasspyActor]:
 
 
 class DummyAudioRecorder(RhasspyActor):
-    """Does nothing"""
+    """Does not record. Returns only empty audio buffers."""
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         if isinstance(message, StopRecordingToBuffer):
             # Return empty buffer
-            self._logger.warn("Dummy microphone system only returns empty buffers!")
+            self._logger.warning("Dummy microphone system only returns empty buffers!")
             self.send(message.receiver or sender, AudioData(bytes()))
 
     @classmethod
     def get_microphones(self) -> Dict[Any, Any]:
+        """Get description of available microphones."""
         return {}
 
     @classmethod
     def test_microphones(self, chunk_size: int) -> Dict[Any, Any]:
+        """Test microphones and return results."""
         return {}
 
 

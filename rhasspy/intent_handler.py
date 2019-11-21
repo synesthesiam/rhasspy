@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import json
-import logging
 import os
 import subprocess
 from typing import Any, Dict, Optional, Tuple, Type
@@ -10,7 +9,6 @@ import pydash
 import requests
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.profiles import Profile
 
 # -----------------------------------------------------------------------------
 
@@ -113,7 +111,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
                 event_type: str = ""
                 event_data: Dict[str, Any] = {}
 
-                if not "hass_event" in intent:
+                if "hass_event" not in intent:
                     event_type, event_data = self.make_hass_event(intent)
                     intent["hass_event"] = {
                         "event_type": event_type,
@@ -204,7 +202,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
             url = urljoin(self.hass_config["url"], "/api/")
             kwargs = self._get_request_kwargs()
             requests.get(url, **kwargs)
-        except:
+        except Exception:
             problems[
                 "Can't contact server"
             ] = f"Unable to reach your Home Assistant server at {hass_url}. Is it running?"

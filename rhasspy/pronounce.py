@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import logging
 import os
 import re
 import subprocess
@@ -8,7 +7,6 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.profiles import Profile
 from rhasspy.utils import load_phoneme_map, read_dict
 
 # -----------------------------------------------------------------------------
