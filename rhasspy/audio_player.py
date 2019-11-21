@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
+"""Support for playing sounds."""
 import os
 import re
 import subprocess
 import uuid
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
 from rhasspy.mqtt import MqttPublish
@@ -14,12 +14,16 @@ from rhasspy.mqtt import MqttPublish
 
 
 class PlayWavFile:
+    """Play a WAV file."""
+
     def __init__(self, wav_path: str, receiver: Optional[RhasspyActor] = None) -> None:
         self.wav_path = wav_path
         self.receiver = receiver
 
 
 class PlayWavData:
+    """Play a WAV buffer."""
+
     def __init__(
         self, wav_data: bytes, receiver: Optional[RhasspyActor] = None
     ) -> None:
@@ -28,6 +32,8 @@ class PlayWavData:
 
 
 class WavPlayed:
+    """Response to PlayWavFile or PlayWavData."""
+
     pass
 
 
@@ -35,14 +41,16 @@ class WavPlayed:
 
 
 def get_sound_class(system: str) -> Type[RhasspyActor]:
+    """Get class type for profile audio player."""
     assert system in ["aplay", "hermes", "dummy"], "Unknown sound system: %s" % system
 
     if system == "aplay":
         return APlayAudioPlayer
-    elif system == "hermes":
+
+    if system == "hermes":
         return HermesAudioPlayer
-    else:
-        return DummyAudioPlayer
+
+    return DummyAudioPlayer
 
 
 # -----------------------------------------------------------------------------
@@ -51,14 +59,16 @@ def get_sound_class(system: str) -> Type[RhasspyActor]:
 
 
 class DummyAudioPlayer(RhasspyActor):
-    """Does nothing"""
+    """Does not play sound. Responds immediately with WavPlayed."""
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
-        if isinstance(message, PlayWavFile) or isinstance(message, PlayWavData):
+        """Handle messages in started state."""
+        if isinstance(message, (PlayWavFile, PlayWavData)):
             self.send(message.receiver or sender, WavPlayed())
 
     @classmethod
     def get_speakers(cls) -> Dict[Any, Any]:
+        """Get list of possible audio output devices."""
         return {}
 
 
@@ -68,14 +78,20 @@ class DummyAudioPlayer(RhasspyActor):
 
 
 class APlayAudioPlayer(RhasspyActor):
-    """Plays WAV files using aplay"""
+    """Plays WAV files using aplay command."""
+
+    def __init__(self):
+        super().__init__()
+        self.device: Optional[str] = None
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.device = self.config.get("device") or self.profile.get(
             "sounds.aplay.device"
         )
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, PlayWavFile):
             self.play_file(message.wav_path)
             self.send(message.receiver or sender, WavPlayed())
@@ -86,8 +102,9 @@ class APlayAudioPlayer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def play_file(self, path: str) -> None:
+        """Play a WAV file using aplay."""
         if not os.path.exists(path):
-            self._logger.warn("Path does not exist: %s", path)
+            self._logger.warning("Path does not exist: %s", path)
             return
 
         aplay_cmd = ["aplay", "-q"]
@@ -102,6 +119,7 @@ class APlayAudioPlayer(RhasspyActor):
         subprocess.run(aplay_cmd)
 
     def play_data(self, wav_data: bytes) -> None:
+        """Play a WAV buffer using aplay."""
         aplay_cmd = ["aplay", "-q"]
 
         if self.device is not None:
@@ -116,6 +134,7 @@ class APlayAudioPlayer(RhasspyActor):
 
     @classmethod
     def get_speakers(cls) -> Dict[Any, Any]:
+        """Get list of possible audio output devices."""
         output = subprocess.check_output(["aplay", "-L"]).decode().splitlines()
 
         speakers: Dict[Any, Any] = {}
@@ -146,13 +165,20 @@ class APlayAudioPlayer(RhasspyActor):
 
 
 class HermesAudioPlayer(RhasspyActor):
-    """Sends audio data over MQTT via Hermes protocol"""
+    """Sends audio data over MQTT via Hermes (Snips) protocol."""
+
+    def __init__(self):
+        super().__init__()
+        self.mqtt: Optional[RhasspyActor] = None
+        self.site_ids:List[str] = []
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.mqtt = self.config["mqtt"]
         self.site_ids = self.profile.get("mqtt.site_id", "default").split(",")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, PlayWavFile):
             self.play_file(message.wav_path)
             self.send(message.receiver or sender, WavPlayed())
@@ -163,14 +189,16 @@ class HermesAudioPlayer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def play_file(self, path: str) -> None:
+        """Send WAV file over MQTT."""
         if not os.path.exists(path):
-            self._logger.warn("Path does not exist: %s", path)
+            self._logger.warning("Path does not exist: %s", path)
             return
 
         with open(path, "rb") as wav_file:
             self.play_data(wav_file.read())
 
     def play_data(self, wav_data: bytes) -> None:
+        """Send WAV buffer over MQTT."""
         request_id = str(uuid.uuid4())
 
         # Send to all site ids
@@ -182,4 +210,5 @@ class HermesAudioPlayer(RhasspyActor):
 
     @classmethod
     def get_speakers(cls) -> Dict[Any, Any]:
+        """Get list of possible audio output devices."""
         return {}
