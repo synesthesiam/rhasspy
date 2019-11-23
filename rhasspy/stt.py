@@ -1,3 +1,4 @@
+"""Speech to text."""
 import io
 import os
 import subprocess
@@ -5,7 +6,7 @@ import tempfile
 import time
 import wave
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any, Dict, Optional, Tuple, Type, List
 
 from rhasspy.actor import RhasspyActor
 from rhasspy.utils import convert_wav
@@ -14,6 +15,8 @@ from rhasspy.utils import convert_wav
 
 
 class TranscribeWav:
+    """Request to transcribe text from WAV buffer."""
+
     def __init__(
         self,
         wav_data: bytes,
@@ -26,6 +29,8 @@ class TranscribeWav:
 
 
 class WavTranscription:
+    """Response to TranscribeWav."""
+
     def __init__(self, text: str, handle: bool = True, confidence: float = 1) -> None:
         self.text = text
         self.confidence = confidence
@@ -36,6 +41,7 @@ class WavTranscription:
 
 
 def get_decoder_class(system: str) -> Type[RhasspyActor]:
+    """Get type for profile speech to text decoder."""
     assert system in ["dummy", "pocketsphinx", "kaldi", "remote", "command"], (
         "Invalid speech to text system: %s" % system
     )
@@ -43,13 +49,13 @@ def get_decoder_class(system: str) -> Type[RhasspyActor]:
     if system == "pocketsphinx":
         # Use pocketsphinx locally
         return PocketsphinxDecoder
-    elif system == "kaldi":
+    if system == "kaldi":
         # Use kaldi locally
         return KaldiDecoder
-    elif system == "remote":
+    if system == "remote":
         # Use remote Rhasspy server
         return RemoteDecoder
-    elif system == "command":
+    if system == "command":
         # Use external program
         return CommandDecoder
 
@@ -64,6 +70,7 @@ class DummyDecoder(RhasspyActor):
     """Always returns an emptry transcription"""
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, TranscribeWav):
             self.send(message.receiver or sender, WavTranscription(""))
 
@@ -80,8 +87,12 @@ class PocketsphinxDecoder(RhasspyActor):
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.decoder = None
+        self.min_confidence: float = 0
+        self.preload: bool = False
+        self.decoder = None
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.min_confidence = self.profile.get(
             "speech_to_text.pocketsphinx.min_confidence", 0.0
         )
@@ -91,11 +102,12 @@ class PocketsphinxDecoder(RhasspyActor):
                 try:
                     self.load_decoder()
                 except Exception as e:
-                    self._logger.warning(f"preload: {e}")
+                    self._logger.warning("preload: %s", e)
 
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in loaded state."""
         if isinstance(message, TranscribeWav):
             try:
                 self.load_decoder()
@@ -118,6 +130,7 @@ class PocketsphinxDecoder(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def load_decoder(self) -> None:
+        """Load Pocketsphinx HMM/LM/Dictionary."""
         if self.decoder is None:
             # Load decoder
             import pocketsphinx
@@ -136,8 +149,10 @@ class PocketsphinxDecoder(RhasspyActor):
             )
 
             self._logger.debug(
-                "Loading decoder with hmm=%s, dict=%s, lm=%s"
-                % (hmm_path, dict_path, lm_path)
+                "Loading decoder with hmm=%s, dict=%s, lm=%s",
+                hmm_path,
+                dict_path,
+                lm_path,
             )
 
             decoder_config = pocketsphinx.Decoder.default_config()
@@ -149,13 +164,14 @@ class PocketsphinxDecoder(RhasspyActor):
             mllr_path = self.profile.read_path(ps_config["mllr_matrix"])
             if os.path.exists(mllr_path):
                 self._logger.debug(
-                    "Using tuned MLLR matrix for acoustic model: %s" % mllr_path
+                    "Using tuned MLLR matrix for acoustic model: %s", mllr_path
                 )
                 decoder_config.set_string("-mllr", mllr_path)
 
             self.decoder = pocketsphinx.Decoder(decoder_config)
 
     def transcribe_wav(self, wav_data: bytes) -> Tuple[str, float]:
+        """Get text from WAV buffer."""
         # Ensure 16-bit 16Khz mono
         assert self.decoder is not None
         with io.BytesIO(wav_data) as wav_io:
@@ -166,7 +182,7 @@ class PocketsphinxDecoder(RhasspyActor):
                     wav_file.getnchannels(),
                 )
                 self._logger.debug(
-                    "rate=%s, width=%s, channels=%s." % (rate, width, channels)
+                    "rate=%s, width=%s, channels=%s.", rate, width, channels
                 )
 
                 if (rate != 16000) or (width != 2) or (channels != 1):
@@ -184,20 +200,22 @@ class PocketsphinxDecoder(RhasspyActor):
         self.decoder.end_utt()
         end_time = time.time()
 
-        self._logger.debug("Decoded WAV in %s second(s)" % (end_time - start_time))
+        self._logger.debug("Decoded WAV in %s second(s)", end_time - start_time)
 
         hyp = self.decoder.hyp()
         if hyp is not None:
             confidence = self.decoder.get_logmath().exp(hyp.prob)
-            self._logger.debug(f"Transcription confidence: {confidence}")
+            self._logger.debug("Transcription confidence: %s", confidence)
             if confidence >= self.min_confidence:
                 # Return best transcription
                 self._logger.debug(hyp.hypstr)
                 return hyp.hypstr, confidence
-            else:
-                self._logger.warning(
-                    f"Transcription did not meet confidence threshold: {confidence} < {self.min_confidence}"
-                )
+
+            self._logger.warning(
+                "Transcription did not meet confidence threshold: %s < %s",
+                confidence,
+                self.min_confidence,
+            )
 
         # No transcription
         return "", 0
@@ -205,6 +223,7 @@ class PocketsphinxDecoder(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def get_problems(self) -> Dict[str, Any]:
+        """Get problems at startup."""
         problems: Dict[str, Any] = {}
 
         try:
@@ -262,20 +281,27 @@ class PocketsphinxDecoder(RhasspyActor):
 class RemoteDecoder(RhasspyActor):
     """Forwards speech to text request to a rmemote Rhasspy server"""
 
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.remote_url = ""
+
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.remote_url = self.profile.get("speech_to_text.remote.url")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, TranscribeWav):
             text = self.transcribe_wav(message.wav_data)
             self.send(message.receiver or sender, WavTranscription(text))
 
     def transcribe_wav(self, wav_data: bytes) -> str:
+        """POST to remote server and return response."""
         import requests
 
         headers = {"Content-Type": "audio/wav"}
         self._logger.debug(
-            "POSTing %d byte(s) of WAV data to %s" % (len(wav_data), self.remote_url)
+            "POSTing %d byte(s) of WAV data to %s", len(wav_data), self.remote_url
         )
         # Pass profile name through
         params = {"profile": self.profile.name}
@@ -285,7 +311,7 @@ class RemoteDecoder(RhasspyActor):
 
         try:
             response.raise_for_status()
-        except Exception as e:
+        except Exception:
             self._logger.exception("transcribe_wav")
             return ""
 
@@ -301,7 +327,16 @@ class RemoteDecoder(RhasspyActor):
 class KaldiDecoder(RhasspyActor):
     """Kaldi based decoder"""
 
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.kaldi_dir = None
+        self.model_dir = None
+        self.graph_dir = None
+        self.decode_path = None
+        self.decode_command: List[str] = []
+
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.kaldi_dir = Path(
             os.path.expandvars(
                 self.profile.get("speech_to_text.kaldi.kaldi_dir", "/opt/kaldi")
@@ -330,11 +365,13 @@ class KaldiDecoder(RhasspyActor):
         ]
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, TranscribeWav):
             text = self.transcribe_wav(message.wav_data)
             self.send(message.receiver or sender, WavTranscription(text))
 
     def transcribe_wav(self, wav_data: bytes) -> str:
+        """Get text from WAV by calling external Kaldi script."""
         try:
             with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb+") as wav_file:
                 # Ensure 16-bit 16Khz mono
@@ -376,11 +413,12 @@ class KaldiDecoder(RhasspyActor):
                     self._logger.error(output)
                     raise Exception(output)
 
-        except Exception as e:
+        except Exception:
             self._logger.exception("transcribe_wav")
             return ""
 
     def get_problems(self) -> Dict[str, Any]:
+        """Get problems at startup."""
         problems: Dict[str, Any] = {}
 
         if not self.kaldi_dir.is_dir():
@@ -405,7 +443,12 @@ class KaldiDecoder(RhasspyActor):
 class CommandDecoder(RhasspyActor):
     """Command-line based decoder"""
 
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.command: List[str] = []
+
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         program = os.path.expandvars(self.profile.get("speech_to_text.command.program"))
         arguments = [
             os.path.expandvars(str(a))
@@ -415,19 +458,25 @@ class CommandDecoder(RhasspyActor):
         self.command = [program] + arguments
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, TranscribeWav):
             text = self.transcribe_wav(message.wav_data)
             self.send(message.receiver or sender, WavTranscription(text))
 
     def transcribe_wav(self, wav_data: bytes) -> str:
+        """Get text from WAV using external program."""
         try:
             self._logger.debug(self.command)
 
             # WAV -> STDIN -> STDOUT -> text
             return (
-                subprocess.check_output(self.command, input=wav_data).decode().strip()
+                subprocess.run(
+                    self.command, check=True, input=wav_data, stdout=subprocess.PIPE
+                )
+                .stdout.decode()
+                .strip()
             )
 
-        except Exception as e:
+        except Exception:
             self._logger.exception("transcribe_wav")
             return ""

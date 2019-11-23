@@ -1,3 +1,4 @@
+"""Training for speech to text systems."""
 import json
 import os
 import subprocess
@@ -15,6 +16,8 @@ from rhasspy.train.jsgf2fst import symbols2intent, fstprintall
 
 
 class TrainSpeech:
+    """Request to train speech to text system."""
+
     def __init__(
         self, intent_fst: fst.Fst, receiver: Optional[RhasspyActor] = None
     ) -> None:
@@ -23,24 +26,17 @@ class TrainSpeech:
 
 
 class SpeechTrainingComplete:
+    """Response when training is successful."""
+
     def __init__(self, intent_fst: fst.Fst) -> None:
         self.intent_fst = intent_fst
 
 
 class SpeechTrainingFailed:
+    """Response when training fails."""
+
     def __init__(self, reason: str) -> None:
         self.reason = reason
-
-
-# -----------------------------------------------------------------------------
-
-
-class UnknownWordsException(Exception):
-    def __init__(self, unknown_words: List[str]) -> None:
-        self.unknown_words = unknown_words
-
-    def __repr__(self):
-        return f"Unknown words: {self.unknown_words}"
 
 
 # -----------------------------------------------------------------------------
@@ -49,7 +45,7 @@ class UnknownWordsException(Exception):
 def get_speech_trainer_class(
     trainer_system: str, decoder_system: str = "dummy"
 ) -> Type[RhasspyActor]:
-
+    """Get type for profile speech to text trainer."""
     assert trainer_system in ["dummy", "pocketsphinx", "kaldi", "auto", "command"], (
         "Invalid speech training system: %s" % trainer_system
     )
@@ -59,19 +55,19 @@ def get_speech_trainer_class(
         if decoder_system == "pocketsphinx":
             # Use opengrm/phonetisaurus
             return PocketsphinxSpeechTrainer
-        elif decoder_system == "kaldi":
+        if decoder_system == "kaldi":
             # Use opengrm/phonetisaurus
             return KaldiSpeechTrainer
-        elif decoder_system == "command":
+        if decoder_system == "command":
             # Use command-line speech trainer
             return CommandSpeechTrainer
-    elif trainer_system == "pocketsphinx":
+    if trainer_system == "pocketsphinx":
         # Use opengrm/phonetisaurus
         return PocketsphinxSpeechTrainer
-    elif trainer_system == "kaldi":
+    if trainer_system == "kaldi":
         # Use opengrm/phonetisaurus/kaldi
         return KaldiSpeechTrainer
-    elif trainer_system == "command":
+    if trainer_system == "command":
         # Use command-line speech trainer
         return CommandSpeechTrainer
 
@@ -83,7 +79,10 @@ def get_speech_trainer_class(
 
 
 class DummySpeechTrainer(RhasspyActor):
+    """Always reports successful training."""
+
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, TrainSpeech):
             self.send(
                 message.receiver or sender, SpeechTrainingComplete(message.intent_fst)
@@ -102,16 +101,24 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
     def __init__(self, system: str = "pocketsphinx") -> None:
         RhasspyActor.__init__(self)
         self.system = system
-
-    def to_started(self, from_state: str) -> None:
-        self.word_pronouncer: RhasspyActor = self.config["word_pronouncer"]
+        self.word_pronouncer: RhasspyActor = None
         self.unknown_words: Dict[str, Dict[str, Any]] = {}
         self.receiver: Optional[RhasspyActor] = None
+        self.dictionary_casing: str = ""
+        self.dictionary_upper = False
+        self.replace_patterns = []
+        self.split_pattern = None
+        self.guess_unknown = True
+        self.fail_on_unknown = True
+
+    def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
+        self.word_pronouncer = self.config["word_pronouncer"]
 
         self.dictionary_casing = self.profile.get(
             "speech_to_text.dictionary_casing", ""
         )
-        self.dictionary_upper: bool = self.profile.get(
+        self.dictionary_upper = self.profile.get(
             "speech_to_text.dictionary_upper", False
         )
 
@@ -129,6 +136,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         )
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         pass
 
 
@@ -145,6 +153,7 @@ class KaldiSpeechTrainer(PocketsphinxSpeechTrainer):
         PocketsphinxSpeechTrainer.__init__(self, system="kaldi")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Transition to started state."""
         pass
 
 
@@ -156,7 +165,15 @@ class KaldiSpeechTrainer(PocketsphinxSpeechTrainer):
 class CommandSpeechTrainer(RhasspyActor):
     """Trains a speech to text system via command line."""
 
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.command: List[str] = []
+        self.dictionary_casing = ""
+        self.replace_patterns = []
+        self.split_pattern = ""
+
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         program = os.path.expandvars(
             self.profile.get("training.speech_to_text.command.program")
         )
@@ -176,6 +193,7 @@ class CommandSpeechTrainer(RhasspyActor):
         self.split_pattern = regex_config.get("split", r"\s+")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, TrainSpeech):
             try:
                 self.train(message.intent_fst)
@@ -190,6 +208,7 @@ class CommandSpeechTrainer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def train(self, intent_fst: fst.Fst):
+        """Train using an external program."""
         self._logger.debug(self.command)
 
         try:
@@ -202,8 +221,8 @@ class CommandSpeechTrainer(RhasspyActor):
                 sentences_by_intent[intent_name].append(intent)
 
             # JSON -> STDIN
-            input = json.dumps(sentences_by_intent).encode()
+            json_input = json.dumps(sentences_by_intent).encode()
 
-            subprocess.run(self.command, input=input, check=True)
+            subprocess.run(self.command, input=json_input, check=True)
         except Exception:
             self._logger.exception("train")

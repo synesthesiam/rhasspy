@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+"""Support for intent recognition."""
 import concurrent.futures
 import json
 import logging
@@ -21,6 +21,8 @@ from rhasspy.utils import empty_intent
 
 
 class RecognizeIntent:
+    """Request to recognize an intent."""
+
     def __init__(
         self,
         text: str,
@@ -35,6 +37,8 @@ class RecognizeIntent:
 
 
 class IntentRecognized:
+    """Response to RecognizeIntent."""
+
     def __init__(self, intent: Dict[str, Any], handle: bool = True) -> None:
         self.intent = intent
         self.handle = handle
@@ -44,6 +48,7 @@ class IntentRecognized:
 
 
 def get_recognizer_class(system: str) -> Type[RhasspyActor]:
+    """Get class for profile intent recognizer."""
     assert system in [
         "dummy",
         "fsticuffs",
@@ -58,36 +63,42 @@ def get_recognizer_class(system: str) -> Type[RhasspyActor]:
     if system == "fsticuffs":
         # Use OpenFST locally
         return FsticuffsRecognizer
-    elif system == "fuzzywuzzy":
+
+    if system == "fuzzywuzzy":
         # Use fuzzy string matching locally
         return FuzzyWuzzyRecognizer
-    elif system == "adapt":
+
+    if system == "adapt":
         # Use Mycroft Adapt locally
         return AdaptIntentRecognizer
-    elif system == "rasa":
+    if system == "rasa":
         # Use Rasa NLU remotely
         return RasaIntentRecognizer
-    elif system == "remote":
+
+    if system == "remote":
         # Use remote rhasspy server
         return RemoteRecognizer
-    elif system == "flair":
+
+    if system == "flair":
         # Use flair locally
         return FlairRecognizer
-    elif system == "command":
+
+    if system == "command":
         # Use command line
         return CommandRecognizer
-    else:
-        # Does nothing
-        return DummyIntentRecognizer
+
+    # Does nothing
+    return DummyIntentRecognizer
 
 
 # -----------------------------------------------------------------------------
 
 
 class DummyIntentRecognizer(RhasspyActor):
-    """Always returns an empty intent"""
+    """Always returns an empty intent."""
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, RecognizeIntent):
             intent = empty_intent()
             intent["text"] = message.text
@@ -101,16 +112,22 @@ class DummyIntentRecognizer(RhasspyActor):
 
 
 class RemoteRecognizer(RhasspyActor):
-    """HTTP based recognizer for remote rhasspy server"""
+    """HTTP based recognizer for remote Rhasspy server."""
+
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.remote_url = ""
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.remote_url = self.profile.get("intent.remote.url")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, RecognizeIntent):
             try:
                 intent = self.recognize(message.text)
-            except Exception as e:
+            except Exception:
                 self._logger.exception("in_started")
                 intent = empty_intent()
                 intent["text"] = message.text
@@ -124,6 +141,7 @@ class RemoteRecognizer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def recognize(self, text: str) -> Dict[str, Any]:
+        """POST to remote server and return response."""
         import requests
 
         params = {"profile": self.profile.name, "nohass": True}
@@ -140,7 +158,7 @@ class RemoteRecognizer(RhasspyActor):
 
 
 class FsticuffsRecognizer(RhasspyActor):
-    """Recognize intents using OpenFST"""
+    """Recognize intents using OpenFST."""
 
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
@@ -149,20 +167,23 @@ class FsticuffsRecognizer(RhasspyActor):
         self.words: Set[str] = set()
         self.stop_words: Set[str] = set()
         self.fuzzy: bool = True
+        self.preload: bool = False
 
     def to_started(self, from_state: str) -> None:
-        self.preload: bool = self.config.get("preload", False)
+        """Transition to started state."""
+        self.preload = self.config.get("preload", False)
         if self.preload:
             try:
                 self.load_fst()
             except Exception as e:
-                self._logger.warning(f"preload: {e}")
+                self._logger.warning("preload: %s", e)
 
         # True if fuzzy search should be used (default)
         self.fuzzy = self.profile.get("intent.fsticuffs.fuzzy", True)
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in loaded state."""
         if isinstance(message, RecognizeIntent):
             try:
                 self.load_fst()
@@ -173,7 +194,7 @@ class FsticuffsRecognizer(RhasspyActor):
                 else:
                     # Strict search
                     intent = self.recognize(message.text)
-            except Exception as e:
+            except Exception:
                 self._logger.exception("in_loaded")
                 intent = empty_intent()
 
@@ -186,6 +207,7 @@ class FsticuffsRecognizer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def recognize(self, text: str) -> Dict[str, Any]:
+        """Use FST as acceptor."""
         from rhasspy.train.jsgf2fst import fstaccept
 
         # Assume lower case, white-space separated tokens
@@ -195,7 +217,7 @@ class FsticuffsRecognizer(RhasspyActor):
             tokens = [w for w in tokens if w in self.words]
 
         intents = fstaccept(self.fst, tokens)
-        self._logger.debug(f"Got {len(intents)} intent(s)")
+        self._logger.debug("Got %s intent(s)", len(intents))
 
         if len(intents) > 0:
             self._logger.debug(intents)
@@ -203,6 +225,7 @@ class FsticuffsRecognizer(RhasspyActor):
         return intents[0]
 
     def recognize_fuzzy(self, text: str, eps: str = "<eps>") -> Dict[str, Any]:
+        """Do fuzzy breadth-first search on FST as graph."""
         from rhasspy.train.jsgf2fst import symbols2intent
 
         # Assume lower case, white-space separated tokens
@@ -218,7 +241,7 @@ class FsticuffsRecognizer(RhasspyActor):
             intent_symbols_and_costs = FsticuffsRecognizer._get_symbols_and_costs(
                 self.graph, tokens, stop_words=self.stop_words, eps=eps
             )
-            for intent_name, (symbols, cost) in intent_symbols_and_costs.items():
+            for symbols, cost in intent_symbols_and_costs.values():
                 intent = symbols2intent(symbols, eps=eps)
                 intent["intent"]["confidence"] = (len(tokens) - cost) / len(tokens)
                 intents.append(intent)
@@ -227,7 +250,7 @@ class FsticuffsRecognizer(RhasspyActor):
                 intents, key=lambda i: i["intent"]["confidence"], reverse=True
             )
 
-        self._logger.debug(f"Recognized {len(intents)} intent(s)")
+        self._logger.debug("Recognized %s intent(s)", len(intents))
 
         # Use first intent
         if len(intents) > 0:
@@ -252,12 +275,17 @@ class FsticuffsRecognizer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
+    @classmethod
     def _get_symbols_and_costs(
+        cls,
         intent_graph: nx.MultiDiGraph,
         tokens: List[str],
-        stop_words: Set[str] = set(),
+        stop_words: Set[str] = None,
         eps: str = "<eps>",
     ) -> Dict[str, Tuple[List[str], int]]:
+        """Get FST paths and costs via BFS."""
+        stop_words = stop_words or set()
+
         # node -> attrs
         n_data = intent_graph.nodes(data=True)
 
@@ -296,7 +324,7 @@ class FsticuffsRecognizer(RhasspyActor):
 
             # Process child edges
             for next_node, edges in intent_graph[q_node].items():
-                for edge_idx, edge_data in edges.items():
+                for edge_data in edges.values():
                     in_label = edge_data["in_label"]
                     out_label = edge_data["out_label"]
                     next_in_tokens = q_in_tokens[:]
@@ -358,8 +386,9 @@ class FsticuffsRecognizer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def _fst_to_graph(the_fst: fst.Fst) -> nx.MultiDiGraph:
-        """Converts a finite state transducer to a directed graph."""
+    @classmethod
+    def _fst_to_graph(cls, the_fst: fst.Fst) -> nx.MultiDiGraph:
+        """Convert a finite state transducer to a directed graph."""
         zero_weight = fst.Weight.Zero(the_fst.weight_type())
         in_symbols = the_fst.input_symbols()
         out_symbols = the_fst.output_symbols()
@@ -387,9 +416,8 @@ class FsticuffsRecognizer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def load_fst(self):
+        """Load intent FST."""
         if self.fst is None:
-            import pywrapfst as fst
-
             fst_path = self.profile.read_path(
                 self.profile.get("intent.fsticuffs.intent_fst", "intent.fst")
             )
@@ -411,25 +439,17 @@ class FsticuffsRecognizer(RhasspyActor):
             if os.path.exists(stop_words_path):
                 self._logger.debug(f"Using stop words at {stop_words_path}")
                 with open(stop_words_path, "r") as stop_words_file:
-                    self.stop_words = set(
-                        [
-                            line.strip()
-                            for line in stop_words_file
-                            if len(line.strip()) > 0
-                        ]
-                    )
+                    self.stop_words = {
+                        line.strip()
+                        for line in stop_words_file
+                        if len(line.strip()) > 0
+                    }
 
     # -------------------------------------------------------------------------
 
     def get_problems(self) -> Dict[str, Any]:
+        """Get problems at startup."""
         problems: Dict[str, Any] = {}
-
-        try:
-            import pywrapfst as fst
-        except Exception:
-            problems[
-                "openfst not installed"
-            ] = "openfst Python library not installed. Try pip3 install openfst"
 
         if not shutil.which("fstminimize"):
             problems[
@@ -460,24 +480,28 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.examples: Optional[Dict[str, Any]] = None
+        self.min_confidence: float = 0
+        self.preload = False
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.min_confidence = self.profile.get("intent.fuzzywuzzy.min_confidence", 0)
-        self.preload: bool = self.config.get("preload", False)
+        self.preload = self.config.get("preload", False)
         if self.preload:
             try:
                 self.load_examples()
             except Exception as e:
-                self._logger.warning(f"preload: {e}")
+                self._logger.warning("preload: %s", e)
 
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in loaded state."""
         if isinstance(message, RecognizeIntent):
             try:
                 self.load_examples()
                 intent = self.recognize(message.text)
-            except Exception as e:
+            except Exception:
                 self._logger.exception("in_loaded")
                 intent = empty_intent()
 
@@ -490,6 +514,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def recognize(self, text: str) -> Dict[str, Any]:
+        """Find sentence with lowest string-edit distance."""
         confidence = 0
         if len(text) > 0:
             assert self.examples is not None, "No examples JSON"
@@ -527,10 +552,12 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                     # Update confidence and return example intent
                     best_intent["intent"]["confidence"] = confidence
                     return best_intent
-                else:
-                    self._logger.warning(
-                        f"Intent did not meet confidence threshold: {confidence} < {self.min_confidence}"
-                    )
+
+                self._logger.warning(
+                    "Intent did not meet confidence threshold: %s < %s",
+                    confidence,
+                    self.min_confidence,
+                )
 
         # Empty intent
         intent = empty_intent()
@@ -542,8 +569,8 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def load_examples(self) -> None:
+        """Load JSON file with intent examples if not already cached"""
         if self.examples is None:
-            """Load JSON file with intent examples if not already cached"""
             examples_path = self.profile.read_path(
                 self.profile.get("intent.fuzzywuzzy.examples_json")
             )
@@ -552,13 +579,14 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                 with open(examples_path, "r") as examples_file:
                     self.examples = json.load(examples_file)
 
-                self._logger.debug("Loaded examples from %s" % examples_path)
+                self._logger.debug("Loaded examples from %s", examples_path)
 
 
 # -----------------------------------------------------------------------------
 
 
 def _get_best_fuzzy(text, sentences):
+    """Find sentence with lowest string-edit distance."""
     from fuzzywuzzy import process
 
     return process.extractOne(text, sentences)
@@ -573,7 +601,13 @@ def _get_best_fuzzy(text, sentences):
 class RasaIntentRecognizer(RhasspyActor):
     """Uses Rasa NLU HTTP API to recognize intents."""
 
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.project_name = ""
+        self.parse_url = ""
+
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         rasa_config = self.profile.get("intent.rasa", {})
         url = rasa_config.get("url", "http://localhost:5005")
         self.project_name = rasa_config.get(
@@ -582,11 +616,12 @@ class RasaIntentRecognizer(RhasspyActor):
         self.parse_url = urljoin(url, "model/parse")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, RecognizeIntent):
             try:
                 intent = self.recognize(message.text)
                 logging.debug(repr(intent))
-            except Exception as e:
+            except Exception:
                 self._logger.exception("in_started")
                 intent = empty_intent()
                 intent["text"] = message.text
@@ -599,6 +634,7 @@ class RasaIntentRecognizer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def recognize(self, text: str) -> Dict[str, Any]:
+        """POST to RasaNLU server and return response."""
         import requests
 
         response = requests.post(
@@ -628,23 +664,26 @@ class AdaptIntentRecognizer(RhasspyActor):
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.engine = None
+        self.preload = False
 
     def to_started(self, from_state: str) -> None:
-        self.preload: bool = self.config.get("preload", False)
+        """Transition to started state."""
+        self.preload = self.config.get("preload", False)
         if self.preload:
             try:
                 self.load_engine()
             except Exception as e:
-                self._logger.warning(f"preload: {e}")
+                self._logger.warning("preload: %s", e)
 
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in loaded state."""
         if isinstance(message, RecognizeIntent):
             try:
                 self.load_engine()
                 intent = self.recognize(message.text)
-            except Exception as e:
+            except Exception:
                 self._logger.exception("in_loaded")
                 intent = empty_intent()
 
@@ -657,6 +696,7 @@ class AdaptIntentRecognizer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def recognize(self, text: str) -> Dict[str, Any]:
+        """Use Adapt engine to recognize intent."""
         # Get all intents
         assert self.engine is not None, "Adapt engine not loaded"
         intents = [intent for intent in self.engine.determine_intent(text) if intent]
@@ -690,7 +730,7 @@ class AdaptIntentRecognizer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def load_engine(self) -> None:
-        """Configure Adapt engine if not already cached"""
+        """Configure Adapt engine if not already cached."""
         if self.engine is None:
             from adapt.intent import IntentBuilder
             from adapt.engine import IntentDeterminationEngine
@@ -724,7 +764,7 @@ class AdaptIntentRecognizer(RhasspyActor):
 
                 self.engine.register_intent_parser(intent.build())
 
-            self._logger.debug("Loaded engine from config file %s" % config_path)
+            self._logger.debug("Loaded engine from config file %s", config_path)
 
 
 # -----------------------------------------------------------------------------
@@ -747,22 +787,25 @@ class FlairRecognizer(RhasspyActor):
         self.class_model: Optional[TextClassifier] = None
         self.ner_models: Optional[Dict[str, SequenceTagger]] = None
         self.intent_map: Optional[Dict[str, str]] = None
+        self.preload = False
 
     def to_started(self, from_state: str) -> None:
-        self.preload: bool = self.config.get("preload", False)
+        """Transition to started state."""
+        self.preload = self.config.get("preload", False)
         if self.preload:
             try:
                 # Pre-load models
                 self.load_models()
             except Exception as e:
-                self._logger.warning(f"preload: {e}")
+                self._logger.warning("preload: %s", e)
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, RecognizeIntent):
             try:
                 self.load_models()
                 intent = self.recognize(message.text)
-            except Exception as e:
+            except Exception:
                 self._logger.exception("in_started")
                 intent = empty_intent()
                 intent["text"] = message.text
@@ -774,6 +817,7 @@ class FlairRecognizer(RhasspyActor):
             )
 
     def recognize(self, text: str) -> Dict[str, Any]:
+        """Run intent classifier and then named-entity recognizer."""
         from flair.data import Sentence
 
         intent = empty_intent()
@@ -815,6 +859,7 @@ class FlairRecognizer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def load_models(self) -> None:
+        """Load intent classifier and named entity recognizers."""
         from flair.models import TextClassifier, SequenceTagger
 
         # Load mapping from intent id to user intent name
@@ -835,7 +880,7 @@ class FlairRecognizer(RhasspyActor):
             class_model_path = os.path.join(
                 data_dir, "classification", "final-model.pt"
             )
-            self._logger.debug(f"Loading classification model from {class_model_path}")
+            self._logger.debug("Loading classification model from %s", class_model_path)
             self.class_model = TextClassifier.load_from_file(class_model_path)
             self._logger.debug("Loaded classification model")
 
@@ -849,11 +894,11 @@ class FlairRecognizer(RhasspyActor):
                     intent_name = file_name
                     if intent_name not in self.intent_map:
                         self._logger.warning(
-                            f"{intent_name} was not found in intent map"
+                            "%s was not found in intent map", intent_name
                         )
 
                     ner_model_path = os.path.join(ner_model_dir, "final-model.pt")
-                    self._logger.debug(f"Loading NER model from {ner_model_path}")
+                    self._logger.debug("Loading NER model from %s", ner_model_path)
                     ner_models[intent_name] = SequenceTagger.load_from_file(
                         ner_model_path
                     )
@@ -870,7 +915,12 @@ class FlairRecognizer(RhasspyActor):
 class CommandRecognizer(RhasspyActor):
     """Command-line based recognizer"""
 
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.command: List[str] = []
+
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         program = os.path.expandvars(self.profile.get("intent.command.program"))
         arguments = [
             os.path.expandvars(str(a))
@@ -880,18 +930,22 @@ class CommandRecognizer(RhasspyActor):
         self.command = [program] + arguments
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, RecognizeIntent):
             try:
                 self._logger.debug(self.command)
 
                 # Text -> STDIN -> STDOUT -> JSON
-                output = subprocess.check_output(
-                    self.command, input=message.text.encode()
-                ).decode()
+                output = subprocess.run(
+                    self.command,
+                    check=True,
+                    input=message.text.encode(),
+                    stdout=subprocess.PIPE,
+                ).stdout.decode()
 
                 intent = json.loads(output)
 
-            except Exception as e:
+            except Exception:
                 self._logger.exception("in_started")
                 intent = empty_intent()
                 intent["text"] = message.text

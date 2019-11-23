@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+"""Support for acoustic model tuning."""
 import logging
 import os
 import shutil

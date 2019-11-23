@@ -1,3 +1,4 @@
+"""Rhasspy utility functions."""
 import collections
 import concurrent.futures
 import gzip
@@ -23,6 +24,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class FunctionLoggingHandler(logging.Handler):
+    """Calls a function for each logging message."""
+
     def __init__(self, func):
         logging.Handler.__init__(self)
         self.func = func
@@ -86,7 +89,7 @@ def read_dict(
                 else:
                     word_dict[word] = [pronounce]
         except Exception as e:
-            _LOGGER.warning(f"read_dict: {e} (line {i+1})")
+            _LOGGER.warning("read_dict: %s (line %s)", e, i+1)
 
     return word_dict
 
@@ -182,8 +185,8 @@ def maybe_convert_wav(wav_data: bytes) -> bytes:
             )
             if (rate != 16000) or (width != 2) or (channels != 1):
                 return convert_wav(wav_data)
-            else:
-                return wav_file.readframes(wav_file.getnframes())
+
+            return wav_file.readframes(wav_file.getnframes())
 
 
 # -----------------------------------------------------------------------------
@@ -223,6 +226,7 @@ def load_phoneme_map(path: str) -> Dict[str, str]:
 
 
 def empty_intent() -> Dict[str, Any]:
+    """Get intent structure."""
     return {"text": "", "intent": {"name": "", "confidence": 0}, "entities": []}
 
 
@@ -238,6 +242,7 @@ class ByteStream:
         self.closed = False
 
     def read(self, n=-1) -> bytes:
+        """Read some number of bytes."""
         # Block until enough data is available
         while len(self.buffer) < n:
             if not self.closed:
@@ -251,6 +256,7 @@ class ByteStream:
         return chunk
 
     def write(self, data: bytes) -> None:
+        """Write buffer."""
         if self.closed:
             return
 
@@ -258,6 +264,7 @@ class ByteStream:
         self.read_event.set()
 
     def close(self) -> None:
+        """Close stream."""
         self.closed = True
         self.read_event.set()
 
@@ -310,6 +317,7 @@ def open_maybe_gzip(path, mode_normal="r", mode_gzip=None):
 
 
 def grouper(iterable, n, fillvalue=None):
+    """Group items from an interable."""
     args = [iter(iterable)] * n
     return itertools.zip_longest(*args, fillvalue=fillvalue)
 
@@ -318,6 +326,7 @@ def grouper(iterable, n, fillvalue=None):
 
 
 def make_sentences_by_intent(intent_fst: fst.Fst) -> Dict[str, Any]:
+    """Get all sentences from an FST."""
     from rhasspy.train.jsgf2fst import fstprintall, symbols2intent
 
     # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }

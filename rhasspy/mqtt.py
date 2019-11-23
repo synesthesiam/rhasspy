@@ -1,3 +1,4 @@
+"""Support for MQTT input/output."""
 import json
 import socket
 import threading
@@ -12,37 +13,47 @@ from rhasspy.actor import RhasspyActor
 from rhasspy.intent import IntentRecognized
 
 # -----------------------------------------------------------------------------
-# Events
-# -----------------------------------------------------------------------------
 
 
 class MqttPublish:
+    """Request to publish payload to topic."""
+
     def __init__(self, topic: str, payload: bytes) -> None:
         self.topic = topic
         self.payload = payload
 
 
 class MqttSubscribe:
+    """Request to subscribe to a topic."""
+
     def __init__(self, topic: str, receiver: Optional[RhasspyActor] = None) -> None:
         self.topic = topic
         self.receiver = receiver
 
 
 class MqttConnected:
+    """Response when connected to broker."""
+
     pass
 
 
 class MqttDisconnected:
+    """Response when disconnected from broker."""
+
     pass
 
 
 class MqttMessage:
+    """Response when MQTT message is received."""
+
     def __init__(self, topic: str, payload: bytes) -> None:
         self.topic = topic
         self.payload = payload
 
 
 class MessageReady:
+    """Internal event for actor."""
+
     pass
 
 
@@ -53,6 +64,8 @@ class MessageReady:
 
 
 class HermesMqtt(RhasspyActor):
+    """Communicate with MQTT broker using Hermes protocol."""
+
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.client = None
@@ -60,10 +73,19 @@ class HermesMqtt(RhasspyActor):
         self.subscriptions: Dict[str, List[RhasspyActor]] = defaultdict(list)
         self.publications: Dict[str, List[bytes]] = defaultdict(list)
         self.message_queue: Queue = Queue()
+        self.site_ids: List[str] = []
+        self.site_id = "default"
+        self.host = "localhost"
+        self.port = 1883
+        self.username = ""
+        self.password = None
+        self.reconnect_sec = 5
+        self.publish_intents = True
 
     # -------------------------------------------------------------------------
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         # Load settings
         self.site_ids = self.profile.get("mqtt.site_id", "default").split(",")
         if len(self.site_ids) > 0:
@@ -82,9 +104,11 @@ class HermesMqtt(RhasspyActor):
             self.transition("connecting")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         self.save_for_later(message, sender)
 
     def to_connecting(self, from_state: str) -> None:
+        """Transition to connecting state."""
         import paho.mqtt.client as mqtt
 
         self.client = mqtt.Client()
@@ -94,10 +118,10 @@ class HermesMqtt(RhasspyActor):
         self.client.on_disconnect = self.on_disconnect
 
         if len(self.username) > 0:
-            self._logger.debug("Logging in as %s" % self.username)
+            self._logger.debug("Logging in as %s", self.username)
             self.client.username_pw_set(self.username, self.password)
 
-        self._logger.debug("Connecting to MQTT broker %s:%s" % (self.host, self.port))
+        self._logger.debug("Connecting to MQTT broker %s:%s", self.host, self.port)
 
         def do_connect():
             success = False
@@ -106,9 +130,9 @@ class HermesMqtt(RhasspyActor):
                     ret = self.client.connect(self.host, self.port)
                     self.client.loop_start()
                     while (ret != 0) and (self.reconnect_sec > 0):
-                        self._logger.warning(f"Connection failed: {ret}")
+                        self._logger.warning("Connection failed: %s", ret)
                         self._logger.debug(
-                            "Reconnecting in %s second(s)" % self.reconnect_sec
+                            "Reconnecting in %s second(s)", self.reconnect_sec
                         )
                         time.sleep(self.reconnect_sec)
                         ret = self.client.connect(self.host, self.port)
@@ -118,7 +142,7 @@ class HermesMqtt(RhasspyActor):
                     self._logger.exception("connecting")
                     if self.reconnect_sec > 0:
                         self._logger.debug(
-                            "Reconnecting in %s second(s)" % self.reconnect_sec
+                            "Reconnecting in %s second(s)", self.reconnect_sec
                         )
                         time.sleep(self.reconnect_sec)
 
@@ -128,23 +152,25 @@ class HermesMqtt(RhasspyActor):
         threading.Thread(target=do_connect, daemon=True).start()
 
     def in_connecting(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in connecting."""
         if isinstance(message, MqttConnected):
             self.connected = True
             self.transition("connected")
         elif isinstance(message, MqttDisconnected):
             if self.reconnect_sec > 0:
-                self._logger.debug("Reconnecting in %s second(s)" % self.reconnect_sec)
+                self._logger.debug("Reconnecting in %s second(s)", self.reconnect_sec)
                 time.sleep(self.reconnect_sec)
                 self.transition("started")
         else:
             self.save_for_later(message, sender)
 
     def to_connected(self, from_state: str) -> None:
+        """Transition to connected state."""
         assert self.client is not None
         # Subscribe to topics
         for topic in self.subscriptions:
             self.client.subscribe(topic)
-            self._logger.debug("Subscribed to %s" % topic)
+            self._logger.debug("Subscribed to %s", topic)
 
         # Publish outstanding messages
         for topic, payloads in self.publications.items():
@@ -154,9 +180,10 @@ class HermesMqtt(RhasspyActor):
         self.publications.clear()
 
     def in_connected(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in connected state."""
         if isinstance(message, MqttDisconnected):
             if self.reconnect_sec > 0:
-                self._logger.debug("Reconnecting in %s second(s)" % self.reconnect_sec)
+                self._logger.debug("Reconnecting in %s second(s)", self.reconnect_sec)
                 time.sleep(self.reconnect_sec)
                 self.transition("started")
             else:
@@ -172,7 +199,7 @@ class HermesMqtt(RhasspyActor):
                 receiver = message.receiver or sender
                 self.subscriptions[message.topic].append(receiver)
                 self.client.subscribe(message.topic)
-                self._logger.debug("Subscribed to %s" % message.topic)
+                self._logger.debug("Subscribed to %s", message.topic)
             elif isinstance(message, MqttPublish):
                 self.client.publish(message.topic, message.payload)
             elif isinstance(message, IntentRecognized):
@@ -182,6 +209,7 @@ class HermesMqtt(RhasspyActor):
             self.save_for_later(message, sender)
 
     def to_stopped(self, from_state: str) -> None:
+        """Transition to stopped state."""
         if self.client is not None:
             self.connected = False
             self._logger.debug("Stopping MQTT client")
@@ -191,6 +219,7 @@ class HermesMqtt(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def save_for_later(self, message: Any, sender: RhasspyActor) -> None:
+        """Cache message until connected."""
         if isinstance(message, MqttSubscribe):
             receiver = message.receiver or sender
             self.subscriptions[message.topic].append(receiver)
@@ -200,21 +229,24 @@ class HermesMqtt(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def on_connect(self, client, userdata, flags, rc):
+        """Callback when connected to broker."""
         try:
-            self._logger.info("Connected to %s:%s" % (self.host, self.port))
+            self._logger.info("Connected to %s:%s", self.host, self.port)
             self.send(self.myAddress, MqttConnected())
         except Exception:
             self._logger.exception("on_connect")
 
     def on_disconnect(self, client, userdata, flags, rc):
+        """Callback when disconnected from broker."""
         try:
-            self._logger.warn("Disconnected")
+            self._logger.warning("Disconnected")
             self.connected = False
             self.send(self.myAddress, MqttDisconnected())
         except Exception:
             self._logger.exception("on_disconnect")
 
     def on_message(self, client, userdata, msg):
+        """Callback when message received."""
         try:
             self.message_queue.put(MqttMessage(msg.topic, msg.payload))
             self.send(self.myAddress, MessageReady())
@@ -224,6 +256,7 @@ class HermesMqtt(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def publish_intent(self, intent: Dict[str, Any]) -> None:
+        """Publish intent to MQTT using Hermes protocol."""
         intent_name = pydash.get(intent, "intent.name", "")
         not_recognized = len(intent_name) == 0
 
@@ -265,11 +298,12 @@ class HermesMqtt(RhasspyActor):
             ).encode()
 
         self.client.publish(topic, payload)
-        self._logger.debug(f"Published intent to {topic}")
+        self._logger.debug("Published intent to %s", topic)
 
     # -------------------------------------------------------------------------
 
     def get_problems(self) -> Dict[str, Any]:
+        """Get problems on startup."""
         problems: Dict[str, Any] = {}
         s = socket.socket()
         try:

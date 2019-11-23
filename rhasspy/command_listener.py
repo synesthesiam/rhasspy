@@ -1,3 +1,4 @@
+"""Support for voice command recording."""
 import json
 import math
 import os
@@ -5,7 +6,7 @@ import subprocess
 import threading
 import uuid
 from datetime import timedelta
-from typing import Any, Optional, Tuple, Type
+from typing import Any, Optional, Tuple, Type, Dict, List
 
 from rhasspy.actor import RhasspyActor, WakeupMessage
 from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
@@ -16,6 +17,8 @@ from rhasspy.utils import convert_wav
 
 
 class ListenForCommand:
+    """Tell Rhasspy to listen for a voice command."""
+
     def __init__(
         self,
         receiver: Optional[RhasspyActor] = None,
@@ -28,6 +31,8 @@ class ListenForCommand:
 
 
 class VoiceCommand:
+    """Response to ListenForCommand."""
+
     def __init__(self, data: bytes, timeout: bool = False, handle: bool = True) -> None:
         self.data = data
         self.timeout = timeout
@@ -38,6 +43,7 @@ class VoiceCommand:
 
 
 def get_command_class(system: str) -> Type[RhasspyActor]:
+    """Return class type for profile command listener."""
     assert system in ["dummy", "webrtcvad", "command", "oneshot", "hermes"], (
         "Unknown voice command system: %s" % system
     )
@@ -45,13 +51,16 @@ def get_command_class(system: str) -> Type[RhasspyActor]:
     if system == "webrtcvad":
         # Use WebRTCVAD locally
         return WebrtcvadCommandListener
-    elif system == "command":
+
+    if system == "command":
         # Use external program
         return CommandCommandListener
-    elif system == "oneshot":
+
+    if system == "oneshot":
         # Use one-shot listener locally
         return OneShotCommandListener
-    elif system == "hermes":
+
+    if system == "hermes":
         # Use MQTT listener
         return HermesCommandListener
 
@@ -63,9 +72,10 @@ def get_command_class(system: str) -> Type[RhasspyActor]:
 
 
 class DummyCommandListener(RhasspyActor):
-    """Always sends an empty voice command"""
+    """Always sends an empty voice command."""
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, ListenForCommand):
             self.send(message.receiver or sender, VoiceCommand(bytes()))
 
@@ -81,12 +91,33 @@ class WebrtcvadCommandListener(RhasspyActor):
 
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
-        self.recorder: Optional[RhasspyActor] = None
-        self.receiver: Optional[RhasspyActor] = None
+        self.after_phrase: bool = False
         self.buffer: bytes = bytes()
+        self.buffer_count: int = 0
         self.chunk: bytes = bytes()
+        self.chunk_size: int = 960
+        self.handle = True
+        self.in_phrase: bool = False
+        self.max_buffers = 0
+        self.min_phrase_buffers: int = 0
+        self.min_sec: float = 2
+        self.receiver: Optional[RhasspyActor] = None
+        self.recorder: Optional[RhasspyActor] = None
+        self.sample_rate: int = 16000
+        self.seconds_per_buffer = 0
+        self.settings: Dict[str, Any] = {}
+        self.silence_buffers: int = 0
+        self.silence_sec: float = 0.5
+        self.speech_buffers: int = 5
+        self.speech_buffers_left: int = 0
+        self.throwaway_buffers: int = 10
+        self.throwaway_buffers_left: int = 0
+        self.timeout_sec: float = 30
+        self.vad_mode: int = 0
+        self.vad = None
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         import webrtcvad
 
         self.recorder = self.config["recorder"]
@@ -108,7 +139,6 @@ class WebrtcvadCommandListener(RhasspyActor):
         self.seconds_per_buffer = self.chunk_size / self.sample_rate
         self.max_buffers = int(math.ceil(self.timeout_sec / self.seconds_per_buffer))
 
-        self.vad = None
         self.vad = webrtcvad.Vad()
         self.vad.set_mode(self.vad_mode)
 
@@ -119,6 +149,7 @@ class WebrtcvadCommandListener(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def to_loaded(self, from_state: str) -> None:
+        """Transition to loaded state."""
         # Recording state
         self.chunk: bytes = bytes()
         self.silence_buffers = int(
@@ -132,6 +163,7 @@ class WebrtcvadCommandListener(RhasspyActor):
         self.buffer_count = 0
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in loaded state."""
         if isinstance(message, ListenForCommand):
             if message.timeout is not None:
                 # Use message timeout
@@ -149,12 +181,14 @@ class WebrtcvadCommandListener(RhasspyActor):
             self.send(self.recorder, StartStreaming(self.myAddress))
 
     def to_listening(self, from_state: str) -> None:
+        """Transition to listening state."""
         self.wakeupAfter(timedelta(seconds=self.timeout_sec))
 
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in listening state."""
         if isinstance(message, WakeupMessage):
             # Timeout
-            self._logger.warn("Timeout")
+            self._logger.warning("Timeout")
             self.send(self.recorder, StopStreaming(self.myAddress))
             self.send(
                 self.receiver,
@@ -186,12 +220,14 @@ class WebrtcvadCommandListener(RhasspyActor):
                     self.transition("loaded")
 
     def to_stopped(self, from_state: str) -> None:
+        """Transition to stopped state."""
         # Stop recording
         self.send(self.recorder, StopStreaming(self.myAddress))
 
     # -------------------------------------------------------------------------
 
     def process_data(self, data: bytes) -> Tuple[bool, bool]:
+        """Process a single audio chunk."""
         finished = False
         timeout = False
 
@@ -203,7 +239,7 @@ class WebrtcvadCommandListener(RhasspyActor):
             # Timeout
             finished = True
             timeout = True
-            self._logger.warn("Timeout")
+            self._logger.warning("Timeout")
 
         # Throw away first N buffers (noise)
         if self.throwaway_buffers_left > 0:
@@ -267,8 +303,11 @@ class CommandCommandListener(RhasspyActor):
     def __init__(self):
         RhasspyActor.__init__(self)
         self.receiver: Optional[RhasspyActor] = None
+        self.command: List[str] = []
+        self.listen_proc = None
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         program = os.path.expandvars(self.profile.get("command.command.program"))
         arguments = [
             os.path.expandvars(str(a))
@@ -278,6 +317,7 @@ class CommandCommandListener(RhasspyActor):
         self.command = [program] + arguments
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, ListenForCommand):
             self.receiver = message.receiver or sender
             self.listen_proc = subprocess.Popen(self.command, stdout=subprocess.PIPE)
@@ -286,7 +326,7 @@ class CommandCommandListener(RhasspyActor):
                 # STDOUT -> WAV data
                 try:
                     wav_data, _ = self.listen_proc.communicate()
-                except:
+                except Exception:
                     wav_data = bytes()
                     self._logger.exception("post_result")
 
@@ -302,6 +342,7 @@ class CommandCommandListener(RhasspyActor):
             threading.Thread(target=post_result, daemon=True).start()
 
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in listening state."""
         if isinstance(message, VoiceCommand):
             # Pass downstream to receiver
             self.send(self.receiver, message)
@@ -319,13 +360,17 @@ class OneShotCommandListener(RhasspyActor):
     def __init__(self):
         RhasspyActor.__init__(self)
         self.receiver: Optional[RhasspyActor] = None
+        self.recorder: Optional[RhasspyActor] = None
+        self.timeout_sec: float = 30
         self.handle: bool = False
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.recorder = self.config["recorder"]
         self.timeout_sec = self.profile.get("command.oneshot.timeout_sec", 30)
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, ListenForCommand):
             self.receiver = message.receiver or sender
             self.handle = message.handle
@@ -342,15 +387,16 @@ class OneShotCommandListener(RhasspyActor):
             self.wakeupAfter(timedelta(seconds=timeout_sec))
 
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in listening state."""
         if isinstance(message, AudioData):
             assert self.receiver is not None
             self.transition("started")
             self.send(self.recorder, StopStreaming(self.myAddress))
-            self._logger.debug(f"Received {len(message.data)} byte(s) of audio data")
+            self._logger.debug("Received %s byte(s) of audio data", len(message.data))
             self.send(self.receiver, VoiceCommand(message.data, self.handle))
         elif isinstance(message, WakeupMessage):
             # Timeout
-            self._logger.warn("Timeout")
+            self._logger.warning("Timeout")
             self.send(self.recorder, StopStreaming(self.myAddress))
             self.send(
                 self.receiver, VoiceCommand(bytes(), timeout=True, handle=self.handle)
@@ -371,23 +417,29 @@ class HermesCommandListener(RhasspyActor):
     def __init__(self):
         RhasspyActor.__init__(self)
         self.receiver: Optional[RhasspyActor] = None
+        self.recorder: Optional[RhasspyActor] = None
+        self.mqtt: Optional[RhasspyActor] = None
         self.handle: bool = False
         self.buffer: bytes = bytes()
         self.timeout_id: str = ""
+        self.timeout_sec: float = 30
+        self.site_ids: List[str] = []
+        self.start_topic = "hermes/asr/startListening"
+        self.stop_topic = "hermes/asr/stopListening"
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.recorder = self.config["recorder"]
         self.mqtt = self.config["mqtt"]
         self.timeout_sec = self.profile.get("command.hermes.timeout_sec", 30)
 
         # Subscribe to MQTT topics
         self.site_ids = self.profile.get("mqtt.site_id", "default").split(",")
-        self.start_topic = "hermes/asr/startListening"
-        self.stop_topic = "hermes/asr/stopListening"
         self.send(self.mqtt, MqttSubscribe(self.start_topic))
         self.send(self.mqtt, MqttSubscribe(self.stop_topic))
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, ListenForCommand):
             self.buffer = bytes()
             self.receiver = message.receiver or sender
@@ -414,12 +466,13 @@ class HermesCommandListener(RhasspyActor):
                     self.send(self._parent, ListenForCommand())
 
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in listening state."""
         if isinstance(message, AudioData):
             self.buffer += message.data
         elif isinstance(message, WakeupMessage):
             if message.payload == self.timeout_id:
                 # Timeout
-                self._logger.warn("Timeout")
+                self._logger.warning("Timeout")
                 self.send(self.recorder, StopStreaming(self.myAddress))
                 self.send(
                     self.receiver,
