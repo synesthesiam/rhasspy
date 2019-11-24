@@ -986,8 +986,8 @@ class GStreamerAudioRecorder(RhasspyActor):
         self.buffers: Dict[str, bytes] = defaultdict(bytes)
 
         self.gstreamer_proc = None
-        self.gstreamer_thread = None
-        self.chunk_size = 960
+        self.gstreamer_thread: Optional[threading.Thread] = None
+        self.chunk_size: int = 960
         self.command: List[str] = []
 
     def to_started(self, from_state: str) -> None:
@@ -1040,11 +1040,14 @@ class GStreamerAudioRecorder(RhasspyActor):
                             time.sleep(0.01)
                 except Exception:
                     if self.gstreamer_proc is not None:
-                        self._logger.exception("gstreamer_thread")
+                        self._logger.exception(
+                            "gstreamer_thread:Optional[threading.Thread]"
+                        )
 
             self.gstreamer_thread = threading.Thread(
                 target=gstreamer_thread_proc, daemon=True
             )
+            assert self.gstreamer_thread is not None
             self.gstreamer_thread.start()
 
             self._logger.debug("Listening for GStreamer audio")

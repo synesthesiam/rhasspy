@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-import asyncio
 import argparse
+import asyncio
 import io
 import itertools
 import json
 import logging
-
 # Configure logging
 import logging.config
 import math
@@ -27,13 +26,9 @@ from rhasspy.core import RhasspyCore
 from rhasspy.dialogue import DialogueManager
 from rhasspy.profiles import Profile
 from rhasspy.utils import buffer_to_wav, maybe_convert_wav
-from rhasspy.wake import (
-    ListenForWakeWord,
-    PocketsphinxWakeListener,
-    StopListeningForWakeWord,
-    WakeWordDetected,
-    WakeWordNotDetected,
-)
+from rhasspy.wake import (ListenForWakeWord, PocketsphinxWakeListener,
+                          StopListeningForWakeWord, WakeWordDetected,
+                          WakeWordNotDetected)
 
 logger = logging.getLogger("rhasspy")
 
@@ -1150,7 +1145,7 @@ async def wav2mqtt(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def text2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
-    result = (await core.speak_sentence(args)).sentence
+    result = await core.speak_sentence(args)
     sys.stdout.buffer.write(result.wav_data)
 
 

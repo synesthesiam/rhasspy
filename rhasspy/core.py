@@ -14,39 +14,18 @@ import aiohttp
 
 # Internal imports
 from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
-from rhasspy.audio_recorder import (
-    AudioData,
-    StartRecordingToBuffer,
-    StopRecordingToBuffer,
-)
-from rhasspy.dialogue import (
-    DialogueManager,
-    GetActorStates,
-    GetMicrophones,
-    GetProblems,
-    GetSpeakers,
-    GetVoiceCommand,
-    GetWordPhonemes,
-    GetWordPronunciations,
-    HandleIntent,
-    ListenForCommand,
-    ListenForWakeWord,
-    MqttPublish,
-    PlayWavData,
-    PlayWavFile,
-    Problems,
-    ProfileTrainingComplete,
-    ProfileTrainingFailed,
-    RecognizeIntent,
-    SpeakSentence,
-    SpeakWord,
-    TestMicrophones,
-    TrainProfile,
-    TranscribeWav,
-    VoiceCommand,
-    WakeWordDetected,
-    WakeWordNotDetected,
-)
+from rhasspy.audio_recorder import (AudioData, StartRecordingToBuffer,
+                                    StopRecordingToBuffer)
+from rhasspy.dialogue import (DialogueManager, GetActorStates, GetMicrophones,
+                              GetProblems, GetSpeakers, GetVoiceCommand,
+                              GetWordPhonemes, GetWordPronunciations,
+                              HandleIntent, ListenForCommand,
+                              ListenForWakeWord, MqttPublish, PlayWavData,
+                              PlayWavFile, Problems, ProfileTrainingComplete,
+                              ProfileTrainingFailed, RecognizeIntent,
+                              SpeakSentence, SpeakWord, TestMicrophones,
+                              TrainProfile, TranscribeWav, VoiceCommand,
+                              WakeWordDetected, WakeWordNotDetected)
 from rhasspy.intent import IntentRecognized
 from rhasspy.intent_handler import IntentHandled
 from rhasspy.profiles import Profile

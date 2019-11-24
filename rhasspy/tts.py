@@ -5,7 +5,7 @@ import os
 import shutil
 import subprocess
 import tempfile
-from typing import Any, Dict, Optional, Type, List
+from typing import Any, Dict, List, Optional, Type
 from urllib.parse import urljoin
 
 import requests

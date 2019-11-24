@@ -282,7 +282,7 @@ class FsticuffsRecognizer(RhasspyActor):
         tokens: List[str],
         stop_words: Set[str] = None,
         eps: str = "<eps>",
-    ) -> Dict[str, Tuple[List[str], int]]:
+    ) -> Dict[str, Tuple[List[str], float]]:
         """Get FST paths and costs via BFS."""
         stop_words = stop_words or set()
 
@@ -293,15 +293,15 @@ class FsticuffsRecognizer(RhasspyActor):
         start_node = [n for n, data in n_data if data["start"]][0]
 
         # intent -> (symbols, cost)
-        intent_symbols_and_costs: Dict[
-            str, Tuple[Optional[List[str]], Optional[float]]
-        ] = {}
+        intent_symbols_and_costs: Dict[str, Tuple[List[str], float]] = {}
 
         # Lowest cost so far
-        best_cost = len(n_data)
+        best_cost: float = len(n_data)
 
         # (node, in_tokens, out_tokens, cost, intent_name)
-        q = [(start_node, tokens, [], 0, None)]
+        q: List[Tuple[int, List[str], List[str], float, str]] = [
+            (start_node, tokens, [], 0, "")
+        ]
 
         # BFS it up
         while len(q) > 0:
@@ -313,10 +313,12 @@ class FsticuffsRecognizer(RhasspyActor):
                 best_intent_cost = intent_symbols_and_costs.get(q_intent, (None, None))[
                     1
                 ]
-                final_cost = q_cost + len(q_in_tokens)  # remaning tokens count against
+                final_cost: float = q_cost + len(
+                    q_in_tokens
+                )  # remaning tokens count against
 
                 if (best_intent_cost is None) or (final_cost < best_intent_cost):
-                    intent_symbols_and_costs[q_intent] = [q_out_tokens, final_cost]
+                    intent_symbols_and_costs[q_intent] = (q_out_tokens, final_cost)
 
                 if final_cost < best_cost:
                     best_cost = final_cost

@@ -4,7 +4,7 @@ import logging
 import queue
 import threading
 import time
-from typing import Any, Callable, Dict, Optional, List
+from typing import Any, Callable, Dict, List, Optional
 
 from rhasspy.profiles import Profile
 

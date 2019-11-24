@@ -13,7 +13,8 @@ from typing import Any, Dict, List, Optional, Set, Type
 from urllib.parse import urljoin
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.utils import lcm, make_sentences_by_intent, sample_sentences_by_intent
+from rhasspy.utils import (lcm, make_sentences_by_intent,
+                           sample_sentences_by_intent)
 
 # -----------------------------------------------------------------------------
 # Events

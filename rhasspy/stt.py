@@ -6,7 +6,7 @@ import tempfile
 import time
 import wave
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Type, List
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from rhasspy.actor import RhasspyActor
 from rhasspy.utils import convert_wav

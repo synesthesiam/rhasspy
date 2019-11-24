@@ -11,28 +11,16 @@ from pathlib import Path
 from typing import Any, List, Tuple, Union
 from uuid import uuid4
 
-from quart import (
-    Quart,
-    Response,
-    jsonify,
-    request,
-    safe_join,
-    send_file,
-    send_from_directory,
-    websocket,
-)
+from quart import (Quart, Response, jsonify, request, safe_join, send_file,
+                   send_from_directory, websocket)
 from quart_cors import cors
 
 from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
 from rhasspy.dialogue import ProfileTrainingFailed
 from rhasspy.intent import IntentRecognized
-from rhasspy.utils import (
-    FunctionLoggingHandler,
-    buffer_to_wav,
-    load_phoneme_examples,
-    recursive_remove,
-)
+from rhasspy.utils import (FunctionLoggingHandler, buffer_to_wav,
+                           load_phoneme_examples, recursive_remove)
 
 # -----------------------------------------------------------------------------
 # Flask Web App Setup
@@ -321,15 +309,15 @@ async def api_pronounce() -> Union[Response, str]:
 
     if pronounce_type == "phonemes":
         # Convert from Sphinx to espeak phonemes
-        result = await core.get_word_phonemes(pronounce_str)
-        espeak_str = result.phonemes
+        phoneme_result = await core.get_word_phonemes(pronounce_str)
+        espeak_str = phoneme_result.phonemes
     else:
         # Speak word directly
         espeak_str = pronounce_str
 
-    result = await core.speak_word(espeak_str)
-    wav_data = result.wav_data
-    espeak_phonemes = result.phonemes
+    speak_result = await core.speak_word(espeak_str)
+    wav_data = speak_result.wav_data
+    espeak_phonemes = speak_result.phonemes
 
     if download:
         # Return WAV
@@ -357,7 +345,7 @@ async def api_play_wav() -> str:
         logger.debug("Loading WAV data from %s", url)
 
         async with core.session.get(url) as response:
-            wav_data = await response.content
+            wav_data = await response.read()
 
     # Play through speakers
     logger.debug("Playing %s byte(s)", len(wav_data))
@@ -777,7 +765,7 @@ def api_slots_by_name(name: str) -> Union[str, Response]:
         return f"Wrote {len(request.data)} byte(s) to {slots_path}"
 
     # Load slots values
-    slot_values = []
+    slot_values: List[str] = []
     slot_file_path = slots_dir / name
     if slot_file_path.is_file():
         slot_values = [line.strip() for line in slot_file_path.read_text().splitlines()]
@@ -850,23 +838,21 @@ async def swagger_yaml() -> Response:
 WS_EVENT_INTENT = 0
 WS_EVENT_LOG = 1
 
-ws_queues: List[asyncio.Queue] = [[], []]
+ws_queues: List[List[asyncio.Queue]] = [[], []]
 ws_locks: List[asyncio.Lock] = [asyncio.Lock(), asyncio.Lock()]
 
 
 async def add_ws_event(event_type: int, text: str):
     """Send text out to all websockets for a specific event."""
     async with ws_locks[event_type]:
-        for queue in ws_queues[event_type]:
-            await queue.put(text)
+        for q in ws_queues[event_type]:
+            await q.put(text)
 
 
 # Send logging messages out to websocket
 logging.root.addHandler(
     FunctionLoggingHandler(
-        lambda msg: loop.call_soon_threadsafe(
-            loop.create_task(add_ws_event(WS_EVENT_LOG, msg))
-        )
+        lambda msg: loop.call_soon_threadsafe(add_ws_event, WS_EVENT_LOG, msg)
     )
 )
 
@@ -887,16 +873,14 @@ class WebSocketObserver(RhasspyActor):
             # Convert to JSON
             intent_json = json.dumps(message.intent)
             self._logger.debug(intent_json)
-            loop.call_soon_threadsafe(
-                loop.create_task(add_ws_event(WS_EVENT_INTENT, intent_json))
-            )
+            loop.call_soon_threadsafe(add_ws_event, WS_EVENT_INTENT, intent_json)
 
 
 @app.websocket("/api/events/intent")
 async def api_events_intent(ws) -> None:
     """Websocket endpoint to receive intents as JSON."""
     # Add new queue for websocket
-    q = asyncio.Queue()
+    q: asyncio.Queue = asyncio.Queue()
     async with ws_locks[WS_EVENT_LOG]:
         ws_queues[WS_EVENT_LOG].append(q)
 
@@ -916,7 +900,7 @@ async def api_events_intent(ws) -> None:
 async def api_events_log() -> None:
     """Websocket endpoint to receive logging messages as text."""
     # Add new queue for websocket
-    q = asyncio.Queue()
+    q: asyncio.Queue = asyncio.Queue()
     async with ws_locks[WS_EVENT_LOG]:
         ws_queues[WS_EVENT_LOG].append(q)
 

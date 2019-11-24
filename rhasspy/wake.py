@@ -769,11 +769,11 @@ class PorcupineWakeListener(RhasspyActor):
                 assert self.handle is not None
                 for _ in range(num_chunks):
                     chunk = self.audio_buffer[: self.chunk_size]
-                    chunk = struct.unpack_from(self.chunk_format, chunk)
+                    unpacked_chunk = struct.unpack_from(self.chunk_format, chunk)
                     self.audio_buffer = self.audio_buffer[self.chunk_size :]
 
                     # Process chunk
-                    keyword_index = self.handle.process(chunk)
+                    keyword_index = self.handle.process(unpacked_chunk)
                     if keyword_index:
                         # Pass downstream to receivers
                         self._logger.debug("Hotword detected (%s)", keyword_index)

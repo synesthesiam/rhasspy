@@ -6,7 +6,7 @@ import subprocess
 import threading
 import uuid
 from datetime import timedelta
-from typing import Any, Optional, Tuple, Type, Dict, List
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 import webrtcvad
 

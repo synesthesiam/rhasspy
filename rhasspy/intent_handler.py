@@ -2,7 +2,7 @@
 import json
 import os
 import subprocess
-from typing import Any, Dict, Optional, Tuple, Type, List
+from typing import Any, Dict, List, Optional, Tuple, Type
 from urllib.parse import urljoin
 
 import pydash

@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Type
 import pywrapfst as fst
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.train.jsgf2fst import symbols2intent, fstprintall
+from rhasspy.train.jsgf2fst import fstprintall, symbols2intent
 
 # -----------------------------------------------------------------------------
 # Events
@@ -106,7 +106,6 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
         self.receiver: Optional[RhasspyActor] = None
         self.dictionary_casing: str = ""
         self.dictionary_upper = False
-        self.replace_patterns = []
         self.split_pattern = None
         self.guess_unknown = True
         self.fail_on_unknown = True
@@ -124,7 +123,6 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
 
         tokenizer = self.profile.get("training.tokenizer", "regex")
         regex_config = self.profile.get(f"training.{tokenizer}", {})
-        self.replace_patterns = regex_config.get("replace", [])
         self.split_pattern = regex_config.get("split", r"\s+")
 
         # Unknown words
@@ -169,7 +167,6 @@ class CommandSpeechTrainer(RhasspyActor):
         RhasspyActor.__init__(self)
         self.command: List[str] = []
         self.dictionary_casing = ""
-        self.replace_patterns = []
         self.split_pattern = ""
 
     def to_started(self, from_state: str) -> None:
@@ -189,7 +186,6 @@ class CommandSpeechTrainer(RhasspyActor):
         )
         tokenizer = self.profile.get("training.tokenizer", "regex")
         regex_config = self.profile.get(f"training.{tokenizer}", {})
-        self.replace_patterns = regex_config.get("replace", [])
         self.split_pattern = regex_config.get("split", r"\s+")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
