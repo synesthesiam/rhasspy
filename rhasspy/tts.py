@@ -228,16 +228,17 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
         RhasspyActor.__init__(self)
         self.player: Optional[RhasspyActor] = None
         self.receiver: Optional[RhasspyActor] = None
-        self.language = ""
-        self.temp_dir = None
-        self.wav_path = ""
-        self.wav_data = bytes()
+        self.language: str = ""
+        self.temp_dir: Optional[tempfile.TemporaryDirectory] = None
+        self.wav_path: str = ""
+        self.wav_data: bytes = bytes()
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
         self.player = self.config["player"]
         self.language = self.profile.get("text_to_speech.picotts.language", "")
         self.temp_dir = tempfile.TemporaryDirectory()
+        assert self.temp_dir is not None
         self.wav_path = os.path.join(self.temp_dir.name, "output.wav")
         os.symlink("/dev/stdout", self.wav_path)
 
@@ -259,7 +260,9 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
 
     def to_stopped(self, from_state: str) -> None:
         """Transition to stopped state."""
-        self.temp_dir.cleanup()
+        if self.temp_dir is not None:
+            self.temp_dir.cleanup()
+            self.temp_dir = None
 
     # -------------------------------------------------------------------------
 

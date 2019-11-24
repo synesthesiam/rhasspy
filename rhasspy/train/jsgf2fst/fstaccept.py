@@ -5,7 +5,7 @@ import argparse
 import re
 import json
 import logging
-from typing import Dict, Any, List, Optional, TextIO, Mapping, Union, Iterable
+from typing import Dict, Any, List, Optional, TextIO, Mapping, Union, Iterable, Set
 from collections import deque, defaultdict, Counter
 
 import pywrapfst as fst
@@ -225,7 +225,7 @@ def longest_path(the_fst: fst.Fst, eps: str = "<eps>") -> fst.Fst:
     output_symbols = the_fst.output_symbols()
     out_eps = output_symbols.find(eps)
     visited_states: Set[int] = set()
-    best_path = []
+    best_path: List[int] = []
     state_queue = deque()
     state_queue.append((the_fst.start(), []))
 

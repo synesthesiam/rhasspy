@@ -120,9 +120,9 @@ class PocketsphinxWakeListener(RhasspyActor):
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
         self.recorder = self.config["recorder"]
-        self.preload: bool = self.config.get("preload", False)
-        self.not_detected: bool = self.config.get("not_detected", False)
-        self.chunk_size: int = self.profile.get("wake.pocketsphinx.chunk_size", 960)
+        self.preload = self.config.get("preload", False)
+        self.not_detected = self.config.get("not_detected", False)
+        self.chunk_size = self.profile.get("wake.pocketsphinx.chunk_size", 960)
         if self.preload:
             with self._lock:
                 try:
@@ -300,11 +300,9 @@ class SnowboyWakeListener(RhasspyActor):
         """Transition to started state."""
         self.recorder = self.config["recorder"]
         self.preload = self.config.get("preload", False)
-        self.not_detected: bool = self.config.get("not_detected", False)
-        self.chunk_size: int = self.profile.get("wake.snowboy.chunk_size", 960)
-        self.apply_frontend: bool = self.profile.get(
-            "wake.snowboy.apply_frontend", False
-        )
+        self.not_detected = self.config.get("not_detected", False)
+        self.chunk_size = self.profile.get("wake.snowboy.chunk_size", 960)
+        self.apply_frontend = self.profile.get("wake.snowboy.apply_frontend", False)
         if self.preload:
             try:
                 self.load_detector()
@@ -472,9 +470,9 @@ class PreciseWakeListener(RhasspyActor):
         """Transition to started state."""
         self.recorder = self.config["recorder"]
         self.preload = self.config.get("preload", False)
-        self.send_not_detected: bool = self.config.get("not_detected", False)
-        self.chunk_size: int = self.profile.get("wake.precise.chunk_size", 2048)
-        self.chunk_delay: float = self.profile.get("wake.precise.chunk_delay", 0)
+        self.send_not_detected = self.config.get("not_detected", False)
+        self.chunk_size = self.profile.get("wake.precise.chunk_size", 2048)
+        self.chunk_delay = self.profile.get("wake.precise.chunk_delay", 0)
 
         if self.preload:
             try:
@@ -657,8 +655,8 @@ class HermesWakeListener(RhasspyActor):
 
         # Subscribe to wake topic
         self.site_ids = self.profile.get("mqtt.site_id", "default").split(",")
-        self.wakeword_id: str = self.profile.get("wake.hermes.wakeword_id", "default")
-        self.wake_topic = "hermes/hotword/%s/detected", self.wakeword_id
+        self.wakeword_id = self.profile.get("wake.hermes.wakeword_id", "default")
+        self.wake_topic = f"hermes/hotword/{self.wakeword_id}/detected"
         self.send(self.mqtt, MqttSubscribe(self.wake_topic))
 
         self.transition("loaded")

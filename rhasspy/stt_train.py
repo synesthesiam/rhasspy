@@ -101,7 +101,7 @@ class PocketsphinxSpeechTrainer(RhasspyActor):
     def __init__(self, system: str = "pocketsphinx") -> None:
         RhasspyActor.__init__(self)
         self.system = system
-        self.word_pronouncer: RhasspyActor = None
+        self.word_pronouncer: Optional[RhasspyActor] = None
         self.unknown_words: Dict[str, Dict[str, Any]] = {}
         self.receiver: Optional[RhasspyActor] = None
         self.dictionary_casing: str = ""

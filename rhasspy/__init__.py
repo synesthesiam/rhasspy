@@ -1200,4 +1200,5 @@ def check(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    main()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())

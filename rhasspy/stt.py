@@ -329,10 +329,10 @@ class KaldiDecoder(RhasspyActor):
 
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
-        self.kaldi_dir = None
-        self.model_dir = None
-        self.graph_dir = None
-        self.decode_path = None
+        self.kaldi_dir: Optional[Path] = None
+        self.model_dir: Optional[Path] = None
+        self.graph_dir: Optional[Path] = None
+        self.decode_path: Optional[Path] = None
         self.decode_command: List[str] = []
 
     def to_started(self, from_state: str) -> None:
@@ -358,10 +358,10 @@ class KaldiDecoder(RhasspyActor):
 
         self.decode_command = [
             "bash",
-            self.decode_path,
-            self.kaldi_dir,
-            self.model_dir,
-            self.graph_dir,
+            str(self.decode_path),
+            str(self.kaldi_dir),
+            str(self.model_dir),
+            str(self.graph_dir),
         ]
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
@@ -421,11 +421,13 @@ class KaldiDecoder(RhasspyActor):
         """Get problems at startup."""
         problems: Dict[str, Any] = {}
 
+        assert self.kaldi_dir is not None
         if not self.kaldi_dir.is_dir():
             problems[
                 "Missing Kaldi"
             ] = f"Kaldi not found at {self.kaldi_dir}. See http://kaldi-asr.org"
 
+        assert self.graph_dir is not None
         hclg_path = self.graph_dir / "HCLG.fst"
         if not hclg_path.is_file():
             problems[

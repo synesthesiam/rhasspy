@@ -8,6 +8,8 @@ import uuid
 from datetime import timedelta
 from typing import Any, Optional, Tuple, Type, Dict, List
 
+import webrtcvad
+
 from rhasspy.actor import RhasspyActor, WakeupMessage
 from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
 from rhasspy.mqtt import MqttMessage, MqttSubscribe
@@ -104,7 +106,7 @@ class WebrtcvadCommandListener(RhasspyActor):
         self.receiver: Optional[RhasspyActor] = None
         self.recorder: Optional[RhasspyActor] = None
         self.sample_rate: int = 16000
-        self.seconds_per_buffer = 0
+        self.seconds_per_buffer: float = 0
         self.settings: Dict[str, Any] = {}
         self.silence_buffers: int = 0
         self.silence_sec: float = 0.5
@@ -114,12 +116,10 @@ class WebrtcvadCommandListener(RhasspyActor):
         self.throwaway_buffers_left: int = 0
         self.timeout_sec: float = 30
         self.vad_mode: int = 0
-        self.vad = None
+        self.vad: Optional[webrtcvad.Vad] = None
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
-        import webrtcvad
-
         self.recorder = self.config["recorder"]
 
         self.settings = self.profile.get("command.webrtcvad")
@@ -140,6 +140,7 @@ class WebrtcvadCommandListener(RhasspyActor):
         self.max_buffers = int(math.ceil(self.timeout_sec / self.seconds_per_buffer))
 
         self.vad = webrtcvad.Vad()
+        assert self.vad is not None
         self.vad.set_mode(self.vad_mode)
 
         self.handle = True
@@ -151,7 +152,7 @@ class WebrtcvadCommandListener(RhasspyActor):
     def to_loaded(self, from_state: str) -> None:
         """Transition to loaded state."""
         # Recording state
-        self.chunk: bytes = bytes()
+        self.chunk = bytes()
         self.silence_buffers = int(
             math.ceil(self.silence_sec / self.seconds_per_buffer)
         )

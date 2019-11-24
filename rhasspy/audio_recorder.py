@@ -850,8 +850,8 @@ class HTTPAudioRecorder(RhasspyActor):
         self.stop_after = "never"
 
         self.server = None
-        self.server_thread = None
-        self.get_response = None
+        self.server_thread: Optional[threading.Thread] = None
+        self.get_response: Optional[str] = None
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
@@ -880,6 +880,7 @@ class HTTPAudioRecorder(RhasspyActor):
                     self._logger.exception("server_proc")
 
             self.server_thread = threading.Thread(target=server_proc, daemon=True)
+            assert self.server_thread is not None
             self.server_thread.start()
 
             self._logger.debug(

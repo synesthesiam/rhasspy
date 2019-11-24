@@ -4,7 +4,7 @@ import logging
 import queue
 import threading
 import time
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, List
 
 from rhasspy.profiles import Profile
 
@@ -93,7 +93,7 @@ class RhasspyActor:
         self._parent: Optional[RhasspyActor] = None
 
         # Rhasspy profile
-        self.profile: Optional[Profile] = None
+        self._profile: Optional[Profile] = None
 
         # Settings for this actor
         self.config: Dict[str, Any] = {}
@@ -103,7 +103,7 @@ class RhasspyActor:
         self._lock = RhasspyActor.shared_lock
 
         # Child actors
-        self._actors = []
+        self._actors: List[RhasspyActor] = []
 
     # -------------------------------------------------------------------------
 
@@ -129,6 +129,12 @@ class RhasspyActor:
             message_dict = self._queue.get()
             self.on_receive(message_dict)
 
+    @property
+    def profile(self) -> Profile:
+        """Get user profile."""
+        assert self._profile is not None
+        return self._profile
+
     # -------------------------------------------------------------------------
 
     def on_receive(self, message_dict: Dict[str, Any]) -> None:
@@ -144,8 +150,8 @@ class RhasspyActor:
                 self.send(self._parent, ChildActorExited(self))
             elif isinstance(message, ConfigureEvent):
                 # Receive configuration and transition to started state
-                self._parent: sender
-                self.profile = message.profile
+                self._parent = sender
+                self._profile = message.profile
                 self.config = message.config
                 self._transitions = self.config.get("transitions", True)
 

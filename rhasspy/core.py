@@ -85,8 +85,16 @@ class RhasspyCore:
         self.defaults = Profile.load_defaults(system_profiles_dir)
 
         self.loop = asyncio.get_event_loop()
-        self.session = aiohttp.ClientSession()
+        self._session: Optional[aiohttp.ClientSession] = aiohttp.ClientSession()
         self.dialogue_manager: Optional[RhasspyActor] = None
+
+    # -------------------------------------------------------------------------
+
+    @property
+    def session(self) -> aiohttp.ClientSession:
+        """Get HTTP client session."""
+        assert self._session is not None
+        return self._session
 
     # -------------------------------------------------------------------------
 
@@ -367,9 +375,9 @@ class RhasspyCore:
             self.actor_system.shutdown()
             self.actor_system = None
 
-        if self.session is not None:
-            await self.session.close()
-            self.session = None
+        if self._session is not None:
+            await self._session.close()
+            self._session = None
 
     # -------------------------------------------------------------------------
 

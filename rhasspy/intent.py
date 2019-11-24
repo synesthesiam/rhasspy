@@ -293,7 +293,9 @@ class FsticuffsRecognizer(RhasspyActor):
         start_node = [n for n, data in n_data if data["start"]][0]
 
         # intent -> (symbols, cost)
-        intent_symbols_and_costs = {}
+        intent_symbols_and_costs: Dict[
+            str, Tuple[Optional[List[str]], Optional[float]]
+        ] = {}
 
         # Lowest cost so far
         best_cost = len(n_data)
@@ -373,13 +375,13 @@ class FsticuffsRecognizer(RhasspyActor):
                             next_out_tokens.append(out_label)
 
                     q.append(
-                        [
+                        (
                             next_node,
                             next_in_tokens,
                             next_out_tokens,
                             next_cost,
                             next_intent,
-                        ]
+                        )
                     )
 
         return intent_symbols_and_costs
@@ -519,7 +521,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
         if len(text) > 0:
             assert self.examples is not None, "No examples JSON"
 
-            choices: Dict[str, Tuple[str, str, Dict[str, List[str]]]] = {}
+            choices: Dict[str, Tuple[str, Dict[str, Any]]] = {}
             with concurrent.futures.ProcessPoolExecutor() as executor:
                 future_to_name = {}
                 for intent_name, intent_examples in self.examples.items():

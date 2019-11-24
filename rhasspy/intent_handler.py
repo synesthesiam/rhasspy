@@ -260,7 +260,7 @@ class CommandIntentHandler(RhasspyActor):
         self.command = [program] + arguments
 
         self.forward_to_hass = self.profile.get("handle.forward_to_hass", False)
-        self.hass_handler = self.config["hass_handler"]
+        self.hass_handler = self.config.get("hass_handler")
 
         self.transition("ready")
 
