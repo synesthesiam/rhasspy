@@ -16,6 +16,7 @@ all:
 	docker build -f Dockerfile \
         --build-arg BUILD_FROM=${BUILD_ARCH}/${BUILD_FROM} \
         -t ${DOCKER_TAG} .
+	mkdir -p dist
 	docker run -i ${DOCKER_TAG} \
         tar -C /build -czf - . > \
         dist/rhasspy-tools_${FRIENDLY_ARCH}.tar.gz
