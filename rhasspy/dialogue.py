@@ -176,7 +176,7 @@ class DialogueManager(RhasspyActor):
 
         # MQTT
         self.mqtt_class: Optional[Type] = None
-        self._mqtt: Optional[RhasspyActor] = None
+        self.mqtt: Optional[RhasspyActor] = None
 
         # For websockets
         self.observer: Optional[RhasspyActor] = None
@@ -259,12 +259,6 @@ class DialogueManager(RhasspyActor):
         return self._intent_trainer
 
     @property
-    def mqtt(self) -> RhasspyActor:
-        """Get actor for MQTT."""
-        assert self._mqtt is not None
-        return self._mqtt
-
-    @property
     def player(self) -> RhasspyActor:
         """Get actor for playing audio."""
         assert self._player is not None
@@ -329,7 +323,7 @@ class DialogueManager(RhasspyActor):
         from rhasspy.mqtt import HermesMqtt
 
         self.mqtt_class = HermesMqtt
-        self._mqtt = self.createActor(self.mqtt_class)
+        self.mqtt = self.createActor(self.mqtt_class)
         self.actors["mqtt"] = self.mqtt
 
         self.send(
@@ -488,13 +482,14 @@ class DialogueManager(RhasspyActor):
                 }
             ).encode()
 
-            self.send(
-                self.mqtt,
-                MqttPublish(
-                    "rhasspy/speech-to-text/transcription", message.text.encode()
-                ),
-            )
-            self.send(self.mqtt, MqttPublish("hermes/asr/textCaptured", payload))
+            if self.mqtt is not None:
+                self.send(
+                    self.mqtt,
+                    MqttPublish(
+                        "rhasspy/speech-to-text/transcription", message.text.encode()
+                    ),
+                )
+                self.send(self.mqtt, MqttPublish("hermes/asr/textCaptured", payload))
 
             # Pass to intent recognizer
             self.send(
@@ -521,7 +516,8 @@ class DialogueManager(RhasspyActor):
                 self.send(self.handler, HandleIntent(message.intent))
 
                 # Forward to MQTT (hermes)
-                self.send(self.mqtt, message)
+                if self.mqtt is not None:
+                    self.send(self.mqtt, message)
 
                 # Forward to observer
                 if self.observer:
@@ -609,7 +605,7 @@ class DialogueManager(RhasspyActor):
                 }
 
                 for actor in self.wait_actors.values():
-                    if actor in [self.mqtt]:
+                    if actor == self.mqtt:
                         continue  # skip
 
                     self.send(
@@ -680,7 +676,8 @@ class DialogueManager(RhasspyActor):
             self.send(self.handler, HandleIntent(message.intent, sender))
 
             # Forward to MQTT (hermes)
-            self.send(self.mqtt, IntentRecognized(message.intent))
+            if self.mqtt is not None:
+                self.send(self.mqtt, IntentRecognized(message.intent))
         elif isinstance(message, GetWordPhonemes):
             # eSpeak -> CMU
             self.send(
@@ -734,7 +731,9 @@ class DialogueManager(RhasspyActor):
         self.actor_states[message.name] = message.to_state
         topic = "rhasspy/%s/transition/%s" % (self.profile.name, message.name)
         payload = message.to_state.encode()
-        self.send(self.mqtt, MqttPublish(topic, payload))
+
+        if self.mqtt is not None:
+            self.send(self.mqtt, MqttPublish(topic, payload))
 
     def handle_forward(self, message: Any, sender: RhasspyActor) -> None:
         """Forward messages to appropriate actor."""
@@ -779,7 +778,8 @@ class DialogueManager(RhasspyActor):
             self.send(self.player, message)
         elif isinstance(message, MqttPublish):
             # Forward directly
-            self.send(self.mqtt, message)
+            if self.mqtt is not None:
+                self.send(self.mqtt, message)
         elif isinstance(message, AudioData):
             # Forward to audio recorder
             self.send(self.recorder, message)
@@ -881,7 +881,7 @@ class DialogueManager(RhasspyActor):
         # Configure actors
         self.wait_actors = {}
         for name, actor in self.actors.items():
-            if (actor is None) or (actor in [self.mqtt]):
+            if (actor is None) or (actor == self.mqtt):
                 continue  # skip
 
             self.send(
