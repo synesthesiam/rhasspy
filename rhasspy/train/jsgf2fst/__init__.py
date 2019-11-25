@@ -70,6 +70,7 @@ def grammar_to_fsts(
 
     # Check for replacements
     grammar_name = listener.grammar_name
+    assert grammar_name is not None
     replace_indices: Dict[int, str] = {}
 
     # Gather all __replace__ references
@@ -82,7 +83,7 @@ def grammar_to_fsts(
     # Handle __replace__
     graph = listener.graph
     postorder = nx.algorithms.traversal.dfs_postorder_nodes(
-        listener.graph, listener.grammar_name
+        listener.graph, grammar_name
     )
 
     for node in postorder:
@@ -122,7 +123,7 @@ def grammar_to_fsts(
             listener.fsts[rule_name] = _replace_fsts(rule_fst, replacements, eps=eps)
 
     # Overwrite grammar_fst
-    main_rule = listener.grammar_name + "." + listener.grammar_name
+    main_rule = grammar_name + "." + grammar_name
     listener.grammar_fst = listener.fsts[main_rule]
 
     return listener
@@ -173,7 +174,7 @@ def slots_to_fsts(
         output_symbols = fst.SymbolTable()
         out_eps = output_symbols.add_symbol(eps)
 
-        replacements: Dict[str, fst.Fst] = {}
+        replacements: Dict[int, fst.Fst] = {}
 
         with open(slot_path, "r") as slot_file:
             # Process each line independently to avoid recursion limit

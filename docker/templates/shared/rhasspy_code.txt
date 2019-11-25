@@ -3,5 +3,7 @@ COPY docker/rhasspy ${RHASSPY_APP}/bin/
 COPY dist/ ${RHASSPY_APP}/dist/
 COPY etc/wav/* ${RHASSPY_APP}/etc/wav/
 COPY rhasspy/profile_schema.json ${RHASSPY_APP}/rhasspy/
+COPY rhasspy/train/jsgf2fst/*.py ${RHASSPY_APP}/rhasspy/train/jsgf2fst/
+COPY rhasspy/train/*.py ${RHASSPY_APP}/rhasspy/train/
 COPY *.py ${RHASSPY_APP}/
 COPY rhasspy/*.py ${RHASSPY_APP}/rhasspy/

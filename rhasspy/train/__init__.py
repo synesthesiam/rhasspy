@@ -186,6 +186,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> None:
 
         # Write FST for main grammar rule
         grammar_fst_path = fsts_dir / f"{grammar_name}.fst"
+        assert listener.grammar_fst is not None
         listener.grammar_fst.write(str(grammar_fst_path))
 
     # -----------------------------------------------------------------------------
@@ -467,15 +468,6 @@ def train_profile(profile_dir: Path, profile: Profile) -> None:
     # -----------------------------------------------------------------------------
 
     DOIT_CONFIG = {"action_string_formatting": "old"}
-
-    # Monkey patch inspect to make doit work inside Pyinstaller.
-    # It grabs the line numbers of functions probably for debugging reasons, but
-    # PyInstaller doesn't seem to keep that information around.
-    #
-    # This better thing to do would be to create a custom TaskLoader.
-    import inspect
-
-    inspect.getsourcelines = lambda obj: [0, 0]
 
     # Run doit main
     DoitMain(ModuleTaskLoader(locals())).run(sys.argv[1:])

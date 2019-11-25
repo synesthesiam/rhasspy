@@ -1,7 +1,3 @@
-Flask
-flask-swagger-ui
-flask_cors
-Flask-Sockets
 pydash
 requests
 paho-mqtt
@@ -9,14 +5,13 @@ PyAudio
 webrtcvad
 fuzzywuzzy[speedup]
 adapt-parser
-precise-runner
-cerberus
-flair>=0.4.1
 google-cloud-texttospeech
-pyopenssl
 bs4
 html5lib
 networkx>=2.0
 doit
 openfst==1.6.9
 num2words
+quart
+quart-cors
+aiohttp

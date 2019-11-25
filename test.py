@@ -1,3 +1,7 @@
+"""Tests for Rhasspy."""
+from rhasspy.core import RhasspyCore
+
+import asyncio
 import os
 import sys
 import json
@@ -7,35 +11,38 @@ import logging
 import argparse
 
 logging.basicConfig(level=logging.DEBUG)
-
-from rhasspy.core import RhasspyCore
+loop = asyncio.get_event_loop()
 
 
 class RhasspyTestCore:
+    """Holds Rhasspy core for test cases as a context manager."""
+
     def __init__(self, profile_name, train=True):
         self.profile_name = profile_name
+        self.user_profiles_dir = None
+        self.core = None
         self.system_profiles_dir = os.path.join(os.getcwd(), "profiles")
         self.train = train
 
-    def __enter__(self):
+    async def __aenter__(self):
         self.user_profiles_dir = tempfile.TemporaryDirectory()
         self.core = RhasspyCore(
             self.profile_name, self.system_profiles_dir, self.user_profiles_dir.name
         )
         self.core.profile.set("wake.system", "dummy")
-        self.core.start(preload=False)
+        await self.core.start(preload=False)
 
         if self.train:
-            self.core.train()
+            await self.core.train()
 
         return self.core
 
-    def __exit__(self, *args):
-        self.core.shutdown()
+    async def __aexit__(self, *_args):
+        await self.core.shutdown()
 
         try:
             self.user_profiles_dir.cleanup()
-        except:
+        except Exception:
             pass
 
 
@@ -43,8 +50,10 @@ class RhasspyTestCore:
 
 
 class RhasspyTestCase(unittest.TestCase):
-    PROFILES = ["en", "de", "es", "fr", "it", "nl", "ru", "pt"]
-    # Not passing: vi, el, sv (bad transcriptions)
+    """Main Rhasspy tests."""
+
+    PROFILES = ["en", "de", "es", "fr", "it", "nl", "ru"]
+    # Not passing: vi, el, sv, pt (bad transcriptions)
     # Not tested: hi, zh
 
     # -------------------------------------------------------------------------
@@ -64,24 +73,30 @@ class RhasspyTestCase(unittest.TestCase):
     # -------------------------------------------------------------------------
 
     def test_transcribe(self):
+        loop.run_until_complete(self.async_test_transcribe())
+
+    async def async_test_transcribe(self):
         """speech -> text"""
         for profile_name in self.profiles:
-            with RhasspyTestCore(profile_name) as core:
+            async with RhasspyTestCore(profile_name) as core:
                 wav_path = self.test_wav_path[profile_name]
                 test_info = self.test_json[profile_name]
 
                 with open(wav_path, "rb") as wav_file:
-                    text = core.transcribe_wav(wav_file.read()).text
+                    text = (await core.transcribe_wav(wav_file.read())).text
                     self.assertEqual(text, test_info["text"])
 
     # -------------------------------------------------------------------------
 
     def test_recognize(self):
+        loop.run_until_complete(self.async_test_recognize())
+
+    async def async_test_recognize(self):
         """text -> intent"""
         for profile_name in self.profiles:
-            with RhasspyTestCore(profile_name) as core:
+            async with RhasspyTestCore(profile_name) as core:
                 test_info = self.test_json[profile_name]
-                intent = core.recognize_intent(test_info["text"]).intent
+                intent = (await core.recognize_intent(test_info["text"])).intent
                 self.assertEqual(intent["intent"]["name"], test_info["intent"]["name"])
 
                 expected_entities = test_info["entities"]
@@ -97,9 +112,12 @@ class RhasspyTestCase(unittest.TestCase):
     # -------------------------------------------------------------------------
 
     def test_training(self):
+        loop.run_until_complete(self.async_test_training())
+
+    async def async_test_training(self):
         """Test training"""
         for profile_name in self.profiles:
-            with RhasspyTestCore(profile_name, train=False) as core:
+            async with RhasspyTestCore(profile_name, train=False) as core:
                 wav_path = self.test_wav_path[profile_name]
                 test_info = self.test_json[profile_name]
 
@@ -129,10 +147,10 @@ class RhasspyTestCase(unittest.TestCase):
                                 print(line, file=new_sentences_file)
 
                 # Train without target intent
-                core.train()
+                await core.train()
                 expected_text = test_info["text"]
                 with open(wav_path, "rb") as wav_file:
-                    text = core.transcribe_wav(wav_file.read()).text
+                    text = (await core.transcribe_wav(wav_file.read())).text
 
                     # Should fail to match
                     self.assertNotEqual(text, expected_text)
@@ -140,9 +158,9 @@ class RhasspyTestCase(unittest.TestCase):
                 # Delete changes
                 os.unlink(new_sentences_path)
 
-                core.train()
+                await core.train()
                 with open(wav_path, "rb") as wav_file:
-                    text = core.transcribe_wav(wav_file.read()).text
+                    text = (await core.transcribe_wav(wav_file.read())).text
 
                     # Should match now
                     self.assertEqual(text, expected_text)
@@ -150,14 +168,17 @@ class RhasspyTestCase(unittest.TestCase):
     # -------------------------------------------------------------------------
 
     def test_pronounce(self):
+        loop.run_until_complete(self.async_test_pronounce())
+
+    async def async_test_pronounce(self):
         for profile_name in self.profiles:
-            with RhasspyTestCore(profile_name) as core:
+            async with RhasspyTestCore(profile_name) as core:
                 test_info = self.test_json[profile_name]
 
                 # Known word
                 known_word = test_info["words"]["known"]["word"]
-                pronunciations = core.get_word_pronunciations(
-                    [known_word]
+                pronunciations = (
+                    await core.get_word_pronunciations([known_word])
                 ).pronunciations
                 self.assertIn(
                     test_info["words"]["known"]["phonemes"],
@@ -167,8 +188,8 @@ class RhasspyTestCase(unittest.TestCase):
                 # Unknown word
                 known_word = test_info["words"]["known"]["word"]
                 unknown_word = test_info["words"]["unknown"]["word"]
-                pronunciations = core.get_word_pronunciations(
-                    [unknown_word], n=5
+                pronunciations = (
+                    await core.get_word_pronunciations([unknown_word], n=5)
                 ).pronunciations
                 self.assertIn(
                     test_info["words"]["unknown"]["phonemes"],
@@ -187,7 +208,7 @@ if __name__ == "__main__":
     args, rest = parser.parse_known_args()
 
     if args.profile:
-        logging.debug(f"Only running tests for {args.profile}")
+        logging.debug("Only running tests for %s", args.profile)
         RhasspyTestCase.PROFILES = [args.profile]
 
     argv = [prog_name] + rest

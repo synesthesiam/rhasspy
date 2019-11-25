@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
+"""Support for acoustic model tuning."""
+import logging
 import os
+import shutil
 import subprocess
 import tempfile
-import logging
-import shutil
-from typing import Dict, Any
+from typing import Any, Dict
 
 from rhasspy.profiles import Profile
 

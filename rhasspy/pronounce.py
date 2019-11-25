@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 import os
 import re
-import logging
 import subprocess
 import tempfile
 from collections import defaultdict
-from typing import Dict, Tuple, List, Optional, Any
+from typing import Any, Dict, List, Optional, Tuple
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.utils import read_dict, load_phoneme_map
-from rhasspy.profiles import Profile
+from rhasspy.utils import load_phoneme_map, read_dict
 
 # -----------------------------------------------------------------------------
 # Events

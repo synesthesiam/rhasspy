@@ -1,31 +1,32 @@
-import os
-import re
+"""Rhasspy utility functions."""
+import collections
+import concurrent.futures
+import gzip
 import io
-import wave
+import itertools
 import logging
 import math
-import itertools
-import json
-import gzip
-import collections
-from collections import defaultdict
-import concurrent.futures
-import threading
-import tempfile
+import re
 import subprocess
-from typing import Dict, List, Iterable, Optional, Any, Mapping, Tuple, Callable, Set
+import threading
+import wave
+from collections import defaultdict
 from pathlib import Path
+from typing import (Any, Callable, Dict, Iterable, List, Mapping, Optional,
+                    Set, Tuple)
 
-from num2words import num2words
 import pywrapfst as fst
-import pydash
+from num2words import num2words
 
 WHITESPACE_PATTERN = re.compile(r"\s+")
+_LOGGER = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------
 
 
 class FunctionLoggingHandler(logging.Handler):
+    """Calls a function for each logging message."""
+
     def __init__(self, func):
         logging.Handler.__init__(self)
         self.func = func
@@ -89,7 +90,7 @@ def read_dict(
                 else:
                     word_dict[word] = [pronounce]
         except Exception as e:
-            logger.warning(f"read_dict: {e} (line {i+1})")
+            _LOGGER.warning("read_dict: %s (line %s)", e, i+1)
 
     return word_dict
 
@@ -185,8 +186,8 @@ def maybe_convert_wav(wav_data: bytes) -> bytes:
             )
             if (rate != 16000) or (width != 2) or (channels != 1):
                 return convert_wav(wav_data)
-            else:
-                return wav_file.readframes(wav_file.getnframes())
+
+            return wav_file.readframes(wav_file.getnframes())
 
 
 # -----------------------------------------------------------------------------
@@ -201,7 +202,7 @@ def load_phoneme_examples(path: str) -> Dict[str, Dict[str, str]]:
             if (len(line) == 0) or line.startswith("#"):
                 continue  # skip blanks and comments
 
-            parts = re.split("\s+", line)
+            parts = split_whitespace(line)
             examples[parts[0]] = {"word": parts[1], "phonemes": " ".join(parts[2:])}
 
     return examples
@@ -216,7 +217,7 @@ def load_phoneme_map(path: str) -> Dict[str, str]:
             if (len(line) == 0) or line.startswith("#"):
                 continue  # skip blanks and comments
 
-            parts = re.split("\s+", line, maxsplit=1)
+            parts = split_whitespace(line, maxsplit=1)
             phonemes[parts[0]] = parts[1]
 
     return phonemes
@@ -226,6 +227,7 @@ def load_phoneme_map(path: str) -> Dict[str, str]:
 
 
 def empty_intent() -> Dict[str, Any]:
+    """Get intent structure."""
     return {"text": "", "intent": {"name": "", "confidence": 0}, "entities": []}
 
 
@@ -241,6 +243,7 @@ class ByteStream:
         self.closed = False
 
     def read(self, n=-1) -> bytes:
+        """Read some number of bytes."""
         # Block until enough data is available
         while len(self.buffer) < n:
             if not self.closed:
@@ -254,6 +257,7 @@ class ByteStream:
         return chunk
 
     def write(self, data: bytes) -> None:
+        """Write buffer."""
         if self.closed:
             return
 
@@ -261,6 +265,7 @@ class ByteStream:
         self.read_event.set()
 
     def close(self) -> None:
+        """Close stream."""
         self.closed = True
         self.read_event.set()
 
@@ -313,6 +318,7 @@ def open_maybe_gzip(path, mode_normal="r", mode_gzip=None):
 
 
 def grouper(iterable, n, fillvalue=None):
+    """Group items from an interable."""
     args = [iter(iterable)] * n
     return itertools.zip_longest(*args, fillvalue=fillvalue)
 
@@ -321,6 +327,7 @@ def grouper(iterable, n, fillvalue=None):
 
 
 def make_sentences_by_intent(intent_fst: fst.Fst) -> Dict[str, Any]:
+    """Get all sentences from an FST."""
     from rhasspy.train.jsgf2fst import fstprintall, symbols2intent
 
     # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
@@ -352,7 +359,6 @@ def sample_sentences_by_intent(
         sentences: List[Dict[str, Any]] = []
         for symbols in fstprintall(rand_fst, exclude_meta=False):
             intent = symbols2intent(symbols)
-            intent_name = intent["intent"]["name"]
             sentences.append(intent)
 
         return sentences
@@ -397,7 +403,7 @@ def numbers_to_words(
     sentence: str, language: Optional[str] = None, add_substitution: bool = False
 ) -> str:
     """Replaces numbers with words in a sentence. Optionally substitues number back in."""
-    words = WHITESPACE_PATTERN.split(sentence)
+    words = split_whitespace(sentence)
     changed = False
     for i, word in enumerate(words):
         try:
@@ -409,7 +415,7 @@ def numbers_to_words(
             if add_substitution:
                 # Empty substitution for everything but last word.
                 # seventy five -> seventy: five:75
-                number_words = [w + ":" for w in WHITESPACE_PATTERN.split(words[i])]
+                number_words = [w + ":" for w in split_whitespace(words[i])]
                 number_words[-1] += word
                 words[i] = " ".join(number_words)
 
@@ -423,3 +429,8 @@ def numbers_to_words(
         return sentence
 
     return " ".join(words)
+
+
+def split_whitespace(s: str, **kwargs):
+    """Split a string by whitespace of any type/length."""
+    return WHITESPACE_PATTERN.split(s, **kwargs)

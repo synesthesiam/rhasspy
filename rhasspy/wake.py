@@ -1,53 +1,59 @@
-#!/usr/bin/env python3
-import os
-import threading
-import logging
+"""Wake word support."""
 import json
+import os
 import re
-import time
-import subprocess
 import shutil
 import struct
-from uuid import uuid4
-from typing import Optional, Any, List, Dict, Type
+import subprocess
+import threading
+import time
+from typing import Any, Dict, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.profiles import Profile
-from rhasspy.audio_recorder import StartStreaming, StopStreaming, AudioData
-from rhasspy.mqtt import MqttSubscribe, MqttMessage
-from rhasspy.utils import ByteStream, read_dict
+from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
+from rhasspy.mqtt import MqttMessage, MqttSubscribe
+from rhasspy.utils import read_dict
 
 # -----------------------------------------------------------------------------
 
 
 class ListenForWakeWord:
+    """Request to start listening for a wake word."""
+
     def __init__(self, receiver: Optional[RhasspyActor] = None, record=True) -> None:
         self.receiver = receiver
         self.record = record
 
 
 class StopListeningForWakeWord:
+    """Request to stop listening for a wake word."""
+
     def __init__(self, receiver: Optional[RhasspyActor] = None, record=True) -> None:
         self.receiver = receiver
         self.record = record
 
 
 class WakeWordDetected:
-    def __init__(self, name: str, audio_data_info: Dict[Any, Any] = {}) -> None:
+    """Response when wake word is detected."""
+
+    def __init__(self, name: str, audio_data_info: Dict[Any, Any] = None) -> None:
         self.name = name
-        self.audio_data_info = audio_data_info
+        self.audio_data_info = audio_data_info or {}
 
 
 class WakeWordNotDetected:
-    def __init__(self, name: str, audio_data_info: Dict[Any, Any] = {}) -> None:
+    """Response when wake word is not detected."""
+
+    def __init__(self, name: str, audio_data_info: Dict[Any, Any] = None) -> None:
         self.name = name
-        self.audio_data_info = audio_data_info
+        self.audio_data_info = audio_data_info or {}
 
 
 # -----------------------------------------------------------------------------
 
 
 def get_wake_class(system: str) -> Type[RhasspyActor]:
+    """Get type for profile wake system."""
     assert system in [
         "dummy",
         "pocketsphinx",
@@ -61,19 +67,19 @@ def get_wake_class(system: str) -> Type[RhasspyActor]:
     if system == "pocketsphinx":
         # Use pocketsphinx locally
         return PocketsphinxWakeListener
-    elif system == "hermes":
+    if system == "hermes":
         # Use remote system via MQTT
         return HermesWakeListener
-    elif system == "snowboy":
+    if system == "snowboy":
         # Use snowboy locally
         return SnowboyWakeListener
-    elif system == "precise":
+    if system == "precise":
         # Use Mycroft Precise locally
         return PreciseWakeListener
-    elif system == "porcupine":
+    if system == "porcupine":
         # Use Picovoice's porcupine locally
         return PorcupineWakeListener
-    elif system == "command":
+    if system == "command":
         # Use command-line listener
         return CommandWakeListener
 
@@ -88,15 +94,14 @@ class DummyWakeListener(RhasspyActor):
     """Does nothing"""
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         pass
 
 
 # -----------------------------------------------------------------------------
 # Pocketsphinx based wake word listener
 # https://github.com/cmusphinx/pocketsphinx
-# -----------------------------------------------------------------------------
-
-
+# -----------------------------------------------------------------------------,
 class PocketsphinxWakeListener(RhasspyActor):
     """Listens for a wake word with pocketsphinx."""
 
@@ -105,22 +110,30 @@ class PocketsphinxWakeListener(RhasspyActor):
         self.receivers: List[RhasspyActor] = []
         self.decoder = None
         self.decoder_started: bool = False
+        self.preload = False
+        self.not_detected = False
+        self.chunk_size = 960
+        self.recorder: Optional[RhasspyActor] = None
+        self.threshold = 0.0
+        self.keyphrase = ""
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.recorder = self.config["recorder"]
-        self.preload: bool = self.config.get("preload", False)
-        self.not_detected: bool = self.config.get("not_detected", False)
-        self.chunk_size: int = self.profile.get("wake.pocketsphinx.chunk_size", 960)
+        self.preload = self.config.get("preload", False)
+        self.not_detected = self.config.get("not_detected", False)
+        self.chunk_size = self.profile.get("wake.pocketsphinx.chunk_size", 960)
         if self.preload:
             with self._lock:
                 try:
                     self.load_decoder()
-                except:
+                except Exception:
                     self._logger.exception("loading wake decoder")
 
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in loaded state."""
         if isinstance(message, ListenForWakeWord):
             self.load_decoder()
             self.receivers.append(message.receiver or sender)
@@ -130,6 +143,7 @@ class PocketsphinxWakeListener(RhasspyActor):
                 self.send(self.recorder, StartStreaming(self.myAddress))
 
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in listening state."""
         if isinstance(message, AudioData):
             if not self.decoder_started:
                 assert self.decoder is not None
@@ -143,7 +157,7 @@ class PocketsphinxWakeListener(RhasspyActor):
                 result = self.process_data(chunk)
                 if result is not None:
                     detected = True
-                    self._logger.debug("Hotword detected (%s)" % self.keyphrase)
+                    self._logger.debug("Hotword detected (%s)", self.keyphrase)
                     detected_msg = WakeWordDetected(
                         self.keyphrase, audio_data_info=message.info
                     )
@@ -185,6 +199,7 @@ class PocketsphinxWakeListener(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def process_data(self, data: bytes) -> Optional[str]:
+        """Process single chunk of audio."""
         assert self.decoder is not None
         self.decoder.process_raw(data, False, False)
         hyp = self.decoder.hyp()
@@ -233,11 +248,11 @@ class PocketsphinxWakeListener(RhasspyActor):
                 else:
                     word = word.lower()
 
-                if not word in word_dict:
-                    self._logger.warn("%s not in dictionary" % word)
+                if word not in word_dict:
+                    self._logger.warning("%s not in dictionary", word)
 
             self._logger.debug(
-                "Loading wake decoder with hmm=%s, dict=%s" % (hmm_path, dict_path)
+                "Loading wake decoder with hmm=%s, dict=%s", hmm_path, dict_path
             )
 
             decoder_config = pocketsphinx.Decoder.default_config()
@@ -253,7 +268,7 @@ class PocketsphinxWakeListener(RhasspyActor):
 
             if os.path.exists(mllr_path):
                 self._logger.debug(
-                    "Using tuned MLLR matrix for acoustic model: %s" % mllr_path
+                    "Using tuned MLLR matrix for acoustic model: %s", mllr_path
                 )
                 decoder_config.set_string("-mllr", mllr_path)
 
@@ -268,28 +283,36 @@ class PocketsphinxWakeListener(RhasspyActor):
 
 
 class SnowboyWakeListener(RhasspyActor):
+    """Listen for wake word with snowboy."""
+
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.receivers: List[RhasspyActor] = []
         self.detector = None
+        self.preload = False
+        self.not_detected = False
+        self.chunk_size = 960
+        self.recorder: Optional[RhasspyActor] = None
+        self.apply_frontend = False
+        self.model_name = ""
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.recorder = self.config["recorder"]
         self.preload = self.config.get("preload", False)
-        self.not_detected: bool = self.config.get("not_detected", False)
-        self.chunk_size: int = self.profile.get("wake.snowboy.chunk_size", 960)
-        self.apply_frontend: bool = self.profile.get(
-            "wake.snowboy.apply_frontend", False
-        )
+        self.not_detected = self.config.get("not_detected", False)
+        self.chunk_size = self.profile.get("wake.snowboy.chunk_size", 960)
+        self.apply_frontend = self.profile.get("wake.snowboy.apply_frontend", False)
         if self.preload:
             try:
                 self.load_detector()
             except Exception as e:
-                self._logger.warning(f"preload: {e}")
+                self._logger.warning("preload: %s", e)
 
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in loaded state."""
         if isinstance(message, ListenForWakeWord):
             try:
                 self.load_detector()
@@ -297,10 +320,11 @@ class SnowboyWakeListener(RhasspyActor):
                 self.transition("listening")
                 if message.record:
                     self.send(self.recorder, StartStreaming(self.myAddress))
-            except Exception as e:
+            except Exception:
                 self._logger.exception("in_loaded")
 
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in listening state."""
         if isinstance(message, AudioData):
             audio_data = message.data
             chunk = audio_data[: self.chunk_size]
@@ -316,7 +340,7 @@ class SnowboyWakeListener(RhasspyActor):
 
             if detected:
                 # Detected
-                self._logger.debug("Hotword detected (%s)" % self.model_name)
+                self._logger.debug("Hotword detected (%s)", self.model_name)
                 detected_event = WakeWordDetected(
                     self.model_name, audio_data_info=message.info
                 )
@@ -339,6 +363,7 @@ class SnowboyWakeListener(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def process_data(self, data: bytes) -> int:
+        """Process single chunk of audio data."""
         assert self.detector is not None
         try:
             # Return is:
@@ -347,7 +372,7 @@ class SnowboyWakeListener(RhasspyActor):
             #  0 voice
             #  n index n-1
             return self.detector.RunDetection(data)
-        except Exception as e:
+        except Exception:
             self._logger.exception("process_data")
 
         return -2
@@ -355,6 +380,7 @@ class SnowboyWakeListener(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def load_detector(self) -> None:
+        """Load snowboy detector."""
         if self.detector is None:
             from snowboy import snowboydetect, snowboydecoder
 
@@ -367,7 +393,7 @@ class SnowboyWakeListener(RhasspyActor):
             sensitivity = float(self.profile.get("wake.snowboy.sensitivity", 0.5))
             audio_gain = float(self.profile.get("wake.snowboy.audio_gain", 1.0))
 
-            self._logger.debug(f"Loading snowboy model from {model_path}")
+            self._logger.debug("Loading snowboy model from %s", model_path)
 
             self.detector = snowboydetect.SnowboyDetect(
                 snowboydecoder.RESOURCE_FILE.encode(), model_path.encode()
@@ -381,17 +407,20 @@ class SnowboyWakeListener(RhasspyActor):
             self.detector.ApplyFrontend(self.apply_frontend)
 
             self._logger.debug(
-                "Loaded snowboy (model=%s, sensitivity=%s, audio_gain=%s)"
-                % (model_path, sensitivity, audio_gain)
+                "Loaded snowboy (model=%s, sensitivity=%s, audio_gain=%s)",
+                model_path,
+                sensitivity,
+                audio_gain,
             )
 
     # -------------------------------------------------------------------------
 
     def get_problems(self) -> Dict[str, Any]:
+        """Get problems at startup."""
         problems: Dict[str, Any] = {}
         try:
             from snowboy import snowboydetect, snowboydecoder
-        except:
+        except Exception:
             problems[
                 "snowboy not installed"
             ] = "The snowboy Python library is not installed. Try pip3 install snowboy"
@@ -420,31 +449,41 @@ class PreciseWakeListener(RhasspyActor):
         from precise_runner import ReadWriteStream
 
         RhasspyActor.__init__(self)
-        self.receivers: List[RhasspyActor] = []
-        self.stream: Optional[ReadWriteStream] = None
-        self.engine = None
-        self.runner = None
-        self.prediction_sem = threading.Semaphore()
         self.audio_buffer: bytes = bytes()
-        self.detected: bool = False
         self.audio_info: Dict[Any, Any] = {}
+        self.chunk_delay = 0
+        self.chunk_size = 2048
+        self.detected: bool = False
+        self.engine = None
+        self.engine_path = ""
+        self.model_name = ""
+        self.model_path = ""
+        self.prediction_sem = threading.Semaphore()
+        self.preload = False
+        self.receivers: List[RhasspyActor] = []
+        self.recorder: Optional[RhasspyActor] = None
+        self.runner = None
+        self.send_not_detected = False
+        self.stream: Optional[ReadWriteStream] = None
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.recorder = self.config["recorder"]
         self.preload = self.config.get("preload", False)
-        self.send_not_detected: bool = self.config.get("not_detected", False)
-        self.chunk_size: int = self.profile.get("wake.precise.chunk_size", 2048)
-        self.chunk_delay: float = self.profile.get("wake.precise.chunk_delay", 0)
+        self.send_not_detected = self.config.get("not_detected", False)
+        self.chunk_size = self.profile.get("wake.precise.chunk_size", 2048)
+        self.chunk_delay = self.profile.get("wake.precise.chunk_delay", 0)
 
         if self.preload:
             try:
                 self.load_runner()
-            except:
+            except Exception:
                 pass
 
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in loaded state."""
         if isinstance(message, ListenForWakeWord):
             try:
                 self.load_runner()
@@ -452,10 +491,11 @@ class PreciseWakeListener(RhasspyActor):
                 self.transition("listening")
                 if message.record:
                     self.send(self.recorder, StartStreaming(self.myAddress))
-            except Exception as e:
+            except Exception:
                 self._logger.exception("in_loaded")
 
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in listening state."""
         try:
             if isinstance(message, AudioData):
                 self.audio_info = message.info
@@ -466,7 +506,7 @@ class PreciseWakeListener(RhasspyActor):
                 if num_chunks > 0:
                     assert self.stream is not None
                     self.prediction_sem = threading.Semaphore()
-                    for i in range(num_chunks):
+                    for _ in range(num_chunks):
                         chunk = self.audio_buffer[: self.chunk_size]
                         self.stream.write(chunk)
                         self.audio_buffer = self.audio_buffer[self.chunk_size :]
@@ -493,16 +533,17 @@ class PreciseWakeListener(RhasspyActor):
                     self.transition("loaded")
             elif isinstance(message, str):
                 # Detected
-                self._logger.debug("Hotword detected (%s)" % self.model_name)
+                self._logger.debug("Hotword detected (%s)", self.model_name)
                 detected_event = WakeWordDetected(
                     self.model_name, audio_data_info=self.audio_info
                 )
                 for receiver in self.receivers:
                     self.send(receiver, detected_event)
-        except Exception as e:
+        except Exception:
             self._logger.exception("in_listening")
 
     def to_stopped(self, from_state: str) -> None:
+        """Transition to stopped state."""
         self.stream = None
 
         if self.runner is not None:
@@ -511,6 +552,7 @@ class PreciseWakeListener(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def load_runner(self) -> None:
+        """Load precise runner."""
         if self.engine is None:
             from precise_runner import PreciseEngine
 
@@ -520,7 +562,7 @@ class PreciseWakeListener(RhasspyActor):
                 self.profile.get("wake.precise.engine_path", "precise-engine")
             )
 
-            self._logger.debug(f"Loading Precise engine at {self.engine_path}")
+            self._logger.debug("Loading Precise engine at %s", self.engine_path)
             self.engine = PreciseEngine(
                 self.engine_path, self.model_path, chunk_size=self.chunk_size
             )
@@ -553,17 +595,20 @@ class PreciseWakeListener(RhasspyActor):
             self.runner.start()
 
             self._logger.debug(
-                "Loaded Mycroft Precise (model=%s, sensitivity=%s, trigger_level=%s)"
-                % (self.model_path, sensitivity, trigger_level)
+                "Loaded Mycroft Precise (model=%s, sensitivity=%s, trigger_level=%s)",
+                self.model_path,
+                sensitivity,
+                trigger_level,
             )
 
     # -------------------------------------------------------------------------
 
     def get_problems(self) -> Dict[str, Any]:
+        """Get problems at startup."""
         problems: Dict[str, Any] = {}
         try:
             from precise_runner import PreciseRunner, ReadWriteStream
-        except:
+        except Exception:
             problems[
                 "precise_runner not installed"
             ] = "The precise_runner Python library is not installed. Try pip3 install precise_runner"
@@ -599,24 +644,31 @@ class HermesWakeListener(RhasspyActor):
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.receivers: List[RhasspyActor] = []
+        self.site_ids = "default"
+        self.wakeword_id = "default"
+        self.wake_topic = ""
+        self.mqtt: Optional[RhasspyActor] = None
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.mqtt = self.config["mqtt"]
 
         # Subscribe to wake topic
         self.site_ids = self.profile.get("mqtt.site_id", "default").split(",")
-        self.wakeword_id: str = self.profile.get("wake.hermes.wakeword_id", "default")
-        self.wake_topic = "hermes/hotword/%s/detected" % self.wakeword_id
+        self.wakeword_id = self.profile.get("wake.hermes.wakeword_id", "default")
+        self.wake_topic = f"hermes/hotword/{self.wakeword_id}/detected"
         self.send(self.mqtt, MqttSubscribe(self.wake_topic))
 
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in loaded state."""
         if isinstance(message, ListenForWakeWord):
             self.receivers.append(message.receiver or sender)
             self.transition("listening")
 
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in listening state."""
         if isinstance(message, MqttMessage):
             if message.topic == self.wake_topic:
                 # Check site ID
@@ -624,12 +676,12 @@ class HermesWakeListener(RhasspyActor):
                 payload_site_id = payload.get("siteId", "")
                 if payload_site_id not in self.site_ids:
                     self._logger.debug(
-                        "Got detected message, but wrong site id (%s)" % payload_site_id
+                        "Got detected message, but wrong site id (%s)", payload_site_id
                     )
                     return
 
                 # Pass downstream to receivers
-                self._logger.debug("Hotword detected (%s)" % self.wakeword_id)
+                self._logger.debug("Hotword detected (%s)", self.wakeword_id)
                 result = WakeWordDetected(self.wakeword_id)
                 for receiver in self.receivers:
                     self.send(receiver, result)
@@ -650,10 +702,21 @@ class PorcupineWakeListener(RhasspyActor):
 
     def __init__(self):
         RhasspyActor.__init__(self)
+        self.audio_buffer: bytes = bytes()
+        self.chunk_format = ""
+        self.chunk_size = 1024
+        self.handle = None
+        self.keyword_paths = []
+        self.library_path = ""
+        self.model_path = ""
+        self.preload: bool = False
         self.receivers: List[RhasspyActor] = []
+        self.recorder: Optional[RhasspyActor] = None
+        self.sensitivities = []
         self.wake_proc = None
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.recorder = self.config["recorder"]
         self.library_path = self.profile.read_path(
             self.profile.get(
@@ -676,18 +739,16 @@ class PorcupineWakeListener(RhasspyActor):
             float(self.profile.get("wake.porcupine.sensitivity", 0.5))
         ]
 
-        self.preload: bool = self.config.get("preload", False)
-        self.audio_buffer: bytes = bytes()
-        self.chunk_size = 1024
-        self.handle = None
+        self.preload = self.config.get("preload", False)
 
         if self.preload:
             try:
                 self.load_handle()
-            except Exception as e:
+            except Exception:
                 self._logger.exception("loading wake handle")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, ListenForWakeWord):
             try:
                 self.load_handle()
@@ -695,33 +756,34 @@ class PorcupineWakeListener(RhasspyActor):
                 self.transition("listening")
                 if message.record:
                     self.send(self.recorder, StartStreaming(self.myAddress))
-            except Exception as e:
+            except Exception:
                 self._logger.exception("loading wake handle")
 
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in listening state."""
         if isinstance(message, AudioData):
             self.audio_buffer += message.data
             num_chunks = len(self.audio_buffer) // self.chunk_size
 
             if num_chunks > 0:
                 assert self.handle is not None
-                for i in range(num_chunks):
+                for _ in range(num_chunks):
                     chunk = self.audio_buffer[: self.chunk_size]
-                    chunk = struct.unpack_from(self.chunk_format, chunk)
+                    unpacked_chunk = struct.unpack_from(self.chunk_format, chunk)
                     self.audio_buffer = self.audio_buffer[self.chunk_size :]
 
                     # Process chunk
-                    keyword_index = self.handle.process(chunk)
+                    keyword_index = self.handle.process(unpacked_chunk)
                     if keyword_index:
                         # Pass downstream to receivers
-                        self._logger.debug(f"Hotword detected ({keyword_index})")
+                        self._logger.debug("Hotword detected (%s)", keyword_index)
                         result = WakeWordDetected(str(keyword_index))
                         for receiver in self.receivers:
                             self.send(receiver, result)
 
         elif isinstance(message, WakeWordDetected):
             # Pass downstream to receivers
-            self._logger.debug("Hotword detected (%s)" % message.name)
+            self._logger.debug("Hotword detected (%s)", message.name)
             for receiver in self.receivers:
                 self.send(receiver, message)
         elif isinstance(message, WakeWordNotDetected):
@@ -741,6 +803,7 @@ class PorcupineWakeListener(RhasspyActor):
                 self.transition("started")
 
     def load_handle(self):
+        """Load porcupine library."""
         if self.handle is None:
             from porcupine import Porcupine
 
@@ -755,7 +818,10 @@ class PorcupineWakeListener(RhasspyActor):
             self.chunk_size = self.handle.frame_length * 2
             self.chunk_format = "h" * self.handle.frame_length
             self._logger.debug(
-                f"Loaded porcupine (keyword={self.keyword_paths[0]}). Expecting sample rate={self.handle.sample_rate}, frame length={self.handle.frame_length}"
+                "Loaded porcupine (keyword=%s). Expecting sample rate=%s, frame length=%s",
+                self.keyword_paths[0],
+                self.handle.sample_rate,
+                self.handle.frame_length,
             )
 
 
@@ -771,8 +837,10 @@ class CommandWakeListener(RhasspyActor):
         RhasspyActor.__init__(self)
         self.receivers: List[RhasspyActor] = []
         self.wake_proc = None
+        self.command: List[str] = []
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         program = os.path.expandvars(self.profile.get("wake.command.program"))
         arguments = [
             os.path.expandvars(str(a))
@@ -782,6 +850,7 @@ class CommandWakeListener(RhasspyActor):
         self.command = [program] + arguments
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, ListenForWakeWord):
             self.receivers.append(message.receiver or sender)
             self.wake_proc = subprocess.Popen(self.command, stdout=subprocess.PIPE)
@@ -791,7 +860,7 @@ class CommandWakeListener(RhasspyActor):
                 try:
                     out, _ = self.wake_proc.communicate()
                     wakeword_id = out.decode().strip()
-                except:
+                except Exception:
                     wakeword_id = ""
                     self._logger.exception("post_result")
 
@@ -807,9 +876,10 @@ class CommandWakeListener(RhasspyActor):
             threading.Thread(target=post_result, daemon=True).start()
 
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in listening state."""
         if isinstance(message, WakeWordDetected):
             # Pass downstream to receivers
-            self._logger.debug("Hotword detected (%s)" % message.name)
+            self._logger.debug("Hotword detected (%s)", message.name)
             for receiver in self.receivers:
                 self.send(receiver, message)
         elif isinstance(message, WakeWordNotDetected):

@@ -5,7 +5,19 @@ import argparse
 import re
 import json
 import logging
-from typing import Dict, Any, List, Optional, TextIO, Mapping, Union, Iterable
+from typing import (
+    Dict,
+    Any,
+    List,
+    Optional,
+    TextIO,
+    Mapping,
+    Union,
+    Iterable,
+    Set,
+    Deque,
+    Tuple,
+)
 from collections import deque, defaultdict, Counter
 
 import pywrapfst as fst
@@ -192,7 +204,7 @@ def fstprintall(
     out_eps = output_symbols.find(eps)
     zero_weight = fst.Weight.Zero(in_fst.weight_type())
 
-    state_queue = deque()
+    state_queue: Deque[Tuple[int, List[str]]] = deque()
     state_queue.append((in_fst.start(), []))
 
     while len(state_queue) > 0:
@@ -225,8 +237,8 @@ def longest_path(the_fst: fst.Fst, eps: str = "<eps>") -> fst.Fst:
     output_symbols = the_fst.output_symbols()
     out_eps = output_symbols.find(eps)
     visited_states: Set[int] = set()
-    best_path = []
-    state_queue = deque()
+    best_path: List[int] = []
+    state_queue: Deque[Tuple[int, List[int]]] = deque()
     state_queue.append((the_fst.start(), []))
 
     # Determine longest path
@@ -320,7 +332,7 @@ def make_slot_acceptor(intent_fst: fst.Fst, eps: str = "<eps>") -> fst.Fst:
     slot_fst.set_start(slot_fst.add_state())
 
     # Queue of (intent state, acceptor state, copy count)
-    state_queue = deque()
+    state_queue: Deque[Tuple[int, int, int]] = deque()
     state_queue.append((intent_fst.start(), slot_fst.start(), 0))
 
     # BFS

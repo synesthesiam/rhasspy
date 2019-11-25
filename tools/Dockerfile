@@ -37,3 +37,6 @@ RUN cd / && tar -xf phonetisaurus-2019.tar.gz && cd phonetisaurus/ && \
        --with-openfst-libs=/build/lib && \
     make -j $MAKE_THREADS && \
     make install
+
+RUN find /build -name '*.a' -delete
+RUN strip --strip-all /build/lib/*.so*

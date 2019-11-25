@@ -1,8 +1,5 @@
 # Install Python dependencies
-RUN python3 -m pip install --no-cache-dir wheel
-
-COPY download/jsgf2fst-0.1.0.tar.gz \
-     /download/
+RUN python3 -m pip install --no-cache-dir setuptools wheel
 
 RUN apt-get install -y libfreetype6-dev libpng-dev pkg-config libffi-dev libssl-dev
 COPY requirements.txt /requirements.txt

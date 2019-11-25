@@ -1,0 +1,3 @@
+COPY download/rhasspy-tools_${BUILD_ARCH}.tar.gz /
+RUN tar -C /usr -xvf /rhasspy-tools_${BUILD_ARCH}.tar.gz && \
+    rm -f /rhasspy-tools_${BUILD_ARCH}.tar.gz

@@ -1,21 +1,21 @@
-#!/usr/bin/env python3
-import os
-import logging
+"""Support for intent handling using external service."""
 import json
+import os
 import subprocess
+from typing import Any, Dict, List, Optional, Tuple, Type
 from urllib.parse import urljoin
-from typing import Dict, Any, Optional, Tuple, Type
 
 import pydash
 import requests
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.profiles import Profile
 
 # -----------------------------------------------------------------------------
 
 
 class HandleIntent:
+    """Request to handle intent."""
+
     def __init__(
         self, intent: Dict[str, Any], receiver: Optional[RhasspyActor] = None
     ) -> None:
@@ -24,11 +24,15 @@ class HandleIntent:
 
 
 class IntentHandled:
+    """Response to HandleIntent."""
+
     def __init__(self, intent: Dict[str, Any]) -> None:
         self.intent = intent
 
 
 class ForwardIntent:
+    """Request intent be forwarded to Home Assistant."""
+
     def __init__(
         self, intent: Dict[str, Any], receiver: Optional[RhasspyActor] = None
     ) -> None:
@@ -37,6 +41,8 @@ class ForwardIntent:
 
 
 class IntentForwarded:
+    """Response to ForwardIntent."""
+
     def __init__(self, intent: Dict[str, Any]) -> None:
         self.intent = intent
 
@@ -45,6 +51,7 @@ class IntentForwarded:
 
 
 def get_intent_handler_class(system: str) -> Type[RhasspyActor]:
+    """Get type for profile intent handlers."""
     assert system in ["dummy", "hass", "command"], (
         "Invalid intent handler system: %s" % system
     )
@@ -52,7 +59,8 @@ def get_intent_handler_class(system: str) -> Type[RhasspyActor]:
     if system == "hass":
         # Use Home Assistant directly
         return HomeAssistantIntentHandler
-    elif system == "command":
+
+    if system == "command":
         # Use command-line speech trainer
         return CommandIntentHandler
 
@@ -64,9 +72,10 @@ def get_intent_handler_class(system: str) -> Type[RhasspyActor]:
 
 
 class DummyIntentHandler(RhasspyActor):
-    """Does nothing"""
+    """Always says intent is handled."""
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, HandleIntent):
             self.send(message.receiver or sender, IntentHandled(message.intent))
         elif isinstance(message, ForwardIntent):
@@ -81,7 +90,14 @@ class DummyIntentHandler(RhasspyActor):
 class HomeAssistantIntentHandler(RhasspyActor):
     """Forward intents to Home Assistant as events."""
 
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.hass_config: Dict[str, Any] = {}
+        self.event_type_format = ""
+        self.pem_file = ""
+
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         self.hass_config = self.profile.get("home_assistant", {})
 
         # Python format string for generating event type name
@@ -93,11 +109,12 @@ class HomeAssistantIntentHandler(RhasspyActor):
         self.pem_file = self.hass_config.get("pem_file", "")
         if (self.pem_file is not None) and (len(self.pem_file) > 0):
             self.pem_file = os.path.expandvars(self.pem_file)
-            self._logger.debug(f"Using PEM file at {self.pem_file}")
+            self._logger.debug("Using PEM file at %s", self.pem_file)
         else:
             self.pem_file = None  # disabled
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, HandleIntent):
             intent = message.intent
             try:
@@ -113,7 +130,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
                 event_type: str = ""
                 event_data: Dict[str, Any] = {}
 
-                if not "hass_event" in intent:
+                if "hass_event" not in intent:
                     event_type, event_data = self.make_hass_event(intent)
                     intent["hass_event"] = {
                         "event_type": event_type,
@@ -133,8 +150,9 @@ class HomeAssistantIntentHandler(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def handle_intent(self, intent: Dict[str, Any]) -> Dict[str, Any]:
+        """Create event for Home Assistant and send it."""
         if len(pydash.get(intent, "intent.name", "")) == 0:
-            self._logger.warn("Empty intent. Not sending to Home Assistant")
+            self._logger.warning("Empty intent. Not sending to Home Assistant")
             return intent
 
         event_type, slots = self.make_hass_event(intent)
@@ -146,6 +164,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
         return intent
 
     def forward_intent(self, event_type: str, slots: Dict[str, Any]):
+        """Forward existing event to Home Assistant."""
         # Base URL of Home Assistant server
         post_url = urljoin(self.hass_config["url"], "api/events/" + event_type)
 
@@ -157,12 +176,13 @@ class HomeAssistantIntentHandler(RhasspyActor):
             kwargs["verify"] = self.pem_file
 
         response = requests.post(post_url, **kwargs)
-        self._logger.debug(f"POSTed intent to {post_url}")
+        self._logger.debug("POSTed intent to %s", post_url)
         response.raise_for_status()
 
     # -------------------------------------------------------------------------
 
     def make_hass_event(self, intent: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+        """Create Home Assistant event from intent."""
         event_type = self.event_type_format.format(intent["intent"]["name"])
         slots = {}
         for entity in intent["entities"]:
@@ -171,6 +191,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
         return event_type, slots
 
     def _get_request_kwargs(self):
+        """Get arguments for POST."""
         headers = {}
 
         # Security stuff
@@ -198,13 +219,14 @@ class HomeAssistantIntentHandler(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def get_problems(self) -> Dict[str, Any]:
+        """Get problems during startup."""
         problems: Dict[str, Any] = {}
         hass_url = self.hass_config["url"]
         try:
             url = urljoin(self.hass_config["url"], "/api/")
             kwargs = self._get_request_kwargs()
             requests.get(url, **kwargs)
-        except:
+        except Exception:
             problems[
                 "Can't contact server"
             ] = f"Unable to reach your Home Assistant server at {hass_url}. Is it running?"
@@ -220,7 +242,15 @@ class HomeAssistantIntentHandler(RhasspyActor):
 class CommandIntentHandler(RhasspyActor):
     """Command-line based intent handler"""
 
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.command: List[str] = []
+        self.hass_handler: Optional[RhasspyActor] = None
+        self.receiver: Optional[RhasspyActor] = None
+        self.forward_to_hass = False
+
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         program = os.path.expandvars(self.profile.get("handle.command.program"))
         arguments = [
             os.path.expandvars(str(a))
@@ -229,13 +259,13 @@ class CommandIntentHandler(RhasspyActor):
 
         self.command = [program] + arguments
 
-        self.forward_to_hass: bool = self.profile.get("handle.forward_to_hass", False)
-        self.hass_handler: Optional[RhasspyActor] = self.config["hass_handler"]
-        self.receiver: Optional[RhasspyActor] = None
+        self.forward_to_hass = self.profile.get("handle.forward_to_hass", False)
+        self.hass_handler = self.config.get("hass_handler")
 
         self.transition("ready")
 
     def in_ready(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in ready state."""
         if isinstance(message, HandleIntent):
             self.receiver = message.receiver or sender
             intent = message.intent
@@ -243,8 +273,10 @@ class CommandIntentHandler(RhasspyActor):
                 self._logger.debug(self.command)
 
                 # JSON -> STDIN -> STDOUT -> JSON
-                input = json.dumps(intent).encode()
-                output = subprocess.check_output(self.command, input=input).decode()
+                json_input = json.dumps(intent).encode()
+                output = subprocess.run(
+                    self.command, check=True, input=json_input, stdout=subprocess.PIPE
+                ).stdout.decode()
 
                 intent = json.loads(output)
             except Exception as e:
@@ -259,6 +291,7 @@ class CommandIntentHandler(RhasspyActor):
                 self.send(self.receiver, IntentHandled(intent))
 
     def in_forwarding(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in forwarding state."""
         if isinstance(message, IntentForwarded):
             # Return back to sender
             self.transition("ready")

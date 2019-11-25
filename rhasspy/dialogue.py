@@ -1,79 +1,68 @@
+"""Manages Rhasspy sleep/wake state and control flow."""
+import json
 import os
 import sys
-import json
 from datetime import timedelta
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Type
+from typing import Any, Dict, Optional, Type
 
 import pywrapfst as fst
 
-from rhasspy.actor import (
-    RhasspyActor,
-    ConfigureEvent,
-    Configured,
-    StateTransition,
-    ActorExitRequest,
-    WakeupMessage,
-    ChildActorExited,
-)
-from rhasspy.wake import (
-    ListenForWakeWord,
-    StopListeningForWakeWord,
-    WakeWordDetected,
-    WakeWordNotDetected,
-    get_wake_class,
-)
-from rhasspy.command_listener import ListenForCommand, VoiceCommand, get_command_class
-from rhasspy.audio_recorder import (
-    StartRecordingToBuffer,
-    StopRecordingToBuffer,
-    AudioData,
-    get_microphone_class,
-    HTTPAudioRecorder,
-)
-from rhasspy.audio_player import PlayWavFile, PlayWavData, WavPlayed, get_sound_class
-from rhasspy.stt import TranscribeWav, WavTranscription, get_decoder_class
-from rhasspy.stt_train import (
-    TrainSpeech,
-    SpeechTrainingComplete,
-    SpeechTrainingFailed,
-    get_speech_trainer_class,
-)
-from rhasspy.intent import RecognizeIntent, IntentRecognized, get_recognizer_class
-from rhasspy.intent_train import (
-    TrainIntent,
-    IntentTrainingComplete,
-    IntentTrainingFailed,
-    get_intent_trainer_class,
-)
-from rhasspy.intent_handler import HandleIntent, IntentHandled, get_intent_handler_class
-
-# from rhasspy.train import GenerateSentences, SentencesGenerated, SentenceGenerationFailed
-from rhasspy.train import train_profile
-from rhasspy.pronounce import GetWordPhonemes, SpeakWord, GetWordPronunciations
-from rhasspy.tts import SpeakSentence, get_speech_class
+from rhasspy.actor import (ActorExitRequest, ChildActorExited, Configured,
+                           ConfigureEvent, RhasspyActor, StateTransition,
+                           WakeupMessage)
+from rhasspy.audio_player import (PlayWavData, PlayWavFile, WavPlayed,
+                                  get_sound_class)
+from rhasspy.audio_recorder import (AudioData, HTTPAudioRecorder,
+                                    StartRecordingToBuffer,
+                                    StopRecordingToBuffer,
+                                    get_microphone_class)
+from rhasspy.command_listener import (ListenForCommand, VoiceCommand,
+                                      get_command_class)
+from rhasspy.intent import (IntentRecognized, RecognizeIntent,
+                            get_recognizer_class)
+from rhasspy.intent_handler import (HandleIntent, IntentHandled,
+                                    get_intent_handler_class)
+from rhasspy.intent_train import (IntentTrainingComplete, IntentTrainingFailed,
+                                  TrainIntent, get_intent_trainer_class)
 from rhasspy.mqtt import MqttPublish
+from rhasspy.pronounce import GetWordPhonemes, GetWordPronunciations, SpeakWord
+from rhasspy.stt import TranscribeWav, WavTranscription, get_decoder_class
+from rhasspy.stt_train import get_speech_trainer_class
+from rhasspy.train import train_profile
+from rhasspy.tts import SpeakSentence, get_speech_class
 from rhasspy.utils import buffer_to_wav
+from rhasspy.wake import (ListenForWakeWord, StopListeningForWakeWord,
+                          WakeWordDetected, WakeWordNotDetected,
+                          get_wake_class)
 
 # -----------------------------------------------------------------------------
 
 
 class GetMicrophones:
+    """Request list of micrphones."""
+
     def __init__(self, system: Optional[str] = None) -> None:
         self.system = system
 
 
 class TestMicrophones:
+    """Request live microphones."""
+
     def __init__(self, system: Optional[str] = None) -> None:
         self.system = system
 
 
 class GetSpeakers:
+    """Request list of audio players."""
+
     def __init__(self, system: Optional[str] = None) -> None:
         self.system = system
 
 
 class TrainProfile:
+    """Request training for profile."""
+
     def __init__(
         self, receiver: Optional[RhasspyActor] = None, reload_actors: bool = True
     ) -> None:
@@ -82,6 +71,8 @@ class TrainProfile:
 
 
 class ProfileTrainingFailed:
+    """Response when training fails."""
+
     def __init__(self, reason: str):
         self.reason = reason
 
@@ -90,17 +81,25 @@ class ProfileTrainingFailed:
 
 
 class ProfileTrainingComplete:
+    """Response when training succeeds."""
+
     def __repr__(self):
         return "OK"
 
 
 class Ready:
-    def __init__(self, timeout: bool = False, problems: Dict[str, Any] = {}) -> None:
+    """Emitted when all actors have been loaded."""
+
+    def __init__(
+        self, timeout: bool = False, problems: Optional[Dict[str, Any]] = None
+    ) -> None:
         self.timeout = timeout
-        self.problems = problems
+        self.problems = problems or {}
 
 
 class GetVoiceCommand:
+    """Request to record a voice command."""
+
     def __init__(
         self, receiver: Optional[RhasspyActor] = None, timeout: Optional[float] = None
     ) -> None:
@@ -109,16 +108,22 @@ class GetVoiceCommand:
 
 
 class GetActorStates:
+    """Request for actors' current states."""
+
     pass
 
 
 class GetProblems:
+    """Request any problems during startup."""
+
     pass
 
 
 class Problems:
-    def __init__(self, problems: Dict[str, Any] = {}):
-        self.problems = problems
+    """Response to GetProblems."""
+
+    def __init__(self, problems: Optional[Dict[str, Any]] = None):
+        self.problems = problems or {}
 
 
 # -----------------------------------------------------------------------------
@@ -127,21 +132,169 @@ class Problems:
 class DialogueManager(RhasspyActor):
     """Manages the overall state of Rhasspy."""
 
-    def to_started(self, from_state: str) -> None:
-        self.site_id: str = self.profile.get("mqtt.site_id", "default")
-        self.preload: bool = self.config.get("preload", False)
-        self.timeout_sec: Optional[float] = self.config.get("load_timeout_sec", None)
-        self.send_ready: bool = self.config.get("ready", False)
-        self.wake_receiver: Optional[RhasspyActor] = None
-        self.intent_receiver: Optional[RhasspyActor] = None
-        self.training_receiver: Optional[RhasspyActor] = None
-        self.handle: bool = True
+    def __init__(self):
+        RhasspyActor.__init__(self)
+
+        # Child actors
         self.actors: Dict[str, RhasspyActor] = {}
+
+        # Actor states
         self.actor_states: Dict[str, str] = {}
-        self.reload_actors_after_training = True
-        self.problems: Dict[str, Any] = {}
+
+        # Voice command recorder
+        self.command_class: Optional[Type] = None
+        self._command: Optional[RhasspyActor] = None
+
+        # Speech to text
+        self.decoder_class: Optional[Type] = None
+        self._decoder: Optional[RhasspyActor] = None
+
+        # Intent handling
+        self.handle: bool = True
+        self.handler_class: Optional[Type] = None
+        self._handler: Optional[RhasspyActor] = None
+        self.hass_handler: Optional[RhasspyActor] = None
+        self.intent_receiver: Optional[RhasspyActor] = None
+
+        # Intent recognizer training
+        self.intent_trainer_class: Optional[Type] = None
+        self._intent_trainer: Optional[RhasspyActor] = None
+
+        # MQTT
+        self.mqtt_class: Optional[Type] = None
         self.mqtt: Optional[RhasspyActor] = None
-        self.observer: Optional[RhasspyActor] = self.config.get("observer", None)
+
+        # For websockets
+        self.observer: Optional[RhasspyActor] = None
+
+        # Audio player
+        self.player_class: Optional[Type] = None
+        self._player: Optional[RhasspyActor] = None
+
+        # External setting to pre-load speech/intent artifacts
+        self.preload: bool = False
+
+        # Problems during startup
+        self.problems: Dict[str, Any] = {}
+
+        # Intent recognition
+        self.recognizer_class: Optional[Type] = None
+        self._recognizer: Optional[RhasspyActor] = None
+
+        # Audio recording
+        self.recorder_class: Optional[Type] = None
+        self._recorder: Optional[RhasspyActor] = None
+
+        # Post-training reload
+        self.reload_actors_after_training = True
+
+        # Send Ready when actors are loaded
+        self.send_ready: bool = False
+
+        # MQTT site id
+        self.site_id: str = "default"
+
+        # Text to speech
+        self.speech_class: Optional[Type] = None
+        self._speech: Optional[RhasspyActor] = None
+        self.speech_trainer_class: Optional[Type] = None
+        self._speech_trainer: Optional[RhasspyActor] = None
+
+        # Load timeout
+        self.timeout_sec: Optional[float] = None
+
+        # Result of training
+        self.training_receiver: Optional[RhasspyActor] = None
+
+        # Loading actors
+        self.wait_actors: Dict[str, RhasspyActor] = {}
+
+        # Wake word
+        self.wake_class: Optional[Type] = None
+        self._wake: Optional[RhasspyActor] = None
+        self.wake_receiver: Optional[RhasspyActor] = None
+
+        # Word pronunciations
+        self.word_pronouncer_class: Optional[Type] = None
+        self._word_pronouncer: Optional[RhasspyActor] = None
+
+    # -------------------------------------------------------------------------
+
+    @property
+    def command(self) -> RhasspyActor:
+        """Get actor for voice command listener."""
+        assert self._command is not None
+        return self._command
+
+    @property
+    def decoder(self) -> RhasspyActor:
+        """Get actor for speech to text."""
+        assert self._decoder is not None
+        return self._decoder
+
+    @property
+    def handler(self) -> RhasspyActor:
+        """Get actor for intent handling."""
+        assert self._handler is not None
+        return self._handler
+
+    @property
+    def intent_trainer(self) -> RhasspyActor:
+        """Get actor for intent recognizer training."""
+        assert self._intent_trainer is not None
+        return self._intent_trainer
+
+    @property
+    def player(self) -> RhasspyActor:
+        """Get actor for playing audio."""
+        assert self._player is not None
+        return self._player
+
+    @property
+    def recognizer(self) -> RhasspyActor:
+        """Get actor for intent recognition."""
+        assert self._recognizer is not None
+        return self._recognizer
+
+    @property
+    def recorder(self) -> RhasspyActor:
+        """Get actor for audio recording."""
+        assert self._recorder is not None
+        return self._recorder
+
+    @property
+    def speech(self) -> RhasspyActor:
+        """Get actor for text to speech."""
+        assert self._speech is not None
+        return self._speech
+
+    @property
+    def speech_trainer(self) -> RhasspyActor:
+        """Get actor for speech to text training."""
+        assert self._speech_trainer is not None
+        return self._speech_trainer
+
+    @property
+    def wake(self) -> RhasspyActor:
+        """Get actor for wake word detection."""
+        assert self._wake is not None
+        return self._wake
+
+    @property
+    def word_pronouncer(self) -> RhasspyActor:
+        """Get actor for pronouncing words."""
+        assert self._word_pronouncer is not None
+        return self._word_pronouncer
+
+    # -------------------------------------------------------------------------
+
+    def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
+        self.site_id = self.profile.get("mqtt.site_id", "default")
+        self.preload = self.config.get("preload", False)
+        self.timeout_sec = self.config.get("load_timeout_sec", None)
+        self.send_ready = self.config.get("ready", False)
+        self.observer = self.config.get("observer", None)
 
         if self.profile.get("mqtt.enabled", False):
             self.transition("loading_mqtt")
@@ -149,6 +302,7 @@ class DialogueManager(RhasspyActor):
             self.transition("loading")
 
     def to_loading_mqtt(self, from_state: str) -> None:
+        """Transition to loading_mqtt state."""
         self._logger.debug("Loading MQTT first")
 
         # MQTT client *first*
@@ -156,6 +310,7 @@ class DialogueManager(RhasspyActor):
 
         self.mqtt_class = HermesMqtt
         self.mqtt = self.createActor(self.mqtt_class)
+        assert self.mqtt is not None
         self.actors["mqtt"] = self.mqtt
 
         self.send(
@@ -164,11 +319,12 @@ class DialogueManager(RhasspyActor):
 
         if self.timeout_sec is not None:
             self._logger.debug(
-                f"Loading...will time out after {self.timeout_sec} second(s)"
+                "Loading...will time out after %s second(s)", self.timeout_sec
             )
             self.wakeupAfter(timedelta(seconds=self.timeout_sec))
 
     def in_loading_mqtt(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in loading_mqtt state."""
         if isinstance(message, Configured) and (sender == self.mqtt):
             self.problems[message.name] = message.problems
             self.transition("loading")
@@ -177,10 +333,12 @@ class DialogueManager(RhasspyActor):
             self.transition("loading")
 
     def to_loading(self, from_state: str) -> None:
+        """Transiton to loading state."""
         # Load all of the other actors
         self.load_actors()
 
     def in_loading(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in loading state."""
         if isinstance(message, Configured):
             self.problems[message.name] = message.problems
 
@@ -193,7 +351,7 @@ class DialogueManager(RhasspyActor):
 
             if sender_name is not None:
                 del self.wait_actors[sender_name]
-                self._logger.debug(f"{sender_name} started")
+                self._logger.debug("%s started", sender_name)
 
             if len(self.wait_actors) == 0:
                 self._logger.info("Actors loaded")
@@ -209,7 +367,7 @@ class DialogueManager(RhasspyActor):
         elif isinstance(message, WakeupMessage):
             wait_names = list(self.wait_actors.keys())
             self._logger.warning(
-                f"Actor timeout! Still waiting on {wait_names} Loading anyway..."
+                "Actor timeout! Still waiting on %s Loading anyway...", wait_names
             )
             self.transition("ready")
 
@@ -229,12 +387,14 @@ class DialogueManager(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def to_ready(self, from_state: str) -> None:
+        """Transition to ready state."""
         if self.profile.get("rhasspy.listen_on_start", False):
             self._logger.info("Automatically listening for wake word")
             self.transition("asleep")
             self.send(self.wake, ListenForWakeWord())
 
     def in_ready(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in ready state."""
         if isinstance(message, ListenForWakeWord):
             self._logger.info("Listening for wake word")
             self.wake_receiver = message.receiver or sender
@@ -244,6 +404,7 @@ class DialogueManager(RhasspyActor):
             self.handle_any(message, sender)
 
     def in_asleep(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in asleep state."""
         if isinstance(message, WakeWordDetected):
             self._logger.debug("Awake!")
             self.transition("awake")
@@ -258,6 +419,7 @@ class DialogueManager(RhasspyActor):
             self.handle_any(message, sender)
 
     def to_awake(self, from_state: str) -> None:
+        """Transition to awake state."""
         self.send(self.wake, StopListeningForWakeWord())
 
         # Wake up beep
@@ -269,6 +431,7 @@ class DialogueManager(RhasspyActor):
         self.send(self.command, ListenForCommand(self.myAddress, handle=self.handle))
 
     def in_awake(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in awake state."""
         if isinstance(message, VoiceCommand):
             # Recorded beep
             wav_path = os.path.expandvars(self.profile.get("sounds.recorded", None))
@@ -287,9 +450,10 @@ class DialogueManager(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def in_decoding(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in decoding state."""
         if isinstance(message, WavTranscription):
             # text -> intent
-            self._logger.debug(f"{message.text} (confidence={message.confidence})")
+            self._logger.debug("%s (confidence=%s)", message.text, message.confidence)
 
             if self.recorder_class == HTTPAudioRecorder:
                 # Forward to audio recorder
@@ -305,13 +469,14 @@ class DialogueManager(RhasspyActor):
                 }
             ).encode()
 
-            self.send(
-                self.mqtt,
-                MqttPublish(
-                    "rhasspy/speech-to-text/transcription", message.text.encode()
-                ),
-            )
-            self.send(self.mqtt, MqttPublish("hermes/asr/textCaptured", payload))
+            if self.mqtt is not None:
+                self.send(
+                    self.mqtt,
+                    MqttPublish(
+                        "rhasspy/speech-to-text/transcription", message.text.encode()
+                    ),
+                )
+                self.send(self.mqtt, MqttPublish("hermes/asr/textCaptured", payload))
 
             # Pass to intent recognizer
             self.send(
@@ -325,6 +490,7 @@ class DialogueManager(RhasspyActor):
             self.handle_any(message, sender)
 
     def in_recognizing(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in recognizing state."""
         if isinstance(message, IntentRecognized):
             if self.recorder_class == HTTPAudioRecorder:
                 # Forward to audio recorder
@@ -337,7 +503,8 @@ class DialogueManager(RhasspyActor):
                 self.send(self.handler, HandleIntent(message.intent))
 
                 # Forward to MQTT (hermes)
-                self.send(self.mqtt, message)
+                if self.mqtt is not None:
+                    self.send(self.mqtt, message)
 
                 # Forward to observer
                 if self.observer:
@@ -353,6 +520,7 @@ class DialogueManager(RhasspyActor):
             self.handle_any(message, sender)
 
     def in_handling(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in handling state."""
         if isinstance(message, IntentHandled):
             if self.intent_receiver is not None:
                 self.send(self.intent_receiver, message.intent)
@@ -366,6 +534,7 @@ class DialogueManager(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def to_training_sentences(self, from_state: str) -> None:
+        """Transition to training_sentences state."""
         # Use doit to train
         saved_argv = sys.argv
         try:
@@ -392,28 +561,8 @@ class DialogueManager(RhasspyActor):
             # Restore sys.argv
             sys.argv = saved_argv
 
-    # def in_training_sentences(self, message: Any, sender: RhasspyActor) -> None:
-    #     if isinstance(message, SentencesGenerated):
-    #         # Train speech system
-    #         self.transition("training_speech")
-    #         self.send(self.speech_trainer, TrainSpeech(message.intent_fst))
-    #     elif isinstance(message, SentenceGenerationFailed):
-    #         self.transition("ready")
-    #         self.send(self.training_receiver, ProfileTrainingFailed(message.reason))
-    #     else:
-    #         self.handle_forward(message, sender)
-
-    # def in_training_speech(self, message: Any, sender: RhasspyActor) -> None:
-    #     if isinstance(message, SpeechTrainingComplete):
-    #         self.transition("training_intent")
-    #         self.send(self.intent_trainer, TrainIntent(message.intent_fst))
-    #     elif isinstance(message, SpeechTrainingFailed):
-    #         self.transition("ready")
-    #         self.send(self.training_receiver, ProfileTrainingFailed(message.reason))
-    #     else:
-    #         self.handle_forward(message, sender)
-
     def in_training_intent(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in training_intent state."""
         if isinstance(message, IntentTrainingComplete):
             self._logger.info("Training complete")
 
@@ -422,28 +571,28 @@ class DialogueManager(RhasspyActor):
 
                 # Wake listener
                 self.send(self.wake, ActorExitRequest())
-                self.wake: RhasspyActor = self.createActor(self.wake_class)
+                self._wake = self.createActor(self.wake_class)
                 self.actors["wake"] = self.wake
 
                 # Speech decoder
                 self.send(self.decoder, ActorExitRequest())
-                self.decoder: RhasspyActor = self.createActor(self.decoder_class)
+                self._decoder = self.createActor(self.decoder_class)
                 self.actors["decoder"] = self.decoder
 
                 # Intent recognizer
                 self.send(self.recognizer, ActorExitRequest())
-                self.recognizer: RhasspyActor = self.createActor(self.recognizer_class)
+                self._recognizer = self.createActor(self.recognizer_class)
                 self.actors["recognizer"] = self.recognizer
 
                 # Configure actors
-                self.wait_actors: Dict[str, RhasspyActor] = {
+                self.wait_actors = {
                     "wake": self.wake,
                     "decoder": self.decoder,
                     "recognizer": self.recognizer,
                 }
 
-                for name, actor in self.wait_actors.items():
-                    if actor in [self.mqtt]:
+                for actor in self.wait_actors.values():
+                    if actor == self.mqtt:
                         continue  # skip
 
                     self.send(
@@ -462,6 +611,7 @@ class DialogueManager(RhasspyActor):
             self.send(self.training_receiver, ProfileTrainingFailed(message.reason))
 
     def in_training_loading(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in training_loading state."""
         if isinstance(message, Configured):
             self.problems[message.name] = message.problems
             self.wait_actors = {
@@ -480,6 +630,7 @@ class DialogueManager(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def handle_any(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in any state."""
         if isinstance(message, ListenForCommand):
             # Force voice command
             self.intent_receiver = message.receiver or sender
@@ -512,7 +663,8 @@ class DialogueManager(RhasspyActor):
             self.send(self.handler, HandleIntent(message.intent, sender))
 
             # Forward to MQTT (hermes)
-            self.send(self.mqtt, IntentRecognized(message.intent))
+            if self.mqtt is not None:
+                self.send(self.mqtt, IntentRecognized(message.intent))
         elif isinstance(message, GetWordPhonemes):
             # eSpeak -> CMU
             self.send(
@@ -562,12 +714,16 @@ class DialogueManager(RhasspyActor):
             self.handle_forward(message, sender)
 
     def handle_transition(self, message: StateTransition, sender: RhasspyActor) -> None:
+        """Report state transition of actor."""
         self.actor_states[message.name] = message.to_state
         topic = "rhasspy/%s/transition/%s" % (self.profile.name, message.name)
         payload = message.to_state.encode()
-        self.send(self.mqtt, MqttPublish(topic, payload))
+
+        if self.mqtt is not None:
+            self.send(self.mqtt, MqttPublish(topic, payload))
 
     def handle_forward(self, message: Any, sender: RhasspyActor) -> None:
+        """Forward messages to appropriate actor."""
         if isinstance(message, GetMicrophones):
             # Get all microphones
             recorder_class = self.recorder_class
@@ -575,8 +731,9 @@ class DialogueManager(RhasspyActor):
                 recorder_class = get_microphone_class(message.system)
 
             try:
+                assert recorder_class is not None
                 mics = recorder_class.get_microphones()
-            except Exception as e:
+            except Exception:
                 self._logger.exception("get_microphones")
                 mics = {}
 
@@ -591,6 +748,7 @@ class DialogueManager(RhasspyActor):
             test_path = "microphone.%s.test_chunk_size" % recorder_system
             chunk_size = int(self.profile.get(test_path, 1024))
 
+            assert recorder_class is not None
             test_mics = recorder_class.test_microphones(chunk_size)
             self.send(sender, test_mics)
         elif isinstance(message, GetSpeakers):
@@ -599,96 +757,86 @@ class DialogueManager(RhasspyActor):
             if message.system is not None:
                 player_class = get_sound_class(message.system)
 
+            assert player_class is not None
             speakers = player_class.get_speakers()
             self.send(sender, speakers)
-        elif isinstance(message, PlayWavData) or isinstance(message, PlayWavFile):
+        elif isinstance(message, (PlayWavData, PlayWavFile)):
             # Forward to audio player
             self.send(self.player, message)
         elif isinstance(message, MqttPublish):
             # Forward directly
-            self.send(self.mqtt, message)
+            if self.mqtt is not None:
+                self.send(self.mqtt, message)
         elif isinstance(message, AudioData):
             # Forward to audio recorder
             self.send(self.recorder, message)
-        elif not (
-            isinstance(message, StateTransition)
-            or isinstance(message, ChildActorExited)
-        ):
-            self._logger.warning("Unhandled message: %s" % message)
+        elif not isinstance(message, (StateTransition, ChildActorExited)):
+            self._logger.warning("Unhandled message: %s", message)
 
     # -------------------------------------------------------------------------
     # Utilities
     # -------------------------------------------------------------------------
 
     def load_actors(self) -> None:
+        """Load all system actors."""
         self._logger.debug("Loading actors")
 
         # Microphone
         mic_system = self.profile.get("microphone.system", "dummy")
         self.recorder_class = get_microphone_class(mic_system)
-        self.recorder: RhasspyActor = self.createActor(self.recorder_class)
+        self._recorder = self.createActor(self.recorder_class)
         self.actors["recorder"] = self.recorder
 
         # Audio player
         player_system = self.profile.get("sounds.system", "dummy")
         self.player_class = get_sound_class(player_system)
-        self.player: RhasspyActor = self.createActor(self.player_class)
+        self._player = self.createActor(self.player_class)
         self.actors["player"] = self.player
 
         # Text to Speech
         speech_system = self.profile.get("text_to_speech.system", "dummy")
         self.speech_class = get_speech_class(speech_system)
-        self.speech: RhasspyActor = self.createActor(self.speech_class)
+        self._speech = self.createActor(self.speech_class)
         self.actors["speech"] = self.speech
 
         # Wake listener
         wake_system = self.profile.get("wake.system", "dummy")
         self.wake_class = get_wake_class(wake_system)
-        self.wake: RhasspyActor = self.createActor(self.wake_class)
+        self._wake = self.createActor(self.wake_class)
         self.actors["wake"] = self.wake
 
         # Command listener
         command_system = self.profile.get("command.system", "dummy")
         self.command_class = get_command_class(command_system)
-        self.command: RhasspyActor = self.createActor(self.command_class)
+        self._command = self.createActor(self.command_class)
         self.actors["command"] = self.command
 
         # Speech decoder
         decoder_system = self.profile.get("speech_to_text.system", "dummy")
         self.decoder_class = get_decoder_class(decoder_system)
-        self.decoder: RhasspyActor = self.createActor(self.decoder_class)
+        self._decoder = self.createActor(self.decoder_class)
         self.actors["decoder"] = self.decoder
 
         # Intent recognizer
         recognizer_system = self.profile.get("intent.system", "dummy")
         self.recognizer_class = get_recognizer_class(recognizer_system)
-        self.recognizer: RhasspyActor = self.createActor(self.recognizer_class)
+        self._recognizer = self.createActor(self.recognizer_class)
         self.actors["recognizer"] = self.recognizer
 
         # Intent handler
         handler_system = self.profile.get("handle.system", "dummy")
         self.handler_class = get_intent_handler_class(handler_system)
-        self.handler: RhasspyActor = self.createActor(self.handler_class)
+        self._handler = self.createActor(self.handler_class)
         self.actors["handler"] = self.handler
 
-        self.hass_handler: Optional[RhasspyActor] = None
+        self.hass_handler = None
         forward_to_hass = self.profile.get("handle.forward_to_hass", False)
         if (handler_system != "hass") and forward_to_hass:
             # Create a separate actor just for home assistant
             from rhasspy.intent_handler import HomeAssistantIntentHandler
 
             self.hass_handler = self.createActor(HomeAssistantIntentHandler)
-
-        self.actors["hass_handler"] = self.hass_handler
-
-        # Sentence generator
-        # from rhasspy.train import JsgfSentenceGenerator
-
-        # self.sentence_generator_class = JsgfSentenceGenerator
-        # self.sentence_generator: RhasspyActor = self.createActor(
-        #     self.sentence_generator_class
-        # )
-        # self.actors["sentence_generator"] = self.sentence_generator
+            self.actors["hass_handler"] = self.hass_handler
 
         # Speech trainer
         speech_trainer_system = self.profile.get(
@@ -698,7 +846,7 @@ class DialogueManager(RhasspyActor):
             speech_trainer_system, decoder_system
         )
 
-        self.speech_trainer: RhasspyActor = self.createActor(self.speech_trainer_class)
+        self._speech_trainer = self.createActor(self.speech_trainer_class)
         self.actors["speech_trainer"] = self.speech_trainer
 
         # Intent trainer
@@ -707,22 +855,20 @@ class DialogueManager(RhasspyActor):
             intent_trainer_system, recognizer_system
         )
 
-        self.intent_trainer: RhasspyActor = self.createActor(self.intent_trainer_class)
+        self._intent_trainer = self.createActor(self.intent_trainer_class)
         self.actors["intent_trainer"] = self.intent_trainer
 
         # Word pronouncer
         from rhasspy.pronounce import PhonetisaurusPronounce
 
         self.word_pronouncer_class = PhonetisaurusPronounce
-        self.word_pronouncer: RhasspyActor = self.createActor(
-            self.word_pronouncer_class
-        )
+        self._word_pronouncer = self.createActor(self.word_pronouncer_class)
         self.actors["word_pronouncer"] = self.word_pronouncer
 
         # Configure actors
-        self.wait_actors: Dict[str, RhasspyActor] = {}
+        self.wait_actors = {}
         for name, actor in self.actors.items():
-            if (actor is None) or (actor in [self.mqtt]):
+            if (actor is None) or (actor == self.mqtt):
                 continue  # skip
 
             self.send(
@@ -731,4 +877,4 @@ class DialogueManager(RhasspyActor):
             self.wait_actors[name] = actor
 
         actor_names = list(self.wait_actors.keys())
-        self._logger.debug(f"Actors created. Waiting for {actor_names} to start.")
+        self._logger.debug("Actors created. Waiting for %s to start.", actor_names)

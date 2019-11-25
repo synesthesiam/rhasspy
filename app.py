@@ -1,58 +1,37 @@
-#!/usr/bin/env python3
-
-import os
-import logging
-import sys
-import subprocess
-import json
-import re
-import gzip
-import time
-import io
-import wave
-import tempfile
-import threading
-import functools
+"""Rhasspy web application server."""
 import argparse
-import shlex
-import time
+import asyncio
 import atexit
-from uuid import uuid4
-from collections import defaultdict
+import json
+import logging
+import os
+import re
+import time
 from pathlib import Path
-from typing import Any, Union, Tuple, Dict, List
+from typing import Any, List, Tuple, Union
+from uuid import uuid4
 
-from flask import (
-    Flask,
-    request,
+from quart import (
+    Quart,
     Response,
     jsonify,
+    request,
     safe_join,
     send_file,
     send_from_directory,
+    websocket,
 )
-from flask_cors import CORS
-from flask_sockets import Sockets
-import requests
-import pydash
-import gevent
-from gevent import pywsgi
-from gevent.queue import Queue as GQueue
-from gevent.lock import RLock
-from geventwebsocket.handler import WebSocketHandler
+from quart_cors import cors
 
-
-from rhasspy.profiles import Profile
+from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
-from rhasspy.actor import RhasspyActor, ActorSystem, ConfigureEvent
 from rhasspy.dialogue import ProfileTrainingFailed
 from rhasspy.intent import IntentRecognized
 from rhasspy.utils import (
-    recursive_update,
-    recursive_remove,
+    FunctionLoggingHandler,
     buffer_to_wav,
     load_phoneme_examples,
-    FunctionLoggingHandler,
+    recursive_remove,
 )
 
 # -----------------------------------------------------------------------------
@@ -62,10 +41,11 @@ from rhasspy.utils import (
 logger = logging.getLogger(__name__)
 logging.root.setLevel(logging.DEBUG)
 
-app = Flask("rhasspy")
+loop = asyncio.get_event_loop()
+
+app = Quart("rhasspy")
 app.secret_key = str(uuid4())
-CORS(app)
-sockets = Sockets(app)
+app = cors(app)
 
 # -----------------------------------------------------------------------------
 # Parse Arguments
@@ -117,14 +97,15 @@ core = None
 
 # We really, *really* want shutdown to be called
 @atexit.register
-def shutdown(*args: Any, **kwargs: Any) -> None:
+def shutdown(*_args: Any, **kwargs: Any) -> None:
+    """Ensure Rhasspy core is stopped."""
     global core
     if core is not None:
-        core.shutdown()
+        loop.run_until_complete(loop.create_task(core.shutdown()))
         core = None
 
 
-def start_rhasspy() -> None:
+async def start_rhasspy() -> None:
     """Create actor system and Rhasspy core."""
     global core
 
@@ -144,10 +125,10 @@ def start_rhasspy() -> None:
     for key, value in args.set:
         try:
             value = json.loads(value)
-        except:
+        except Exception:
             pass
 
-        logger.debug("Profile: {0}={1}".format(key, value))
+        logger.debug("Profile: %s=%s", key, value)
         extra_settings[key] = value
         core.profile.set(key, value)
 
@@ -155,7 +136,7 @@ def start_rhasspy() -> None:
     observer = system.createActor(WebSocketObserver)
     system.ask(observer, ConfigureEvent(core.profile))
 
-    core.start(observer=observer)
+    await core.start(observer=observer)
     logger.info("Started")
 
 
@@ -165,7 +146,7 @@ def start_rhasspy() -> None:
 
 
 @app.route("/api/profiles")
-def api_profiles() -> Response:
+async def api_profiles() -> Response:
     """Get list of available profiles and verify necessary files."""
     assert core is not None
     profile_names = set()
@@ -194,11 +175,11 @@ def api_profiles() -> Response:
 
 
 @app.route("/api/download-profile", methods=["POST"])
-def api_download_profile() -> str:
+async def api_download_profile() -> str:
     """Downloads the current profile."""
     assert core is not None
     delete = request.args.get("delete", "false").lower() == "true"
-    core.download_profile(delete=delete)
+    await core.download_profile(delete=delete)
 
     return "OK"
 
@@ -207,52 +188,50 @@ def api_download_profile() -> str:
 
 
 @app.route("/api/problems", methods=["GET"])
-def api_problems() -> Response:
+async def api_problems() -> Response:
     """Returns any problems Rhasspy has found."""
     assert core is not None
-    problems = core.get_problems()
-
-    return jsonify(problems)
+    return jsonify(await core.get_problems())
 
 
 # -----------------------------------------------------------------------------
 
 
 @app.route("/api/microphones", methods=["GET"])
-def api_microphones() -> Response:
+async def api_microphones() -> Response:
     """Get a dictionary of available recording devices"""
     assert core is not None
     system = request.args.get("system", None)
-    return jsonify(core.get_microphones(system))
+    return jsonify(await core.get_microphones(system))
 
 
 # -----------------------------------------------------------------------------
 
 
 @app.route("/api/test-microphones", methods=["GET"])
-def api_test_microphones() -> Response:
+async def api_test_microphones() -> Response:
     """Get a dictionary of available, functioning recording devices"""
     assert core is not None
     system = request.args.get("system", None)
-    return jsonify(core.test_microphones(system))
+    return jsonify(await core.test_microphones(system))
 
 
 # -----------------------------------------------------------------------------
 
 
 @app.route("/api/speakers", methods=["GET"])
-def api_speakers() -> Response:
+async def api_speakers() -> Response:
     """Get a dictionary of available playback devices"""
     assert core is not None
     system = request.args.get("system", None)
-    return jsonify(core.get_speakers(system))
+    return jsonify(await core.get_speakers(system))
 
 
 # -----------------------------------------------------------------------------
 
 
 @app.route("/api/listen-for-wake", methods=["POST"])
-def api_listen_for_wake() -> str:
+async def api_listen_for_wake() -> str:
     """Make Rhasspy listen for a wake word"""
     assert core is not None
     core.listen_for_wake()
@@ -263,28 +242,28 @@ def api_listen_for_wake() -> str:
 
 
 @app.route("/api/listen-for-command", methods=["POST"])
-def api_listen_for_command() -> Response:
+async def api_listen_for_command() -> Response:
     """Wake Rhasspy up and listen for a voice command"""
     assert core is not None
     no_hass = request.args.get("nohass", "false").lower() == "true"
-    return jsonify(core.listen_for_command(handle=not no_hass))
+    return jsonify(await core.listen_for_command(handle=not no_hass))
 
 
 # -----------------------------------------------------------------------------
 
 
 @app.route("/api/profile", methods=["GET", "POST"])
-def api_profile() -> Union[str, Response]:
+async def api_profile() -> Union[str, Response]:
     """Read or write profile JSON directly"""
     assert core is not None
     layers = request.args.get("layers", "all")
 
     if request.method == "POST":
         # Ensure that JSON is valid
-        profile_json = json.loads(request.data)
+        profile_json = await request.json
         recursive_remove(core.profile.system_json, profile_json)
 
-        profile_path = os.path.abspath(core.profile.write_path("profile.json"))
+        profile_path = Path(core.profile.write_path("profile.json"))
         with open(profile_path, "w") as profile_file:
             json.dump(profile_json, profile_file, indent=4)
 
@@ -295,28 +274,32 @@ def api_profile() -> Union[str, Response]:
     if layers == "defaults":
         # Read default settings
         return jsonify(core.defaults)
-    elif layers == "profile":
+
+    if layers == "profile":
         # Local settings only
-        profile_path = core.profile.read_path("profile.json")
-        return send_file(open(profile_path, "rb"), mimetype="application/json")
-    else:
-        return jsonify(core.profile.json)
+        profile_path = Path(core.profile.read_path("profile.json"))
+        return send_file(profile_path)  # , mimetype="application/json")
+
+    return jsonify(core.profile.json)
 
 
 # -----------------------------------------------------------------------------
 
 
 @app.route("/api/lookup", methods=["POST"])
-def api_lookup() -> Response:
+async def api_lookup() -> Response:
     """Get CMU phonemes from dictionary or guessed pronunciation(s)"""
     assert core is not None
     n = int(request.args.get("n", 5))
     assert n > 0, "No pronunciations requested"
 
-    word = request.data.decode("utf-8").strip().lower()
-    assert len(word) > 0, "No word to look up"
+    data = await request.data
+    word = data.decode().strip().lower()
+    assert word, "No word to look up"
 
-    pronunciations = core.get_word_pronunciations([word], n).pronunciations
+    result = await core.get_word_pronunciations([word], n)
+    pronunciations = result.pronunciations
+
     return jsonify(pronunciations[word])
 
 
@@ -324,55 +307,60 @@ def api_lookup() -> Response:
 
 
 @app.route("/api/pronounce", methods=["POST"])
-def api_pronounce() -> Union[Response, str]:
+async def api_pronounce() -> Union[Response, str]:
     """Pronounce CMU phonemes or word using eSpeak"""
     assert core is not None
     download = request.args.get("download", "false").lower() == "true"
 
-    pronounce_str = request.data.decode("utf-8").strip()
-    assert len(pronounce_str) > 0, "No string to pronounce"
+    data = await request.data
+    pronounce_str = data.decode().strip()
+    assert pronounce_str, "No string to pronounce"
 
     # phonemes or word
     pronounce_type = request.args.get("type", "phonemes")
 
     if pronounce_type == "phonemes":
         # Convert from Sphinx to espeak phonemes
-        espeak_str = core.get_word_phonemes(pronounce_str).phonemes
+        phoneme_result = await core.get_word_phonemes(pronounce_str)
+        espeak_str = phoneme_result.phonemes
     else:
         # Speak word directly
         espeak_str = pronounce_str
 
-    result = core.speak_word(espeak_str)
-    wav_data = result.wav_data
-    espeak_phonemes = result.phonemes
+    speak_result = await core.speak_word(espeak_str)
+    wav_data = speak_result.wav_data
+    espeak_phonemes = speak_result.phonemes
 
     if download:
         # Return WAV
-        return Response(wav_data, mimetype="audio/wav")
-    else:
-        # Play through speakers
-        core.play_wav_data(wav_data)
-        return espeak_phonemes
+        return Response(wav_data)  # , mimetype="audio/wav")
+
+    # Play through speakers
+    core.play_wav_data(wav_data)
+    return espeak_phonemes
 
 
 # -----------------------------------------------------------------------------
 
 
 @app.route("/api/play-wav", methods=["POST"])
-def api_play_wav() -> str:
+async def api_play_wav() -> str:
     """Play WAV data through the configured audio output system"""
     assert core is not None
 
     if request.content_type == "audio/wav":
-        wav_data = request.data
+        wav_data = await request.data
     else:
         # Interpret as URL
-        url = request.data.decode()
-        logger.debug(f"Loading WAV data from {url}")
-        wav_data = requests.get(url).content
+        data = await request.data
+        url = data.decode()
+        logger.debug("Loading WAV data from %s", url)
+
+        async with core.session.get(url) as response:
+            wav_data = await response.read()
 
     # Play through speakers
-    logger.debug(f"Playing {len(wav_data)} byte(s)")
+    logger.debug("Playing %s byte(s)", len(wav_data))
     core.play_wav_data(wav_data)
 
     return "OK"
@@ -385,12 +373,14 @@ def api_play_wav() -> str:
 def api_phonemes():
     """Get phonemes and example words for a profile"""
     assert core is not None
-    examples_path = core.profile.read_path(
-        core.profile.get("text_to_speech.phoneme_examples", "phoneme_examples.txt")
+    examples_path = Path(
+        core.profile.read_path(
+            core.profile.get("text_to_speech.phoneme_examples", "phoneme_examples.txt")
+        )
     )
 
     # phoneme -> { word, phonemes }
-    logger.debug("Loading phoneme examples from %s" % examples_path)
+    logger.debug("Loading phoneme examples from %s", examples_path)
     examples_dict = load_phoneme_examples(examples_path)
 
     return jsonify(examples_dict)
@@ -400,51 +390,55 @@ def api_phonemes():
 
 
 @app.route("/api/sentences", methods=["GET", "POST"])
-def api_sentences():
+async def api_sentences():
     """Read or write sentences for a profile"""
     assert core is not None
 
     if request.method == "POST":
         # Update sentences
-        sentences_path = core.profile.write_path(
-            core.profile.get("speech_to_text.sentences_ini")
+        sentences_path = Path(
+            core.profile.write_path(core.profile.get("speech_to_text.sentences_ini"))
         )
 
+        data = await request.data
         with open(sentences_path, "wb") as sentences_file:
-            sentences_file.write(request.data)
-            return "Wrote %s byte(s) to %s" % (len(request.data), sentences_path)
+            sentences_file.write(data)
+            return "Wrote %s byte(s) to %s" % (len(data), sentences_path)
 
     # Return sentences
-    sentences_path = core.profile.read_path(
-        core.profile.get("speech_to_text.sentences_ini")
+    sentences_path = Path(
+        core.profile.read_path(core.profile.get("speech_to_text.sentences_ini"))
     )
 
-    if not os.path.exists(sentences_path):
+    if not sentences_path.exists():
         return ""  # no sentences yet
 
     # Return file contents
-    return send_file(open(sentences_path, "rb"), mimetype="text/plain")
+    return await send_file(sentences_path)  # , mimetype="text/plain")
 
 
 # -----------------------------------------------------------------------------
 
 
 @app.route("/api/custom-words", methods=["GET", "POST"])
-def api_custom_words():
+async def api_custom_words():
     """Read or write custom word dictionary for a profile"""
     assert core is not None
     if request.method == "POST":
-        custom_words_path = core.profile.write_path(
-            core.profile.get("speech_to_text.pocketsphinx.custom_words")
+        custom_words_path = Path(
+            core.profile.write_path(
+                core.profile.get("speech_to_text.pocketsphinx.custom_words")
+            )
         )
 
         # Update custom words
         lines_written = 0
         with open(custom_words_path, "w") as custom_words_file:
-            lines = request.data.decode().splitlines()
+            data = await request.data
+            lines = data.decode().splitlines()
             for line in lines:
                 line = line.strip()
-                if len(line) == 0:
+                if not line:
                     continue
 
                 print(line, file=custom_words_file)
@@ -452,38 +446,41 @@ def api_custom_words():
 
             return "Wrote %s line(s) to %s" % (lines_written, custom_words_path)
 
-    custom_words_path = core.profile.read_path(
-        core.profile.get("speech_to_text.pocketsphinx.custom_words")
+    custom_words_path = Path(
+        core.profile.read_path(
+            core.profile.get("speech_to_text.pocketsphinx.custom_words")
+        )
     )
 
     # Return custom_words
-    if not os.path.exists(custom_words_path):
+    if custom_words_path.exists():
         return ""  # no custom_words yet
 
     # Return file contents
-    return send_file(open(custom_words_path, "rb"), mimetype="text/plain")
+    return await send_file(custom_words_path)  # , mimetype="text/plain")
 
 
 # -----------------------------------------------------------------------------
 
 
 @app.route("/api/train", methods=["POST"])
-def api_train() -> str:
+async def api_train() -> str:
+    """Generate speech/intent artifacts for profile."""
     no_cache = request.args.get("nocache", "false").lower() == "true"
 
     assert core is not None
 
     if no_cache:
         # Delete doit database
-        db_path = core.profile.write_path(".doit.db")
-        if os.path.exists(db_path):
+        db_path = Path(core.profile.write_path(".doit.db"))
+        if db_path.exists():
             logger.debug("Clearing training cache")
-            os.unlink(db_path)
+            db_path.unlink()
 
     start_time = time.time()
     logger.info("Starting training")
 
-    result = gevent.spawn(core.train).get()
+    result = await core.train()
     if isinstance(result, ProfileTrainingFailed):
         raise Exception(f"Training failed: {result.reason}")
 
@@ -496,15 +493,16 @@ def api_train() -> str:
 
 
 @app.route("/api/restart", methods=["POST"])
-def api_restart() -> str:
+async def api_restart() -> str:
+    """Restart Rhasspy actors."""
     assert core is not None
     logger.debug("Restarting Rhasspy")
 
     # Stop
-    core.shutdown()
+    await core.shutdown()
 
     # Start
-    start_rhasspy()
+    await start_rhasspy()
     logger.info("Restarted Rhasspy")
 
     return "Restarted Rhasspy"
@@ -512,35 +510,37 @@ def api_restart() -> str:
 
 # -----------------------------------------------------------------------------
 
-# Get text from a WAV file
+
 @app.route("/api/speech-to-text", methods=["POST"])
-def api_speech_to_text() -> str:
-    """speech -> text"""
+async def api_speech_to_text() -> str:
+    """Transcribe speech from WAV file."""
     no_header = request.args.get("noheader", "false").lower() == "true"
     assert core is not None
 
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
-    wav_data = request.data
+    wav_data = await request.data
     if no_header:
         # Wrap in WAV
         wav_data = buffer_to_wav(wav_data)
 
-    return core.transcribe_wav(wav_data).text
+    result = await core.transcribe_wav(wav_data)
+    return result.text
 
 
 # -----------------------------------------------------------------------------
 
-# Get intent from text
+
 @app.route("/api/text-to-intent", methods=["POST"])
-def api_text_to_intent():
-    """text -> intent"""
+async def api_text_to_intent():
+    """Recgonize intent from text and optionally handle."""
     assert core is not None
-    text = request.data.decode()
+    data = await request.data
+    text = data.decode()
     no_hass = request.args.get("nohass", "false").lower() == "true"
 
     # Convert text to intent
     start_time = time.time()
-    intent = core.recognize_intent(text).intent
+    intent = (await core.recognize_intent(text)).intent
     intent["speech_confidence"] = 1
 
     intent_sec = time.time() - start_time
@@ -548,35 +548,35 @@ def api_text_to_intent():
 
     intent_json = json.dumps(intent)
     logger.debug(intent_json)
-    add_ws_event(WS_EVENT_INTENT, intent_json)
+    await add_ws_event(WS_EVENT_INTENT, intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
-        intent = core.handle_intent(intent).intent
+        intent = (await core.handle_intent(intent)).intent
 
     return jsonify(intent)
 
 
 # -----------------------------------------------------------------------------
 
-# Get intent from a WAV file
+
 @app.route("/api/speech-to-intent", methods=["POST"])
-def api_speech_to_intent() -> Response:
-    """speech -> text -> intent"""
+async def api_speech_to_intent() -> Response:
+    """Transcribe speech, recognize intent, and optionally handle."""
     assert core is not None
     no_hass = request.args.get("nohass", "false").lower() == "true"
 
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
-    wav_data = request.data
+    wav_data = await request.data
 
     # speech -> text
     start_time = time.time()
-    transcription = core.transcribe_wav(wav_data)
+    transcription = await core.transcribe_wav(wav_data)
     text = transcription.text
     logger.debug(text)
 
     # text -> intent
-    intent = core.recognize_intent(text).intent
+    intent = (await core.recognize_intent(text)).intent
     intent["speech_confidence"] = transcription.confidence
 
     intent_sec = time.time() - start_time
@@ -584,21 +584,21 @@ def api_speech_to_intent() -> Response:
 
     intent_json = json.dumps(intent)
     logger.debug(intent_json)
-    add_ws_event(WS_EVENT_INTENT, intent_json)
+    await add_ws_event(WS_EVENT_INTENT, intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
-        intent = core.handle_intent(intent).intent
+        intent = (await core.handle_intent(intent)).intent
 
     return jsonify(intent)
 
 
 # -----------------------------------------------------------------------------
 
-# Start recording a WAV file to a temporary buffer
+
 @app.route("/api/start-recording", methods=["POST"])
-def api_start_recording() -> str:
-    """Begin recording voice command"""
+async def api_start_recording() -> str:
+    """Begin recording voice command."""
     assert core is not None
     buffer_name = request.args.get("name", "")
     core.start_recording_wav(buffer_name)
@@ -606,33 +606,32 @@ def api_start_recording() -> str:
     return "OK"
 
 
-# Stop recording WAV file, transcribe, and get intent
 @app.route("/api/stop-recording", methods=["POST"])
-def api_stop_recording() -> Response:
+async def api_stop_recording() -> Response:
     """End recording voice command. Transcribe and handle."""
     assert core is not None
     no_hass = request.args.get("nohass", "false").lower() == "true"
 
     buffer_name = request.args.get("name", "")
-    audio_data = core.stop_recording_wav(buffer_name).data
+    audio_data = (await core.stop_recording_wav(buffer_name)).data
 
     wav_data = buffer_to_wav(audio_data)
-    logger.debug("Recorded %s byte(s) of audio data" % len(wav_data))
+    logger.debug("Recorded %s byte(s) of audio data", len(wav_data))
 
-    transcription = core.transcribe_wav(wav_data)
+    transcription = await core.transcribe_wav(wav_data)
     text = transcription.text
     logger.debug(text)
 
-    intent = core.recognize_intent(text).intent
+    intent = (await core.recognize_intent(text)).intent
     intent["speech_confidence"] = transcription.confidence
 
     intent_json = json.dumps(intent)
     logger.debug(intent_json)
-    add_ws_event(WS_EVENT_INTENT, intent_json)
+    await add_ws_event(WS_EVENT_INTENT, intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
-        intent = core.handle_intent(intent).intent
+        intent = (await core.handle_intent(intent)).intent
 
     return jsonify(intent)
 
@@ -641,18 +640,20 @@ def api_stop_recording() -> Response:
 
 
 @app.route("/api/unknown_words", methods=["GET"])
-def api_unknown_words() -> Response:
-    """Get list of unknown words"""
+async def api_unknown_words() -> Response:
+    """Get list of unknown words."""
     assert core is not None
     unknown_words = {}
-    unknown_path = core.profile.read_path(
-        core.profile.get("speech_to_text.pocketsphinx.unknown_words")
+    unknown_path = Path(
+        core.profile.read_path(
+            core.profile.get("speech_to_text.pocketsphinx.unknown_words")
+        )
     )
 
-    if os.path.exists(unknown_path):
+    if unknown_path.exists():
         for line in open(unknown_path, "r"):
             line = line.strip()
-            if len(line) > 0:
+            if line:
                 word, pronunciation = re.split(r"[ ]+", line, maxsplit=1)
                 unknown_words[word] = pronunciation
 
@@ -665,14 +666,15 @@ last_sentence = ""
 
 
 @app.route("/api/text-to-speech", methods=["POST"])
-def api_text_to_speech() -> str:
-    """Speaks a sentence with text to speech system"""
+async def api_text_to_speech() -> str:
+    """Speak a sentence with text to speech system."""
     global last_sentence
     repeat = request.args.get("repeat", "false").strip().lower() == "true"
-    sentence = last_sentence if repeat else request.data.decode().strip()
+    data = await request.data
+    sentence = last_sentence if repeat else data.decode().strip()
 
     assert core is not None
-    core.speak_sentence(sentence)
+    await core.speak_sentence(sentence)
 
     last_sentence = sentence
 
@@ -683,8 +685,8 @@ def api_text_to_speech() -> str:
 
 
 @app.route("/api/slots", methods=["GET", "POST"])
-def api_slots() -> Union[str, Response]:
-    """Get the values of all slots"""
+async def api_slots() -> Union[str, Response]:
+    """Get the values of all slots."""
     assert core is not None
 
     slots_dir = Path(
@@ -693,34 +695,36 @@ def api_slots() -> Union[str, Response]:
 
     if request.method == "POST":
         overwrite_all = request.args.get("overwrite_all", "false").lower() == "true"
-        new_slot_values = json.loads(request.data)
+        new_slot_values = await request.json
 
         if overwrite_all:
             # Remote existing values first
             for name in new_slot_values.keys():
                 slots_path = safe_join(slots_dir, f"{name}")
-                if os.path.exists(slots_path):
+                if slots_path.exists():
                     try:
-                        os.unlink(slots_path)
-                    except:
+                        slots_path.unlink()
+                    except Exception:
                         logger.exception("api_slots")
 
         for name, values in new_slot_values.items():
             if isinstance(values, str):
                 values = [values]
 
-            slots_path = core.profile.write_path(
-                core.profile.get("speech_to_text.slots_dir", "slots"), f"{name}"
+            slots_path = Path(
+                core.profile.write_path(
+                    core.profile.get("speech_to_text.slots_dir", "slots"), f"{name}"
+                )
             )
 
             # Create directories
-            os.makedirs(os.path.split(slots_path)[0], exist_ok=True)
+            slots_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Write data
             with open(slots_path, "w") as slots_file:
                 for value in values:
                     value = value.strip()
-                    if len(value) > 0:
+                    if value:
                         print(value, file=slots_file)
 
         return "OK"
@@ -739,30 +743,32 @@ def api_slots() -> Union[str, Response]:
 
 @app.route("/api/slots/<name>", methods=["GET", "POST"])
 def api_slots_by_name(name: str) -> Union[str, Response]:
-    """Get or sets the values of a slot list"""
+    """Get or set the values of a slot list."""
     assert core is not None
     overwrite_all = request.args.get("overwrite_all", "false").lower() == "true"
 
-    slots_dir = core.profile.read_path(
-        core.profile.get("speech_to_text.slots_dir", "slots")
+    slots_dir = Path(
+        core.profile.read_path(core.profile.get("speech_to_text.slots_dir", "slots"))
     )
 
     if request.method == "POST":
         if overwrite_all:
             # Remote existing values first
             slots_path = safe_join(slots_dir, f"{name}")
-            if os.path.exists(slots_path):
+            if slots_path.exists():
                 try:
-                    os.unlink(slots_path)
-                except:
+                    slots_path.unlink()
+                except Exception:
                     logger.exception("api_slots_by_name")
 
-        slots_path = core.profile.write_path(
-            core.profile.get("speech_to_text.slots_dir", "slots"), f"{name}"
+        slots_path = Path(
+            core.profile.write_path(
+                core.profile.get("speech_to_text.slots_dir", "slots"), f"{name}"
+            )
         )
 
         # Create directories
-        os.makedirs(os.path.split(slots_path)[0], exist_ok=True)
+        slots_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Write data
         with open(slots_path, "wb") as slots_file:
@@ -771,25 +777,20 @@ def api_slots_by_name(name: str) -> Union[str, Response]:
         return f"Wrote {len(request.data)} byte(s) to {slots_path}"
 
     # Load slots values
-    slot_values = read_slots(slots_dir)
+    slot_values: List[str] = []
+    slot_file_path = slots_dir / name
+    if slot_file_path.is_file():
+        slot_values = [line.strip() for line in slot_file_path.read_text().splitlines()]
 
-    return "\n".join(slot_values.get(name, []))
-
-
-# -----------------------------------------------------------------------------
-
-
-@app.route("/api/ping")
-def api_ping() -> str:
-    """Used to force gevent loop on flask thread to run."""
-    return "pong"
+    return jsonify(slot_values)
 
 
 # -----------------------------------------------------------------------------
 
 
 @app.errorhandler(Exception)
-def handle_error(err) -> Tuple[str, int]:
+async def handle_error(err) -> Tuple[str, int]:
+    """Return error as text."""
     logger.exception(err)
     return (str(err), 500)
 
@@ -802,23 +803,27 @@ web_dir = os.path.join(os.getcwd(), "dist")
 
 
 @app.route("/css/<path:filename>", methods=["GET"])
-def css(filename) -> Response:
-    return send_from_directory(os.path.join(web_dir, "css"), filename)
+async def css(filename) -> Response:
+    """CSS static endpoint."""
+    return await send_from_directory(os.path.join(web_dir, "css"), filename)
 
 
 @app.route("/js/<path:filename>", methods=["GET"])
-def js(filename) -> Response:
-    return send_from_directory(os.path.join(web_dir, "js"), filename)
+async def js(filename) -> Response:
+    """Javascript static endpoint."""
+    return await send_from_directory(os.path.join(web_dir, "js"), filename)
 
 
 @app.route("/img/<path:filename>", methods=["GET"])
-def img(filename) -> Response:
-    return send_from_directory(os.path.join(web_dir, "img"), filename)
+async def img(filename) -> Response:
+    """Image static endpoint."""
+    return await send_from_directory(os.path.join(web_dir, "img"), filename)
 
 
 @app.route("/webfonts/<path:filename>", methods=["GET"])
-def webfonts(filename) -> Response:
-    return send_from_directory(os.path.join(web_dir, "webfonts"), filename)
+async def webfonts(filename) -> Response:
+    """Web font static endpoint."""
+    return await send_from_directory(os.path.join(web_dir, "webfonts"), filename)
 
 
 # ----------------------------------------------------------------------------
@@ -827,28 +832,16 @@ def webfonts(filename) -> Response:
 
 
 @app.route("/", methods=["GET"])
-def index() -> Response:
-    return send_file(os.path.join(web_dir, "index.html"))
+async def index() -> Response:
+    """Render main web page."""
+    return await send_file(os.path.join(web_dir, "index.html"))
 
 
 @app.route("/swagger.yaml", methods=["GET"])
-def swagger_yaml() -> Response:
-    return send_file(os.path.join(web_dir, "swagger.yaml"))
+async def swagger_yaml() -> Response:
+    """OpenAPI static endpoint."""
+    return await send_file(os.path.join(web_dir, "swagger.yaml"))
 
-
-# -----------------------------------------------------------------------------
-
-# Swagger/OpenAPI documentation
-from flask_swagger_ui import get_swaggerui_blueprint
-
-SWAGGER_URL = "/api"
-API_URL = "/swagger.yaml"
-
-swaggerui_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL, API_URL, config={"app_name": "Rhasspy API"}
-)
-
-app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 # -----------------------------------------------------------------------------
 # WebSocket API
@@ -857,28 +850,32 @@ app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 WS_EVENT_INTENT = 0
 WS_EVENT_LOG = 1
 
-ws_queues: List[Dict[Any, GQueue]] = [{}, {}]
-ws_locks: List[RLock] = [RLock(), RLock()]
+ws_queues: List[List[asyncio.Queue]] = [[], []]
+ws_locks: List[asyncio.Lock] = [asyncio.Lock(), asyncio.Lock()]
 
 
-def add_ws_event(event_type: int, text: str):
-    with ws_locks[event_type]:
-        for queue in ws_queues[event_type].values():
-            queue.put(text)
-
-    # Yield to main loop
-    gevent.sleep(0)
+async def add_ws_event(event_type: int, text: str):
+    """Send text out to all websockets for a specific event."""
+    async with ws_locks[event_type]:
+        for q in ws_queues[event_type]:
+            await q.put(text)
 
 
+# Send logging messages out to websocket
 logging.root.addHandler(
-    FunctionLoggingHandler(lambda msg: add_ws_event(WS_EVENT_LOG, msg))
+    FunctionLoggingHandler(
+        lambda msg: asyncio.run_coroutine_threadsafe(
+            add_ws_event(WS_EVENT_LOG, msg), loop
+        )
+    )
 )
 
 
 class WebSocketObserver(RhasspyActor):
-    """Observes the dialogue manager and outputs intents to the websocket."""
+    """Observe the dialogue manager and output intents to the websocket."""
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, IntentRecognized):
             # Add slots
             intent_slots = {}
@@ -890,73 +887,72 @@ class WebSocketObserver(RhasspyActor):
             # Convert to JSON
             intent_json = json.dumps(message.intent)
             self._logger.debug(intent_json)
-            add_ws_event(WS_EVENT_INTENT, intent_json)
+            asyncio.run_coroutine_threadsafe(
+                add_ws_event(WS_EVENT_INTENT, intent_json), loop
+            )
 
-            # Really silly way of forcing gevent loop on main thread to run...
-            requests.get(f"http://{args.host}:{args.port}/api/ping")
 
-
-@sockets.route("/api/events/intent")
-def api_events_intent(ws) -> None:
+@app.websocket("/api/events/intent")
+async def api_events_intent() -> None:
+    """Websocket endpoint to receive intents as JSON."""
     # Add new queue for websocket
-    q = GQueue()
-    with ws_locks[WS_EVENT_INTENT]:
-        ws_queues[WS_EVENT_INTENT][ws] = q
+    q: asyncio.Queue = asyncio.Queue()
+    async with ws_locks[WS_EVENT_INTENT]:
+        ws_queues[WS_EVENT_INTENT].append(q)
 
     try:
-        while not ws.closed:
-            text = q.get()
-            ws.send(text)
-    except Exception as e:
+        while True:
+            text = await q.get()
+            await websocket.send(text)
+    except Exception:
         logger.exception("api_events_intent")
 
     # Remove queue
-    with ws_locks[WS_EVENT_INTENT]:
-        del ws_queues[WS_EVENT_INTENT][ws]
+    async with ws_locks[WS_EVENT_INTENT]:
+        ws_queues[WS_EVENT_INTENT].remove(q)
 
 
-@sockets.route("/api/events/log")
-def api_events_log(ws) -> None:
+@app.websocket("/api/events/log")
+async def api_events_log() -> None:
+    """Websocket endpoint to receive logging messages as text."""
     # Add new queue for websocket
-    q = GQueue()
-    with ws_locks[WS_EVENT_LOG]:
-        ws_queues[WS_EVENT_LOG][ws] = q
+    q: asyncio.Queue = asyncio.Queue()
+    async with ws_locks[WS_EVENT_LOG]:
+        ws_queues[WS_EVENT_LOG].append(q)
 
     try:
-        while not ws.closed:
-            text = q.get()
-            ws.send(text)
-    except Exception as e:
+        while True:
+            text = await q.get()
+            await websocket.send(text)
+    except Exception:
         logger.exception("api_events_log")
 
     # Remove queue
-    with ws_locks[WS_EVENT_LOG]:
-        del ws_queues[WS_EVENT_LOG][ws]
+    async with ws_locks[WS_EVENT_LOG]:
+        ws_queues[WS_EVENT_LOG].remove(q)
 
 
 # -----------------------------------------------------------------------------
 
-start_rhasspy()
+# Start Rhasspy actors
+loop.run_until_complete(start_rhasspy())
 
 # -----------------------------------------------------------------------------
 
 # Start web server
-protocol = "http"
-server_kwargs = {}
-
 if args.ssl is not None:
-    logger.debug(f"Using SSL with certfile, keyfile = {args.ssl}")
-    server_kwargs["certfile"] = args.ssl[0]
-    server_kwargs["keyfile"] = args.ssl[1]
+    logger.debug("Using SSL with certfile, keyfile = %s", args.ssl)
+    certfile = args.ssl[0]
+    keyfile = args.ssl[1]
     protocol = "https"
+else:
+    certfile = None
+    keyfile = None
+    protocol = "http"
 
-logger.debug(f"Starting web server at {protocol}://{args.host}:{args.port}")
-server = pywsgi.WSGIServer(
-    (args.host, args.port), app, handler_class=WebSocketHandler, **server_kwargs
-)
-logging.getLogger("geventwebsocket").setLevel(logging.WARN)
+logger.debug("Starting web server at %s://%s:%s", protocol, args.host, args.port)
 
 try:
-    server.serve_forever()
+    app.run(host=args.host, port=args.port, certfile=certfile, keyfile=keyfile)
 except KeyboardInterrupt:
     pass

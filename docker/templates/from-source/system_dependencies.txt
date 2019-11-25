@@ -1,16 +1,17 @@
 RUN apt-get update && \
-    apt-get install -y bash jq unzip \
-                       python3 python3-pip python3-dev \
-                       build-essential portaudio19-dev swig \
-                       libatlas-base-dev \
-                       sox espeak flite alsa-utils \
-                       git curl \
-                       autoconf libtool automake bison \
-                       sphinxbase-utils sphinxtrain
+    apt-get install --no-install-recommends --yes \
+        bash jq unzip \
+        python3 python3-pip python3-dev \
+        build-essential portaudio19-dev swig \
+        libatlas-base-dev \
+        sox espeak flite alsa-utils \
+        git curl \
+        autoconf libtool automake bison \
+        sphinxbase-utils sphinxtrain
 
 COPY download/openfst-1.6.2-1_${BUILD_ARCH}.deb /
 RUN if [ "$BUILD_ARCH" != "aarch64" ]; then \
-        apt-get install -y libfst-dev libfst-tools; \
+        apt-get install --no-install-recommends --yes libfst-dev libfst-tools; \
         else \
         dpkg -i /openfst-1.6.2-1_${BUILD_ARCH}.deb; \
         rm /openfst*.deb; \

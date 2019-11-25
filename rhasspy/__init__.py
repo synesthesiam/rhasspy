@@ -1,24 +1,37 @@
 #!/usr/bin/env python3
+import argparse
+import asyncio
+import io
+import itertools
+import json
 import logging
+# Configure logging
+import logging.config
+import math
+import os
+import random
+import sys
+import tempfile
+import threading
+import time
+import wave
+from typing import Any, Dict, List, Optional, Set
+
+import pydash
+
+from rhasspy.actor import ActorSystem, Configured, ConfigureEvent, RhasspyActor
+from rhasspy.audio_player import DummyAudioPlayer
+from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
+from rhasspy.core import RhasspyCore
+from rhasspy.dialogue import DialogueManager
+from rhasspy.profiles import Profile
+from rhasspy.utils import buffer_to_wav, maybe_convert_wav
+from rhasspy.wake import (ListenForWakeWord, PocketsphinxWakeListener,
+                          StopListeningForWakeWord, WakeWordDetected,
+                          WakeWordNotDetected)
 
 logger = logging.getLogger("rhasspy")
 
-import sys
-import os
-import io
-import json
-import argparse
-import threading
-import tempfile
-import random
-import time
-import itertools
-import wave
-import math
-import random
-from typing import Any, List, Optional, Dict, Set
-
-import pydash
 
 try:
     # Need to import here because they screw with logging
@@ -26,24 +39,6 @@ try:
 except:
     pass
 
-from rhasspy.core import RhasspyCore
-from rhasspy.actor import ConfigureEvent, Configured, ActorSystem, RhasspyActor
-from rhasspy.profiles import Profile
-from rhasspy.utils import buffer_to_wav, maybe_convert_wav
-from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
-from rhasspy.audio_player import DummyAudioPlayer
-from rhasspy.dialogue import DialogueManager
-from rhasspy.wake import (
-    PocketsphinxWakeListener,
-    ListenForWakeWord,
-    StopListeningForWakeWord,
-    WakeWordDetected,
-    WakeWordNotDetected,
-)
-
-
-# Configure logging
-import logging.config
 
 logging.config.dictConfig(
     {
@@ -81,7 +76,7 @@ mic_stdin_running = False
 # -----------------------------------------------------------------------------
 
 
-def main() -> None:
+async def main() -> None:
     global mic_stdin_running, mic_stdin_thread
 
     # Parse command-line arguments
@@ -185,16 +180,16 @@ def main() -> None:
     # test_parser.add_argument('directory', help='Directory with WAV files and intent JSON files')
 
     # test-wake
-    test_wake_parser = sub_parsers.add_parser(
-        "test-wake", help="Test wake word examples for profile"
-    )
-    test_wake_parser.add_argument("directory", help="Directory with WAV files")
-    test_wake_parser.add_argument(
-        "--threads", type=int, default=4, help="Number of threads to use"
-    )
-    test_wake_parser.add_argument(
-        "--system", type=str, default=None, help="Override wake word system"
-    )
+    # test_wake_parser = sub_parsers.add_parser(
+    #     "test-wake", help="Test wake word examples for profile"
+    # )
+    # test_wake_parser.add_argument("directory", help="Directory with WAV files")
+    # test_wake_parser.add_argument(
+    #     "--threads", type=int, default=4, help="Number of threads to use"
+    # )
+    # test_wake_parser.add_argument(
+    #     "--system", type=str, default=None, help="Override wake word system"
+    # )
 
     # mic2wav
     mic2wav_parser = sub_parsers.add_parser("mic2wav", help="Voice command to WAV data")
@@ -342,18 +337,18 @@ def main() -> None:
         else:
             # Print profile settings
             json.dump(core.profile.json, sys.stdout, indent=4)
-    elif args.command == "validate":
-        from cerberus import Validator
+    # elif args.command == "validate":
+    #     from cerberus import Validator
 
-        schema_path = os.path.join(os.path.dirname(__file__), "profile_schema.json")
-        with open(schema_path, "r") as schema_file:
-            v = Validator(json.load(schema_file))
-            if v.validate(core.profile.json):
-                print("VALID")
-            else:
-                print("INVALID")
-                for err in v._errors:
-                    print(err)
+    #     schema_path = os.path.join(os.path.dirname(__file__), "profile_schema.json")
+    #     with open(schema_path, "r") as schema_file:
+    #         v = Validator(json.load(schema_file))
+    #         if v.validate(core.profile.json):
+    #             print("VALID")
+    #         else:
+    #             print("INVALID")
+    #             for err in v._errors:
+    #                 print(err)
     elif args.command == "sentences":
         sentences_path = core.profile.read_path(
             core.profile.get("speech_to_text.sentences_ini", "sentences.ini")
@@ -392,7 +387,7 @@ def main() -> None:
             # 'tune': tune,
             # 'tune-wake': tune_wake,
             # 'test': test,
-            "test-wake": test_wake,
+            # "test-wake": test_wake,
             "mic2text": mic2text,
             "mic2intent": mic2intent,
             "mic2wav": mic2wav,
@@ -408,7 +403,7 @@ def main() -> None:
 
         if not args.command in ["test-wake"]:
             # Automatically start core
-            core.start()
+            await core.start()
 
         if not args.no_check and (args.command not in ["check", "download"]):
             # Verify that profile has necessary files
@@ -428,13 +423,13 @@ def main() -> None:
 
         # Run command
         try:
-            command_funcs[args.command](core, profile, args)
+            await command_funcs[args.command](core, profile, args)
 
             if mic_stdin_thread is not None:
                 mic_stdin_running = False
                 mic_stdin_thread.join()
         finally:
-            core.shutdown()
+            await core.shutdown()
 
 
 # -----------------------------------------------------------------------------
@@ -442,20 +437,20 @@ def main() -> None:
 # -----------------------------------------------------------------------------
 
 
-def wav2text(core: RhasspyCore, profile: Profile, args: Any) -> None:
+async def wav2text(core: RhasspyCore, profile: Profile, args: Any) -> None:
     if len(args.wav_files) > 0:
         # Read WAV paths from argument list
         transcriptions = {}
         for wav_path in args.wav_files:
             with open(wav_path, "rb") as wav_file:
-                text = core.transcribe_wav(wav_file.read()).text
+                text = (await core.transcribe_wav(wav_file.read())).text
                 transcriptions[wav_path] = text
 
         # Output JSON
         json.dump(transcriptions, sys.stdout, indent=4)
     else:
         # Read WAV data from stdin
-        text = core.transcribe_wav(sys.stdin.buffer.read()).text
+        text = (await core.transcribe_wav(sys.stdin.buffer.read())).text
 
         # Output text
         print(text)
@@ -466,16 +461,16 @@ def wav2text(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 
-def text2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
+async def text2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
     # Parse sentences from command line or stdin
     intents = {}
     sentences = args.sentences if len(args.sentences) > 0 else sys.stdin
     for sentence in sentences:
         sentence = sentence.strip()
-        intent = core.recognize_intent(sentence).intent
+        intent = (await core.recognize_intent(sentence)).intent
 
         if args.handle:
-            intent = core.handle_intent(intent).intent
+            intent = (await core.handle_intent(intent)).intent
 
         intents[sentence] = intent
 
@@ -488,22 +483,22 @@ def text2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 
-def wav2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
+async def wav2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
     if len(args.wav_files) > 0:
         # Read WAV paths from argument list
         transcriptions = {}
         for wav_path in args.wav_files:
             with open(wav_path, "rb") as wav_file:
-                text = core.transcribe_wav(wav_file.read()).text
+                text = (await core.transcribe_wav(wav_file.read())).text
                 transcriptions[wav_path] = text
 
         # Parse intents
         intents = {}
         for wav_path, sentence in transcriptions.items():
-            intent = core.recognize_intent(sentence).intent
+            intent = (await core.recognize_intent(sentence)).intent
 
             if args.handle:
-                intent = core.handle_intent(intent).intent
+                intent = (await core.handle_intent(intent)).intent
 
             intents[wav_path] = intent
 
@@ -511,11 +506,11 @@ def wav2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
         json.dump(intents, sys.stdout, indent=4)
     else:
         # Read WAV data from stdin
-        sentence = core.transcribe_wav(sys.stdin.buffer.read()).text
-        intent = core.recognize_intent(sentence).intent
+        sentence = (await core.transcribe_wav(sys.stdin.buffer.read())).text
+        intent = (await core.recognize_intent(sentence)).intent
 
         if args.handle:
-            intent = core.handle_intent(intent).intent
+            intent = (await core.handle_intent(intent)).intent
 
         # Output JSON
         json.dump(intent, sys.stdout, indent=4)
@@ -526,8 +521,8 @@ def wav2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 
-def train_profile(core: RhasspyCore, profile: Profile, args: Any) -> None:
-    result = core.train(reload_actors=False)
+async def train_profile(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    result = await core.train(reload_actors=False)
     print(result)
 
 
@@ -796,176 +791,176 @@ def train_profile(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 
-def test_wake(core: RhasspyCore, profile: Profile, args: Any) -> None:
-    base_dir_path = args.directory
-    wake_system = args.system or profile.get("wake.system", "pocketsphinx")
+# def test_wake(core: RhasspyCore, profile: Profile, args: Any) -> None:
+#     base_dir_path = args.directory
+#     wake_system = args.system or profile.get("wake.system", "pocketsphinx")
 
-    # Path to positive examples
-    true_path = os.path.join(base_dir_path, "wake-word")
-    true_wav_paths: List[str] = []
-    if os.path.exists(true_path):
-        true_wav_paths = [
-            os.path.join(true_path, name)
-            for name in os.listdir(true_path)
-            if name.endswith(".wav")
-        ]
+#     # Path to positive examples
+#     true_path = os.path.join(base_dir_path, "wake-word")
+#     true_wav_paths: List[str] = []
+#     if os.path.exists(true_path):
+#         true_wav_paths = [
+#             os.path.join(true_path, name)
+#             for name in os.listdir(true_path)
+#             if name.endswith(".wav")
+#         ]
 
-    # Path to negative examples
-    false_path = os.path.join(base_dir_path, "not-wake-word")
-    false_wav_paths: List[str] = []
-    if os.path.exists(false_path):
-        false_wav_paths = [
-            os.path.join(false_path, name)
-            for name in os.listdir(false_path)
-            if name.endswith(".wav")
-        ]
+#     # Path to negative examples
+#     false_path = os.path.join(base_dir_path, "not-wake-word")
+#     false_wav_paths: List[str] = []
+#     if os.path.exists(false_path):
+#         false_wav_paths = [
+#             os.path.join(false_path, name)
+#             for name in os.listdir(false_path)
+#             if name.endswith(".wav")
+#         ]
 
-    # Spin up actors
-    kwargs: Dict[str, Any] = {}
-    if not args.debug:
-        kwargs = {"logDefs": {"version": 1, "loggers": {"": {}}}}
+#     # Spin up actors
+#     kwargs: Dict[str, Any] = {}
+#     if not args.debug:
+#         kwargs = {"logDefs": {"version": 1, "loggers": {"": {}}}}
 
-    system = ActorSystem("multiprocTCPBase", **kwargs)
-    detected_paths: Set[str] = set()
+#     system = ActorSystem("multiprocTCPBase", **kwargs)
+#     detected_paths: Set[str] = set()
 
-    try:
-        test_actor = system.createActor(TestWakeActor)
-        all_wav_paths = true_wav_paths + false_wav_paths
+#     try:
+#         test_actor = system.createActor(TestWakeActor)
+#         all_wav_paths = true_wav_paths + false_wav_paths
 
-        start_time = time.time()
-        with system.private() as private:
-            private.tell(test_actor, ConfigureEvent(profile, transitions=False))
-            result = private.listen()
-            assert isinstance(result, Configured)
+#         start_time = time.time()
+#         with system.private() as private:
+#             private.tell(test_actor, ConfigureEvent(profile, transitions=False))
+#             result = private.listen()
+#             assert isinstance(result, Configured)
 
-            private.tell(test_actor, (wake_system, args.threads, all_wav_paths))
+#             private.tell(test_actor, (wake_system, args.threads, all_wav_paths))
 
-            # Collect WAV paths that had a positive detection
-            detected_paths = private.listen()
+#             # Collect WAV paths that had a positive detection
+#             detected_paths = private.listen()
 
-        end_time = time.time()
-    finally:
-        system.shutdown()
+#         end_time = time.time()
+#     finally:
+#         system.shutdown()
 
-    # Compute statistics
-    expected_true = len(true_wav_paths)
-    expected_false = len(false_wav_paths)
+#     # Compute statistics
+#     expected_true = len(true_wav_paths)
+#     expected_false = len(false_wav_paths)
 
-    true_positives = 0
-    false_positives = 0
-    true_negatives = 0
-    false_negatives = 0
+#     true_positives = 0
+#     false_positives = 0
+#     true_negatives = 0
+#     false_negatives = 0
 
-    should_be_true = True
-    for wav_path in itertools.chain(true_wav_paths, [None], false_wav_paths):
-        # Switch between true and false examples
-        if wav_path is None:
-            should_be_true = not should_be_true
-            continue
+#     should_be_true = True
+#     for wav_path in itertools.chain(true_wav_paths, [None], false_wav_paths):
+#         # Switch between true and false examples
+#         if wav_path is None:
+#             should_be_true = not should_be_true
+#             continue
 
-        detected = wav_path in detected_paths
-        if detected:
-            if should_be_true:
-                true_positives += 1
-                status = ""
-            else:
-                false_positives += 1
-                status = ":("
-        else:
-            if should_be_true:
-                false_negatives += 1
-                status = ":("
-            else:
-                true_negatives += 1
-                status = ""
+#         detected = wav_path in detected_paths
+#         if detected:
+#             if should_be_true:
+#                 true_positives += 1
+#                 status = ""
+#             else:
+#                 false_positives += 1
+#                 status = ":("
+#         else:
+#             if should_be_true:
+#                 false_negatives += 1
+#                 status = ":("
+#             else:
+#                 true_negatives += 1
+#                 status = ""
 
-    # Report
-    result = {
-        "system": wake_system,
-        "settings": profile.get("wake.%s" % wake_system, {}),
-        "detected": list(detected_paths),
-        "not_detected": list(set(all_wav_paths) - set(detected_paths)),
-        "time_sec": end_time - start_time,
-        "statistics": {
-            "true_positives": true_positives,
-            "true_negatives": true_negatives,
-            "false_positives": false_positives,
-            "false_negatives": false_negatives,
-        },
-    }
+#     # Report
+#     result = {
+#         "system": wake_system,
+#         "settings": profile.get("wake.%s" % wake_system, {}),
+#         "detected": list(detected_paths),
+#         "not_detected": list(set(all_wav_paths) - set(detected_paths)),
+#         "time_sec": end_time - start_time,
+#         "statistics": {
+#             "true_positives": true_positives,
+#             "true_negatives": true_negatives,
+#             "false_positives": false_positives,
+#             "false_negatives": false_negatives,
+#         },
+#     }
 
-    json.dump(result, sys.stdout, indent=4)
-
-
-# -----------------------------------------------------------------------------
+#     json.dump(result, sys.stdout, indent=4)
 
 
-class TestWakeActor(RhasspyActor):
-    def __init__(self):
-        RhasspyActor.__init__(self)
-        self.actors: List[RhasspyActor] = []
-        self.wav_paths: List[str] = []
-        self.wav_paths_left: List[str] = []
-        self.detected_paths: Set[str] = set()
+# # -----------------------------------------------------------------------------
 
-    def in_started(self, message: Any, sender: RhasspyActor) -> None:
-        if isinstance(message, tuple):
-            # Start up
-            self.parent = sender
-            wake_system, num_actors, self.wav_paths = message
-            self.wav_paths_left = list(self.wav_paths)
 
-            # Create actors
-            wake_class = DialogueManager.get_wake_class(wake_system)
-            for i in range(num_actors):
-                actor = self.createActor(wake_class)
-                self.send(
-                    actor,
-                    ConfigureEvent(
-                        profile=self.profile,
-                        preload=True,
-                        recorder=self.myAddress,
-                        transitions=False,
-                        not_detected=True,
-                    ),
-                )
+# class TestWakeActor(RhasspyActor):
+#     def __init__(self):
+#         RhasspyActor.__init__(self)
+#         self.actors: List[RhasspyActor] = []
+#         self.wav_paths: List[str] = []
+#         self.wav_paths_left: List[str] = []
+#         self.detected_paths: Set[str] = set()
 
-            self.transition("loaded")
+#     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+#         if isinstance(message, tuple):
+#             # Start up
+#             self.parent = sender
+#             wake_system, num_actors, self.wav_paths = message
+#             self.wav_paths_left = list(self.wav_paths)
 
-    def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
-        if isinstance(message, Configured):
-            self.send(sender, ListenForWakeWord())
-        elif isinstance(message, StartStreaming):
-            if len(self.wav_paths) > 0:
-                self.send_random_wav(sender)
-        elif isinstance(message, WakeWordDetected):
-            # Detected
-            wav_path = message.audio_data_info["path"]
-            # print('!', end='', flush=True)
-            self.detected_paths.add(wav_path)
-            if wav_path in self.wav_paths_left:
-                self.wav_paths_left.remove(wav_path)
+#             # Create actors
+#             wake_class = DialogueManager.get_wake_class(wake_system)
+#             for i in range(num_actors):
+#                 actor = self.createActor(wake_class)
+#                 self.send(
+#                     actor,
+#                     ConfigureEvent(
+#                         profile=self.profile,
+#                         preload=True,
+#                         recorder=self.myAddress,
+#                         transitions=False,
+#                         not_detected=True,
+#                     ),
+#                 )
 
-                if len(self.wav_paths) > 0:
-                    self.send_random_wav(sender)
+#             self.transition("loaded")
 
-        elif isinstance(message, WakeWordNotDetected):
-            # Not detected
-            wav_path = message.audio_data_info["path"]
-            # print('.', end='', flush=True)
-            self.wav_paths_left.remove(wav_path)
-            if len(self.wav_paths) > 0:
-                self.send_random_wav(sender)
+#     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
+#         if isinstance(message, Configured):
+#             self.send(sender, ListenForWakeWord())
+#         elif isinstance(message, StartStreaming):
+#             if len(self.wav_paths) > 0:
+#                 self.send_random_wav(sender)
+#         elif isinstance(message, WakeWordDetected):
+#             # Detected
+#             wav_path = message.audio_data_info["path"]
+#             # print('!', end='', flush=True)
+#             self.detected_paths.add(wav_path)
+#             if wav_path in self.wav_paths_left:
+#                 self.wav_paths_left.remove(wav_path)
 
-        if len(self.wav_paths_left) == 0:
-            self.send(self.parent, self.detected_paths)
+#                 if len(self.wav_paths) > 0:
+#                     self.send_random_wav(sender)
 
-    def send_random_wav(self, receiver):
-        index = random.randint(0, len(self.wav_paths) - 1)
-        wav_path = self.wav_paths.pop(index)
-        with open(wav_path, "rb") as wav_file:
-            audio_data = maybe_convert_wav(wav_file.read())
-            self.send(receiver, AudioData(audio_data, path=wav_path))
+#         elif isinstance(message, WakeWordNotDetected):
+#             # Not detected
+#             wav_path = message.audio_data_info["path"]
+#             # print('.', end='', flush=True)
+#             self.wav_paths_left.remove(wav_path)
+#             if len(self.wav_paths) > 0:
+#                 self.send_random_wav(sender)
+
+#         if len(self.wav_paths_left) == 0:
+#             self.send(self.parent, self.detected_paths)
+
+#     def send_random_wav(self, receiver):
+#         index = random.randint(0, len(self.wav_paths) - 1)
+#         wav_path = self.wav_paths.pop(index)
+#         with open(wav_path, "rb") as wav_file:
+#             audio_data = maybe_convert_wav(wav_file.read())
+#             self.send(receiver, AudioData(audio_data, path=wav_path))
 
 
 # -----------------------------------------------------------------------------
@@ -973,9 +968,9 @@ class TestWakeActor(RhasspyActor):
 # -----------------------------------------------------------------------------
 
 
-def mic2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
+async def mic2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
     # Listen until silence
-    wav_data = buffer_to_wav(core.record_command(args.timeout).data)
+    wav_data = buffer_to_wav((await core.record_command(args.timeout)).data)
 
     # Output WAV data
     sys.stdout.buffer.write(wav_data)
@@ -986,12 +981,12 @@ def mic2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 
-def mic2text(core: RhasspyCore, profile: Profile, args: Any) -> None:
+async def mic2text(core: RhasspyCore, profile: Profile, args: Any) -> None:
     # Listen until silence
-    wav_data = buffer_to_wav(core.record_command(args.timeout).data)
+    wav_data = buffer_to_wav((await core.record_command(args.timeout)).data)
 
     # Transcribe
-    text = core.transcribe_wav(wav_data).text
+    text = (await core.transcribe_wav(wav_data)).text
 
     # Output text
     print(text)
@@ -1009,18 +1004,18 @@ def read_audio_stdin(core: RhasspyCore, chunk_size: int = 960):
         core.send_audio_data(AudioData(audio_data))
 
 
-def mic2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
+async def mic2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
     # Listen until silence
-    wav_data = buffer_to_wav(core.record_command(args.timeout).data)
+    wav_data = buffer_to_wav((await core.record_command(args.timeout)).data)
 
     # Transcribe
-    sentence = core.transcribe_wav(wav_data).text
+    sentence = (await core.transcribe_wav(wav_data)).text
 
     # Parse
-    intent = core.recognize_intent(sentence).intent
+    intent = (await core.recognize_intent(sentence)).intent
 
     if args.handle:
-        intent = core.handle_intent(intent).intent
+        intent = (await core.handle_intent(intent)).intent
 
     # Output JSON
     json.dump(intent, sys.stdout, indent=4)
@@ -1031,11 +1026,13 @@ def mic2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 
-def word2phonemes(core: RhasspyCore, profile: Profile, args: Any) -> None:
+async def word2phonemes(core: RhasspyCore, profile: Profile, args: Any) -> None:
     words = args.words if len(args.words) > 0 else sys.stdin
 
     # Get pronunciations for all words
-    pronunciations = core.get_word_pronunciations(words, n=args.n).pronunciations
+    pronunciations = (
+        await core.get_word_pronunciations(words, n=args.n)
+    ).pronunciations
 
     # Output JSON
     json.dump(pronunciations, sys.stdout, indent=4)
@@ -1046,16 +1043,18 @@ def word2phonemes(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 
-def word2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
+async def word2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
     # Get pronunciation for word
-    all_pronunciations = core.get_word_pronunciations([args.word], n=1).pronunciations
+    all_pronunciations = (
+        await core.get_word_pronunciations([args.word], n=1)
+    ).pronunciations
     word_pronunciations = all_pronunciations[args.word]["pronunciations"]
 
     # Convert from CMU phonemes to eSpeak phonemes
-    espeak_str = core.get_word_phonemes(word_pronunciations[0]).phonemes
+    espeak_str = (await core.get_word_phonemes(word_pronunciations[0])).phonemes
 
     # Pronounce as WAV
-    wav_data = core.speak_word(espeak_str).wav_data
+    wav_data = (await core.speak_word(espeak_str)).wav_data
 
     # Output WAV data
     sys.stdout.buffer.write(wav_data)
@@ -1086,7 +1085,7 @@ def _send_frame(
         core.mqtt_publish(topic, mqtt_payload)
 
 
-def wav2mqtt(core: RhasspyCore, profile: Profile, args: Any) -> None:
+async def wav2mqtt(core: RhasspyCore, profile: Profile, args: Any) -> None:
     # hermes/audioServer/<SITE_ID>/audioFrame
     topic = "hermes/audioServer/%s/audioFrame" % args.site_id
 
@@ -1145,8 +1144,8 @@ def wav2mqtt(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 
-def text2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
-    result = core.speak_sentence(args.sentence)
+async def text2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    result = await core.speak_sentence(args)
     sys.stdout.buffer.write(result.wav_data)
 
 
@@ -1155,14 +1154,14 @@ def text2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 
-def text2speech(core: RhasspyCore, profile: Profile, args: Any) -> None:
+async def text2speech(core: RhasspyCore, profile: Profile, args: Any) -> None:
     sentences = args.sentences
     if len(sentences) == 0:
         sentences = sys.stdin
 
     for sentence in sentences:
         sentence = sentence.strip()
-        core.speak_sentence(sentence)
+        await core.speak_sentence(sentence)
 
 
 # -----------------------------------------------------------------------------
@@ -1170,8 +1169,8 @@ def text2speech(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 
-def sleep(core: RhasspyCore, profile: Profile, args: Any) -> None:
-    result = core.wakeup_and_wait()
+async def sleep(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    result = await core.wakeup_and_wait()
     if isinstance(result, WakeWordDetected):
         print(result.name)
     else:
@@ -1183,8 +1182,8 @@ def sleep(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 
-def download(core: RhasspyCore, profile: Profile, args: Any) -> None:
-    core.download_profile(delete=args.delete)
+async def download(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    await core.download_profile(delete=args.delete)
     print("OK")
 
 
@@ -1193,7 +1192,7 @@ def download(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 
-def check(core: RhasspyCore, profile: Profile, args: Any) -> None:
+async def check(core: RhasspyCore, profile: Profile, args: Any) -> None:
     missing_files = core.check_profile()
     json.dump(missing_files, sys.stdout, indent=4)
 
@@ -1201,4 +1200,8 @@ def check(core: RhasspyCore, profile: Profile, args: Any) -> None:
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    main()
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    finally:
+        loop.close()

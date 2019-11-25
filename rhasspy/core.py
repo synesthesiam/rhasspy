@@ -1,57 +1,38 @@
-import os
-import sys
+"""Core Rhasspy commands."""
+import asyncio
+import gzip
 import logging
-import subprocess
+import os
+import platform
 import shutil
 import tempfile
-import urllib.request
-import platform
-import gzip
 from collections import defaultdict
-import concurrent.futures
-from typing import List, Dict, Optional, Any, Callable, Tuple, Union, Set
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Union
 
-import pydash
+import aiohttp
 
 # Internal imports
-from rhasspy.actor import ConfigureEvent, ActorSystem, RhasspyActor
-from rhasspy.profiles import Profile
-from rhasspy.audio_recorder import AudioData, StartRecordingToBuffer, StopRecordingToBuffer
-from rhasspy.stt import WavTranscription
+from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
+from rhasspy.audio_recorder import (AudioData, StartRecordingToBuffer,
+                                    StopRecordingToBuffer)
+from rhasspy.dialogue import (DialogueManager, GetActorStates, GetMicrophones,
+                              GetProblems, GetSpeakers, GetVoiceCommand,
+                              GetWordPhonemes, GetWordPronunciations,
+                              HandleIntent, ListenForCommand,
+                              ListenForWakeWord, MqttPublish, PlayWavData,
+                              PlayWavFile, Problems, ProfileTrainingComplete,
+                              ProfileTrainingFailed, RecognizeIntent,
+                              SpeakSentence, SpeakWord, TestMicrophones,
+                              TrainProfile, TranscribeWav, VoiceCommand,
+                              WakeWordDetected, WakeWordNotDetected)
 from rhasspy.intent import IntentRecognized
 from rhasspy.intent_handler import IntentHandled
-from rhasspy.pronounce import WordPronunciations, WordPhonemes, WordSpoken
+from rhasspy.profiles import Profile
+from rhasspy.pronounce import WordPhonemes, WordPronunciations, WordSpoken
+from rhasspy.stt import WavTranscription
 from rhasspy.tts import SentenceSpoken
 from rhasspy.utils import numbers_to_words
-from rhasspy.dialogue import (
-    DialogueManager,
-    GetMicrophones,
-    TestMicrophones,
-    ListenForCommand,
-    ListenForWakeWord,
-    WakeWordDetected,
-    WakeWordNotDetected,
-    TrainProfile,
-    ProfileTrainingFailed,
-    GetWordPhonemes,
-    SpeakWord,
-    GetWordPronunciations,
-    TranscribeWav,
-    PlayWavData,
-    PlayWavFile,
-    RecognizeIntent,
-    HandleIntent,
-    ProfileTrainingComplete,
-    ProfileTrainingFailed,
-    MqttPublish,
-    GetVoiceCommand,
-    VoiceCommand,
-    GetActorStates,
-    GetSpeakers,
-    SpeakSentence,
-    GetProblems,
-    Problems,
-)
 
 # -----------------------------------------------------------------------------
 
@@ -75,23 +56,35 @@ class RhasspyCore:
         self.profile = Profile(
             self.profile_name, system_profiles_dir, user_profiles_dir
         )
-        self._logger.debug(f"Loaded profile from {self.profile.json_path}")
+        self._logger.debug("Loaded profile from %s", self.profile.json_path)
         self._logger.debug(
-            f"Profile files will be written to {self.profile.write_path()}"
+            "Profile files will be written to %s", self.profile.write_path()
         )
 
         self.defaults = Profile.load_defaults(system_profiles_dir)
 
+        self.loop = asyncio.get_event_loop()
+        self._session: Optional[aiohttp.ClientSession] = aiohttp.ClientSession()
+        self.dialogue_manager: Optional[RhasspyActor] = None
+
     # -------------------------------------------------------------------------
 
-    def start(
+    @property
+    def session(self) -> aiohttp.ClientSession:
+        """Get HTTP client session."""
+        assert self._session is not None
+        return self._session
+
+    # -------------------------------------------------------------------------
+
+    async def start(
         self,
         preload: Optional[bool] = None,
         block: bool = True,
         timeout: float = 60,
         observer: Optional[RhasspyActor] = None,
     ) -> None:
-        """Start Rhasspy"""
+        """Start Rhasspy core."""
 
         if self.actor_system is None:
             self.actor_system = ActorSystem()
@@ -102,7 +95,7 @@ class RhasspyCore:
         assert self.actor_system is not None
         self.dialogue_manager = self.actor_system.createActor(DialogueManager)
         with self.actor_system.private() as sys:
-            sys.ask(
+            await sys.async_ask(
                 self.dialogue_manager,
                 ConfigureEvent(
                     self.profile,
@@ -116,63 +109,75 @@ class RhasspyCore:
 
             # Block until ready
             if block:
-                result = sys.listen(timeout)
+                await sys.async_listen(timeout)
 
     # -------------------------------------------------------------------------
 
-    def get_microphones(self, system: Optional[str] = None) -> Dict[Any, Any]:
+    async def get_microphones(self, system: Optional[str] = None) -> Dict[Any, Any]:
+        """Get available audio recording devices."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, GetMicrophones(system))
+            result = await sys.async_ask(self.dialogue_manager, GetMicrophones(system))
             assert isinstance(result, dict), result
             return result
 
-    def test_microphones(self, system: Optional[str] = None) -> Dict[Any, Any]:
+    async def test_microphones(self, system: Optional[str] = None) -> Dict[Any, Any]:
+        """Listen to all microphones and determine if they're live."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, TestMicrophones(system))
+            result = await sys.async_ask(self.dialogue_manager, TestMicrophones(system))
             assert isinstance(result, dict), result
             return result
 
-    def get_speakers(self, system: Optional[str] = None) -> Dict[Any, Any]:
+    async def get_speakers(self, system: Optional[str] = None) -> Dict[Any, Any]:
+        """Get available audio playback devices."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, GetSpeakers(system))
+            result = await sys.async_ask(self.dialogue_manager, GetSpeakers(system))
             assert isinstance(result, dict), result
             return result
 
     # -------------------------------------------------------------------------
 
     def listen_for_wake(self) -> None:
+        """Tell Rhasspy to start listening for a wake word."""
         assert self.actor_system is not None
         self.actor_system.tell(self.dialogue_manager, ListenForWakeWord())
 
-    def listen_for_command(self, handle: bool = True) -> Dict[str, Any]:
+    async def listen_for_command(self, handle: bool = True) -> Dict[str, Any]:
+        """Block until a voice command has been spoken. Optionally handle it."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, ListenForCommand(handle=handle))
+            result = await sys.async_ask(
+                self.dialogue_manager, ListenForCommand(handle=handle)
+            )
             assert isinstance(result, dict), result
             return result
 
-    def record_command(self, timeout: Optional[float] = None) -> VoiceCommand:
+    async def record_command(self, timeout: Optional[float] = None) -> VoiceCommand:
+        """Record a single voice command."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, GetVoiceCommand(timeout=timeout))
+            result = await sys.async_ask(
+                self.dialogue_manager, GetVoiceCommand(timeout=timeout)
+            )
             assert isinstance(result, VoiceCommand), result
             return result
 
     # -------------------------------------------------------------------------
 
-    def transcribe_wav(self, wav_data: bytes) -> WavTranscription:
+    async def transcribe_wav(self, wav_data: bytes) -> WavTranscription:
+        """Transcribe text from WAV buffer."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(
+            result = await sys.async_ask(
                 self.dialogue_manager, TranscribeWav(wav_data, handle=False)
             )
             assert isinstance(result, WavTranscription), result
             return result
 
-    def recognize_intent(self, text: str) -> IntentRecognized:
+    async def recognize_intent(self, text: str) -> IntentRecognized:
+        """Recognize an intent from text."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             # Fix casing
@@ -191,7 +196,9 @@ class RhasspyCore:
                 # 75 -> seventy five
                 text = numbers_to_words(text, language=language)
 
-            result = sys.ask(self.dialogue_manager, RecognizeIntent(text, handle=False))
+            result = await sys.async_ask(
+                self.dialogue_manager, RecognizeIntent(text, handle=False)
+            )
             assert isinstance(result, IntentRecognized), result
 
             # Add slots
@@ -203,25 +210,28 @@ class RhasspyCore:
 
             return result
 
-    def handle_intent(self, intent: Dict[str, Any]) -> IntentHandled:
+    async def handle_intent(self, intent: Dict[str, Any]) -> IntentHandled:
+        """Handle an intent."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, HandleIntent(intent))
+            result = await sys.async_ask(self.dialogue_manager, HandleIntent(intent))
             assert isinstance(result, IntentHandled), result
             return result
 
     # -------------------------------------------------------------------------
 
     def start_recording_wav(self, buffer_name: str = "") -> None:
+        """Record audio data to a named buffer."""
         assert self.actor_system is not None
         self.actor_system.tell(
             self.dialogue_manager, StartRecordingToBuffer(buffer_name)
         )
 
-    def stop_recording_wav(self, buffer_name: str = "") -> AudioData:
+    async def stop_recording_wav(self, buffer_name: str = "") -> AudioData:
+        """Stop recording audio data to a named buffer."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = self.actor_system.ask(
+            result = await sys.async_ask(
                 self.dialogue_manager, StopRecordingToBuffer(buffer_name)
             )
             assert isinstance(result, AudioData), result
@@ -230,97 +240,109 @@ class RhasspyCore:
     # -------------------------------------------------------------------------
 
     def play_wav_data(self, wav_data: bytes) -> None:
+        """Play WAV buffer through audio playback system."""
         assert self.actor_system is not None
         self.actor_system.tell(self.dialogue_manager, PlayWavData(wav_data))
 
     def play_wav_file(self, wav_path: str) -> None:
+        """Play WAV file through audio playback system."""
         assert self.actor_system is not None
         self.actor_system.tell(self.dialogue_manager, PlayWavFile(wav_path))
 
     # -------------------------------------------------------------------------
 
-    def get_word_pronunciations(
+    async def get_word_pronunciations(
         self, words: List[str], n: int = 5
     ) -> WordPronunciations:
+        """Look up or guess pronunciations for a word."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, GetWordPronunciations(words, n))
+            result = await sys.async_ask(
+                self.dialogue_manager, GetWordPronunciations(words, n)
+            )
             assert isinstance(result, WordPronunciations), result
             return result
 
-    def get_word_phonemes(self, word: str) -> WordPhonemes:
+    async def get_word_phonemes(self, word: str) -> WordPhonemes:
+        """Get eSpeak phonemes for a word."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, GetWordPhonemes(word))
+            result = await sys.async_ask(self.dialogue_manager, GetWordPhonemes(word))
             assert isinstance(result, WordPhonemes), result
             return result
 
-    def speak_word(self, word: str) -> WordSpoken:
+    async def speak_word(self, word: str) -> WordSpoken:
+        """Speak a single word."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, SpeakWord(word))
+            result = await sys.async_ask(self.dialogue_manager, SpeakWord(word))
             assert isinstance(result, WordSpoken), result
             return result
 
-    def speak_sentence(self, sentence: str) -> SentenceSpoken:
+    async def speak_sentence(self, sentence: str) -> SentenceSpoken:
+        """Speak an entire sentence using text to speech system."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, SpeakSentence(sentence))
+            result = await sys.async_ask(self.dialogue_manager, SpeakSentence(sentence))
             assert isinstance(result, SentenceSpoken), result
             return result
 
     # -------------------------------------------------------------------------
 
-    def train(
+    async def train(
         self, reload_actors: bool = True
     ) -> Union[ProfileTrainingComplete, ProfileTrainingFailed]:
+        """Generate speech/intent artifacts for profile."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(
+            result = await sys.async_ask(
                 self.dialogue_manager, TrainProfile(reload_actors=reload_actors)
             )
-            assert isinstance(result, ProfileTrainingComplete) or isinstance(
-                result, ProfileTrainingFailed
+            assert isinstance(
+                result, (ProfileTrainingComplete, ProfileTrainingFailed)
             ), result
             return result
 
     # -------------------------------------------------------------------------
 
     def mqtt_publish(self, topic: str, payload: bytes) -> None:
+        """Publish a payload to an MQTT topic."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             sys.tell(self.dialogue_manager, MqttPublish(topic, payload))
 
     # -------------------------------------------------------------------------
 
-    def wakeup_and_wait(self) -> Union[WakeWordDetected, WakeWordNotDetected]:
+    async def wakeup_and_wait(self) -> Union[WakeWordDetected, WakeWordNotDetected]:
+        """Listen for a wake word to be detected or not."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, ListenForWakeWord())
-            assert isinstance(result, WakeWordDetected) or isinstance(
-                result, WakeWordNotDetected
-            ), result
+            result = await sys.async_ask(self.dialogue_manager, ListenForWakeWord())
+            assert isinstance(result, (WakeWordDetected, WakeWordNotDetected)), result
 
             return result
 
     # -------------------------------------------------------------------------
 
-    def get_actor_states(self) -> Dict[str, str]:
+    async def get_actor_states(self) -> Dict[str, str]:
+        """Get the current state of each Rhasspy actor."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, GetActorStates())
+            result = await sys.async_ask(self.dialogue_manager, GetActorStates())
             assert isinstance(result, dict), result
             return result
 
     # -------------------------------------------------------------------------
 
     def send_audio_data(self, data: AudioData) -> None:
+        """Send raw audio data to Rhasspy."""
         assert self.actor_system is not None
         self.actor_system.tell(self.dialogue_manager, data)
 
     # -------------------------------------------------------------------------
 
-    def shutdown(self) -> None:
+    async def shutdown(self) -> None:
+        """Shut down actors."""
         # Clear environment variables
         rhasspy_vars = [v for v in os.environ if v.startswith("RHASSPY")]
 
@@ -332,10 +354,14 @@ class RhasspyCore:
             self.actor_system.shutdown()
             self.actor_system = None
 
+        if self._session is not None:
+            await self._session.close()
+            self._session = None
+
     # -------------------------------------------------------------------------
 
     def check_profile(self) -> Dict[str, str]:
-        """Returns True if the profile has all necessary files downloaded."""
+        """Return True if the profile has all necessary files downloaded."""
         output_dir = self.profile.write_path()
         missing_files: Dict[str, Any] = {}
 
@@ -348,7 +374,9 @@ class RhasspyCore:
 
             # Compare setting values
             for setting_value, files_dict in conditions[setting_name].items():
-                compare_func = lambda v1, v2: v1 == v2
+
+                def compare_func(v1, v2):
+                    return v1 == v2
 
                 if compare_func(setting_value, real_value):
                     # Check if file needs to be downloaded
@@ -364,19 +392,23 @@ class RhasspyCore:
         if value.startswith(">="):
             f_value = float(value[2:])
             return lambda v: v >= f_value
-        elif value.startswith("<="):
+
+        if value.startswith("<="):
             f_value = float(value[2:])
             return lambda v: v <= f_value
-        elif value.startswith(">"):
+
+        if value.startswith(">"):
             f_value = float(value[1:])
             return lambda v: v > f_value
-        elif value.startswith("<"):
+
+        if value.startswith("<"):
             f_value = float(value[1:])
             return lambda v: v < f_value
-        elif value.startswith("!"):
+
+        if value.startswith("!"):
             return lambda v: v != value
-        else:
-            return lambda v: v == value
+
+        return lambda v: v == value
 
     def _unpack_gz(self, src_path, temp_dir):
         # Strip off .gz and put relative to temporary directory
@@ -391,18 +423,18 @@ class RhasspyCore:
 
     # -------------------------------------------------------------------------
 
-    def download_profile(self, delete=False) -> None:
-        """Downloads all necessary profile files from the internet and extracts them."""
-        output_dir = self.profile.write_path()
-        download_dir = self.profile.write_path(
-            self.profile.get("download.cache_dir", "download")
+    async def download_profile(self, delete=False, chunk_size=4096) -> None:
+        """Download all necessary profile files from the internet and extracts them."""
+        output_dir = Path(self.profile.write_path())
+        download_dir = Path(
+            self.profile.write_path(self.profile.get("download.cache_dir", "download"))
         )
 
-        if delete and os.path.exists(download_dir):
-            self._logger.debug(f"Deleting download cache at {download_dir}")
+        if delete and download_dir.exists():
+            self._logger.debug("Deleting download cache at %s", download_dir)
             shutil.rmtree(download_dir)
 
-        os.makedirs(download_dir, exist_ok=True)
+        download_dir.mkdir(parents=True, exist_ok=True)
 
         # Load configuration
         conditions = self.profile.get("download.conditions", {})
@@ -411,91 +443,106 @@ class RhasspyCore:
         files_to_extract: Dict[str, List[Any]] = defaultdict(list)
         files_to_download: Set[str] = set()
 
-        def download_file(url, filename):
+        async def download_file(url, filename):
             try:
-                self._logger.debug(f"Downloading {url} to {filename}")
+                self._logger.debug("Downloading %s to %s", url, filename)
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
-                urllib.request.urlretrieve(url, filename)
-            except Exception as e:
+
+                async with self.session.get(url) as response:
+                    with open(filename, "wb") as out_file:
+                        chunk = await response.content.read_chunk(chunk_size)
+                        while chunk is not None:
+                            out_file.write(chunk)
+                            chunk = await response.content.read_chunk(chunk_size)
+
+                self._logger.debug("Downloaded %s", filename)
+            except Exception:
                 self._logger.exception(url)
 
         # Check conditions
         machine_type = platform.machine()
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            for setting_name in conditions:
-                real_value = self.profile.get(setting_name, None)
+        download_tasks = []
+        for setting_name in conditions:
+            real_value = self.profile.get(setting_name, None)
 
-                # Compare setting values
-                for setting_value, files_dict in conditions[setting_name].items():
-                    compare_func = self._get_compare_func(setting_value)
+            # Compare setting values
+            for setting_value, files_dict in conditions[setting_name].items():
+                compare_func = self._get_compare_func(setting_value)
 
-                    if compare_func(real_value):
-                        # Check if file needs to be downloaded
-                        for dest_name, src_name in files_dict.items():
-                            dest_path = os.path.join(output_dir, dest_name)
-                            if ":" in src_name:
-                                # File is an archive
-                                src_name, src_extract = src_name.split(":", maxsplit=1)
-                                src_path = os.path.join(download_dir, src_name)
-                                files_to_extract[src_path].append(
-                                    (dest_path, src_extract)
+                if compare_func(real_value):
+                    # Check if file needs to be downloaded
+                    for dest_name, src_name in files_dict.items():
+                        dest_path = os.path.join(output_dir, dest_name)
+                        if ":" in src_name:
+                            # File is an archive
+                            src_name, src_extract = src_name.split(":", maxsplit=1)
+                            src_path = os.path.join(download_dir, src_name)
+                            files_to_extract[src_path].append((dest_path, src_extract))
+                        else:
+                            # Just a regular file
+                            src_path = os.path.join(download_dir, src_name)
+                            files_to_copy[src_path] = dest_path
+
+                        # Get download/cache info for file
+                        src_info = all_files.get(src_name, None)
+                        if src_info is None:
+                            self._logger.error(
+                                "No entry for download file %s", src_name
+                            )
+                            continue
+
+                        if not src_info.get("cache", True):
+                            # File will be downloaded in-place
+                            files_to_copy.pop(src_path)
+                            src_path = dest_path
+
+                        # Check if file is already in cache
+                        if os.path.exists(src_path):
+                            self._logger.debug(
+                                "Using cached %s for %s", src_path, dest_name
+                            )
+                        else:
+                            # File needs to be downloaded
+                            src_url = src_info.get("url", None)
+                            if src_url is None:
+                                # Try with machine type
+                                if machine_type in src_info:
+                                    src_url = src_info[machine_type]["url"]
+                                else:
+                                    self._logger.error(
+                                        "No entry for download file %s with machine type %s",
+                                        src_url,
+                                        machine_type,
+                                    )
+                                    continue
+
+                            # Schedule file for download
+                            if src_url not in files_to_download:
+                                download_tasks.append(
+                                    self.loop.create_task(
+                                        download_file(src_url, src_path)
+                                    )
                                 )
-                            else:
-                                # Just a regular file
-                                src_path = os.path.join(download_dir, src_name)
-                                files_to_copy[src_path] = dest_path
+                                files_to_download.add(src_url)
 
-                            # Get download/cache info for file
-                            src_info = all_files.get(src_name, None)
-                            if src_info is None:
-                                self._logger.error(
-                                    f"No entry for download file {src_name}"
-                                )
-                                continue
-
-                            if not src_info.get("cache", True):
-                                # File will be downloaded in-place
-                                files_to_copy.pop(src_path)
-                                src_path = dest_path
-
-                            # Check if file is already in cache
-                            if os.path.exists(src_path):
-                                self._logger.debug(
-                                    f"Using cached {src_path} for {dest_name}"
-                                )
-                            else:
-                                # File needs to be downloaded
-                                src_url = src_info.get("url", None)
-                                if src_url is None:
-                                    # Try with machine type
-                                    if machine_type in src_info:
-                                        src_url = src_info[machine_type]["url"]
-                                    else:
-                                        self._logger.error(
-                                            f"No entry for download file {src_name} with machine type {machine_type}"
-                                        )
-                                        continue
-
-                                # Schedule file for download
-                                if not src_url in files_to_download:
-                                    executor.submit(download_file, src_url, src_path)
-                                    files_to_download.add(src_url)
+        # Wait for downloads to complete
+        await asyncio.gather(*download_tasks)
 
         # Copy files
         for src_path, dest_path in files_to_copy.items():
             # Remove existing file/directory
             if os.path.isdir(dest_path):
-                self._logger.debug(f"Removing {dest_path}")
+                self._logger.debug("Removing %s", dest_path)
                 shutil.rmtree(dest_path)
             elif os.path.isfile(dest_path):
-                self._logger.debug(f"Removing {dest_path}")
+                self._logger.debug("Removing %s", dest_path)
                 os.unlink(dest_path)
 
             # Create necessary directories
             os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
             # Copy file/directory as is
-            self._logger.debug(f"Copying {src_path} to {dest_path}")
+            self._logger.debug("Copying %s to %s", src_path, dest_path)
             if os.path.isdir(src_path):
                 shutil.copytree(src_path, dest_path)
             else:
@@ -513,16 +560,24 @@ class RhasspyCore:
                 if src_path.endswith(ext):
                     known_format = True
 
-            unpack = lambda temp_dir: shutil.unpack_archive(src_path, temp_dir)
+            def unpack_default(temp_dir):
+                return shutil.unpack_archive(src_path, temp_dir)
+
+            def unpack_gz(temp_dir):
+                return self._unpack_gz(src_path, temp_dir)
+
+            unpack = unpack_default
+
             if not known_format:
                 # Handle special archives
                 if src_path.endswith(".gz"):
                     # Single file compressed with gzip
-                    unpack = lambda temp_dir: self._unpack_gz(src_path, temp_dir)
+                    unpack = unpack_gz
                 else:
                     # Very bad situation
                     self._logger.warning(
-                        f"Unknown archive extension {src_path}. This is probably going to fail."
+                        "Unknown archive extension %s. This is probably going to fail.",
+                        src_path,
                     )
 
             # Cached file is an archive. Unpack first.
@@ -542,10 +597,10 @@ class RhasspyCore:
 
                     # Remove existing file/directory
                     if os.path.isdir(dest_path):
-                        self._logger.debug(f"Removing {dest_path}")
+                        self._logger.debug("Removing %s", dest_path)
                         shutil.rmtree(dest_path)
                     elif os.path.isfile(dest_path):
-                        self._logger.debug(f"Removing {dest_path}")
+                        self._logger.debug("Removing %s", dest_path)
                         os.unlink(dest_path)
 
                     # Create necessary directories
@@ -560,22 +615,27 @@ class RhasspyCore:
                         extract_path = os.path.join(temp_dir, src_extract)
 
                     # Copy specific file/directory
-                    self._logger.debug(f"Copying {extract_path} to {dest_path}")
+                    self._logger.debug("Copying %s to %s", extract_path, dest_path)
                     if os.path.isdir(extract_path):
-                        ignore = None
                         if len(src_exclude) > 0:
-                            ignore = lambda cur_dir, filenames: src_exclude[cur_dir]
-
-                        shutil.copytree(extract_path, dest_path, ignore=ignore)
+                            # Ignore some files
+                            shutil.copytree(
+                                extract_path,
+                                dest_path,
+                                ignore=lambda d, fs: src_exclude[d],
+                            )
+                        else:
+                            # Copy everything
+                            shutil.copytree(extract_path, dest_path)
                     else:
                         shutil.copy2(extract_path, dest_path)
 
     # -------------------------------------------------------------------------
 
-    def get_problems(self) -> Dict[str, Any]:
-        """Returns a dictionary with problems from each actor."""
+    async def get_problems(self) -> Dict[str, Any]:
+        """Return a dictionary with problems from each actor."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = sys.ask(self.dialogue_manager, GetProblems())
+            result = await sys.async_ask(self.dialogue_manager, GetProblems())
             assert isinstance(result, Problems), result
             return result.problems

@@ -1,6 +1,6 @@
 import re
 from collections import defaultdict
-from typing import Optional, Dict, Set, List
+from typing import Optional, Dict, Set, List, Tuple
 
 import pywrapfst as fst
 import networkx as nx

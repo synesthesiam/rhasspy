@@ -1,21 +1,20 @@
-#!/usr/bin/env python3
-import os
+"""Training for intent recognizers."""
 import json
-import logging
-import tempfile
-import subprocess
+import os
+import random
 import re
 import shutil
+import subprocess
+import tempfile
 import time
-import random
-import copy
+from collections import Counter, defaultdict
 from io import StringIO
+from typing import Any, Dict, List, Optional, Set, Type
 from urllib.parse import urljoin
-from collections import defaultdict, Counter
-from typing import Dict, List, Set, Any, Optional, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.utils import make_sentences_by_intent, lcm, sample_sentences_by_intent
+from rhasspy.utils import (lcm, make_sentences_by_intent,
+                           sample_sentences_by_intent)
 
 # -----------------------------------------------------------------------------
 # Events
@@ -23,24 +22,33 @@ from rhasspy.utils import make_sentences_by_intent, lcm, sample_sentences_by_int
 
 
 class TrainIntent:
+    """Request to train intent recognizer."""
+
     def __init__(self, intent_fst, receiver: Optional[RhasspyActor] = None) -> None:
         self.intent_fst = intent_fst
         self.receiver = receiver
 
 
 class IntentTrainingComplete:
+    """Response when training is successful."""
+
     pass
 
 
 class IntentTrainingFailed:
+    """Response when training fails."""
+
     def __init__(self, reason: str) -> None:
         self.reason = reason
 
 
 # -----------------------------------------------------------------------------
+
+
 def get_intent_trainer_class(
     trainer_system: str, recognizer_system: str = "dummy"
 ) -> Type[RhasspyActor]:
+    """Get type for profile intent trainer."""
 
     assert trainer_system in [
         "dummy",
@@ -58,37 +66,37 @@ def get_intent_trainer_class(
         if recognizer_system == "fsticuffs":
             # Use OpenFST acceptor locally
             return FsticuffsIntentTrainer
-        elif recognizer_system == "fuzzywuzzy":
+        if recognizer_system == "fuzzywuzzy":
             # Use fuzzy string matching locally
             return FuzzyWuzzyIntentTrainer
-        elif recognizer_system == "adapt":
+        if recognizer_system == "adapt":
             # Use Mycroft Adapt locally
             return AdaptIntentTrainer
-        elif recognizer_system == "flair":
+        if recognizer_system == "flair":
             # Use flair locally
             return FlairIntentTrainer
-        elif recognizer_system == "rasa":
+        if recognizer_system == "rasa":
             # Use Rasa NLU remotely
             return RasaIntentTrainer
-        elif recognizer_system == "command":
+        if recognizer_system == "command":
             # Use command-line intent trainer
             return CommandIntentTrainer
-    elif trainer_system == "fsticuffs":
+    if trainer_system == "fsticuffs":
         # Use OpenFST acceptor locally
         return FsticuffsIntentTrainer
-    elif trainer_system == "fuzzywuzzy":
+    if trainer_system == "fuzzywuzzy":
         # Use fuzzy string matching locally
         return FuzzyWuzzyIntentTrainer
-    elif trainer_system == "adapt":
+    if trainer_system == "adapt":
         # Use Mycroft Adapt locally
         return AdaptIntentTrainer
-    elif trainer_system == "rasa":
+    if trainer_system == "rasa":
         # Use Rasa NLU remotely
         return RasaIntentTrainer
-    elif trainer_system == "flair":
+    if trainer_system == "flair":
         # Use flair RNN locally
         return FlairIntentTrainer
-    elif trainer_system == "command":
+    if trainer_system == "command":
         # Use command-line intent trainer
         return CommandIntentTrainer
 
@@ -99,9 +107,10 @@ def get_intent_trainer_class(
 
 
 class DummyIntentTrainer(RhasspyActor):
-    """Does nothing."""
+    """Always reports successful training."""
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, TrainIntent):
             self.send(message.receiver or sender, IntentTrainingComplete())
 
@@ -128,6 +137,7 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
     """Save examples to JSON for fuzzy string matching later."""
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, TrainIntent):
             try:
                 self.train(message.intent_fst)
@@ -137,6 +147,7 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
                 self.send(message.receiver or sender, IntentTrainingFailed(repr(e)))
 
     def train(self, intent_fst) -> None:
+        """Save examples to JSON file."""
         examples_path = self.profile.write_path(
             self.profile.get("intent.fuzzywuzzy.examples_json")
         )
@@ -145,7 +156,7 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
         with open(examples_path, "w") as examples_file:
             json.dump(sentences_by_intent, examples_file, indent=4)
 
-        self._logger.debug("Wrote intent examples to %s" % examples_path)
+        self._logger.debug("Wrote intent examples to %s", examples_path)
 
 
 # -----------------------------------------------------------------------------
@@ -158,6 +169,7 @@ class RasaIntentTrainer(RhasspyActor):
     """Uses Rasa NLU HTTP API to train a recognizer."""
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, TrainIntent):
             try:
                 self.train(message.intent_fst)
@@ -169,6 +181,7 @@ class RasaIntentTrainer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def train(self, intent_fst) -> None:
+        """Convert examples to Markdown and POST to RasaNLU server."""
         from rhasspy.train.jsgf2fst import fstprintall
         import requests
 
@@ -192,7 +205,8 @@ class RasaIntentTrainer(RhasspyActor):
             for sym in symbols:
                 if sym.startswith("<"):
                     continue  # <eps>
-                elif sym.startswith("__label__"):
+
+                if sym.startswith("__label__"):
                     intent_name = sym[9:]
                 elif sym.startswith("__begin__"):
                     strings.append("[")
@@ -260,14 +274,16 @@ class RasaIntentTrainer(RhasspyActor):
                     headers={"Content-Type": "application/json"},
                 )
 
-            self._logger.debug(f"POSTed training data to {training_url}")
+            self._logger.debug("POSTed training data to %s", training_url)
 
             try:
                 response.raise_for_status()
-            except:
+            except Exception:
                 # Rasa gives quite helpful error messages, so extract them from the response.
                 raise Exception(
-                    f"{response.reason}: {json.loads(response.content)['message']}"
+                    "{0}: {1}".format(
+                        response.reason, json.loads(response.content)["message"]
+                    )
                 )
 
 
@@ -281,6 +297,7 @@ class AdaptIntentTrainer(RhasspyActor):
     """Configure a Mycroft Adapt engine."""
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, TrainIntent):
             try:
                 self.train(message.intent_fst)
@@ -292,16 +309,15 @@ class AdaptIntentTrainer(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def train(self, intent_fst) -> None:
-        from rhasspy.train.jsgf2fst import fstprintall, symbols2intent
-
+        """Create intents, entities, and keywords."""
         # Load "stop" words (common words that are excluded from training)
         stop_words: Set[str] = set()
         stop_words_path = self.profile.read_path("stop_words.txt")
         if os.path.exists(stop_words_path):
             with open(stop_words_path, "r") as stop_words_file:
-                stop_words = set(
-                    [line.strip() for line in stop_words_file if len(line.strip()) > 0]
-                )
+                stop_words = {
+                    line.strip() for line in stop_words_file if len(line.strip()) > 0
+                }
 
         # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
         sentences_by_intent: Dict[str, Any] = make_sentences_by_intent(intent_fst)
@@ -323,7 +339,7 @@ class AdaptIntentTrainer(RhasspyActor):
 
             # Process sentences for this intent
             for intent_sent in intent_sents:
-                sentence, slots, word_tokens = (
+                _, slots, word_tokens = (
                     intent_sent.get("raw_text", intent_sent["text"]),
                     intent_sent["entities"],
                     intent_sent["tokens"],
@@ -339,7 +355,7 @@ class AdaptIntentTrainer(RhasspyActor):
                 for entity_name, entity_values in slot_entities.items():
                     # Prefix entity name with intent name
                     entity_name = "{0}.{1}".format(intent_name, entity_name)
-                    if not entity_name in entities:
+                    if entity_name not in entities:
                         entities[entity_name] = set()
 
                     entities[entity_name].update(entity_values)
@@ -407,7 +423,7 @@ class AdaptIntentTrainer(RhasspyActor):
         with open(config_path, "w") as config_file:
             json.dump(config, config_file, indent=4)
 
-        self._logger.debug("Wrote adapt configuration to %s" % config_path)
+        self._logger.debug("Wrote adapt configuration to %s", config_path)
 
 
 # -----------------------------------------------------------------------------
@@ -421,11 +437,10 @@ class FlairIntentTrainer(RhasspyActor):
 
     def __init__(self):
         RhasspyActor.__init__(self)
-
-    def to_started(self, from_state: str) -> None:
-        pass
+        self.embeddings = []
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, TrainIntent):
             try:
                 self.train(message.intent_fst)
@@ -435,6 +450,7 @@ class FlairIntentTrainer(RhasspyActor):
                 self.send(message.receiver or sender, IntentTrainingFailed(repr(e)))
 
     def train(self, intent_fst) -> None:
+        """Train intent classifier and named entity recognizers."""
         from flair.data import Sentence, Token
         from flair.models import SequenceTagger, TextClassifier
         from flair.embeddings import (
@@ -470,8 +486,7 @@ class FlairIntentTrainer(RhasspyActor):
         os.makedirs(ner_data_dir, exist_ok=True)
 
         # Convert FST to training data
-        class_data_path = os.path.join(class_data_dir, "train.txt")
-        ner_data_path = os.path.join(ner_data_dir, "train.txt")
+        # ----------------------------
 
         # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
         sentences_by_intent: Dict[str, Any] = {}
@@ -502,7 +517,9 @@ class FlairIntentTrainer(RhasspyActor):
 
             # Generate samples
             self._logger.debug(
-                f"Generating {num_samples} sample(s) from {len(intent_fst_paths)} intent(s)"
+                "Generating %s sample(s) from %s intent(s)",
+                num_samples,
+                len(intent_fst_paths),
             )
 
             sentences_by_intent = sample_sentences_by_intent(
@@ -516,7 +533,7 @@ class FlairIntentTrainer(RhasspyActor):
             sentences_by_intent = make_sentences_by_intent(intent_fst)
 
         sentence_time = time.time() - start_time
-        self._logger.debug(f"Generated sentences in {sentence_time} second(s)")
+        self._logger.debug("Generated sentences in %s second(s)", sentence_time)
 
         # Get least common multiple in order to balance sentences by intent
         lcm_sentences = lcm(*(len(sents) for sents in sentences_by_intent.values()))
@@ -530,7 +547,7 @@ class FlairIntentTrainer(RhasspyActor):
                 # Only train an intent classifier if there's more than one intent
                 if len(sentences_by_intent) > 1:
                     # Add balanced copies
-                    for i in range(num_repeats):
+                    for _ in range(num_repeats):
                         class_sent = Sentence(labels=[intent_name])
                         for word in intent_sent["tokens"]:
                             class_sent.add_token(Token(word))
@@ -563,7 +580,7 @@ class FlairIntentTrainer(RhasspyActor):
                         entity = None
 
                 # Add balanced copies
-                for i in range(num_repeats):
+                for _ in range(num_repeats):
                     ner_sent = Sentence()
                     for word, tag in word_tags:
                         token = Token(word)
@@ -576,7 +593,7 @@ class FlairIntentTrainer(RhasspyActor):
         max_epochs = int(self.profile.get("intent.flair.max_epochs", 100))
 
         # Load word embeddings
-        self._logger.debug(f"Loading word embeddings from {cache_dir}")
+        self._logger.debug("Loading word embeddings from %s", cache_dir)
         word_embeddings = [
             FlairEmbeddings(os.path.join(cache_dir, "embeddings", e))
             for e in self.embeddings
@@ -604,7 +621,7 @@ class FlairIntentTrainer(RhasspyActor):
             )
 
             self._logger.debug(
-                f"Intent classifier has {len(class_sentences)} example(s)"
+                "Intent classifier has %s example(s)", len(class_sentences)
             )
             trainer = ModelTrainer(classifier, class_corpus)
             trainer.train(class_data_dir, max_epochs=max_epochs)
@@ -612,7 +629,7 @@ class FlairIntentTrainer(RhasspyActor):
             self._logger.info("Skipping intent classifier training")
 
         if len(ner_sentences) > 0:
-            self._logger.debug(f"Training {len(ner_sentences)} NER sequence tagger(s)")
+            self._logger.debug("Training %s NER sequence tagger(s)", len(ner_sentences))
 
             # Named entity recognition
             stacked_embeddings = StackedEmbeddings(word_embeddings)
@@ -633,7 +650,9 @@ class FlairIntentTrainer(RhasspyActor):
                 os.makedirs(ner_intent_dir, exist_ok=True)
 
                 self._logger.debug(
-                    f"NER tagger for {intent_name} has {len(intent_ner_sents)} example(s)"
+                    "NER tagger for %s has %s example(s)",
+                    intent_name,
+                    len(intent_ner_sents),
                 )
                 trainer = ModelTrainer(tagger, ner_corpus)
                 trainer.train(ner_intent_dir, max_epochs=max_epochs)
@@ -668,7 +687,12 @@ class FlairIntentTrainer(RhasspyActor):
 class CommandIntentTrainer(RhasspyActor):
     """Calls out to a command-line program to do intent system training."""
 
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.command: List[str] = []
+
     def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
         program = os.path.expandvars(
             self.profile.get("training.intent.command.program")
         )
@@ -680,6 +704,7 @@ class CommandIntentTrainer(RhasspyActor):
         self.command = [program] + arguments
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
         if isinstance(message, TrainIntent):
             try:
                 self.train(message.intent_fst)
@@ -689,6 +714,7 @@ class CommandIntentTrainer(RhasspyActor):
                 self.send(message.receiver or sender, IntentTrainingFailed(repr(e)))
 
     def train(self, intent_fst) -> None:
+        """Run external trainer."""
         try:
             self._logger.debug(self.command)
 
@@ -696,8 +722,8 @@ class CommandIntentTrainer(RhasspyActor):
             sentences_by_intent: Dict[str, Any] = make_sentences_by_intent(intent_fst)
 
             # JSON -> STDIN
-            input = json.dumps({sentences_by_intent}).encode()
+            json_input = json.dumps({sentences_by_intent}).encode()
 
-            subprocess.run(self.command, input=input, check=True)
-        except:
+            subprocess.run(self.command, input=json_input, check=True)
+        except Exception:
             self._logger.exception("train")

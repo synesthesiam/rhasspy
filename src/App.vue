@@ -2,7 +2,9 @@
     <div id="app">
         <!-- Top Bar -->
         <nav class="navbar navbar-expand-sm navbar-dark bg-dark fixed-top">
-            <img class="navbar-brand" v-bind:class="spinnerClass" src="/img/logo.png">
+            <a href="/">
+                <img class="navbar-brand" v-bind:class="spinnerClass" src="/img/logo.png">
+            </a>
 
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -11,7 +13,7 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <div class="navbar-container">
                     <a href="/" class="text-white font-weight-bold">Rhasspy</a>
-                    <a href="/api/" class="badge badge-info ml-2">API</a>
+                    <span class="badge badge-info ml-2">2.4</span>
                     <span class="badge badge-pill badge-danger ml-2" v-if="this.numProblems > 0" title="Problems were detected"><i class="fas fa-exclamation"></i></span>
                 </div>
                 <div class="navbar-container ml-auto">

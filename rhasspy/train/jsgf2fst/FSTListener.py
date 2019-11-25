@@ -26,7 +26,7 @@ class FSTListener(DependencyListener):
         self.is_public: bool = False
         self.in_rule: bool = False
         self.in_rule_reference: bool = False
-        self.rule_name: bool = None
+        self.rule_name: Optional[str] = None
 
         # Nesting level of groups/optionals
         self.group_depth: int = 0
