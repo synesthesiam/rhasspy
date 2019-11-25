@@ -10,11 +10,11 @@
     "words": {
         "known": {
             "word": "tempo",
-            "phonemes": "T E~+ P UX"
+            "phonemes": "t e~ p u"
         },
         "unknown": {
             "word": "tempoada",
-            "phonemes": "T E~ P O A+ D AX"
+            "phonemes": "t e~ p o a d a"
         }
     }
 }

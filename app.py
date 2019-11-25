@@ -11,16 +11,28 @@ from pathlib import Path
 from typing import Any, List, Tuple, Union
 from uuid import uuid4
 
-from quart import (Quart, Response, jsonify, request, safe_join, send_file,
-                   send_from_directory, websocket)
+from quart import (
+    Quart,
+    Response,
+    jsonify,
+    request,
+    safe_join,
+    send_file,
+    send_from_directory,
+    websocket,
+)
 from quart_cors import cors
 
 from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
 from rhasspy.dialogue import ProfileTrainingFailed
 from rhasspy.intent import IntentRecognized
-from rhasspy.utils import (FunctionLoggingHandler, buffer_to_wav,
-                           load_phoneme_examples, recursive_remove)
+from rhasspy.utils import (
+    FunctionLoggingHandler,
+    buffer_to_wav,
+    load_phoneme_examples,
+    recursive_remove,
+)
 
 # -----------------------------------------------------------------------------
 # Flask Web App Setup
@@ -852,7 +864,9 @@ async def add_ws_event(event_type: int, text: str):
 # Send logging messages out to websocket
 logging.root.addHandler(
     FunctionLoggingHandler(
-        lambda msg: loop.call_soon_threadsafe(add_ws_event, WS_EVENT_LOG, msg)
+        lambda msg: asyncio.run_coroutine_threadsafe(
+            add_ws_event(WS_EVENT_LOG, msg), loop
+        )
     )
 )
 
@@ -873,16 +887,18 @@ class WebSocketObserver(RhasspyActor):
             # Convert to JSON
             intent_json = json.dumps(message.intent)
             self._logger.debug(intent_json)
-            loop.call_soon_threadsafe(add_ws_event, WS_EVENT_INTENT, intent_json)
+            asyncio.run_coroutine_threadsafe(
+                add_ws_event(WS_EVENT_INTENT, intent_json), loop
+            )
 
 
 @app.websocket("/api/events/intent")
-async def api_events_intent(ws) -> None:
+async def api_events_intent() -> None:
     """Websocket endpoint to receive intents as JSON."""
     # Add new queue for websocket
     q: asyncio.Queue = asyncio.Queue()
-    async with ws_locks[WS_EVENT_LOG]:
-        ws_queues[WS_EVENT_LOG].append(q)
+    async with ws_locks[WS_EVENT_INTENT]:
+        ws_queues[WS_EVENT_INTENT].append(q)
 
     try:
         while True:
