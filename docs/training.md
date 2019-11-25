@@ -65,7 +65,7 @@ Compared to JSON, YAML, etc., there is minimal syntactic overhead for the purpos
 3. You cannot share commonly *repeated phrases* across sentences or intents.
 4. There is no way to *tag phrases* so the intent recognizer knows the values for an intent's slots (e.g., color).
 
-Each of these shortcomings are addressed by considering the space between intent headings (`[Intent 1]`, etc.) as a **grammar** that will *generate* tagged sentences in [Rasa NLU's training data format](https://rasa.com/docs/rasa/nlu/training-data-format/). The generated sentences, stripped of their tags, are used as input to [opengrm](https://www.opengrm.org) to produce a language model for [pocketsphinx](https://github.com/cmusphinx/pocketsphinx) or [Kaldi](https://kaldi-asr.org). The tagged sentences are then used to train an intent recognizer.
+Each of these shortcomings are addressed by considering the space between intent headings (`[Intent 1]`, etc.) as a **grammar** that represent many possible voice commands. The possible sentences, stripped of their tags, are used as input to [opengrm](https://www.opengrm.org) to produce a standard ARPA language model for [pocketsphinx](https://github.com/cmusphinx/pocketsphinx) or [Kaldi](https://kaldi-asr.org). The tagged sentences are then used to train an intent recognizer.
 
 ### Optional Words
 
