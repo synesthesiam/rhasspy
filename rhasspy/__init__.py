@@ -337,18 +337,18 @@ async def main() -> None:
         else:
             # Print profile settings
             json.dump(core.profile.json, sys.stdout, indent=4)
-    elif args.command == "validate":
-        from cerberus import Validator
+    # elif args.command == "validate":
+    #     from cerberus import Validator
 
-        schema_path = os.path.join(os.path.dirname(__file__), "profile_schema.json")
-        with open(schema_path, "r") as schema_file:
-            v = Validator(json.load(schema_file))
-            if v.validate(core.profile.json):
-                print("VALID")
-            else:
-                print("INVALID")
-                for err in v._errors:
-                    print(err)
+    #     schema_path = os.path.join(os.path.dirname(__file__), "profile_schema.json")
+    #     with open(schema_path, "r") as schema_file:
+    #         v = Validator(json.load(schema_file))
+    #         if v.validate(core.profile.json):
+    #             print("VALID")
+    #         else:
+    #             print("INVALID")
+    #             for err in v._errors:
+    #                 print(err)
     elif args.command == "sentences":
         sentences_path = core.profile.read_path(
             core.profile.get("speech_to_text.sentences_ini", "sentences.ini")

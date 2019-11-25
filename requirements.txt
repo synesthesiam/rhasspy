@@ -5,11 +5,7 @@ PyAudio
 webrtcvad
 fuzzywuzzy[speedup]
 adapt-parser
-precise-runner
-cerberus
-flair>=0.4.1
 google-cloud-texttospeech
-pyopenssl
 bs4
 html5lib
 networkx>=2.0
