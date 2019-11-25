@@ -77,6 +77,8 @@ Rhasspy features a comprehensive HTTP API available at `/api`, documented with [
     * POST text and have Rhasspy process it as command
 * `/api/text-to-speech`
     * POST text and have Rhasspy speak it
+* `/api/slots`
+    * POST JSON to update [slot values](training.md#slots-lists)
     
 See `public/swagger.yaml` in Rhasspy's repository for all available endpoints, or visit `/api` on your Rhasspy web server (e.g., [http://localhost:12101/api](http://localhost:12101/api)).
 

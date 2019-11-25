@@ -8,10 +8,69 @@ The following table summarizes the key characteristics of each wake word system:
 
 | System                                    | Performance | Training to Customize | Online Sign Up          |
 | ------                                    | ----------- | -----------------     | ----------------------- |
+| [porcupine](wake-word.md#porcupine)       | excellent   | yes, offline          | no                      |
+| [snowboy](wake-word.md#snowboy)           | good        | yes, online           | yes                     |
 | [pocketsphinx](wake-word.md#pocketsphinx) | poor        | no                    | no                      |
 | [precise](wake-word.md#mycroft-precise)   | moderate    | yes, offline          | no                      |
-| [snowboy](wake-word.md#snowboy)           | good        | yes, online           | yes                     |
-| [porcupine](wake-word.md#porcupine)       | excellent   | yes, offline          | no                      |
+
+## Porcupine
+
+Listens for a wake word with [porcupine](https://github.com/Picovoice/Porcupine). This system has the best performance out of the box. If you want a custom wake word, however, you will need to re-run their optimizer tool every 30 days.
+
+Add to your [profile](profiles.md):
+
+```json
+"wake": {
+  "system": "porcupine",
+  "porcupine": {
+    "library_path": "porcupine/libpv_porcupine.so",
+    "model_path": "porcupine/porcupine_params.pv",
+    "keyword_path": "porcupine/porcupine.ppn",
+    "sensitivity": 0.5
+  }
+},
+
+"rhasspy": {
+  "listen_on_start": true
+}
+```
+    
+There are a lot of [keyword files](https://github.com/Picovoice/Porcupine/tree/master/resources/keyword_files) available for download. Use the `linux` platform if you're on desktop/laptop (`amd64`) and the `raspberrypi` platform if you're using a Raspberry Pi (`armhf`/`aarch64`). The `.ppn` files should go in the `porcupine` directory inside your profile (referenced by `keyword_path`).
+
+If you want to create a custom wake word, you will need to run the [Porcupine Optimizer](https://github.com/Picovoice/Porcupine/tree/master/tools/optimizer). **NOTE**: the generated keyword file is only valid for 30 days, though you can always just re-run the optimizer.
+
+See `rhasspy.wake.PorcupineWakeListener` for details.
+
+## Snowboy
+
+Listens for a wake word with [snowboy](https://snowboy.kitt.ai). This system has the good performance out of the box, but requires an online service to train.
+
+Add to your [profile](profiles.md):
+
+```json
+"wake": {
+  "system": "snowboy",
+  "hermes": {
+    "wakeword_id": "default"
+  },
+  "snowboy": {
+    "model": "model-name-in-profile.(u|p)mdl",
+    "audio_gain": 1,
+    "sensitivity": 0.5,
+    "chunk_size": 960
+  }
+},
+
+"rhasspy": {
+  "listen_on_start": true
+}
+```
+    
+Visit [the snowboy website](https://snowboy.kitt.ai) to train your own wake word model (requires linking to a GitHub/Google/Facebook account). This *personal* model with end with `.pmdl`, and should go in your profile directory. Then, set `wake.snowboy.model` to the name of that file.
+
+You also have the option of using a pre-train *universal* model (`.umdl`) from [Kitt.AI](https://github.com/Kitt-AI/snowboy/tree/master/resources/models). I've received errors using anything but `snowboy.umdl`, but YMMV.
+
+See `rhasspy.wake.SnowboyWakeListener` for details.
 
 ## Pocketsphinx
 
@@ -65,65 +124,6 @@ Add to your [profile](profiles.md):
 Follow [the instructions from Mycroft AI](https://github.com/MycroftAI/mycroft-precise/wiki/Training-your-own-wake-word#how-to-train-your-own-wake-word) to train your own wake word model. When you're finished, place **both** the `.pb` and `.pb.params` files in your profile directory, and set `wake.precise.model` to the name of the `.pb` file.
     
 See `rhasspy.wake.PreciseWakeListener` for details.
-
-## Snowboy
-
-Listens for a wake word with [snowboy](https://snowboy.kitt.ai). This system has the good performance out of the box, but requires an online service to train.
-
-Add to your [profile](profiles.md):
-
-```json
-"wake": {
-  "system": "snowboy",
-  "hermes": {
-    "wakeword_id": "default"
-  },
-  "snowboy": {
-    "model": "model-name-in-profile.(u|p)mdl",
-    "audio_gain": 1,
-    "sensitivity": 0.5,
-    "chunk_size": 960
-  }
-},
-
-"rhasspy": {
-  "listen_on_start": true
-}
-```
-    
-Visit [the snowboy website](https://snowboy.kitt.ai) to train your own wake word model (requires linking to a GitHub/Google/Facebook account). This *personal* model with end with `.pmdl`, and should go in your profile directory. Then, set `wake.snowboy.model` to the name of that file.
-
-You also have the option of using a pre-train *universal* model (`.umdl`) from [Kitt.AI](https://github.com/Kitt-AI/snowboy/tree/master/resources/models). I've received errors using anything but `snowboy.umdl`, but YMMV.
-
-See `rhasspy.wake.SnowboyWakeListener` for details.
-
-## Porcupine
-
-Listens for a wake word with [porcupine](https://github.com/Picovoice/Porcupine). This system has the best performance out of the box. If you want a custom wake word, however, you will need to re-run their optimizer tool every 30 days.
-
-Add to your [profile](profiles.md):
-
-```json
-"wake": {
-  "system": "porcupine",
-  "porcupine": {
-    "library_path": "porcupine/libpv_porcupine.so",
-    "model_path": "porcupine/porcupine_params.pv",
-    "keyword_path": "porcupine/porcupine.ppn",
-    "sensitivity": 0.5
-  }
-},
-
-"rhasspy": {
-  "listen_on_start": true
-}
-```
-    
-There are a lot of [keyword files](https://github.com/Picovoice/Porcupine/tree/master/resources/keyword_files) available for download. Use the `linux` platform if you're on desktop/laptop (`amd64`) and the `raspberrypi` platform if you're using a Raspberry Pi (`armhf`/`aarch64`). The `.ppn` files should go in the `porcupine` directory inside your profile (referenced by `keyword_path`).
-
-If you want to create a custom wake word, you will need to run the [Porcupine Optimizer](https://github.com/Picovoice/Porcupine/tree/master/tools/optimizer). **NOTE**: the generated keyword file is only valid for 30 days, though you can always just re-run the optimizer.
-
-See `rhasspy.wake.PorcupineWakeListener` for details.
 
 ## MQTT/Hermes
 
