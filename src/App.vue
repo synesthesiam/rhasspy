@@ -67,7 +67,7 @@
                     <Slots />
                 </div>
                 <div class="tab-pane fade" id="pronounce" role="tabpanel" aria-labelledby="pronounce-tab">
-                    <LookupPronounce :unknownWords="unknownWords" />
+                    <LookupPronounce :unknownWords="unknownWords" :customWords="customWords" />
                 </div>
                 <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
                     <ProfileSettings :profile="profile" :profiles="profiles" :defaults="defaults"
@@ -168,6 +168,7 @@
              restarting: false,
              downloading: false,
 
+             customWords: '',
              unknownWords: [],
 
              rhasspyLog: '',
@@ -248,12 +249,19 @@
              this.beginAsync()
              this.training = true
              LanguageModelService.train(noCache)
-                                 .then(request => this.alert(request.data, 'success'))
+                                 .then(this.getUnknownWords())
+                                 .then(request => {
+                                     if (this.unknownWords.length > 0) {
+                                         this.alert('There are ' + this.unknownWords.length + ' unknown word(s)', 'warning')
+                                     } else {
+                                         this.alert(request.data, 'success')
+                                     }
+                                 })
                                  .catch(err => this.error(err))
                                  .then(() => {
                                      this.training = false
                                      this.endAsync()
-                                     this.getUnknownWords()
+                                     this.getCustomWords()
                                  })
          },
 
@@ -276,6 +284,14 @@
                              .then(request => {
                                  this.unknownWords = Object.entries(request.data)
                                  this.unknownWords.sort()
+                             })
+                             .catch(err => this.error(err))
+         },
+
+         getCustomWords: function() {
+             PronounceService.getCustomWords()
+                             .then(request => {
+                                 this.customWords = request.data
                              })
                              .catch(err => this.error(err))
          },
@@ -316,6 +332,7 @@
          this.getProfile()
          this.getProfiles()
          this.getDefaults()
+         this.getCustomWords()
          this.getUnknownWords()
          this.getProblems()
          this.$options.sockets.onmessage = function(event) {

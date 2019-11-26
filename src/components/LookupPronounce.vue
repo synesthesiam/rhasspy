@@ -88,7 +88,7 @@
                     </div>
                 </div>
                 <div class="form-row">
-                    <textarea id="custom-words" class="form-control" style="border-width: 3px" type="text" rows="10" v-model="customWords" v-bind:class="{ 'border-danger': customWordsDirty }" @input="customWordsDirty=true"></textarea>
+                    <textarea id="custom-words" class="form-control" style="border-width: 3px" type="text" rows="10" v-model="$parent.customWords" v-bind:class="{ 'border-danger': customWordsDirty }" @input="customWordsDirty=true"></textarea>
                 </div>
             </div>
 
@@ -154,7 +154,6 @@
              examples: [],
              pronounceType: 'phonemes',
 
-             customWords: '',
              customWordsDirty: false,
          }
      },
@@ -239,27 +238,18 @@
          },
 
          saveCustomWords: function() {
-             this.$parent.beginAsync()
-             PronounceService.updateCustomWords(this.customWords)
-                 .then(request => this.$parent.alert(request.data, 'success'))
-                 .then(() => {
-                     this.$parent.endAsync()
-                     this.customWordsDirty = false
-                 })
-                 .catch(err => this.$parent.error(err))
-         },
-
-         getCustomWords: function() {
-             PronounceService.getCustomWords()
-                             .then(request => {
-                                 this.customWords = request.data
+             PronounceService.updateCustomWords(this.$parent.customWords)
+                             .then(request => this.$parent.alert(request.data, 'success'))
+                             .then(() => {
+                                 this.$parent.endAsync()
+                                 this.customWordsDirty = false
                              })
                              .catch(err => this.$parent.error(err))
          },
 
          addToCustomWords: function() {
              if (this.dictWord.length > 0) {
-                 this.customWords += '\n' + this.dictWord + ' ' + this.phonemes
+                 this.$parent.customWords += '\n' + this.dictWord + ' ' + this.phonemes
                  this.customWordsDirty = true
              }
          }
@@ -267,7 +257,6 @@
 
      mounted: function() {
          this.refreshExamples()
-         this.customWords = this.getCustomWords()
      }
  }
 </script>

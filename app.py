@@ -32,6 +32,8 @@ from rhasspy.utils import (
     buffer_to_wav,
     load_phoneme_examples,
     recursive_remove,
+    get_wav_duration,
+    read_dict,
 )
 
 # -----------------------------------------------------------------------------
@@ -410,7 +412,7 @@ async def api_sentences():
         core.profile.read_path(core.profile.get("speech_to_text.sentences_ini"))
     )
 
-    if not sentences_path.exists():
+    if not sentences_path.is_file():
         return ""  # no sentences yet
 
     # Return file contents
@@ -453,11 +455,18 @@ async def api_custom_words():
     )
 
     # Return custom_words
-    if custom_words_path.exists():
-        return ""  # no custom_words yet
+    if prefers_json():
+        if not custom_words_path.is_file():
+            return jsonify({})  # no custom_words yet
 
-    # Return file contents
-    return await send_file(custom_words_path)  # , mimetype="text/plain")
+        with open(custom_words_path, "r") as words_file:
+            return jsonify(read_dict(words_file))
+    else:
+        if not custom_words_path.is_file():
+            return ""  # no custom_words yet
+
+        # Return file contents
+        return await send_file(custom_words_path)
 
 
 # -----------------------------------------------------------------------------
@@ -523,7 +532,20 @@ async def api_speech_to_text() -> str:
         # Wrap in WAV
         wav_data = buffer_to_wav(wav_data)
 
+    start_time = time.perf_counter()
     result = await core.transcribe_wav(wav_data)
+    end_time = time.perf_counter()
+
+    if prefers_json():
+        return jsonify(
+            {
+                "text": result.text,
+                "likelihood": result.confidence,
+                "transcribe_seconds": (end_time - start_time),
+                "wav_seconds": get_wav_duration(wav_data),
+            }
+        )
+
     return result.text
 
 
@@ -639,7 +661,7 @@ async def api_stop_recording() -> Response:
 # -----------------------------------------------------------------------------
 
 
-@app.route("/api/unknown_words", methods=["GET"])
+@app.route("/api/unknown-words", methods=["GET"])
 async def api_unknown_words() -> Response:
     """Get list of unknown words."""
     assert core is not None
@@ -650,7 +672,7 @@ async def api_unknown_words() -> Response:
         )
     )
 
-    if unknown_path.exists():
+    if unknown_path.is_file():
         for line in open(unknown_path, "r"):
             line = line.strip()
             if line:
@@ -701,7 +723,7 @@ async def api_slots() -> Union[str, Response]:
             # Remote existing values first
             for name in new_slot_values.keys():
                 slots_path = safe_join(slots_dir, f"{name}")
-                if slots_path.exists():
+                if slots_path.is_file():
                     try:
                         slots_path.unlink()
                     except Exception:
@@ -755,7 +777,7 @@ def api_slots_by_name(name: str) -> Union[str, Response]:
         if overwrite_all:
             # Remote existing values first
             slots_path = safe_join(slots_dir, f"{name}")
-            if slots_path.exists():
+            if slots_path.is_file():
                 try:
                     slots_path.unlink()
                 except Exception:
@@ -930,6 +952,22 @@ async def api_events_log() -> None:
     # Remove queue
     async with ws_locks[WS_EVENT_LOG]:
         ws_queues[WS_EVENT_LOG].remove(q)
+
+
+# -----------------------------------------------------------------------------
+
+
+def prefers_json() -> bool:
+    return quality(request.accept_mimetypes, "application/json") > quality(
+        request.accept_mimetypes, "text/plain"
+    )
+
+
+def quality(accept, key: str) -> float:
+    for option in accept.options:
+        if accept._values_match(key, option.value):
+            return option.quality
+    return 0.0
 
 
 # -----------------------------------------------------------------------------

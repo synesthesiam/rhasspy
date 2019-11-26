@@ -8,7 +8,7 @@ import logging
 import tempfile
 import subprocess
 from pathlib import Path
-from typing import Dict, Set, Iterable, Any, List
+from typing import Dict, Set, Iterable, Any, List, Tuple
 from collections import deque
 
 import pywrapfst as fst
@@ -18,6 +18,7 @@ import doit
 from doit import create_after
 from doit.cmd_base import ModuleTaskLoader
 from doit.doit_cmd import DoitMain
+from doit.reporter import ConsoleReporter
 
 from rhasspy.train.jsgf2fst import (
     get_grammar_dependencies,
@@ -36,7 +37,7 @@ logger = logging.getLogger("train")
 # -----------------------------------------------------------------------------
 
 
-def train_profile(profile_dir: Path, profile: Profile) -> None:
+def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
 
     # Compact
     def ppath(query, default=None, write=False):
@@ -112,27 +113,11 @@ def train_profile(profile_dir: Path, profile: Profile) -> None:
     # Default to using all intents
     intents.update(_get_intents(sentences_ini))
 
-    # Check if intent whitelist exists
-    # if intent_whitelist.exists():
-    #     with open(intent_whitelist, "r") as whitelist_file:
-    #         # Each line is an intent to use
-    #         for line in whitelist_file:
-    #             line = line.strip()
-    #             if len(line) > 0:
-    #                 if whitelist is None:
-    #                     whitelist = []
-    #                     intents.clear()
-
-    #                 whitelist.append(line)
-    #                 intents.add(line)
-
     # -----------------------------------------------------------------------------
 
     def task_grammars():
         """Transforms sentences.ini into JSGF grammars, one per intent."""
         maybe_deps = []
-        # if intent_whitelist.exists():
-        #     maybe_deps.append(intent_whitelist)
 
         def ini_to_grammars(targets):
             with open(sentences_ini, "r") as sentences_file:
@@ -467,10 +452,22 @@ def train_profile(profile_dir: Path, profile: Profile) -> None:
 
     # -----------------------------------------------------------------------------
 
-    DOIT_CONFIG = {"action_string_formatting": "old"}
+    errors = []
+
+    class MyReporter(ConsoleReporter):
+        def add_failure(self, task, exception):
+            super().add_failure(task, exception)
+            errors.append(f"{task}: {exception}")
+
+        def runtime_error(self, msg):
+            super().runtime_error(msg)
+            errors.append(msg)
+
+    DOIT_CONFIG = {"action_string_formatting": "old", "reporter": MyReporter}
 
     # Run doit main
-    DoitMain(ModuleTaskLoader(locals())).run(sys.argv[1:])
+    result = DoitMain(ModuleTaskLoader(locals())).run(sys.argv[1:])
+    return (result, errors)
 
 
 # -----------------------------------------------------------------------------

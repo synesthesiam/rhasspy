@@ -12,8 +12,7 @@ import threading
 import wave
 from collections import defaultdict
 from pathlib import Path
-from typing import (Any, Callable, Dict, Iterable, List, Mapping, Optional,
-                    Set, Tuple)
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
 import pywrapfst as fst
 from num2words import num2words
@@ -90,7 +89,7 @@ def read_dict(
                 else:
                     word_dict[word] = [pronounce]
         except Exception as e:
-            _LOGGER.warning("read_dict: %s (line %s)", e, i+1)
+            _LOGGER.warning("read_dict: %s (line %s)", e, i + 1)
 
     return word_dict
 
@@ -434,3 +433,14 @@ def numbers_to_words(
 def split_whitespace(s: str, **kwargs):
     """Split a string by whitespace of any type/length."""
     return WHITESPACE_PATTERN.split(s, **kwargs)
+
+
+# -----------------------------------------------------------------------------
+
+
+def get_wav_duration(wav_bytes: bytes) -> float:
+    with io.BytesIO(wav_bytes) as wav_buffer:
+        with wave.open(wav_buffer) as wav_file:
+            frames = wav_file.getnframes()
+            rate = wav_file.getframerate()
+            return frames / float(rate)

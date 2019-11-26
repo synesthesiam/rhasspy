@@ -26,7 +26,7 @@ export default {
     },
 
     getUnknownWords() {
-        return Api().get('/api/unknown_words')
+        return Api().get('/api/unknown-words')
     },
 
     updateCustomWords(custom_words) {
