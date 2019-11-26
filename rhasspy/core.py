@@ -14,18 +14,39 @@ import aiohttp
 
 # Internal imports
 from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
-from rhasspy.audio_recorder import (AudioData, StartRecordingToBuffer,
-                                    StopRecordingToBuffer)
-from rhasspy.dialogue import (DialogueManager, GetActorStates, GetMicrophones,
-                              GetProblems, GetSpeakers, GetVoiceCommand,
-                              GetWordPhonemes, GetWordPronunciations,
-                              HandleIntent, ListenForCommand,
-                              ListenForWakeWord, MqttPublish, PlayWavData,
-                              PlayWavFile, Problems, ProfileTrainingComplete,
-                              ProfileTrainingFailed, RecognizeIntent,
-                              SpeakSentence, SpeakWord, TestMicrophones,
-                              TrainProfile, TranscribeWav, VoiceCommand,
-                              WakeWordDetected, WakeWordNotDetected)
+from rhasspy.audio_recorder import (
+    AudioData,
+    StartRecordingToBuffer,
+    StopRecordingToBuffer,
+)
+from rhasspy.dialogue import (
+    DialogueManager,
+    GetActorStates,
+    GetMicrophones,
+    GetProblems,
+    GetSpeakers,
+    GetVoiceCommand,
+    GetWordPhonemes,
+    GetWordPronunciations,
+    HandleIntent,
+    ListenForCommand,
+    ListenForWakeWord,
+    MqttPublish,
+    PlayWavData,
+    PlayWavFile,
+    Problems,
+    ProfileTrainingComplete,
+    ProfileTrainingFailed,
+    RecognizeIntent,
+    SpeakSentence,
+    SpeakWord,
+    TestMicrophones,
+    TrainProfile,
+    TranscribeWav,
+    VoiceCommand,
+    WakeWordDetected,
+    WakeWordNotDetected,
+)
 from rhasspy.intent import IntentRecognized
 from rhasspy.intent_handler import IntentHandled
 from rhasspy.profiles import Profile
@@ -382,7 +403,9 @@ class RhasspyCore:
                     # Check if file needs to be downloaded
                     for dest_name in files_dict:
                         dest_path = os.path.join(output_dir, dest_name)
-                        if not os.path.exists(dest_path):
+                        if not os.path.exists(dest_path) or (
+                            os.path.getsize(dest_path) == 0
+                        ):
                             missing_files[dest_path] = (setting_name, setting_value)
 
         return missing_files
@@ -450,10 +473,8 @@ class RhasspyCore:
 
                 async with self.session.get(url) as response:
                     with open(filename, "wb") as out_file:
-                        chunk = await response.content.read_chunk(chunk_size)
-                        while chunk is not None:
+                        async for chunk in response.content.iter_chunked(chunk_size):
                             out_file.write(chunk)
-                            chunk = await response.content.read_chunk(chunk_size)
 
                 self._logger.debug("Downloaded %s", filename)
             except Exception:
@@ -497,7 +518,7 @@ class RhasspyCore:
                             src_path = dest_path
 
                         # Check if file is already in cache
-                        if os.path.exists(src_path):
+                        if os.path.exists(src_path) and (os.path.getsize(src_path) > 0):
                             self._logger.debug(
                                 "Using cached %s for %s", src_path, dest_name
                             )

@@ -1,94 +1,84 @@
 {
-    "language": "en",
-    "name": "en",
-    "speech_to_text": {
-        "system": "pocketsphinx",
-        "dictionary_casing": "lower",
-        "kaldi": {
-            "base_dictionary": "kaldi/base_dictionary.txt",
-            "base_language_model": "kaldi/base_language_model.txt",
-            "compatible": true,
-            "custom_words": "kaldi/custom_words.txt",
-            "dictionary": "kaldi/dictionary.txt",
-            "graph": "graph",
-            "language_model": "kaldi/language_model.txt",
-            "model_dir": "kaldi/model",
-            "unknown_words": "kaldi/unknown_words.txt",
-            "mix_fst": "kaldi/mixed.fst",
-            "g2p_model": "kaldi/g2p.fst"
-        }
-    },
-    "intent": {
-        "flair": {
-            "embeddings": [
-                "news-forward-0.4.1.pt",
-                "news-backward-0.4.1.pt"
-            ]
-        }
-    },
-    "text_to_speech": {
-        "wavenet": {
-            "language_code": "en-US"
-        },
-        "marytts": {
-            "locale": "en-US"
-        }
-    },
-    "download": {
-        "conditions": {
-            "speech_to_text.system": {
-                "pocketsphinx": {
-                    "acoustic_model": "cmusphinx-en-us-5.2.tar.gz:cmusphinx-en-us-5.2",
-                    "base_dictionary.txt": "en-g2p.tar.gz:base_dictionary.txt",
-                    "g2p.fst": "en-g2p.tar.gz:g2p.fst"
-                }
-            },
-
-            "speech_to_text.pocketsphinx.mix_weight": {
-                ">0": {
-                    "base_language_model.txt": "en-70k-0.2-pruned.lm.gz:en-70k-0.2-pruned.lm"
-                }
-            },
-
-            "speech_to_text.system": {
-                "kaldi": {
-                    "kaldi": "en_kaldi-zamia.tar.gz:kaldi"
-                }
-            },
-
-            "intent.system": {
-                "flair": {
-                    "flair/cache/embeddings/news-forward-0.4.1.pt": "news-forward-0.4.1.pt",
-                    "flair/cache/embeddings/news-backward-0.4.1.pt": "news-backward-0.4.1.pt"
-                }
-            }
-        },
-
-        "files": {
-            "cmusphinx-en-us-5.2.tar.gz": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/cmusphinx-en-us-5.2.tar.gz"
-            },
-            "en-70k-0.2-pruned.lm.gz": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/en-70k-0.2-pruned.lm.gz"
-            },
-            "en-g2p.tar.gz": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/en-g2p.tar.gz"
-            },
-            "news-forward-0.4.1.pt": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/news-forward-0.4.1.pt",
-                "cache": false
-            },
-            "news-backward-0.4.1.pt": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/news-backward-0.4.1.pt",
-                "cache": false
-            },
-            "news-backward-0.4.1.pt": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/news-backward-0.4.1.pt",
-                "cache": false
-            },
-            "en_kaldi-zamia.tar.gz": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/en_kaldi-zamia.tar.gz"
-            }
-        }
+  "language": "en",
+  "name": "en",
+  "speech_to_text": {
+    "system": "pocketsphinx",
+    "dictionary_casing": "lower",
+    "kaldi": {
+      "base_dictionary": "kaldi/base_dictionary.txt",
+      "base_language_model": "kaldi/base_language_model.txt",
+      "compatible": true,
+      "custom_words": "kaldi/custom_words.txt",
+      "dictionary": "kaldi/dictionary.txt",
+      "graph": "graph",
+      "language_model": "kaldi/language_model.txt",
+      "model_dir": "kaldi/model",
+      "unknown_words": "kaldi/unknown_words.txt",
+      "mix_fst": "kaldi/mixed.fst",
+      "g2p_model": "kaldi/g2p.fst"
     }
+  },
+  "intent": {
+    "flair": {
+      "embeddings": [
+        "news-forward-0.4.1.pt",
+        "news-backward-0.4.1.pt"
+      ]
+    }
+  },
+  "text_to_speech": {
+    "wavenet": {
+      "language_code": "en-US"
+    },
+    "marytts": {
+      "locale": "en-US"
+    }
+  },
+  "download": {
+    "conditions": {
+      "speech_to_text.system": {
+        "pocketsphinx": {
+          "acoustic_model": "cmusphinx-en-us-5.2.tar.gz:cmusphinx-en-us-5.2",
+          "base_dictionary.txt": "en-g2p.tar.gz:base_dictionary.txt",
+          "g2p.fst": "en-g2p.tar.gz:g2p.fst"
+        },
+        "kaldi": {
+          "kaldi": "en_kaldi-zamia.tar.gz:kaldi"
+        }
+      },
+      "speech_to_text.pocketsphinx.mix_weight": {
+        ">0": {
+          "base_language_model.txt": "en-70k-0.2-pruned.lm.gz:en-70k-0.2-pruned.lm"
+        }
+      },
+      "intent.system": {
+        "flair": {
+          "flair/cache/embeddings/news-forward-0.4.1.pt": "news-forward-0.4.1.pt",
+          "flair/cache/embeddings/news-backward-0.4.1.pt": "news-backward-0.4.1.pt"
+        }
+      }
+    },
+    "files": {
+      "cmusphinx-en-us-5.2.tar.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/cmusphinx-en-us-5.2.tar.gz"
+      },
+      "en-70k-0.2-pruned.lm.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/en-70k-0.2-pruned.lm.gz"
+      },
+      "en-g2p.tar.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/en-g2p.tar.gz"
+      },
+      "news-forward-0.4.1.pt": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/news-forward-0.4.1.pt",
+        "cache": false
+      },
+      "news-backward-0.4.1.pt": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/news-backward-0.4.1.pt",
+        "cache": false
+      },
+      "en_kaldi-zamia.tar.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-en/en_kaldi-zamia.tar.gz"
+      }
+    }
+  }
 }

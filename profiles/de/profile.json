@@ -1,90 +1,84 @@
 {
-    "language": "de",
-    "name": "de",
-    "speech_to_text": {
-        "system": "pocketsphinx",
-        "dictionary_casing": "lower",
-        "kaldi": {
-            "base_dictionary": "kaldi/base_dictionary.txt",
-            "base_language_model": "kaldi/base_language_model.txt",
-            "compatible": true,
-            "custom_words": "kaldi/custom_words.txt",
-            "dictionary": "kaldi/dictionary.txt",
-            "graph": "graph",
-            "language_model": "kaldi/language_model.txt",
-            "model_dir": "kaldi/model",
-            "unknown_words": "kaldi/unknown_words.txt",
-            "mix_fst": "kaldi/mixed.fst",
-            "g2p_model": "kaldi/g2p.fst"
-        }
-    },
-    "intent": {
-        "flair": {
-            "embeddings": [
-                "lm-mix-german-forward-v0.2rc.pt",
-                "lm-mix-german-backward-v0.2rc.pt"
-            ]
-        }
-    },
-    "text_to_speech": {
-        "wavenet": {
-            "language_code": "de-DE"
-        },
-        "marytts": {
-            "locale": "de-DE"
-        }
-    },
-    "download": {
-        "conditions": {
-            "speech_to_text.system": {
-                "pocketsphinx": {
-                    "acoustic_model": "cmusphinx-de-voxforge-5.2.tar.gz:cmusphinx-cont-voxforge-de-r20171217/model_parameters/voxforge.cd_cont_6000",
-                    "base_dictionary.txt": "cmusphinx-de-voxforge-5.2.tar.gz:cmusphinx-cont-voxforge-de-r20171217/etc/voxforge.dic",
-                    "g2p.fst": "de-g2p.tar.gz:g2p.fst"
-                }
-            },
-
-            "speech_to_text.pocketsphinx.mix_weight": {
-                ">0": {
-                    "base_language_model.txt": "cmusphinx-voxforge-de.lm.gz:cmusphinx-voxforge-de.lm"
-                }
-            },
-
-            "speech_to_text.system": {
-                "kaldi": {
-                    "kaldi": "de_kaldi-zamia.tar.gz:kaldi"
-                }
-            },
-
-            "intent.system": {
-                "flair": {
-                    "flair/cache/embeddings/lm-mix-german-forward-v0.2rc.pt": "lm-mix-german-forward-v0.2rc.pt",
-                    "flair/cache/embeddings/lm-mix-german-backward-v0.2rc.pt": "lm-mix-german-backward-v0.2rc.pt"
-                }
-            }
-        },
-
-        "files": {
-            "cmusphinx-de-voxforge-5.2.tar.gz": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/cmusphinx-de-voxforge-5.2.tar.gz"
-            },
-            "cmusphinx-voxforge-de.lm.gz": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/cmusphinx-voxforge-de.lm.gz"
-            },
-            "de-g2p.tar.gz": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/de-g2p.tar.gz"
-            },
-            "lm-mix-german-forward-v0.2rc.pt": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/lm-mix-german-forward-v0.2rc.pt",
-                "cache": false
-            },
-            "lm-mix-german-backward-v0.2rc.pt": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/lm-mix-german-backward-v0.2rc.pt",
-                "cache": false
-            },
-            "de_kaldi-zamia.tar.gz": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/de_kaldi-zamia.tar.gz"
-            }
-        }
+  "language": "de",
+  "name": "de",
+  "speech_to_text": {
+    "system": "pocketsphinx",
+    "dictionary_casing": "lower",
+    "kaldi": {
+      "base_dictionary": "kaldi/base_dictionary.txt",
+      "base_language_model": "kaldi/base_language_model.txt",
+      "compatible": true,
+      "custom_words": "kaldi/custom_words.txt",
+      "dictionary": "kaldi/dictionary.txt",
+      "graph": "graph",
+      "language_model": "kaldi/language_model.txt",
+      "model_dir": "kaldi/model",
+      "unknown_words": "kaldi/unknown_words.txt",
+      "mix_fst": "kaldi/mixed.fst",
+      "g2p_model": "kaldi/g2p.fst"
     }
+  },
+  "intent": {
+    "flair": {
+      "embeddings": [
+        "lm-mix-german-forward-v0.2rc.pt",
+        "lm-mix-german-backward-v0.2rc.pt"
+      ]
+    }
+  },
+  "text_to_speech": {
+    "wavenet": {
+      "language_code": "de-DE"
+    },
+    "marytts": {
+      "locale": "de-DE"
+    }
+  },
+  "download": {
+    "conditions": {
+      "speech_to_text.system": {
+        "pocketsphinx": {
+          "acoustic_model": "cmusphinx-de-voxforge-5.2.tar.gz:cmusphinx-cont-voxforge-de-r20171217/model_parameters/voxforge.cd_cont_6000",
+          "base_dictionary.txt": "cmusphinx-de-voxforge-5.2.tar.gz:cmusphinx-cont-voxforge-de-r20171217/etc/voxforge.dic",
+          "g2p.fst": "de-g2p.tar.gz:g2p.fst"
+        },
+        "kaldi": {
+          "kaldi": "de_kaldi-zamia.tar.gz:kaldi"
+        }
+      },
+      "speech_to_text.pocketsphinx.mix_weight": {
+        ">0": {
+          "base_language_model.txt": "cmusphinx-voxforge-de.lm.gz:cmusphinx-voxforge-de.lm"
+        }
+      },
+      "intent.system": {
+        "flair": {
+          "flair/cache/embeddings/lm-mix-german-forward-v0.2rc.pt": "lm-mix-german-forward-v0.2rc.pt",
+          "flair/cache/embeddings/lm-mix-german-backward-v0.2rc.pt": "lm-mix-german-backward-v0.2rc.pt"
+        }
+      }
+    },
+    "files": {
+      "cmusphinx-de-voxforge-5.2.tar.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/cmusphinx-de-voxforge-5.2.tar.gz"
+      },
+      "cmusphinx-voxforge-de.lm.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/cmusphinx-voxforge-de.lm.gz"
+      },
+      "de-g2p.tar.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/de-g2p.tar.gz"
+      },
+      "lm-mix-german-forward-v0.2rc.pt": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/lm-mix-german-forward-v0.2rc.pt",
+        "cache": false
+      },
+      "lm-mix-german-backward-v0.2rc.pt": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/lm-mix-german-backward-v0.2rc.pt",
+        "cache": false
+      },
+      "de_kaldi-zamia.tar.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-de/de_kaldi-zamia.tar.gz"
+      }
+    }
+  }
 }
