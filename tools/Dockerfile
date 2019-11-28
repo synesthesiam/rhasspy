@@ -17,7 +17,7 @@ RUN apt-get update &&  \
     apt-get install -y build-essential python3-dev checkinstall
 
 RUN cd / && tar -xf openfst-1.6.9.tar.gz && cd openfst-1.6.9/ && \
-    ./configure --prefix=/build --enable-far --enable-static --enable-shared --enable-ngram-fsts && \
+    ./configure --prefix=/build --enable-far --enable-static=no --enable-bin=no --enable-shared --enable-ngram-fsts && \
     make -j $MAKE_THREADS && \
     make install
 
@@ -25,9 +25,8 @@ ENV CPPFLAGS=-I/build/include
 ENV LDFLAGS=-L/build/lib
 
 RUN cd / && tar -xf opengrm-ngram-1.3.4.tar.gz && cd opengrm-ngram-1.3.4/ && \
-   ./configure --prefix=/build \
-       --with-openfst-includes=/build/include \
-       --with-openfst-libs=/build/lib && \
+   CXXFLAGS="-I/build/include" LDFLAGS="-L/build/lib" \
+   ./configure --prefix=/build && \
    make -j $MAKE_THREADS && \
    make install
 
