@@ -128,7 +128,9 @@ const profileDefaults = {
             "mllr_matrix": "acoustic_model_mllr",
             "unknown_words": "unknown_words.txt",
             "min_confidence": 0.0,
-            "compatible": true
+            "compatible": true,
+            "phoneme_examples": "phoneme_examples.txt",
+            "phoneme_map": "espeak_phonemes.txt"
         },
         "kaldi": {
             "base_dictionary": "base_dictionary.txt",
@@ -139,7 +141,9 @@ const profileDefaults = {
             "language_model": "language_model.txt",
             "model_dir": "model",
             "unknown_words": "unknown_words.txt",
-            "compatible": false
+            "compatible": false,
+            "phoneme_examples": "phoneme_examples.txt",
+            "phoneme_map": "espeak_phonemes.txt"
         },
         "remote": {
             "url": "http://my-server:12101/api/speech-to-text"
@@ -155,9 +159,7 @@ const profileDefaults = {
     },
     "text_to_speech": {
         "espeak": {
-            "phoneme_map": "espeak_phonemes.txt"
         },
-        "phoneme_examples": "phoneme_examples.txt",
         "system": "espeak",
         "command": {
             "program": "",

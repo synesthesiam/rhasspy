@@ -375,9 +375,13 @@ async def api_play_wav() -> str:
 def api_phonemes():
     """Get phonemes and example words for a profile"""
     assert core is not None
+    speech_system = core.profile.get("speech_to_text.system", "pocketsphinx")
     examples_path = Path(
         core.profile.read_path(
-            core.profile.get("text_to_speech.phoneme_examples", "phoneme_examples.txt")
+            core.profile.get(
+                f"speech_to_text.{speech_system}.phoneme_examples",
+                "phoneme_examples.txt",
+            )
         )
     )
 
@@ -426,10 +430,12 @@ async def api_sentences():
 async def api_custom_words():
     """Read or write custom word dictionary for a profile"""
     assert core is not None
+    speech_system = core.profile.get("speech_to_text.system", "pocketsphinx")
+
     if request.method == "POST":
         custom_words_path = Path(
             core.profile.write_path(
-                core.profile.get("speech_to_text.pocketsphinx.custom_words")
+                core.profile.get(f"speech_to_text.{speech_system}.custom_words")
             )
         )
 
@@ -450,7 +456,7 @@ async def api_custom_words():
 
     custom_words_path = Path(
         core.profile.read_path(
-            core.profile.get("speech_to_text.pocketsphinx.custom_words")
+            core.profile.get(f"speech_to_text.{speech_system}.custom_words")
         )
     )
 
@@ -665,10 +671,11 @@ async def api_stop_recording() -> Response:
 async def api_unknown_words() -> Response:
     """Get list of unknown words."""
     assert core is not None
+    speech_system = core.profile.get("speech_to_text.system", "pocketsphinx")
     unknown_words = {}
     unknown_path = Path(
         core.profile.read_path(
-            core.profile.get("speech_to_text.pocketsphinx.unknown_words")
+            core.profile.get(f"speech_to_text.{speech_system}.unknown_words")
         )
     )
 

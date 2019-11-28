@@ -1,323 +1,324 @@
 {
+  "command": {
     "command": {
-        "command": {
-            "arguments": [],
-            "program": ""
-        },
-        "hermes": {
-            "timeout_sec": 30
-        },
-        "oneshot": {
-            "timeout_sec": 30
-        },
-        "system": "webrtcvad",
-        "webrtcvad": {
-            "chunk_size": 960,
-            "min_sec": 2,
-            "sample_rate": 16000,
-            "silence_sec": 0.5,
-            "speech_buffers": 5,
-            "throwaway_buffers": 10,
-            "timeout_sec": 30,
-            "vad_mode": 0
-        }
+      "arguments": [],
+      "program": ""
     },
-    "handle": {
-        "command": {
-            "arguments": [],
-            "program": ""
-        },
-        "forward_to_hass": false,
-        "system": "dummy"
+    "hermes": {
+      "timeout_sec": 30
     },
-    "home_assistant": {
-        "access_token": "",
-        "api_password": "",
-        "event_type_format": "rhasspy_{0}",
-        "pem_file": "",
-        "url": "http://hassio/homeassistant/"
+    "oneshot": {
+      "timeout_sec": 30
+    },
+    "system": "webrtcvad",
+    "webrtcvad": {
+      "chunk_size": 960,
+      "min_sec": 2,
+      "sample_rate": 16000,
+      "silence_sec": 0.5,
+      "speech_buffers": 5,
+      "throwaway_buffers": 10,
+      "timeout_sec": 30,
+      "vad_mode": 0
+    }
+  },
+  "handle": {
+    "command": {
+      "arguments": [],
+      "program": ""
+    },
+    "forward_to_hass": false,
+    "system": "dummy"
+  },
+  "home_assistant": {
+    "access_token": "",
+    "api_password": "",
+    "event_type_format": "rhasspy_{0}",
+    "pem_file": "",
+    "url": "http://hassio/homeassistant/"
+  },
+  "intent": {
+    "adapt": {
+      "stop_words": "stop_words.txt"
+    },
+    "command": {
+      "arguments": [],
+      "program": ""
+    },
+    "fuzzywuzzy": {
+      "examples_json": "intent_examples.json",
+      "min_confidence": 0
+    },
+    "fsticuffs": {
+      "intent_fst": "intent.fst",
+      "ignore_unknown_words": true,
+      "fuzzy": true
+    },
+    "flair": {
+      "cache_dir": "flair/cache",
+      "data_dir": "flair/data",
+      "embeddings": [],
+      "max_epochs": 25,
+      "do_sampling": true,
+      "num_samples": 10000,
+      "compatible": true
+    },
+    "rasa": {
+      "examples_markdown": "intent_examples.md",
+      "project_name": "rhasspy",
+      "url": "http://localhost:5005/"
+    },
+    "remote": {
+      "url": "http://my-server:12101/api/text-to-intent"
+    },
+    "replace_numbers": true,
+    "system": "fsticuffs"
+  },
+  "language": "",
+  "microphone": {
+    "arecord": {
+      "chunk_size": 960,
+      "device": ""
+    },
+    "pyaudio": {
+      "device": "",
+      "frames_per_buffer": 480
+    },
+    "stdin": {
+      "auto_start": true,
+      "chunk_size": 960
+    },
+    "http": {
+      "host": "127.0.0.1",
+      "port": 12333,
+      "stop_after": "never"
+    },
+    "gstreamer": {
+      "pipeline": "udpsrc port=12333 ! rawaudioparse use-sink-caps=false format=pcm pcm-format=s16le sample-rate=16000 num-channels=1 ! queue ! audioconvert ! audioresample"
+    },
+    "system": "pyaudio"
+  },
+  "mqtt": {
+    "enabled": false,
+    "host": "localhost",
+    "password": "",
+    "port": 1883,
+    "publish_intents": true,
+    "reconnect_sec": 5,
+    "site_id": "default",
+    "username": ""
+  },
+  "rhasspy": {
+    "listen_on_start": true,
+    "load_timeout_sec": 15,
+    "preload_profile": true
+  },
+  "sounds": {
+    "recorded": "${RHASSPY_BASE_DIR}/etc/wav/beep_lo.wav",
+    "system": "aplay",
+    "wake": "${RHASSPY_BASE_DIR}/etc/wav/beep_hi.wav"
+  },
+  "speech_to_text": {
+    "command": {
+      "arguments": [],
+      "program": ""
+    },
+    "dictionary_casing": "",
+    "g2p_casing": "",
+    "grammars_dir": "grammars",
+    "fsts_dir": "fsts",
+    "kaldi": {
+      "base_dictionary": "base_dictionary.txt",
+      "base_language_model": "base_language_model.txt",
+      "compatible": false,
+      "custom_words": "custom_words.txt",
+      "dictionary": "dictionary.txt",
+      "graph": "graph",
+      "kaldi_dir": "${KALDI_PREFIX}/kaldi",
+      "language_model": "language_model.txt",
+      "model_dir": "model",
+      "unknown_words": "unknown_words.txt",
+      "mix_weight": 0,
+      "mix_fst": "mixed.fst",
+      "g2p_model": "g2p.fst",
+      "phoneme_examples": "phoneme_examples.txt",
+      "phoneme_map": "espeak_phonemes.txt"
+    },
+    "pocketsphinx": {
+      "acoustic_model": "acoustic_model",
+      "base_dictionary": "base_dictionary.txt",
+      "base_language_model": "base_language_model.txt",
+      "compatible": true,
+      "custom_words": "custom_words.txt",
+      "dictionary": "dictionary.txt",
+      "language_model": "language_model.txt",
+      "min_confidence": 0,
+      "mllr_matrix": "acoustic_model_mllr",
+      "unknown_words": "unknown_words.txt",
+      "mix_weight": 0,
+      "mix_fst": "mixed.fst",
+      "g2p_model": "g2p.fst",
+      "phoneme_examples": "phoneme_examples.txt",
+      "phoneme_map": "espeak_phonemes.txt"
+    },
+    "remote": {
+      "url": "http://my-server:12101/api/speech-to-text"
+    },
+    "sentences_ini": "sentences.ini",
+    "slots_dir": "slots",
+    "system": "dummy"
+  },
+  "text_to_speech": {
+    "command": {
+      "arguments": [],
+      "program": ""
+    },
+    "espeak": {},
+    "flite": {
+      "voice": "kal16"
+    },
+    "marytts": {
+      "url": "http://localhost:59125"
+    },
+    "picotts": {},
+    "system": "espeak",
+    "wavenet": {
+      "cache_dir": "tts/googlewavenet/cache",
+      "credentials_json": "tts/googlewavenet/credentials.json",
+      "gender": "FEMALE",
+      "language_code": "en-US",
+      "sample_rate": 22050,
+      "url": "https://texttospeech.googleapis.com/v1/text:synthesize",
+      "voice": "Wavenet-C",
+      "fallback_tts": "espeak"
+    }
+  },
+  "training": {
+    "dictionary_number_duplicates": true,
+    "grammars": {
+      "delete_before_training": true
     },
     "intent": {
-        "adapt": {
-            "stop_words": "stop_words.txt"
-        },
-        "command": {
-            "arguments": [],
-            "program": ""
-        },
-        "fuzzywuzzy": {
-            "examples_json": "intent_examples.json",
-            "min_confidence": 0
-        },
-        "fsticuffs": {
-            "intent_fst": "intent.fst",
-            "ignore_unknown_words": true,
-            "fuzzy": true
-        },
-        "flair": {
-            "cache_dir": "flair/cache",
-            "data_dir": "flair/data",
-            "embeddings": [],
-            "max_epochs": 25,
-            "do_sampling": true,
-            "num_samples": 10000,
-            "compatible": true
-        },
-        "rasa": {
-            "examples_markdown": "intent_examples.md",
-            "project_name": "rhasspy",
-            "url": "http://localhost:5005/"
-        },
-        "remote": {
-            "url": "http://my-server:12101/api/text-to-intent"
-        },
-        "replace_numbers": true,
-        "system": "fsticuffs"
+      "command": {
+        "arguments": [],
+        "program": ""
+      },
+      "intent_map": "intent_map.json",
+      "system": "auto"
     },
-    "language": "",
-    "microphone": {
-        "arecord": {
-            "chunk_size": 960,
-            "device": ""
-        },
-        "pyaudio": {
-            "device": "",
-            "frames_per_buffer": 480
-        },
-        "stdin": {
-            "auto_start": true,
-            "chunk_size": 960
-        },
-        "http": {
-            "host": "127.0.0.1",
-            "port": 12333,
-            "stop_after": "never"
-        },
-        "gstreamer": {
-            "pipeline": "udpsrc port=12333 ! rawaudioparse use-sink-caps=false format=pcm pcm-format=s16le sample-rate=16000 num-channels=1 ! queue ! audioconvert ! audioresample"
-        },
-        "system": "pyaudio"
-    },
-    "mqtt": {
-        "enabled": false,
-        "host": "localhost",
-        "password": "",
-        "port": 1883,
-        "publish_intents": true,
-        "reconnect_sec": 5,
-        "site_id": "default",
-        "username": ""
-    },
-    "rhasspy": {
-        "listen_on_start": true,
-        "load_timeout_sec": 15,
-        "preload_profile": true
-    },
-    "sounds": {
-        "recorded": "${RHASSPY_BASE_DIR}/etc/wav/beep_lo.wav",
-        "system": "aplay",
-        "wake": "${RHASSPY_BASE_DIR}/etc/wav/beep_hi.wav"
+    "regex": {
+      "split": "\\s+"
     },
     "speech_to_text": {
-        "command": {
-            "arguments": [],
-            "program": ""
-        },
-        "dictionary_casing": "",
-        "g2p_casing": "",
-        "grammars_dir": "grammars",
-        "fsts_dir": "fsts",
-        "kaldi": {
-            "base_dictionary": "base_dictionary.txt",
-            "base_language_model": "base_language_model.txt",
-            "compatible": false,
-            "custom_words": "custom_words.txt",
-            "dictionary": "dictionary.txt",
-            "graph": "graph",
-            "kaldi_dir": "${KALDI_PREFIX}/kaldi",
-            "language_model": "language_model.txt",
-            "model_dir": "model",
-            "unknown_words": "unknown_words.txt",
-            "mix_weight": 0.0,
-            "mix_fst": "mixed.fst",
-            "g2p_model": "g2p.fst"
-        },
-        "pocketsphinx": {
-            "acoustic_model": "acoustic_model",
-            "base_dictionary": "base_dictionary.txt",
-            "base_language_model": "base_language_model.txt",
-            "compatible": true,
-            "custom_words": "custom_words.txt",
-            "dictionary": "dictionary.txt",
-            "language_model": "language_model.txt",
-            "min_confidence": 0,
-            "mllr_matrix": "acoustic_model_mllr",
-            "unknown_words": "unknown_words.txt",
-            "mix_weight": 0.0,
-            "mix_fst": "mixed.fst",
-            "g2p_model": "g2p.fst"
-        },
-        "remote": {
-            "url": "http://my-server:12101/api/speech-to-text"
-        },
-        "sentences_ini": "sentences.ini",
-        "slots_dir": "slots",
-        "system": "dummy"
+      "command": {
+        "arguments": [],
+        "program": ""
+      },
+      "system": "auto"
     },
-    "text_to_speech": {
-        "command": {
-            "arguments": [],
-            "program": ""
-        },
-        "espeak": {
-            "phoneme_map": "espeak_phonemes.txt"
-        },
-        "flite": {
-            "voice": "kal16"
-        },
-        "marytts": {
-            "url": "http://localhost:59125"
-        },
-        "phoneme_examples": "phoneme_examples.txt",
-        "picotts": {},
-        "system": "espeak",
-        "wavenet": {
-            "cache_dir": "tts/googlewavenet/cache",
-            "credentials_json": "tts/googlewavenet/credentials.json",
-            "gender": "FEMALE",
-            "language_code": "en-US",
-            "sample_rate": 22050,
-            "url": "https://texttospeech.googleapis.com/v1/text:synthesize",
-            "voice": "Wavenet-C",
-            "fallback_tts": "espeak"
-        }
+    "tokenizer": "regex",
+    "unknown_words": {
+      "fail_when_present": true,
+      "guess_pronunciations": true
+    }
+  },
+  "wake": {
+    "command": {
+      "arguments": [],
+      "program": ""
     },
-    "training": {
-        "dictionary_number_duplicates": true,
-        "grammars": {
-            "delete_before_training": true
-        },
-        "intent": {
-            "command": {
-                "arguments": [],
-                "program": ""
-            },
-            "intent_map": "intent_map.json",
-            "system": "auto"
-        },
-        "regex": {
-            "split": "\\s+"
-        },
-        "speech_to_text": {
-            "command": {
-                "arguments": [],
-                "program": ""
-            },
-            "system": "auto"
-        },
-        "tokenizer": "regex",
-        "unknown_words": {
-            "fail_when_present": true,
-            "guess_pronunciations": true
-        }
+    "hermes": {
+      "wakeword_id": "default"
     },
-    "wake": {
-        "command": {
-            "arguments": [],
-            "program": ""
-        },
-        "hermes": {
-            "wakeword_id": "default"
-        },
-        "pocketsphinx": {
-            "chunk_size": 960,
-            "compatible": true,
-            "keyphrase": "okay rhasspy",
-            "mllr_matrix": "wake_mllr",
-            "threshold": 1e-30
+    "pocketsphinx": {
+      "chunk_size": 960,
+      "compatible": true,
+      "keyphrase": "okay rhasspy",
+      "mllr_matrix": "wake_mllr",
+      "threshold": 1e-30
+    },
+    "precise": {
+      "chunk_delay": 0.005,
+      "chunk_size": 2048,
+      "engine_path": "precise-engine",
+      "model": "precise/hey-mycroft-2.pb",
+      "sensitivity": 0.5,
+      "trigger_level": 3
+    },
+    "snowboy": {
+      "apply_frontend": false,
+      "audio_gain": 1,
+      "chunk_size": 960,
+      "model": "snowboy/snowboy.umdl",
+      "sensitivity": 0.5
+    },
+    "porcupine": {
+      "library_path": "porcupine/libpv_porcupine.so",
+      "model_path": "porcupine/porcupine_params.pv",
+      "keyword_path": "porcupine/porcupine.ppn",
+      "sensitivity": 0.5
+    },
+    "system": "dummy"
+  },
+  "download": {
+    "cache_dir": "download",
+    "conditions": {
+      "wake.system": {
+        "snowboy": {
+          "snowboy/snowboy.umdl": "snowboy.umdl"
         },
         "precise": {
-            "chunk_delay": 0.005,
-            "chunk_size": 2048,
-            "engine_path": "precise-engine",
-            "model": "precise/hey-mycroft-2.pb",
-            "sensitivity": 0.5,
-            "trigger_level": 3
-        },
-        "snowboy": {
-            "apply_frontend": false,
-            "audio_gain": 1,
-            "chunk_size": 960,
-            "model": "snowboy/snowboy.umdl",
-            "sensitivity": 0.5
+          "precise/hey-mycroft-2.pb": "hey-mycroft-2.pb",
+          "precise/hey-mycroft-2.pb.params": "hey-mycroft-2.pb.params"
         },
         "porcupine": {
-            "library_path": "porcupine/libpv_porcupine.so",
-            "model_path": "porcupine/porcupine_params.pv",
-            "keyword_path": "porcupine/porcupine.ppn",
-            "sensitivity": 0.5
-        },
-        "system": "dummy"
-    },
-    "download": {
-        "cache_dir": "download",
-        "conditions": {
-            "wake.system": {
-                "snowboy": {
-                    "snowboy/snowboy.umdl": "snowboy.umdl"
-                },
-                "precise": {
-                    "precise/hey-mycroft-2.pb": "hey-mycroft-2.pb",
-                    "precise/hey-mycroft-2.pb.params": "hey-mycroft-2.pb.params"
-                },
-                "porcupine": {
-                    "porcupine/porcupine_params.pv": "porcupine_params.pv",
-                    "porcupine/libpv_porcupine.so": "libpv_porcupine.so",
-                    "porcupine/porcupine.ppn": "porcupine.ppn"
-                }
-            }
-        },
-        "files": {
-            "snowboy.umdl": {
-                "url": "https://github.com/Kitt-AI/snowboy/raw/master/resources/models/snowboy.umdl",
-                "cache": false
-            },
-            "hey-mycroft-2.pb": {
-                "url": "https://github.com/MycroftAI/precise-data/raw/models/hey-mycroft-2.pb",
-                "cache": false
-            },
-            "hey-mycroft-2.pb.params": {
-                "url": "https://github.com/MycroftAI/precise-data/raw/models/hey-mycroft-2.pb.params",
-                "cache": false
-            },
-            "porcupine_params.pv": {
-                "url": "https://github.com/Picovoice/Porcupine/raw/master/lib/common/porcupine_params.pv",
-                "cache": false
-            },
-            "porcupine.ppn": {
-                "cache": false,
-                "x86_64": {
-                    "url": "https://github.com/Picovoice/Porcupine/raw/master/resources/keyword_files/linux/porcupine_linux.ppn"
-                },
-                "armv7l": {
-                    "url": "https://github.com/Picovoice/Porcupine/raw/master/resources/keyword_files/raspberrypi/porcupine_raspberrypi.ppn"
-                },
-                "aarch64": {
-                    "url": "https://github.com/Picovoice/Porcupine/raw/master/resources/keyword_files/raspberrypi/porcupine_raspberrypi.ppn"
-                }
-            },
-            "libpv_porcupine.so": {
-                "cache": false,
-                "x86_64": {
-                    "url": "https://github.com/Picovoice/Porcupine/raw/master/lib/linux/x86_64/libpv_porcupine.so"
-                },
-                "armv7l": {
-                    "url": "https://github.com/Picovoice/Porcupine/raw/master/lib/raspberry-pi/cortex-a53/libpv_porcupine.so"
-                },
-                "aarch64": {
-                    "url": "https://github.com/Picovoice/Porcupine/raw/master/lib/raspberry-pi/cortex-a53/libpv_porcupine.so"
-                }
-            }
+          "porcupine/porcupine_params.pv": "porcupine_params.pv",
+          "porcupine/libpv_porcupine.so": "libpv_porcupine.so",
+          "porcupine/porcupine.ppn": "porcupine.ppn"
         }
+      }
+    },
+    "files": {
+      "snowboy.umdl": {
+        "url": "https://github.com/Kitt-AI/snowboy/raw/master/resources/models/snowboy.umdl",
+        "cache": false
+      },
+      "hey-mycroft-2.pb": {
+        "url": "https://github.com/MycroftAI/precise-data/raw/models/hey-mycroft-2.pb",
+        "cache": false
+      },
+      "hey-mycroft-2.pb.params": {
+        "url": "https://github.com/MycroftAI/precise-data/raw/models/hey-mycroft-2.pb.params",
+        "cache": false
+      },
+      "porcupine_params.pv": {
+        "url": "https://github.com/Picovoice/Porcupine/raw/master/lib/common/porcupine_params.pv",
+        "cache": false
+      },
+      "porcupine.ppn": {
+        "cache": false,
+        "x86_64": {
+          "url": "https://github.com/Picovoice/Porcupine/raw/master/resources/keyword_files/linux/porcupine_linux.ppn"
+        },
+        "armv7l": {
+          "url": "https://github.com/Picovoice/Porcupine/raw/master/resources/keyword_files/raspberrypi/porcupine_raspberrypi.ppn"
+        },
+        "aarch64": {
+          "url": "https://github.com/Picovoice/Porcupine/raw/master/resources/keyword_files/raspberrypi/porcupine_raspberrypi.ppn"
+        }
+      },
+      "libpv_porcupine.so": {
+        "cache": false,
+        "x86_64": {
+          "url": "https://github.com/Picovoice/Porcupine/raw/master/lib/linux/x86_64/libpv_porcupine.so"
+        },
+        "armv7l": {
+          "url": "https://github.com/Picovoice/Porcupine/raw/master/lib/raspberry-pi/cortex-a53/libpv_porcupine.so"
+        },
+        "aarch64": {
+          "url": "https://github.com/Picovoice/Porcupine/raw/master/lib/raspberry-pi/cortex-a53/libpv_porcupine.so"
+        }
+      }
     }
+  }
 }

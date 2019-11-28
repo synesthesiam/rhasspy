@@ -135,7 +135,7 @@ class PhonetisaurusPronounce(RhasspyActor):
     def translate_phonemes(self, phonemes: str) -> str:
         # Load map from Sphinx to eSpeak phonemes
         map_path = self.profile.read_path(
-            self.profile.get("text_to_speech.espeak.phoneme_map")
+            self.profile.get(f"speech_to_text.{self.speech_system}.phoneme_map")
         )
 
         phoneme_map = load_phoneme_map(map_path)

@@ -15,7 +15,9 @@
       "model_dir": "kaldi/model",
       "unknown_words": "kaldi/unknown_words.txt",
       "mix_fst": "kaldi/mixed.fst",
-      "g2p_model": "kaldi/g2p.fst"
+      "g2p_model": "kaldi/g2p.fst",
+      "phoneme_examples": "kaldi/phoneme_examples.txt",
+      "phoneme_map": "kaldi/espeak_phonemes.txt"
     }
   },
   "intent": {
