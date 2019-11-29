@@ -255,12 +255,12 @@ async def api_listen_for_command() -> Response:
         timeout = float(timeout)
 
     # Key/value to set in recognized intent
-    key = request.args.get("key")
+    entity = request.args.get("entity")
     value = request.args.get("value")
 
     return jsonify(
         await core.listen_for_command(
-            handle=not no_hass, timeout=timeout, key=key, value=value
+            handle=(not no_hass), timeout=timeout, entity=entity, value=value
         )
     )
 

@@ -169,7 +169,7 @@ class RhasspyCore:
         self,
         handle: bool = True,
         timeout: Optional[float] = None,
-        key: Optional[str] = None,
+        entity: Optional[str] = None,
         value: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Block until a voice command has been spoken. Optionally handle it."""
@@ -179,8 +179,14 @@ class RhasspyCore:
                 self.dialogue_manager, ListenForCommand(handle=handle, timeout=timeout)
             )
             assert isinstance(result, dict), result
-            if key is not None:
-                result[key] = value
+            if entity is not None:
+                entities = result.get("entities", [])
+                entities.append({"entity": entity, "value": value})
+                result["entities"] = entities
+
+                slots = result.get("slots", {})
+                slots[entity] = value
+                result["slots"] = slots
 
             return result
 

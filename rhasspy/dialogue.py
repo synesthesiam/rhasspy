@@ -401,6 +401,7 @@ class DialogueManager(RhasspyActor):
 
     def to_ready(self, from_state: str) -> None:
         """Transition to ready state."""
+        self.handle = True
         if self.profile.get("rhasspy.listen_on_start", False):
             self._logger.info("Automatically listening for wake word")
             self.transition("asleep")
@@ -649,6 +650,7 @@ class DialogueManager(RhasspyActor):
         """Handle messages in any state."""
         if isinstance(message, ListenForCommand):
             # Force voice command
+            self.handle = message.handle
             self.intent_receiver = message.receiver or sender
             self.transition("awake")
         elif isinstance(message, GetVoiceCommand):
