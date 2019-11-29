@@ -8,7 +8,7 @@ The following table summarizes language support for the various text to speech s
 | ------                                      | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  |
 | [espeak](text-to-speech.md#espeak)          | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |
 | [flite](text-to-speech.md#flite)            | &#x2713; |          |          |          |          |          |          |          | &#x2713; |          |          |          |          |
-| [picotts](text-to-speech.md#picotts)        | &#x2713; |          |          |          |          |          |          |          |          |          |          |          |          |
+| [picotts](text-to-speech.md#picotts)        | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |          |          |          |          |          |          |          |          |
 | [marytts](text-to-speech.md#marytts)        | &#x2713; | &#x2713; |          | &#x2713; | &#x2713; |          | &#x2713; |          |          |          |          |          |          |
 | [wavenet](text-to-speech.md#google-wavenet) | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |          | &#x2713; | &#x2713; |          | &#x2713; |          |
 
