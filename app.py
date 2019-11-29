@@ -248,7 +248,11 @@ async def api_listen_for_command() -> Response:
     """Wake Rhasspy up and listen for a voice command"""
     assert core is not None
     no_hass = request.args.get("nohass", "false").lower() == "true"
-    return jsonify(await core.listen_for_command(handle=not no_hass))
+    key = request.args.get("key")
+    value = request.args.get("value")
+    return jsonify(
+        await core.listen_for_command(handle=not no_hass, key=key, value=value)
+    )
 
 
 # -----------------------------------------------------------------------------

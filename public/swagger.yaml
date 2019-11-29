@@ -78,6 +78,16 @@ paths:
         schema:
           type: boolean
           default: false
+      - in: query
+        name: key
+        description: 'Set property named key in recognized intent to value'
+        schema:
+          type: string
+      - in: query
+        name: value
+        description: 'Set property named key in recognized intent to value'
+        schema:
+          type: string
       responses:
         '200':
           description: Intent

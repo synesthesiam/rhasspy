@@ -165,7 +165,12 @@ class RhasspyCore:
         assert self.actor_system is not None
         self.actor_system.tell(self.dialogue_manager, ListenForWakeWord())
 
-    async def listen_for_command(self, handle: bool = True) -> Dict[str, Any]:
+    async def listen_for_command(
+        self,
+        handle: bool = True,
+        key: Optional[str] = None,
+        value: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Block until a voice command has been spoken. Optionally handle it."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
@@ -173,6 +178,9 @@ class RhasspyCore:
                 self.dialogue_manager, ListenForCommand(handle=handle)
             )
             assert isinstance(result, dict), result
+            if key is not None:
+                result[key] = value
+
             return result
 
     async def record_command(self, timeout: Optional[float] = None) -> VoiceCommand:
