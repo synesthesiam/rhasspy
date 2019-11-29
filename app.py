@@ -248,10 +248,20 @@ async def api_listen_for_command() -> Response:
     """Wake Rhasspy up and listen for a voice command"""
     assert core is not None
     no_hass = request.args.get("nohass", "false").lower() == "true"
+
+    # Seconds before timing out
+    timeout = request.args.get("timeout")
+    if timeout is not None:
+        timeout = float(timeout)
+
+    # Key/value to set in recognized intent
     key = request.args.get("key")
     value = request.args.get("value")
+
     return jsonify(
-        await core.listen_for_command(handle=not no_hass, key=key, value=value)
+        await core.listen_for_command(
+            handle=not no_hass, timeout=timeout, key=key, value=value
+        )
     )
 
 

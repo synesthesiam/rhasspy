@@ -149,20 +149,6 @@ class WebrtcvadCommandListener(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def to_loaded(self, from_state: str) -> None:
-        """Transition to loaded state."""
-        # Recording state
-        self.chunk = bytes()
-        self.silence_buffers = int(
-            math.ceil(self.silence_sec / self.seconds_per_buffer)
-        )
-        self.min_phrase_buffers = int(math.ceil(self.min_sec / self.seconds_per_buffer))
-        self.throwaway_buffers_left = self.throwaway_buffers
-        self.speech_buffers_left = self.speech_buffers
-        self.in_phrase = False
-        self.after_phrase = False
-        self.buffer_count = 0
-
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in loaded state."""
         if isinstance(message, ListenForCommand):
@@ -176,6 +162,7 @@ class WebrtcvadCommandListener(RhasspyActor):
             self.max_buffers = int(
                 math.ceil(self.timeout_sec / self.seconds_per_buffer)
             )
+            print(self.max_buffers)
             self.receiver = message.receiver or sender
             self.transition("listening")
             self.handle = message.handle
@@ -184,6 +171,18 @@ class WebrtcvadCommandListener(RhasspyActor):
     def to_listening(self, from_state: str) -> None:
         """Transition to listening state."""
         self.wakeupAfter(timedelta(seconds=self.timeout_sec))
+
+        # Reset state
+        self.chunk = bytes()
+        self.silence_buffers = int(
+            math.ceil(self.silence_sec / self.seconds_per_buffer)
+        )
+        self.min_phrase_buffers = int(math.ceil(self.min_sec / self.seconds_per_buffer))
+        self.throwaway_buffers_left = self.throwaway_buffers
+        self.speech_buffers_left = self.speech_buffers
+        self.in_phrase = False
+        self.after_phrase = False
+        self.buffer_count = 0
 
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in listening state."""

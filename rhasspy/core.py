@@ -168,6 +168,7 @@ class RhasspyCore:
     async def listen_for_command(
         self,
         handle: bool = True,
+        timeout: Optional[float] = None,
         key: Optional[str] = None,
         value: Optional[str] = None,
     ) -> Dict[str, Any]:
@@ -175,7 +176,7 @@ class RhasspyCore:
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = await sys.async_ask(
-                self.dialogue_manager, ListenForCommand(handle=handle)
+                self.dialogue_manager, ListenForCommand(handle=handle, timeout=timeout)
             )
             assert isinstance(result, dict), result
             if key is not None:

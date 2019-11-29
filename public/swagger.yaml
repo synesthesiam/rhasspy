@@ -88,6 +88,11 @@ paths:
         description: 'Set property named key in recognized intent to value'
         schema:
           type: string
+      - in: query
+        name: timeout
+        description: 'Number of seconds before empty intent is returned'
+        schema:
+          type: float
       responses:
         '200':
           description: Intent
