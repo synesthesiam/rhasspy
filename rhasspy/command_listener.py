@@ -100,7 +100,6 @@ class WebrtcvadCommandListener(RhasspyActor):
         self.chunk_size: int = 960
         self.handle = True
         self.in_phrase: bool = False
-        self.max_buffers = 0
         self.min_phrase_buffers: int = 0
         self.min_sec: float = 2
         self.receiver: Optional[RhasspyActor] = None
@@ -137,7 +136,6 @@ class WebrtcvadCommandListener(RhasspyActor):
         self.speech_buffers = self.settings["speech_buffers"]
 
         self.seconds_per_buffer = self.chunk_size / self.sample_rate
-        self.max_buffers = int(math.ceil(self.timeout_sec / self.seconds_per_buffer))
 
         self.vad = webrtcvad.Vad()
         assert self.vad is not None
@@ -159,10 +157,7 @@ class WebrtcvadCommandListener(RhasspyActor):
                 # Use default timeout
                 self.timeout_sec = self.settings["timeout_sec"]
 
-            self.max_buffers = int(
-                math.ceil(self.timeout_sec / self.seconds_per_buffer)
-            )
-            print(self.max_buffers)
+            self._logger.debug("Will timeout in %s second(s)", self.timeout_sec)
             self.receiver = message.receiver or sender
             self.transition("listening")
             self.handle = message.handle
@@ -205,7 +200,7 @@ class WebrtcvadCommandListener(RhasspyActor):
                 self.chunk = self.chunk[self.chunk_size :]
 
                 # Process chunk
-                finished, timeout = self.process_data(data)
+                finished = self.process_data(data)
 
                 if finished:
                     # Stop recording
@@ -213,7 +208,8 @@ class WebrtcvadCommandListener(RhasspyActor):
 
                     # Response
                     self.send(
-                        self.receiver, VoiceCommand(self.buffer, timeout, self.handle)
+                        self.receiver,
+                        VoiceCommand(self.buffer, timeout=False, handle=self.handle),
                     )
 
                     self.buffer = bytes()
@@ -226,25 +222,16 @@ class WebrtcvadCommandListener(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def process_data(self, data: bytes) -> Tuple[bool, bool]:
+    def process_data(self, data: bytes) -> bool:
         """Process a single audio chunk."""
         finished = False
-        timeout = False
 
         self.buffer_count += 1
-
-        # Check maximum number of seconds to record
-        self.max_buffers -= 1
-        if self.max_buffers <= 0:
-            # Timeout
-            finished = True
-            timeout = True
-            self._logger.warning("Timeout")
 
         # Throw away first N buffers (noise)
         if self.throwaway_buffers_left > 0:
             self.throwaway_buffers_left -= 1
-            return False, False
+            return False
 
         # Detect speech in chunk
         assert self.vad is not None
@@ -289,7 +276,7 @@ class WebrtcvadCommandListener(RhasspyActor):
                     math.ceil(self.silence_sec / self.seconds_per_buffer)
                 )
 
-        return finished, timeout
+        return finished
 
 
 # -----------------------------------------------------------------------------

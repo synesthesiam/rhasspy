@@ -216,6 +216,9 @@ class DialogueManager(RhasspyActor):
         # Load timeout
         self.timeout_sec: Optional[float] = None
 
+        # Timeout when listening for voice commands
+        self.listen_timeout_sec: Optional[float] = None
+
         # Result of training
         self.training_receiver: Optional[RhasspyActor] = None
 
@@ -442,7 +445,12 @@ class DialogueManager(RhasspyActor):
             self.send(self.player, PlayWavFile(wav_path))
 
         # Listen for a voice command
-        self.send(self.command, ListenForCommand(self.myAddress, handle=self.handle))
+        self.send(
+            self.command,
+            ListenForCommand(
+                self.myAddress, handle=self.handle, timeout=self.listen_timeout_sec
+            ),
+        )
 
     def in_awake(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in awake state."""
@@ -652,6 +660,7 @@ class DialogueManager(RhasspyActor):
             # Force voice command
             self.handle = message.handle
             self.intent_receiver = message.receiver or sender
+            self.listen_timeout_sec = message.timeout
             self.transition("awake")
         elif isinstance(message, GetVoiceCommand):
             # Record voice command, but don't do anything with it
