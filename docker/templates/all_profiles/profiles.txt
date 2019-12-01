@@ -27,12 +27,14 @@ COPY profiles/de/profile.json \
      profiles/de/custom_words.txt \
      profiles/de/espeak_phonemes.txt \
      profiles/de/phoneme_examples.txt \
-     profiles/de/kaldi/custom_words.txt \
-     profiles/de/kaldi/espeak_phonemes.txt \
-     profiles/de/kaldi/phoneme_examples.txt \
      profiles/de/frequent_words.txt \
      profiles/de/sentences.ini \
      profiles/de/stop_words.txt ${RHASSPY_APP}/profiles/de/
+
+COPY profiles/de/kaldi/custom_words.txt \
+     profiles/de/kaldi/espeak_phonemes.txt \
+     profiles/de/kaldi/phoneme_examples.txt \
+     ${RHASSPY_APP}/profiles/de/kaldi/
 
 COPY profiles/it/profile.json \
      profiles/it/custom_words.txt \
@@ -70,12 +72,14 @@ COPY profiles/nl/profile.json \
      profiles/nl/custom_words.txt \
      profiles/nl/espeak_phonemes.txt \
      profiles/nl/phoneme_examples.txt \
-     profiles/nl/kaldi/custom_words.txt \
-     profiles/nl/kaldi/espeak_phonemes.txt \
-     profiles/nl/kaldi/phoneme_examples.txt \
      profiles/nl/frequent_words.txt \
      profiles/nl/sentences.ini \
      profiles/nl/stop_words.txt ${RHASSPY_APP}/profiles/nl/
+
+COPY profiles/nl/kaldi/custom_words.txt \
+     profiles/nl/kaldi/espeak_phonemes.txt \
+     profiles/nl/kaldi/phoneme_examples.txt \
+     ${RHASSPY_APP}/profiles/nl/kaldi/
 
 COPY profiles/vi/profile.json \
      profiles/vi/custom_words.txt \
@@ -113,9 +117,11 @@ COPY profiles/en/profile.json \
      profiles/en/custom_words.txt \
      profiles/en/espeak_phonemes.txt \
      profiles/en/phoneme_examples.txt \
-     profiles/en/kaldi/custom_words.txt \
-     profiles/en/kaldi/espeak_phonemes.txt \
-     profiles/en/kaldi/phoneme_examples.txt \
      profiles/en/frequent_words.txt \
      profiles/en/sentences.ini \
      profiles/en/stop_words.txt ${RHASSPY_APP}/profiles/en/
+
+COPY profiles/en/kaldi/custom_words.txt \
+     profiles/en/kaldi/espeak_phonemes.txt \
+     profiles/en/kaldi/phoneme_examples.txt \
+     ${RHASSPY_APP}/profiles/en/kaldi/
