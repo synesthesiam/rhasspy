@@ -26,10 +26,12 @@ class ListenForCommand:
         receiver: Optional[RhasspyActor] = None,
         handle: bool = True,
         timeout: Optional[float] = None,
+        entities: List[Dict[str, Any]] = None,
     ) -> None:
         self.receiver = receiver
         self.handle = handle
         self.timeout = timeout
+        self.entities = entities or []
 
 
 class VoiceCommand:

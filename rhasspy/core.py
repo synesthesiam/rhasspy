@@ -175,18 +175,15 @@ class RhasspyCore:
         """Block until a voice command has been spoken. Optionally handle it."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
+            entities = None
+            if entity is not None:
+                entities = [{"entity": entity, "value": value}]
+
             result = await sys.async_ask(
-                self.dialogue_manager, ListenForCommand(handle=handle, timeout=timeout)
+                self.dialogue_manager,
+                ListenForCommand(handle=handle, timeout=timeout, entities=entities),
             )
             assert isinstance(result, dict), result
-            if entity is not None:
-                entities = result.get("entities", [])
-                entities.append({"entity": entity, "value": value})
-                result["entities"] = entities
-
-                slots = result.get("slots", {})
-                slots[entity] = value
-                result["slots"] = slots
 
             return result
 

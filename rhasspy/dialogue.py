@@ -218,6 +218,7 @@ class DialogueManager(RhasspyActor):
 
         # Timeout when listening for voice commands
         self.listen_timeout_sec: Optional[float] = None
+        self.listen_entities: List[Dict[str, Any]] = []
 
         # Result of training
         self.training_receiver: Optional[RhasspyActor] = None
@@ -420,6 +421,10 @@ class DialogueManager(RhasspyActor):
         else:
             self.handle_any(message, sender)
 
+    def to_asleep(self, from_state: str) -> None:
+        """Transition to asleep state."""
+        self.listen_entities = []
+
     def in_asleep(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in asleep state."""
         if isinstance(message, WakeWordDetected):
@@ -517,6 +522,15 @@ class DialogueManager(RhasspyActor):
             if self.recorder_class == HTTPAudioRecorder:
                 # Forward to audio recorder
                 self.send(self.recorder, message)
+
+            # Augment with extra entities
+            entities = message.intent.get("entities", [])
+            entities.extend(self.listen_entities)
+            message.intent["entities"] = entities
+
+            slots = message.intent.get("slots", {})
+            for entity_dict in self.listen_entities:
+                slots[entity_dict["entity"]] = entity_dict["value"]
 
             # Handle intent
             self._logger.debug(message.intent)
@@ -661,6 +675,7 @@ class DialogueManager(RhasspyActor):
             self.handle = message.handle
             self.intent_receiver = message.receiver or sender
             self.listen_timeout_sec = message.timeout
+            self.listen_entities = message.entities
             self.transition("awake")
         elif isinstance(message, GetVoiceCommand):
             # Record voice command, but don't do anything with it
