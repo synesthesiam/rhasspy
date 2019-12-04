@@ -1,59 +1,65 @@
 {
-    "language": "sv",
-    "name": "sv",
-    "speech_to_text": {
-        "kaldi": {
-            "compatible": true
-        },
-        "pocketsphinx": {
-            "compatible": false
-        },
-        "dictionary_casing": "lower",
-        "g2p_casing": "lower",
-        "system": "kaldi"
+  "language": "sv",
+  "name": "sv",
+  "speech_to_text": {
+    "kaldi": {
+      "compatible": true
     },
-    "wake": {
-        "pocketsphinx": {
-            "compatible": false
-        }
+    "pocketsphinx": {
+      "compatible": false
     },
-    "intent": {
-        "flair": {
-            "compatible": false
-        }
-    },
-    "text_to_speech": {
-        "wavenet": {
-            "language_code": "sv-SE"
-        }
-    },
-    "download": {
-        "conditions": {
-            "speech_to_text.system": {
-                "kaldi": {
-                    "model": "swedish.zip:swedish",
-                    "base_dictionary.txt": "swedish_g2p.zip:SV/base.dict",
-                    "g2p.fst": "swedish_g2p.zip:SV/model.fst"
-                }
-            },
-
-            "speech_to_text.kaldi.mix_weight": {
-                ">0": {
-                    "base_language_model.txt": "SV.3gram.lm.gz:SV.3gram.lm"
-                }
-            }
-        },
-
-        "files": {
-            "swedish.zip": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-sv/swedish.zip"
-            },
-            "SV.3gram.lm.gz": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-sv/VN.3gram.lm.gz"
-            },
-            "swedish_g2p.zip": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-sv/swedish_g2p.zip"
-            }
-        }
+    "dictionary_casing": "lower",
+    "g2p_casing": "lower",
+    "system": "kaldi"
+  },
+  "wake": {
+    "pocketsphinx": {
+      "compatible": false
     }
+  },
+  "intent": {
+    "flair": {
+      "compatible": false
+    }
+  },
+  "text_to_speech": {
+    "wavenet": {
+      "language_code": "sv-SE"
+    }
+  },
+  "download": {
+    "conditions": {
+      "speech_to_text.system": {
+        "kaldi": {
+          "model": "swedish.zip:swedish",
+          "base_dictionary.txt": "swedish_g2p.zip:SV/base.dict",
+          "g2p.fst": "swedish_g2p.zip:SV/model.fst"
+        }
+      },
+      "speech_to_text.kaldi.open_transcription": {
+        "True": {
+          "kaldi/model/base_graph": "sv_kaldi-montreal-base_graph.tar.gz:base_graph"
+        }
+      },
+      "speech_to_text.kaldi.mix_weight": {
+        ">0": {
+          "base_language_model.txt": "SV.3gram.lm.gz:SV.3gram.lm"
+        }
+      }
+    },
+    "files": {
+      "swedish.zip": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-sv/swedish.zip"
+      },
+      "SV.3gram.lm.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-sv/VN.3gram.lm.gz"
+      },
+      "swedish_g2p.zip": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-sv/swedish_g2p.zip"
+      },
+      "sv_kaldi-montreal-base_graph.tar.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-sv/sv_kaldi-monreal-base_graph.tar.gz"
+      }
+    }
+  }
 }
