@@ -1,6 +1,6 @@
 # Training
 
-Rhasspy is designed to recognize only the specific set of voice commands that [you provide](#sentencesini). These commands are categorized by **intent**, and may contain variable **slots** or **entities**, such as the color and name of a light.
+Rhasspy is designed to recognize voice commands that [you provide](#sentencesini). These commands are categorized by **intent**, and may contain variable **slots** or **entities**, such as the color and name of a light.
 
 During the training process, Rhasspy simultaneously trains *both* a speech and intent recognizer. The speech recognizer converts voice commands to text, and the intent recognizer converts text to JSON events. Combined, they enable a low power, offline system like a Raspberry Pi to understand and respond to your voice commands.
 

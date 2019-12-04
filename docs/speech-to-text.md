@@ -7,7 +7,7 @@ The following table summarizes language support for the various speech to text s
 | System                                         | en       | de       | es       | fr       | it       | nl       | ru       | el       | hi       | zh       | vi       | pt       | ca       |
 | ------                                         | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  |
 | [pocketsphinx](speech-to-text.md#pocketsphinx) | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |          | &#x2713; | &#x2713; |
-| [kaldi](speech-to-text.md#kaldi)               |          |          |          |          |          |          |          |          |          |          | &#x2713; |          |          |
+| [kaldi](speech-to-text.md#kaldi)               | &#x2713; | &#x2713; |          |          |          | &#x2713; |          |          |          |          | &#x2713; |          |          |
 
 ## Pocketsphinx
 
@@ -24,9 +24,7 @@ Add to your [profile](profiles.md):
     "base_dictionary": "base_dictionary.txt",
     "custom_words": "custom_words.txt",
     "dictionary": "dictionary.txt",
-    "language_model": "language_model.txt",
-    "unknown_words": "unknown_words.txt",
-    "mllr_matrix": "acoustic_model_mllr"
+    "language_model": "language_model.txt"
   }
 }
 ```
@@ -38,11 +36,10 @@ When Rhasspy starts, it creates a pocketsphinx decoder with the following attrib
 * `hmm` - `speech_to_text.pocketsphinx.acoustic_model` (directory)
 * `dict` - `speech_to_text.pocketsphinx.dictionary` (file)
 * `lm` - `speech_to_text.pocketsphinx.language_model` (file)
-* `mllr` - `speech_to_text.pocketsphinx.mllr_matrix` (file, optional)
 
-The `mllr_matrix` file is intended for advanced users who want to [tune/adapt their acoustic models](https://cmusphinx.github.io/wiki/tutorialadapt). This can increase the performance of Rhasspy's speech recognition for a specific user/microphone/acoustic environment.
+### Open Transcription
 
-Pocketsphinx allows Rhasspy to support English (en), German (de), Dutch (nl), Spanish (es), Italian (it), French (fr), Greek (el), Russian (ru), Hindi (hi), and Mandarin (zh).
+If you just want to use Rhasspy for general speech to text, you can set `speech_to_text.pocketsphinx.open_transcription` to `true` in your profile. This will use the included general language model (much slower) and ignore any custom voice commands you've specified. For English, German, and Dutch, you may want to use [Kaldi](#kaldi) instead for better results.
 
 See `rhasspy.stt.PocketsphinxDecoder` for details.
 
@@ -75,6 +72,10 @@ Kaldi allows Rhasspy to support Vietnamese (vi) and Portuguese (pt) thanks to [p
 This requires Kaldi to be installed, which is...challenging. The [Docker image of Rhasspy](https://cloud.docker.com/u/synesthesiam/repository/docker/synesthesiam/rhasspy-server) contains a [pre-built copy](https://github.com/synesthesiam/kaldi-docker/releases) of Kaldi, which might work for you outside of Docker. Make sure to set `kaldi_dir` to wherever you installed Kaldi.
 
 Rhasspy expects a Kaldi-compatible profile to contain a `model` directory with a `train.sh` and `decode.sh` script. See the Vietnamese (vi) or Portuguese (pt) [profile](https://github.com/synesthesiam/rhasspy-profiles/releases) for an example.
+
+### Open Transcription
+
+If you just want to use Rhasspy for general speech to text, you can set `speech_to_text.kaldi.open_transcription` to `true` in your profile. This will use the included general language model (much slower) and ignore any custom voice commands you've specified.
 
 ## Remote HTTP Server
 
