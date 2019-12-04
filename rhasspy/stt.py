@@ -96,6 +96,9 @@ class PocketsphinxDecoder(RhasspyActor):
         self.min_confidence = self.profile.get(
             "speech_to_text.pocketsphinx.min_confidence", 0.0
         )
+        self.open_transcription = self.profile.get(
+            "speech_to_text.pocketsphinx.open_transcription", False
+        )
         self.preload = self.config.get("preload", False)
         if self.preload:
             with self._lock:
@@ -141,12 +144,25 @@ class PocketsphinxDecoder(RhasspyActor):
             hmm_path = self.profile.read_path(
                 ps_config.get("acoustic_model", "acoustic_model")
             )
-            dict_path = self.profile.read_path(
-                ps_config.get("dictionary", "dictionary.txt")
-            )
-            lm_path = self.profile.read_path(
-                ps_config.get("language_model", "language_model.txt")
-            )
+
+            if self.open_transcription:
+                self._logger.debug("Open transcription mode")
+
+                # Use base language model/dictionary
+                dict_path = self.profile.read_path(
+                    ps_config.get("base_dictionary", "base_dictionary.txt")
+                )
+                lm_path = self.profile.read_path(
+                    ps_config.get("base_language_model", "base_language_model.txt")
+                )
+            else:
+                # Custom voice commands
+                dict_path = self.profile.read_path(
+                    ps_config.get("dictionary", "dictionary.txt")
+                )
+                lm_path = self.profile.read_path(
+                    ps_config.get("language_model", "language_model.txt")
+                )
 
             self._logger.debug(
                 "Loading decoder with hmm=%s, dict=%s, lm=%s",
@@ -350,9 +366,18 @@ class KaldiDecoder(RhasspyActor):
 
         self.model_dir = Path(self.profile.read_path(model_dir_name))
 
-        self.graph_dir = self.model_dir / self.profile.get(
-            "speech_to_text.kaldi.graph_dir", "graph"
+        self.open_transcription = self.profile.get(
+            "speech_to_text.kaldi.open_transcription", False
         )
+
+        if self.open_transcription:
+            self.graph_dir = self.model_dir / self.profile.get(
+                "speech_to_text.kaldi.base_graph", "base_graph"
+            )
+        else:
+            self.graph_dir = self.model_dir / self.profile.get(
+                "speech_to_text.kaldi.graph", "graph"
+            )
 
         self.decode_path = Path(self.profile.read_path(model_dir_name, "decode.sh"))
 
@@ -433,6 +458,12 @@ class KaldiDecoder(RhasspyActor):
             problems[
                 "Missing HCLG.fst"
             ] = f"Graph not found at {hclg_path}. Did you train your profile?"
+
+        conf_path = self.model_dir / "online" / "conf" / "online.conf"
+        if not conf_path.is_file():
+            problems[
+                "Missing online.conf"
+            ] = f"Configuration file not found at {conf_path}. Did you train your profile?"
 
         return problems
 

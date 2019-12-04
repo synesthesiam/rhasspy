@@ -1,3 +1,4 @@
+import sys
 import re
 import logging
 from collections import defaultdict, deque
@@ -267,7 +268,7 @@ class FSTListener(DependencyListener):
                         if output_symbol.startswith(":"):
                             output_symbol = ""
 
-                    arc.olabel = self.output_symbols.add_symbol(output_symbol + ":")
+                    arc.olabel = self.output_symbols.add_symbol(output_symbol)
                     state_queue.append(arc.nextstate)
 
                     # Update arc in-place

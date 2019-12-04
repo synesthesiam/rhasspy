@@ -73,6 +73,8 @@ All available profile sections and settings are listed below:
         * `dictionary` - text file with all words/pronunciations needed for example sentences
         * `unknown_words` - small text file with guessed word pronunciations (from phonetisaurus)
         * `language_model` - text file with trigram [ARPA language model](https://cmusphinx.github.io/wiki/arpaformat/) built from example sentences
+        * `open_transcription` - true if general language model should be used (custom voices commands ignored)
+        * `base_language_model` - large general language model (read only)
         * `mllr_matrix` - MLLR matrix from [acoustic model tuning](https://cmusphinx.github.io/wiki/tutorialtuning/) 
         * `mix_weight` - how much of the base language model to [mix in during training](training.md#language-model-mixing) (0-1)
         * `mix_fst` - path to save mixed ngram FST model
@@ -81,9 +83,11 @@ All available profile sections and settings are listed below:
         * `kaldi_dir` - absolute path to Kaldi root directory
         * `model_dir` - directory where Kaldi model is stored (relative to profile directory)
         * `graph` - directory where HCLG.fst is located (relative to `model_dir`)
+        * `base_graph` - directory where large general HCLG.fst is located (relative to `model_dir`)
         * `base_dictionary` - large text file with word pronunciations (read only)
         * `custom_words` - small text file with words/pronunciations added by user
         * `dictionary` - text file with all words/pronunciations needed for example sentences
+        * `open_transcription` - true if general language model should be used (custom voices commands ignored)
         * `unknown_words` - small text file with guessed word pronunciations (from phonetisaurus)
         * `mix_weight` - how much of the base language model to [mix in during training](training.md#language-model-mixing) (0-1)
         * `mix_fst` - path to save mixed ngram FST model

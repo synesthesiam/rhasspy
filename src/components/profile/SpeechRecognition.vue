@@ -28,6 +28,12 @@
             </div>
             <div class="form-group">
                 <div class="form-row">
+                    <input type="checkbox" id="pocketsphinx-open" v-model="profile.speech_to_text.pocketsphinx.open_transcription">
+                    <label for="pocketsphinx-open" class="col-form-label">Open transcription mode (no custom voice commands)</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
                     <label for="pocketsphinx-min-confidence" class="col-form-label">Minimum Confidence</label>
                     <div class="col">
                         <input id="pocketsphinx-min-confidence" type="number" step="0.01" min="0" max="1" class="form-control" v-model.number="profile.speech_to_text.pocketsphinx.min_confidence" :disabled="profile.speech_to_text.system != 'pocketsphinx'">
@@ -46,6 +52,12 @@
                 </div>
                 <div class="alert alert-warning" v-if="!profile.speech_to_text.kaldi.compatible">
                     Not compatible with this profile
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <input type="checkbox" id="kaldi-open" v-model="profile.speech_to_text.kaldi.open_transcription">
+                    <label for="kaldi-open" class="col-form-label">Open transcription mode (no custom voice commands)</label>
                 </div>
             </div>
             <div class="form-group">

@@ -407,11 +407,9 @@ class RhasspyCore:
 
             # Compare setting values
             for setting_value, files_dict in conditions[setting_name].items():
+                compare_func = self._get_compare_func(setting_value)
 
-                def compare_func(v1, v2):
-                    return v1 == v2
-
-                if compare_func(setting_value, real_value):
+                if compare_func(real_value):
                     # Check if file needs to be downloaded
                     for dest_name in files_dict:
                         dest_path = os.path.join(output_dir, dest_name)
@@ -443,7 +441,7 @@ class RhasspyCore:
         if value.startswith("!"):
             return lambda v: v != value
 
-        return lambda v: v == value
+        return lambda v: str(v) == value
 
     def _unpack_gz(self, src_path, temp_dir):
         # Strip off .gz and put relative to temporary directory
@@ -459,7 +457,7 @@ class RhasspyCore:
     # -------------------------------------------------------------------------
 
     async def download_profile(self, delete=False, chunk_size=4096) -> None:
-        """Download all necessary profile files from the internet and extracts them."""
+        """Download all necessary profile files from the internet and extract them."""
         output_dir = Path(self.profile.write_path())
         download_dir = Path(
             self.profile.write_path(self.profile.get("download.cache_dir", "download"))

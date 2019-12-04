@@ -130,7 +130,8 @@ const profileDefaults = {
             "min_confidence": 0.0,
             "compatible": true,
             "phoneme_examples": "phoneme_examples.txt",
-            "phoneme_map": "espeak_phonemes.txt"
+            "phoneme_map": "espeak_phonemes.txt",
+            "open_transcription": false
         },
         "kaldi": {
             "base_dictionary": "base_dictionary.txt",
@@ -143,7 +144,8 @@ const profileDefaults = {
             "unknown_words": "unknown_words.txt",
             "compatible": false,
             "phoneme_examples": "phoneme_examples.txt",
-            "phoneme_map": "espeak_phonemes.txt"
+            "phoneme_map": "espeak_phonemes.txt",
+            "open_transcription": false
         },
         "remote": {
             "url": "http://my-server:12101/api/speech-to-text"

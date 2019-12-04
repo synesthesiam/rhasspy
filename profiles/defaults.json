@@ -134,6 +134,7 @@
       "custom_words": "custom_words.txt",
       "dictionary": "dictionary.txt",
       "graph": "graph",
+      "base_graph": "base_graph",
       "kaldi_dir": "${KALDI_PREFIX}/kaldi",
       "language_model": "language_model.txt",
       "model_dir": "model",
@@ -142,7 +143,8 @@
       "mix_fst": "mixed.fst",
       "g2p_model": "g2p.fst",
       "phoneme_examples": "phoneme_examples.txt",
-      "phoneme_map": "espeak_phonemes.txt"
+      "phoneme_map": "espeak_phonemes.txt",
+      "open_transcription": false
     },
     "pocketsphinx": {
       "acoustic_model": "acoustic_model",
@@ -159,7 +161,8 @@
       "mix_fst": "mixed.fst",
       "g2p_model": "g2p.fst",
       "phoneme_examples": "phoneme_examples.txt",
-      "phoneme_map": "espeak_phonemes.txt"
+      "phoneme_map": "espeak_phonemes.txt",
+      "open_transcription": false
     },
     "remote": {
       "url": "http://my-server:12101/api/speech-to-text"

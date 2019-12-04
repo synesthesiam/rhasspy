@@ -62,7 +62,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
     acoustic_model_type = stt_system
 
     if acoustic_model_type == "pocketsphinx":
-        acoustic_model = ppath(f"{stt_prefix}.acoustic-model", "acoustic_model")
+        acoustic_model = ppath(f"{stt_prefix}.acoustic_model", "acoustic_model")
         kaldi_dir = None
     elif acoustic_model_type == "kaldi":
         kaldi_dir = Path(

@@ -1,6 +1,6 @@
 ![Rhasspy logo](img/rhasspy.svg)
 
-Rhasspy (pronounced RAH-SPEE) is an offline, [multi-language](#supported-languages) voice assistant toolkit inspired by [Jasper](https://jasperproject.github.io/) that works well with [Home Assistant](https://www.home-assistant.io/), [Hass.io](https://www.home-assistant.io/hassio/), and [Node-RED](https://nodered.org).
+Rhasspy (pronounced RAH-SPEE) is an [open source](https://github.com/synesthesiam/rhasspy), fully offline voice assistant toolkit for [many languages](#supported-languages) that works well with [Home Assistant](https://www.home-assistant.io/), [Hass.io](https://www.home-assistant.io/hassio/), and [Node-RED](https://nodered.org).
 
 Rhasspy transforms voice commands into [JSON](https://json.org) events that can trigger actions in home automation software, like [Home Assistant automations](https://www.home-assistant.io/docs/automation/trigger/#event-trigger) or [Node-RED flows](usage.md#node-red). You define custom voice commands in a [profile](profiles.md) using a [specialized template syntax](training.md), and Rhasspy takes care of the rest.
 
