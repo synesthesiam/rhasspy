@@ -5,6 +5,7 @@ import io
 import itertools
 import json
 import logging
+
 # Configure logging
 import logging.config
 import math
@@ -26,9 +27,13 @@ from rhasspy.core import RhasspyCore
 from rhasspy.dialogue import DialogueManager
 from rhasspy.profiles import Profile
 from rhasspy.utils import buffer_to_wav, maybe_convert_wav
-from rhasspy.wake import (ListenForWakeWord, PocketsphinxWakeListener,
-                          StopListeningForWakeWord, WakeWordDetected,
-                          WakeWordNotDetected)
+from rhasspy.wake import (
+    ListenForWakeWord,
+    PocketsphinxWakeListener,
+    StopListeningForWakeWord,
+    WakeWordDetected,
+    WakeWordNotDetected,
+)
 
 logger = logging.getLogger("rhasspy")
 
@@ -157,6 +162,9 @@ async def main() -> None:
 
     # train
     train_parser = sub_parsers.add_parser("train", help="Re-train profile")
+    train_parser.add_argument(
+        "--no-cache", action="store_true", help="Clear training cache"
+    )
 
     # record
     # record_parser = sub_parsers.add_parser('record', help='Record test phrases for profile')
@@ -522,7 +530,7 @@ async def wav2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def train_profile(core: RhasspyCore, profile: Profile, args: Any) -> None:
-    result = await core.train(reload_actors=False)
+    result = await core.train(reload_actors=False, no_cache=args.no_cache)
     print(result)
 
 

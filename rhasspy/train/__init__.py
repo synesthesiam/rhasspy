@@ -51,13 +51,9 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
     sentences_ini = ppath("speech_to_text.sentences_ini", "sentences.ini")
     base_dictionary = ppath(f"{stt_prefix}.base_dictionary", "base_dictionary.txt")
     base_language_model = ppath(
-        f"{stt_prefix}.language_model", "base_language_model.txt"
-    )
-    base_language_model_fst = ppath(
-        f"{stt_prefix}.base_language_model_fst", "base_language_model.fst"
+        f"{stt_prefix}.base_language_model", "base_language_model.txt"
     )
     base_language_model_weight = float(profile.get(f"{stt_prefix}.mix_weight", 0))
-    custom_words = ppath(f"{stt_prefix}.custom_words", "custom_words.txt")
     g2p_model = ppath(f"{stt_prefix}.g2p_model", "g2p.fst")
     acoustic_model_type = stt_system
 
@@ -86,8 +82,12 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
 
     # Outputs
     dictionary = ppath(f"{stt_prefix}.dictionary", "dictionary.txt", write=True)
+    custom_words = ppath(f"{stt_prefix}.custom_words", "custom_words.txt", write=True)
     language_model = ppath(
         f"{stt_prefix}.language_model", "language_model.txt", write=True
+    )
+    base_language_model_fst = ppath(
+        f"{stt_prefix}.base_language_model_fst", "base_language_model.fst", write=True
     )
     intent_fst = ppath("intent.fsticiffs.intent_fst", "intent.fst", write=True)
     vocab = ppath(f"{stt_prefix}.vocabulary", "vocab.txt", write=True)
@@ -306,7 +306,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
         }
 
         if base_language_model_weight > 0:
-            merged_model = str(intent_model) + ".merge"
+            merged_model = Path(str(intent_model) + ".merge")
 
             # merge
             yield {

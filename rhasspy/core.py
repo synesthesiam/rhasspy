@@ -323,9 +323,15 @@ class RhasspyCore:
     # -------------------------------------------------------------------------
 
     async def train(
-        self, reload_actors: bool = True
+        self, reload_actors: bool = True, no_cache: bool = False
     ) -> Union[ProfileTrainingComplete, ProfileTrainingFailed]:
         """Generate speech/intent artifacts for profile."""
+        if no_cache:
+            # Delete doit database
+            db_path = Path(self.profile.write_path(".doit.db"))
+            if db_path.is_file():
+                db_path.unlink()
+
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = await sys.async_ask(

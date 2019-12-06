@@ -499,17 +499,10 @@ async def api_train() -> str:
 
     assert core is not None
 
-    if no_cache:
-        # Delete doit database
-        db_path = Path(core.profile.write_path(".doit.db"))
-        if db_path.exists():
-            logger.debug("Clearing training cache")
-            db_path.unlink()
-
     start_time = time.time()
     logger.info("Starting training")
 
-    result = await core.train()
+    result = await core.train(no_cache=no_cache)
     if isinstance(result, ProfileTrainingFailed):
         raise Exception(f"Training failed: {result.reason}")
 
