@@ -739,7 +739,6 @@ class AdaptIntentRecognizer(RhasspyActor):
             from adapt.intent import IntentBuilder
             from adapt.engine import IntentDeterminationEngine
 
-            assert self.engine is not None
             config_path = self.profile.read_path("adapt_config.json")
             if not os.path.exists(config_path):
                 return
