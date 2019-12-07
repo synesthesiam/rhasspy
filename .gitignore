@@ -72,3 +72,7 @@ etc/test/vi/2*
 
 # Misc
 workbench.xmi
+
+# Debian
+site/
+debian/rhasspy-server*

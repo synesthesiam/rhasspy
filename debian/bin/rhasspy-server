@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+if [[ -z "${RHASSPY_BASE_DIR}" ]]; then
+    export RHASSPY_BASE_DIR="/usr/lib/rhasspy"
+fi
+
+if [[ -z "${KALDI_PREFIX}" ]]; then
+    export KALDI_PREFIX="${RHASSPY_BASE_DIR}"
+fi
+
+cd "${RHASSPY_BASE_DIR}"  && rhasspy/rhasspy "$@"

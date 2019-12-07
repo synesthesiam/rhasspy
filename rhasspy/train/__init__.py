@@ -465,6 +465,15 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
 
     DOIT_CONFIG = {"action_string_formatting": "old", "reporter": MyReporter}
 
+    # Monkey patch inspect to make doit work inside Pyinstaller.
+    # It grabs the line numbers of functions probably for debugging reasons, but
+    # PyInstaller doesn't seem to keep that information around.
+    #
+    # This better thing to do would be to create a custom TaskLoader.
+    import inspect
+
+    inspect.getsourcelines = lambda obj: [0, 0]
+
     # Run doit main
     result = DoitMain(ModuleTaskLoader(locals())).run(sys.argv[1:])
     return (result, errors)
