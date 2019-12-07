@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 this_dir="$( cd "$( dirname "$0" )" && pwd )"
-CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
+cpu_arch="$(lscpu | awk '/^Architecture/{print $2}')"
 
 # -----------------------------------------------------------------------------
 # Command-line Arguments
@@ -13,6 +13,7 @@ DEFINE_boolean 'precise' true 'Install Mycroft Precise'
 DEFINE_boolean 'kaldi' true 'Install Kaldi'
 DEFINE_boolean 'offline' false "Don't download anything"
 DEFINE_boolean 'all-cpu' false 'Download dependencies for all CPU architectures'
+DEFINE_string 'cpu-arch' "${cpu_arch}" 'CPU architecture (x86_64, armv7l, arm64v8)'
 
 FLAGS "$@" || exit $?
 eval set -- "${FLAGS_ARGV}"
@@ -23,6 +24,7 @@ eval set -- "${FLAGS_ARGV}"
 
 set -e
 
+cpu_arch="${FLAGS_cpu_arch}"
 download_dir="${FLAGS_download_dir}"
 mkdir -p "${download_dir}"
 
@@ -69,8 +71,8 @@ if [[ ! -z "${all_cpu}" ]]; then
     CPU_ARCHS=("x86_64" "armv7l" "arm64v8")
     FRIENDLY_ARCHS=("amd64" "armhf" "aarch64")
 else
-    CPU_ARCHS=("${CPU_ARCH}")
-    FRIENDLY_ARCHS=("${CPU_TO_FRIENDLY[${CPU_ARCH}]}")
+    CPU_ARCHS=("${cpu_arch}")
+    FRIENDLY_ARCHS=("${CPU_TO_FRIENDLY[${cpu_arch}]}")
 fi
 
 # -----------------------------------------------------------------------------
