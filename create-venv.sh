@@ -10,10 +10,10 @@ this_dir="$( cd "$( dirname "$0" )" && pwd )"
 DEFINE_string 'venv' "${this_dir}/.venv" 'Path to create virtual environment'
 DEFINE_string 'download-dir' "${this_dir}/download" 'Directory to cache downloaded files'
 DEFINE_boolean 'system' true 'Install system dependencies'
-DEFINE_boolean 'flair' true 'Install flair'
-DEFINE_boolean 'precise' true 'Install Mycroft Precise'
+DEFINE_boolean 'flair' false 'Install flair'
+DEFINE_boolean 'precise' false 'Install Mycroft Precise'
 DEFINE_boolean 'adapt' true 'Install Mycroft Adapt'
-DEFINE_boolean 'google' true 'Install Google Text to Speech'
+DEFINE_boolean 'google' false 'Install Google Text to Speech'
 DEFINE_boolean 'kaldi' true 'Install Kaldi'
 DEFINE_boolean 'offline' false "Don't download anything"
 DEFINE_integer 'make-threads' 4 'Number of threads to use with make' 'j'
@@ -49,6 +49,10 @@ fi
 
 if [[ "${FLAGS_kaldi}" -eq "${FLAGS_FALSE}" ]]; then
     no_kaldi='true'
+fi
+
+if [[ "${FLAGS_google}" -eq "${FLAGS_FALSE}" ]]; then
+    no_google='true'
 fi
 
 if [[ "${FLAGS_offline}" -eq "${FLAGS_TRUE}" ]]; then
@@ -103,10 +107,16 @@ if [[ -z "${no_system}" ]]; then
 fi
 
 # -----------------------------------------------------------------------------
-# Python 3.6
+# Python >= 3.6
 # -----------------------------------------------------------------------------
 
-if [[ -z "$(which python3.6)" ]]; then
+if [[ ! -z "$(which python3.8)" ]]; then
+    PYTHON='python3.8'
+# elif [[ ! -z "$(which python3.7)" ]]; then
+#     PYTHON='python3.7'
+elif [[ ! -z "$(which python3.6)" ]]; then
+    PYTHON='python3.6'
+else
     echo "Installing Python 3.6 from source. This is going to take a LONG time."
     sudo apt-get install --no-install-recommends --yes \
          tk-dev libncurses5-dev libncursesw5-dev \
@@ -123,6 +133,8 @@ if [[ -z "$(which python3.6)" ]]; then
         ./configure && \
         make -j "${make_threads}" && \
         sudo make altinstall
+
+    PYTHON='python3.6'
 fi
 
 # -----------------------------------------------------------------------------
@@ -167,7 +179,6 @@ bash download-dependencies.sh "${download_args[@]}"
 
 cd "${this_dir}"
 
-PYTHON="python3.6"
 echo "${venv}"
 
 if [[ -d "${venv}" ]]; then
@@ -191,7 +202,7 @@ export LD_LIBRARY_PATH="${venv}/lib:${LD_LIBRARY_PATH}"
 source "${venv}/bin/activate"
 
 echo "Installing Python requirements"
-"${PYTHON}" -m pip install wheel
+"${PYTHON}" -m pip install wheel setuptools
 "${PYTHON}" -m pip install requests
 
 # pytorch is not available on ARM
