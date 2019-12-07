@@ -130,7 +130,7 @@ fi
 # -----------------------------------------------------------------------------
 
 # CPU architecture
-CPU_ARCH="$(python3 -c 'import platform; print(platform.machine())')"
+CPU_ARCH="$(uname --m)"
 case "${CPU_ARCH}" in
     x86_64)
         FRIENDLY_ARCH=amd64

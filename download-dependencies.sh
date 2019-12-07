@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 this_dir="$( cd "$( dirname "$0" )" && pwd )"
-cpu_arch="$(python3 -c 'import platform; print(platform.machine())')"
+cpu_arch=$(uname --m)
 
 # -----------------------------------------------------------------------------
 # Command-line Arguments
