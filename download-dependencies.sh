@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 this_dir="$( cd "$( dirname "$0" )" && pwd )"
-cpu_arch="$(lscpu | awk '/^Architecture/{print $2}')"
+cpu_arch="$(python3 -c 'import platform; print(platform.machine())')"
 
 # -----------------------------------------------------------------------------
 # Command-line Arguments

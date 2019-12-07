@@ -59,22 +59,6 @@ make_threads="${FLAGS_make_threads}"
 
 # -----------------------------------------------------------------------------
 
-# CPU architecture
-CPU_ARCH="$(lscpu | awk '/^Architecture/{print $2}')"
-case "${CPU_ARCH}" in
-    x86_64)
-        FRIENDLY_ARCH=amd64
-        ;;
-
-    armv7l)
-        FRIENDLY_ARCH=armhf
-        ;;
-
-    arm64v8)
-        FRIENDLY_ARCH=aarch64
-        ;;
-esac
-
 # Create a temporary directory for building stuff
 temp_dir="$(mktemp -d)"
 
@@ -104,7 +88,7 @@ function maybe_download {
 # -----------------------------------------------------------------------------
 
 if [[ -z "${no_system}" ]]; then
-    echo "Installing system dependencies (${FRIENDLY_ARCH})"
+    echo "Installing system dependencies"
     sudo apt-get update
     sudo apt-get install --no-install-recommends --yes \
          python3 python3-pip python3-venv python3-dev \
@@ -144,6 +128,22 @@ fi
 # -----------------------------------------------------------------------------
 # Download dependencies
 # -----------------------------------------------------------------------------
+
+# CPU architecture
+CPU_ARCH="$(python3 -c 'import platform; print(platform.machine())')"
+case "${CPU_ARCH}" in
+    x86_64)
+        FRIENDLY_ARCH=amd64
+        ;;
+
+    armv7l)
+        FRIENDLY_ARCH=armhf
+        ;;
+
+    arm64v8)
+        FRIENDLY_ARCH=aarch64
+        ;;
+esac
 
 echo "Downloading dependencies"
 download_args=()
