@@ -141,7 +141,7 @@ if [[ -z "${FLAGS_python}" ]]; then
     fi
 else
     # User-provided Python
-    PYTHON="{FLAGS_python}"
+    PYTHON="${FLAGS_python}"
 fi
 
 # -----------------------------------------------------------------------------
