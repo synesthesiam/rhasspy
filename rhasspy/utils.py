@@ -6,6 +6,7 @@ import io
 import itertools
 import logging
 import math
+import os
 import re
 import subprocess
 import threading
@@ -444,3 +445,31 @@ def get_wav_duration(wav_bytes: bytes) -> float:
             frames = wav_file.getnframes()
             rate = wav_file.getframerate()
             return frames / float(rate)
+
+
+# -----------------------------------------------------------------------------
+
+
+def hass_request_kwargs(
+    hass_config: Dict[str, Any], pem_file: Optional[str] = None
+) -> Dict[str, Any]:
+    """Get arguments for HTTP interaction with Home Assistant."""
+    headers = {}
+
+    # Security stuff
+    if ("access_token" in hass_config) and len(hass_config["access_token"]) > 0:
+        # Use token from config
+        headers["Authorization"] = "Bearer %s" % hass_config["access_token"]
+    elif ("api_password" in hass_config) and len(hass_config["api_password"]) > 0:
+        # Use API password (deprecated)
+        headers["X-HA-Access"] = hass_config["api_password"]
+    elif "HASSIO_TOKEN" in os.environ:
+        # Use token from hass.io
+        headers["Authorization"] = "Bearer %s" % os.environ["HASSIO_TOKEN"]
+
+    kwargs = {"headers": headers}
+
+    if pem_file is not None:
+        kwargs["verify"] = pem_file
+
+    return kwargs

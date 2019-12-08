@@ -11,9 +11,12 @@ from urllib.parse import urljoin
 
 import networkx as nx
 import pywrapfst as fst
+import pydash
+import requests
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.utils import empty_intent
+from rhasspy.tts import SpeakSentence
+from rhasspy.utils import empty_intent, hass_request_kwargs
 
 # -----------------------------------------------------------------------------
 # Events
@@ -57,6 +60,7 @@ def get_recognizer_class(system: str) -> Type[RhasspyActor]:
         "rasa",
         "remote",
         "flair",
+        "conversation",
         "command",
     ], ("Invalid intent system: %s" % system)
 
@@ -82,6 +86,10 @@ def get_recognizer_class(system: str) -> Type[RhasspyActor]:
     if system == "flair":
         # Use flair locally
         return FlairRecognizer
+
+    if system == "conversation":
+        # Use HA conversation
+        return HomeAssistantConversationRecognizer
 
     if system == "command":
         # Use command line
@@ -908,6 +916,68 @@ class FlairRecognizer(RhasspyActor):
 
             self._logger.debug("Loaded NER model(s)")
             self.ner_models = ner_models
+
+
+# -----------------------------------------------------------------------------
+# Home Assistant Conversation
+# https://www.home-assistant.io/integrations/conversation
+# -----------------------------------------------------------------------------
+
+
+class HomeAssistantConversationRecognizer(RhasspyActor):
+    """Use Home Assistant's conversation component."""
+
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.hass_config: Dict[str, Any] = {}
+        self.pem_file: bool = ""
+        self.handle_speech: bool = True
+
+    def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
+        self.hass_config = self.profile.get("home_assistant", {})
+
+        # PEM file for self-signed HA certificates
+        self.pem_file = self.hass_config.get("pem_file", "")
+        if self.pem_file:
+            self.pem_file = os.path.expandvars(self.pem_file)
+            self._logger.debug("Using PEM file at %s", self.pem_file)
+        else:
+            self.pem_file = None  # disabled
+
+        self.handle_speech = self.profile.get("intent.conversation.handle_speech", True)
+
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
+        if isinstance(message, RecognizeIntent):
+            post_url = urljoin(self.hass_config["url"], "api/conversation/process")
+
+            # Send to Home Assistant
+            kwargs = hass_request_kwargs(self.hass_config, self.pem_file)
+            kwargs["json"] = {"text": message.text}
+
+            if self.pem_file is not None:
+                kwargs["verify"] = self.pem_file
+
+            # POST to /api/conversation/process
+            response = requests.post(post_url, **kwargs)
+            response.raise_for_status()
+
+            response_json = response.json()
+
+            # Extract speech
+            if self.handle_speech:
+                speech = pydash.get(response_json, "speech.plain.speech", "")
+                if speech:
+                    # Forward to TTS system
+                    self._logger.debug("Handling speech")
+                    self.send(sender, SpeakSentence(speech))
+
+            # Return empty intent since conversation doesn't give it to us
+            intent = empty_intent()
+            intent["text"] = message.text
+            intent["speech_confidence"] = message.confidence
+            self.send(message.receiver or sender, IntentRecognized(intent))
 
 
 # -----------------------------------------------------------------------------

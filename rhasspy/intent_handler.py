@@ -9,6 +9,7 @@ import pydash
 import requests
 
 from rhasspy.actor import RhasspyActor
+from rhasspy.utils import hass_request_kwargs
 
 # -----------------------------------------------------------------------------
 
@@ -169,7 +170,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
         post_url = urljoin(self.hass_config["url"], "api/events/" + event_type)
 
         # Send to Home Assistant
-        kwargs = self._get_request_kwargs()
+        kwargs = hass_request_kwargs(self.hass_config, self.pem_file)
         kwargs["json"] = slots
 
         if self.pem_file is not None:
@@ -190,32 +191,6 @@ class HomeAssistantIntentHandler(RhasspyActor):
 
         return event_type, slots
 
-    def _get_request_kwargs(self):
-        """Get arguments for POST."""
-        headers = {}
-
-        # Security stuff
-        if ("access_token" in self.hass_config) and len(
-            self.hass_config["access_token"]
-        ) > 0:
-            # Use token from config
-            headers["Authorization"] = "Bearer %s" % self.hass_config["access_token"]
-        elif ("api_password" in self.hass_config) and len(
-            self.hass_config["api_password"]
-        ) > 0:
-            # Use API password (deprecated)
-            headers["X-HA-Access"] = self.hass_config["api_password"]
-        elif "HASSIO_TOKEN" in os.environ:
-            # Use token from hass.io
-            headers["Authorization"] = "Bearer %s" % os.environ["HASSIO_TOKEN"]
-
-        kwargs = {"headers": headers}
-
-        if self.pem_file is not None:
-            kwargs["verify"] = self.pem_file
-
-        return kwargs
-
     # -------------------------------------------------------------------------
 
     def get_problems(self) -> Dict[str, Any]:
@@ -224,7 +199,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
         hass_url = self.hass_config["url"]
         try:
             url = urljoin(self.hass_config["url"], "/api/")
-            kwargs = self._get_request_kwargs()
+            kwargs = hass_request_kwargs(self.hass_config, self.pem_file)
             requests.get(url, **kwargs)
         except Exception:
             problems[

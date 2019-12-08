@@ -38,6 +38,9 @@ const profileDefaults = {
         "forward_to_hass": true
     },
     "intent": {
+        "conversation": {
+            "handle_speech": true
+        },
         "fsticuffs": {
             "intent_fst": "intent.fst",
             "ignore_unknown_words": true,

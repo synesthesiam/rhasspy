@@ -132,6 +132,29 @@ Add to your [profile](profiles.md):
 
 See `rhasspy.intent.RemoteRecognizer` for details.
 
+## Home Assistant Conversation
+
+Sends transcriptions from [speech to text](speech-to-text.md) to [Home Assistant's conversation API](https://www.home-assistant.io/integrations/conversation/). If the response contains speech, Rhasspy can optionally speak it.
+
+Add to your [profile](profiles.md):
+
+```json
+"intent": {
+  "system": "conversation",
+  "conversation": {
+    "handle_speech": true
+  }
+}
+```
+
+When `handle_speech` is `true`, Rhasspy will forward the returned speech to your [text to speech](text-to-speech.md) system.
+
+The settings from your profile's `home_assistant` section are automatically used (URL, access token, etc.).
+
+Because Home Assistant will already handle your intent (probably using an [intent script](https://www.home-assistant.io/integrations/intent_script/)), Rhasspy will always generate an empty intent with this recognizer.
+
+See `rhasspy.intent.HomeAssistantConversationRecognizer` for details.
+
 ## Command
 
 Recognizes intents from text using a custom external program.

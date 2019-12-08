@@ -68,6 +68,21 @@
                 </div>
             </div>
             <hr>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="intent-system" id="intent-system-conversation" value="conversation" v-model="profile.intent.system">
+                        <label class="form-check-label" for="intent-system-conversation">
+                            Send transcriptions to <a href="https://www.home-assistant.io/integrations/conversation/">Home Assistant's conversation API</a>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <input type="checkbox" id="conversation-handle-speech" v-model="profile.intent.conversation.handle_speech" :disabled="profile.intent.system != 'conversation'">
+                    <label for="conversation-handle-speech" class="col-form-label">Speak response with Rhasspy</label>
+                </div>
+            </div>
+            <hr>
             <!-- <div class="form-group"> -->
             <!-- <div class="form-row"> -->
             <!-- <div class="form-check"> -->

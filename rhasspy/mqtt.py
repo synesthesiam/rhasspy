@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Optional
 import pydash
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.intent import IntentRecognized
 
 # -----------------------------------------------------------------------------
 
@@ -194,6 +193,8 @@ class HermesMqtt(RhasspyActor):
                 for receiver in self.subscriptions[mqtt_message.topic]:
                     self.send(receiver, mqtt_message)
         elif self.connected:
+            from rhasspy.intent import IntentRecognized
+
             assert self.client is not None
             if isinstance(message, MqttSubscribe):
                 receiver = message.receiver or sender

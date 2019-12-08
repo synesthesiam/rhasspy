@@ -45,6 +45,9 @@
       "arguments": [],
       "program": ""
     },
+    "conversation": {
+      "handle_speech": true
+    },
     "fuzzywuzzy": {
       "examples_json": "intent_examples.json",
       "min_confidence": 0
