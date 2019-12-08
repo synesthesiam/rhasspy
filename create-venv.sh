@@ -17,6 +17,7 @@ DEFINE_boolean 'google' false 'Install Google Text to Speech'
 DEFINE_boolean 'kaldi' true 'Install Kaldi'
 DEFINE_boolean 'offline' false "Don't download anything"
 DEFINE_integer 'make-threads' 4 'Number of threads to use with make' 'j'
+DEFINE_string 'python' '' 'Path to Python executable'
 
 FLAGS "$@" || exit $?
 eval set -- "${FLAGS_ARGV}"
@@ -110,31 +111,37 @@ fi
 # Python >= 3.6
 # -----------------------------------------------------------------------------
 
-if [[ ! -z "$(which python3.8)" ]]; then
-    PYTHON='python3.8'
-elif [[ ! -z "$(which python3.7)" ]]; then
-    PYTHON='python3.7'
-elif [[ ! -z "$(which python3.6)" ]]; then
-    PYTHON='python3.6'
+if [[ -z "${FLAGS_python}" ]]; then
+    # Auto-detect Python
+    if [[ ! -z "$(which python3.8)" ]]; then
+        PYTHON='python3.8'
+    elif [[ ! -z "$(which python3.7)" ]]; then
+        PYTHON='python3.7'
+    elif [[ ! -z "$(which python3.6)" ]]; then
+        PYTHON='python3.6'
+    else
+        echo "Installing Python 3.6 from source. This is going to take a LONG time."
+        sudo apt-get install --no-install-recommends --yes \
+             tk-dev libncurses5-dev libncursesw5-dev \
+             libreadline6-dev libdb5.3-dev libgdbm-dev \
+             libsqlite3-dev libssl-dev libbz2-dev \
+             libexpat1-dev liblzma-dev zlib1g-dev
+
+        python_file="${download_dir}/Python-3.6.8.tar.xz"
+        python_url='https://www.python.org/ftp/python/3.6.8/Python-3.6.8.tar.xz'
+        maybe_download "${python_url}" "${python_file}"
+
+        tar -C "${temp_dir}" -xf "${python_file}"
+        cd "${temp_dir}/Python-3.6.8" && \
+            ./configure && \
+            make -j "${make_threads}" && \
+            sudo make altinstall
+
+        PYTHON='python3.6'
+    fi
 else
-    echo "Installing Python 3.6 from source. This is going to take a LONG time."
-    sudo apt-get install --no-install-recommends --yes \
-         tk-dev libncurses5-dev libncursesw5-dev \
-         libreadline6-dev libdb5.3-dev libgdbm-dev \
-         libsqlite3-dev libssl-dev libbz2-dev \
-         libexpat1-dev liblzma-dev zlib1g-dev
-
-    python_file="${download_dir}/Python-3.6.8.tar.xz"
-    python_url='https://www.python.org/ftp/python/3.6.8/Python-3.6.8.tar.xz'
-    maybe_download "${python_url}" "${python_file}"
-
-    tar -C "${temp_dir}" -xf "${python_file}"
-    cd "${temp_dir}/Python-3.6.8" && \
-        ./configure && \
-        make -j "${make_threads}" && \
-        sudo make altinstall
-
-    PYTHON='python3.6'
+    # User-provided Python
+    PYTHON="{FLAGS_python}"
 fi
 
 # -----------------------------------------------------------------------------
