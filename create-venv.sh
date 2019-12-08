@@ -112,8 +112,8 @@ fi
 
 if [[ ! -z "$(which python3.8)" ]]; then
     PYTHON='python3.8'
-# elif [[ ! -z "$(which python3.7)" ]]; then
-#     PYTHON='python3.7'
+elif [[ ! -z "$(which python3.7)" ]]; then
+    PYTHON='python3.7'
 elif [[ ! -z "$(which python3.6)" ]]; then
     PYTHON='python3.6'
 else
