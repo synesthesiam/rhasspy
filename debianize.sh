@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-rhasspy_version="2.4.8"
+rhasspy_version="2.4.10"
 
 this_dir="$( cd "$( dirname "$0" )" && pwd )"
 
@@ -131,7 +131,7 @@ cp "${this_dir}/app.py" "${share_dir}/src/"
 # -----------------------------------------------------------------------------
 
 echo "Copying Kaldi"
-kaldi_src="${venv}/kaldi"
+kaldi_src="${this_dir}/opt/kaldi"
 if [[ ! -d "${kaldi_src}" ]]; then
     echo "Missing Kaldi at ${kaldi_src}"
     exit 1

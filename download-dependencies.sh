@@ -82,7 +82,7 @@ fi
 for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}";
 do
     rhasspy_files=("rhasspy-tools_${FRIENDLY_ARCH}.tar.gz" "rhasspy-web-dist.tar.gz")
-    for rhasspy_file_name in "${rhasspy_files}"; do
+    for rhasspy_file_name in "${rhasspy_files[@]}"; do
         rhasspy_file="${download_dir}/${rhasspy_file_name}"
         rhasspy_file_url="https://github.com/synesthesiam/rhasspy/releases/download/v2.0/${rhasspy_file_name}"
         maybe_download "${rhasspy_file_url}" "${rhasspy_file}"
@@ -110,7 +110,7 @@ maybe_download "${snowboy_url}" "${snowboy_file}"
 # -----------------------------------------------------------------------------
 
 if [[ -z "${no_precise}" ]]; then
-    for CPU_ARCH in "${CPU_ARCHS}";
+    for CPU_ARCH in "${CPU_ARCHS[@]}";
     do
         case $CPU_ARCH in
             x86_64|armv7l)
@@ -126,7 +126,7 @@ fi
 # -----------------------------------------------------------------------------
 
 if [[ -z "${no_kaldi}" ]]; then
-    for FRIENDLY_ARCH in "${FRIENDLY_ARCHS}"
+    for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"
     do
         # Install pre-built package
         kaldi_file="${download_dir}/kaldi_${FRIENDLY_ARCH}.tar.gz"
