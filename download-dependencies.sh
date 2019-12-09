@@ -48,7 +48,7 @@ fi
 
 function maybe_download {
     if [[ ! -f "$2" ]]; then
-        if [[ ! -z "${offline}" ]]; then
+        if [[ -n "${offline}" ]]; then
             echo "Need to download $1 but offline."
             exit 1
         fi
@@ -67,7 +67,7 @@ CPU_TO_FRIENDLY["armv7l"]="armhf"
 CPU_TO_FRIENDLY["arm64v8"]="aarch64"
 
 # CPU architecture
-if [[ ! -z "${all_cpu}" ]]; then
+if [[ -n "${all_cpu}" ]]; then
     CPU_ARCHS=("x86_64" "armv7l" "arm64v8")
     FRIENDLY_ARCHS=("amd64" "armhf" "aarch64")
 else
