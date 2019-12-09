@@ -9,7 +9,7 @@ paths:
   /api/profiles:
     get:
       summary: 'Get available profiles'
-      produces: 
+      produces:
         - application/json
       responses:
         '200':
@@ -19,15 +19,15 @@ paths:
   /api/profile:
     get:
       summary: 'Get profile settings'
-      produces: 
+      produces:
         - application/json
       parameters:
-      - in: query
-        name: layers
-        description: ''
-        enum: [all, defaults, profile]
-        schema:
-          type: string
+        - in: query
+          name: layers
+          description: ''
+          enum: [all, defaults, profile]
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -35,7 +35,7 @@ paths:
             type: object
     post:
       summary: 'Overwrite profile settings'
-      produces: 
+      produces:
         - application/json
       requestBody:
         description: 'JSON to write to profile'
@@ -45,12 +45,12 @@ paths:
             schema:
               type: object
       parameters:
-      - in: query
-        name: layers
-        description: ''
-        enum: [default, profile]
-        schema:
-          type: string
+        - in: query
+          name: layers
+          description: ''
+          enum: [default, profile]
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -59,7 +59,7 @@ paths:
   /api/listen-for-wake:
     post:
       summary: 'Make Rhasspy listen for the wake word'
-      produces: 
+      produces:
         - application/json
       responses:
         '200':
@@ -69,30 +69,30 @@ paths:
   /api/listen-for-command:
     post:
       summary: 'Make Rhasspy listen for a command'
-      produces: 
+      produces:
         - application/json
       parameters:
-      - in: query
-        name: nohass
-        description: 'True if intent should NOT be sent to Home Assistant'
-        schema:
-          type: boolean
-          default: false
-      - in: query
-        name: entity
-        description: 'Set slot named entity in recognized intent to value'
-        schema:
-          type: string
-      - in: query
-        name: value
-        description: 'Set slot named entity in recognized intent to value'
-        schema:
-          type: string
-      - in: query
-        name: timeout
-        description: 'Number of seconds before empty intent is returned'
-        schema:
-          type: float
+        - in: query
+          name: nohass
+          description: 'True if intent should NOT be sent to Home Assistant'
+          schema:
+            type: boolean
+            default: false
+        - in: query
+          name: entity
+          description: 'Set slot named entity in recognized intent to value'
+          schema:
+            type: string
+        - in: query
+          name: value
+          description: 'Set slot named entity in recognized intent to value'
+          schema:
+            type: string
+        - in: query
+          name: timeout
+          description: 'Number of seconds before empty intent is returned'
+          schema:
+            type: float
       responses:
         '200':
           description: Intent
@@ -101,7 +101,7 @@ paths:
   /api/microphones:
     get:
       summary: 'Get list of available microphones'
-      produces: 
+      produces:
         - application/json
       responses:
         '200':
@@ -111,7 +111,7 @@ paths:
   /api/test-microphones:
     get:
       summary: 'Get list of available microphones and if they are working'
-      produces: 
+      produces:
         - application/json
       responses:
         '200':
@@ -121,7 +121,7 @@ paths:
   /api/speakers:
     get:
       summary: 'Get list of available speakers'
-      produces: 
+      produces:
         - application/json
       responses:
         '200':
@@ -131,7 +131,7 @@ paths:
   /api/pronounce:
     post:
       summary: 'Pronounce a word or set of phonemes'
-      produces: 
+      produces:
         - text/plain
         - audio/wav
       requestBody:
@@ -142,24 +142,24 @@ paths:
             schema:
               type: string
       parameters:
-      - in: query
-        name: pronounce_type
-        description: 'Input type'
-        required: true
-        schema:
-          type: string
-          enum: [word, phonemes]
-      - in: query
-        name: download
-        description: 'Return WAV file instead of using speakers'
-        schema:
-          type: boolean
-          default: false
-      - in: query
-        name: voice
-        description: 'Voice/language to use (defaults to profile language)'
-        schema:
-          type: string
+        - in: query
+          name: pronounce_type
+          description: 'Input type'
+          required: true
+          schema:
+            type: string
+            enum: [word, phonemes]
+        - in: query
+          name: download
+          description: 'Return WAV file instead of using speakers'
+          schema:
+            type: boolean
+            default: false
+        - in: query
+          name: voice
+          description: 'Voice/language to use (defaults to profile language)'
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -174,7 +174,7 @@ paths:
   /api/lookup:
     post:
       summary: 'Look up a word in the dictionary or guess pronunciation'
-      produces: 
+      produces:
         - application/json
       requestBody:
         description: 'Word to look up'
@@ -184,12 +184,12 @@ paths:
             schema:
               type: string
       parameters:
-      - in: query
-        name: n
-        description: 'Number of pronunciations to generate'
-        schema:
-          type: integer
-          default: 5
+        - in: query
+          name: n
+          description: 'Number of pronunciations to generate'
+          schema:
+            type: integer
+            default: 5
       responses:
         '200':
           description: OK
@@ -200,7 +200,7 @@ paths:
   /api/phonemes:
     get:
       summary: 'Get examples of phonemes for a profile'
-      produces: 
+      produces:
         - application/json
       responses:
         '200':
@@ -212,7 +212,7 @@ paths:
   /api/sentences:
     get:
       summary: 'Get example sentences for profile'
-      produces: 
+      produces:
         - text/plain
       responses:
         '200':
@@ -240,7 +240,7 @@ paths:
   /api/custom-words:
     get:
       summary: 'Get custom words for profile'
-      produces: 
+      produces:
         - text/plain
       responses:
         '200':
@@ -268,7 +268,7 @@ paths:
   /api/unknown-words:
     get:
       summary: 'Get unknown words for profile'
-      produces: 
+      produces:
         - application/json
       responses:
         '200':
@@ -327,12 +327,12 @@ paths:
             schema:
               type: string
       parameters:
-      - in: query
-        name: nohass
-        description: 'True if intent should NOT be sent to Home Assistant'
-        schema:
-          type: boolean
-          default: false
+        - in: query
+          name: nohass
+          description: 'True if intent should NOT be sent to Home Assistant'
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: OK
@@ -351,12 +351,12 @@ paths:
             schema:
               type: string
       parameters:
-      - in: query
-        name: repeat
-        description: 'True if Rhasspy should repeat the last spoken sentence'
-        schema:
-          type: boolean
-          default: false
+        - in: query
+          name: repeat
+          description: 'True if Rhasspy should repeat the last spoken sentence'
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: OK
@@ -397,12 +397,12 @@ paths:
               type: string
               format: binary
       parameters:
-      - in: query
-        name: nohass
-        description: 'True if intent should NOT be sent to Home Assistant'
-        schema:
-          type: boolean
-          default: false
+        - in: query
+          name: nohass
+          description: 'True if intent should NOT be sent to Home Assistant'
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: OK
@@ -424,12 +424,12 @@ paths:
     post:
       summary: 'Stop recording WAV file, transcribe, extract intent, and send to Home Assistant'
       parameters:
-      - in: query
-        name: nohass
-        description: 'True if intent should NOT be sent to Home Assistant'
-        schema:
-          type: boolean
-          default: false
+        - in: query
+          name: nohass
+          description: 'True if intent should NOT be sent to Home Assistant'
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: Intent
@@ -441,12 +441,12 @@ paths:
     post:
       summary: 'Force Rhasspy to download files for current profile'
       parameters:
-      - in: query
-        name: delete
-        description: 'True if download cache should be deleted'
-        schema:
-          type: boolean
-          default: false
+        - in: query
+          name: delete
+          description: 'True if download cache should be deleted'
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: Log
