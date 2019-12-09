@@ -1,6 +1,4 @@
 """Tests for Rhasspy."""
-from rhasspy.core import RhasspyCore
-
 import asyncio
 import os
 import sys
@@ -9,6 +7,8 @@ import tempfile
 import unittest
 import logging
 import argparse
+
+from rhasspy.core import RhasspyCore
 
 logging.basicConfig(level=logging.DEBUG)
 loop = asyncio.get_event_loop()
