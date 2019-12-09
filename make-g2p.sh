@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-if [[ -z "$(which phonetisaurus-train)" ]]; then
+if [[ -z "$(command -v phonetisaurus-train)" ]]; then
     echo "Phonetisaurus not installed!"
     exit 1
 fi

@@ -77,7 +77,7 @@ trap cleanup EXIT
 
 function maybe_download {
     if [[ ! -f "$2" ]]; then
-        if [[ ! -z "${offline}" ]]; then
+        if [[ -n "${offline}" ]]; then
             echo "Need to download $1 but offline."
             exit 1
         fi
@@ -113,11 +113,11 @@ fi
 
 if [[ -z "${FLAGS_python}" ]]; then
     # Auto-detect Python
-    if [[ ! -z "$(which python3.8)" ]]; then
+    if [[ -n "$(command -v python3.8)" ]]; then
         PYTHON='python3.8'
-    elif [[ ! -z "$(which python3.7)" ]]; then
+    elif [[ -n "$(command -v python3.7)" ]]; then
         PYTHON='python3.7'
-    elif [[ ! -z "$(which python3.6)" ]]; then
+    elif [[ -n "$(command -v python3.6)" ]]; then
         PYTHON='python3.6'
     else
         echo "Installing Python 3.6 from source. This is going to take a LONG time."
@@ -166,15 +166,15 @@ esac
 
 echo "Downloading dependencies"
 download_args=()
-if [[ ! -z "${offline}" ]]; then
+if [[ -n "${offline}" ]]; then
     download_args+=('--offline')
 fi
 
-if [[ ! -z "${no_precise}" ]]; then
+if [[ -n "${no_precise}" ]]; then
     download_args+=('--noprecise')
 fi
 
-if [[ ! -z "${no_kaldi}" ]]; then
+if [[ -n "${no_kaldi}" ]]; then
     download_args+=('--nokaldi')
 fi
 
@@ -215,29 +215,29 @@ echo "Installing Python requirements"
 # pytorch is not available on ARM
 case "${CPU_ARCH}" in
     armv7l|arm64v8)
-	    no_flair="true" ;;
+        no_flair="true" ;;
 esac
 
 requirements_file="${temp_dir}/requirements.txt"
 cp "${this_dir}/requirements.txt" "${requirements_file}"
 
 # Exclude requirements
-if [[ ! -z "${no_flair}" ]]; then
+if [[ -n "${no_flair}" ]]; then
     echo "Excluding flair from virtual environment"
     sed -i '/^flair/d' "${requirements_file}"
 fi
 
-if [[ ! -z "${no_precise}" ]]; then
+if [[ -n "${no_precise}" ]]; then
     echo "Excluding Mycroft Precise from virtual environment"
     sed -i '/^precise-runner/d' "${requirements_file}"
 fi
 
-if [[ ! -z "${no_adapt}" ]]; then
+if [[ -n "${no_adapt}" ]]; then
     echo "Excluding Mycroft Adapt from virtual environment"
     sed -i '/^adapt-parser/d' "${requirements_file}"
 fi
 
-if [[ ! -z "${no_google}" ]]; then
+if [[ -n "${no_google}" ]]; then
     echo "Excluding Google Text to Speech from virtual environment"
     sed -i '/^google-cloud-texttospeech/d' "${requirements_file}"
 fi
@@ -273,7 +273,7 @@ esac
 # Mycroft Precise
 # -----------------------------------------------------------------------------
 
-if [[ -z "${no_precise}" && -z "$(which precise-engine)" ]]; then
+if [[ -z "${no_precise}" && -z "$(command -v precise-engine)" ]]; then
     case "${CPU_ARCH}" in
         x86_64|armv7l)
             echo "Installing Mycroft Precise"

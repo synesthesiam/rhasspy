@@ -40,7 +40,7 @@ switch:
         command_on: "echo 'Living room lamp ON'"
         command_off: "echo 'Living room lamp OFF'"
       garage_light:
-        command_on:  "echo 'Garage light ON'"
+        command_on: "echo 'Garage light ON'"
         command_off: "echo 'Garage light OFF'"
 
 # Doors
@@ -50,7 +50,7 @@ binary_sensor:
     command: "bash -c 'sec=$(date +%s); [[ $(($sec % 2)) -eq 0 ]] && echo open || echo closed'"
     payload_on: "closed"
     payload_off: "open"
-    
+
 # Temperature
 sensor:
   - platform: command_line

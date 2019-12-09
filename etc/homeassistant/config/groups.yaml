@@ -1,5 +1,5 @@
 default_view:
-  view: yes
+  view: true
   entities:
     - group.inside
     - group.garage

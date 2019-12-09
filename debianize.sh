@@ -46,7 +46,7 @@ fi
 cd "${this_dir}"
 source "${venv}/bin/activate"
 
-if [[ -z "$(which pyinstaller)" ]]; then
+if [[ -z "$(command -v pyinstaller)" ]]; then
     echo "Missing PyInstaller"
     exit 1
 fi
@@ -145,7 +145,7 @@ rsync -av --delete "${kaldi_src}/" "${kaldi_dest}/"
 rm -f "${kaldi_dest}/egs/wsj/s5/utils/utils"
 
 # Turn duplicate .so files into symbolic links
-function fix_library_links() {
+function fix_library_links {
     lib_dir="$1"
 
     for lib in "${lib_dir}"/*.so; do
