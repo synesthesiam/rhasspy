@@ -1,0 +1,44 @@
+2 bleu b l 2
+9 club k l 9 b
+9~ aucun o k 9~
+@ ceci s @ s i
+A base b A z
+A~ andy A~ n d i
+E aies E
+E: têtes t E: t
+E~ bien b j E~
+H fuir f H i R
+I avril A v R I l
+J gagne g a J
+N king k i N
+O bord b O R
+O~ bons b O~
+R agir a Z i R
+S chef S E f
+Z ange A~ Z
+a abri a b R i
+a: marc m a: k
+b aube o b
+d aide E d
+dZ jack dZ a k
+e aidé E d e
+f afin a f E~
+g goût g u
+i agit a Z i
+j ayez E j e
+k acte a k t
+l allo a l o
+m aime E m
+n anna a n a
+o allô a l o
+p pain p E~
+r prison p r i z O~
+s alex a l E k s
+t bite b i t
+tS match m a tS
+ts cents s E n ts
+u chou S u
+v avec a v E k
+w coin k w E~
+y buts b y t
+z aise E z

@@ -1,63 +1,98 @@
 {
-    "language": "fr",
-    "name": "fr",
-
-    "speech_to_text": {
-        "system": "pocketsphinx",
-        "dictionary_casing": "lower"
-    },
-    "intent": {
-        "wavenet": {
-            "language_code": "fr-FR"
-        },
-        "flair": {
-            "embeddings": [
-                "lm-fr-charlm-backward.pt", "lm-fr-charlm-forward.pt"
-            ]
-        }
-    },
-    "download": {
-        "conditions": {
-            "speech_to_text.system": {
-                "pocketsphinx": {
-                    "acoustic_model": "cmusphinx-fr-5.2.tar.gz:cmusphinx-fr-5.2",
-                    "base_dictionary.txt": "fr-g2p.tar.gz:base_dictionary.txt",
-                    "g2p.fst": "fr-g2p.tar.gz:g2p.fst"
-                }
-            },
-
-            "speech_to_text.pocketsphinx.mix_weight": {
-                ">0": {
-                    "base_language_model.txt": "fr-small.lm.gz:fr-small.lm"
-                }
-            },
-
-            "intent.system": {
-                "flair": {
-                    "flair/cache/embeddings/lm-fr-charlm-backward.pt": "lm-fr-charlm-backward.pt",
-                    "flair/cache/embeddings/lm-fr-charlm-forward.pt": "lm-fr-charlm-forward.pt"
-                }
-            }
-        },
-
-        "files": {
-            "cmusphinx-fr-5.2.tar.gz": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/cmusphinx-fr-5.2.tar.gz"
-            },
-            "fr-small.lm.gz": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/fr-small.lm.gz"
-            },
-            "fr-g2p.tar.gz": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/fr-g2p.tar.gz"
-            },
-            "lm-fr-charlm-backward.pt": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/lm-fr-charlm-backward.pt",
-                "cache": false
-            },
-            "lm-fr-charlm-forward.pt": {
-                "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/lm-fr-charlm-forward.pt",
-                "cache": false
-            }
-        }
+  "language": "fr",
+  "name": "fr",
+  "speech_to_text": {
+    "system": "pocketsphinx",
+    "dictionary_casing": "lower",
+    "kaldi": {
+      "base_dictionary": "kaldi/base_dictionary.txt",
+      "base_language_model": "kaldi/base_language_model.txt",
+      "base_language_model_fst": "kaldi/base_language_model.fst",
+      "compatible": true,
+      "custom_words": "kaldi/custom_words.txt",
+      "dictionary": "kaldi/dictionary.txt",
+      "graph": "graph",
+      "language_model": "kaldi/language_model.txt",
+      "model_dir": "kaldi/model",
+      "unknown_words": "kaldi/unknown_words.txt",
+      "mix_fst": "kaldi/mixed.fst",
+      "g2p_model": "kaldi/g2p.fst",
+      "phoneme_examples": "kaldi/phoneme_examples.txt",
+      "phoneme_map": "kaldi/espeak_phonemes.txt"
     }
+  },
+  "intent": {
+    "wavenet": {
+      "language_code": "fr-FR"
+    },
+    "flair": {
+      "embeddings": [
+        "lm-fr-charlm-backward.pt",
+        "lm-fr-charlm-forward.pt"
+      ]
+    }
+  },
+  "download": {
+    "conditions": {
+      "speech_to_text.system": {
+        "pocketsphinx": {
+          "acoustic_model": "cmusphinx-fr-5.2.tar.gz:cmusphinx-fr-5.2",
+          "base_dictionary.txt": "fr-g2p.tar.gz:base_dictionary.txt",
+          "g2p.fst": "fr-g2p.tar.gz:g2p.fst"
+        },
+        "kaldi": {
+          "kaldi": "fr_kaldi-zamia.tar.gz:kaldi"
+        }
+      },
+      "speech_to_text.pocketsphinx.mix_weight": {
+        ">0": {
+          "base_language_model.txt": "fr-small.lm.gz:fr-small.lm"
+        }
+      },
+      "speech_to_text.kaldi.mix_weight": {
+        ">0": {
+          "kaldi/base_language_model.txt": "generic_fr_lang_model_small-r20191016.arpa.tar.gz:generic_fr_lang_model_small-r20191016.arpa"
+        }
+      },
+      "speech_to_text.kaldi.open_transcription": {
+        "True": {
+          "kaldi/model/base_graph": "fr_kaldi-zamia-base_graph.tar.gz:base_graph"
+        }
+      },
+      "intent.system": {
+        "flair": {
+          "flair/cache/embeddings/lm-fr-charlm-backward.pt": "lm-fr-charlm-backward.pt",
+          "flair/cache/embeddings/lm-fr-charlm-forward.pt": "lm-fr-charlm-forward.pt"
+        }
+      }
+    },
+    "files": {
+      "cmusphinx-fr-5.2.tar.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/cmusphinx-fr-5.2.tar.gz"
+      },
+      "fr-small.lm.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/fr-small.lm.gz"
+      },
+      "fr-g2p.tar.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/fr-g2p.tar.gz"
+      },
+      "lm-fr-charlm-backward.pt": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/lm-fr-charlm-backward.pt",
+        "cache": false
+      },
+      "lm-fr-charlm-forward.pt": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/lm-fr-charlm-forward.pt",
+        "cache": false
+      },
+      "generic_fr_lang_model_small-r20191016.arpa.xz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/generic_fr_lang_model_small-r20191016.arpa.xz"
+      },
+      "fr_kaldi-zamia.tar.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/fr_kaldi-zamia.tar.gz"
+      },
+      "fr_kaldi-zamia-base_graph.tar.gz": {
+        "url": "https://github.com/synesthesiam/rhasspy-profiles/releases/download/v1.0-fr/fr_kaldi-zamia-base_graph.tar.gz"
+      }
+    }
+  }
 }

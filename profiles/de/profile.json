@@ -7,6 +7,7 @@
     "kaldi": {
       "base_dictionary": "kaldi/base_dictionary.txt",
       "base_language_model": "kaldi/base_language_model.txt",
+      "base_language_model_fst": "kaldi/base_language_model.fst",
       "compatible": true,
       "custom_words": "kaldi/custom_words.txt",
       "dictionary": "kaldi/dictionary.txt",
