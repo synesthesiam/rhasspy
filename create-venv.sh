@@ -215,7 +215,7 @@ echo "Installing Python requirements"
 # pytorch is not available on ARM
 case "${CPU_ARCH}" in
     armv7l|arm64v8)
-	    no_flair="true" ;;
+        no_flair="true" ;;
 esac
 
 requirements_file="${temp_dir}/requirements.txt"

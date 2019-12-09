@@ -79,8 +79,7 @@ fi
 # Rhasspy
 # -----------------------------------------------------------------------------
 
-for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}";
-do
+for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"; do
     rhasspy_files=("rhasspy-tools_${FRIENDLY_ARCH}.tar.gz" "rhasspy-web-dist.tar.gz")
     for rhasspy_file_name in "${rhasspy_files[@]}"; do
         rhasspy_file="${download_dir}/${rhasspy_file_name}"
@@ -110,8 +109,7 @@ maybe_download "${snowboy_url}" "${snowboy_file}"
 # -----------------------------------------------------------------------------
 
 if [[ -z "${no_precise}" ]]; then
-    for CPU_ARCH in "${CPU_ARCHS[@]}";
-    do
+    for CPU_ARCH in "${CPU_ARCHS[@]}"; do
         case $CPU_ARCH in
             x86_64|armv7l)
                 precise_file="${download_dir}/precise-engine_0.3.0_${CPU_ARCH}.tar.gz"
@@ -126,8 +124,7 @@ fi
 # -----------------------------------------------------------------------------
 
 if [[ -z "${no_kaldi}" ]]; then
-    for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"
-    do
+    for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"; do
         # Install pre-built package
         kaldi_file="${download_dir}/kaldi_${FRIENDLY_ARCH}.tar.gz"
         kaldi_url="https://github.com/synesthesiam/kaldi-docker/releases/download/v1.0/kaldi_${FRIENDLY_ARCH}.tar.gz"
