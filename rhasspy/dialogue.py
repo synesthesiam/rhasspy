@@ -4,7 +4,7 @@ import os
 import sys
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 
 import pywrapfst as fst
 
