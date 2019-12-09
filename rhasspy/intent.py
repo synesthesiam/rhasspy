@@ -150,7 +150,6 @@ class RemoteRecognizer(RhasspyActor):
 
     def recognize(self, text: str) -> Dict[str, Any]:
         """POST to remote server and return response."""
-        import requests
 
         params = {"profile": self.profile.name, "nohass": True}
         response = requests.post(self.remote_url, params=params, data=text.encode())
@@ -647,7 +646,6 @@ class RasaIntentRecognizer(RhasspyActor):
 
     def recognize(self, text: str) -> Dict[str, Any]:
         """POST to RasaNLU server and return response."""
-        import requests
 
         response = requests.post(
             self.parse_url, json={"text": text, "project": self.project_name}
