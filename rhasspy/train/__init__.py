@@ -119,6 +119,11 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
         """Transforms sentences.ini into JSGF grammars, one per intent."""
         maybe_deps = []
 
+        # Add profile itself as a dependency
+        profile_json_path = profile_dir / "profile.json"
+        if profile_json_path.is_file():
+            maybe_deps.append(profile_json_path)
+
         def ini_to_grammars(targets):
             with open(sentences_ini, "r") as sentences_file:
                 make_grammars(sentences_file, grammar_dir, whitelist=whitelist)
