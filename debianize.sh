@@ -46,7 +46,7 @@ fi
 cd "${this_dir}"
 source "${venv}/bin/activate"
 
-if [[ -z "$(which pyinstaller)" ]]; then
+if [[ -z "$(command -v pyinstaller)" ]]; then
     echo "Missing PyInstaller"
     exit 1
 fi

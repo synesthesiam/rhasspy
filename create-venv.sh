@@ -113,11 +113,11 @@ fi
 
 if [[ -z "${FLAGS_python}" ]]; then
     # Auto-detect Python
-    if [[ ! -z "$(which python3.8)" ]]; then
+    if [[ ! -z "$(command -v python3.8)" ]]; then
         PYTHON='python3.8'
-    elif [[ ! -z "$(which python3.7)" ]]; then
+    elif [[ ! -z "$(command -v python3.7)" ]]; then
         PYTHON='python3.7'
-    elif [[ ! -z "$(which python3.6)" ]]; then
+    elif [[ ! -z "$(command -v python3.6)" ]]; then
         PYTHON='python3.6'
     else
         echo "Installing Python 3.6 from source. This is going to take a LONG time."
@@ -273,7 +273,7 @@ esac
 # Mycroft Precise
 # -----------------------------------------------------------------------------
 
-if [[ -z "${no_precise}" && -z "$(which precise-engine)" ]]; then
+if [[ -z "${no_precise}" && -z "$(command -v precise-engine)" ]]; then
     case "${CPU_ARCH}" in
         x86_64|armv7l)
             echo "Installing Mycroft Precise"
