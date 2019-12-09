@@ -59,6 +59,11 @@ COPY profiles/fr/profile.json \
      profiles/fr/frequent_words.txt \
      profiles/fr/sentences.ini \
      profiles/fr/stop_words.txt ${RHASSPY_APP}/profiles/fr/
+     
+COPY profiles/fr/kaldi/custom_words.txt \
+     profiles/fr/kaldi/espeak_phonemes.txt \
+     profiles/fr/kaldi/phoneme_examples.txt \
+     ${RHASSPY_APP}/profiles/fr/kaldi/
 
 COPY profiles/ru/profile.json \
      profiles/ru/custom_words.txt \
