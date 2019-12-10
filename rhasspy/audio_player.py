@@ -170,7 +170,7 @@ class HermesAudioPlayer(RhasspyActor):
     def __init__(self):
         super().__init__()
         self.mqtt: Optional[RhasspyActor] = None
-        self.site_ids:List[str] = []
+        self.site_ids: List[str] = []
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""

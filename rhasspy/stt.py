@@ -243,7 +243,7 @@ class PocketsphinxDecoder(RhasspyActor):
         problems: Dict[str, Any] = {}
 
         try:
-            import pocketsphinx
+            import pocketsphinx  # noqa: F401
         except Exception:
             problems[
                 "Missing pocketsphinx"
