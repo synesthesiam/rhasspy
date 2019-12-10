@@ -20,14 +20,23 @@ from doit.cmd_base import ModuleTaskLoader
 from doit.doit_cmd import DoitMain
 from doit.reporter import ConsoleReporter
 
-from rhasspy.train.jsgf2fst import (
-    get_grammar_dependencies,
-    grammar_to_fsts,
-    slots_to_fsts,
-    make_intent_fst,
+from rhasspynlu import (
+    parse_ini,
+    intents_to_graph,
+    graph_to_fst,
+    graph_to_json,
+    json_to_graph,
+    jsgf,
 )
 
-from rhasspy.train.ini_jsgf import make_grammars
+# from rhasspy.train.jsgf2fst import (
+#     get_grammar_dependencies,
+#     grammar_to_fsts,
+#     slots_to_fsts,
+#     make_intent_fst,
+# )
+
+# from rhasspy.train.ini_jsgf import make_grammars
 from rhasspy.train.vocab_dict import make_dict, FORMAT_CMU, FORMAT_JULIUS
 from rhasspy.profiles import Profile
 from rhasspy.utils import ppath as utils_ppath, read_dict
@@ -89,6 +98,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
     base_language_model_fst = ppath(
         f"{stt_prefix}.base_language_model_fst", "base_language_model.fst", write=True
     )
+    intent_graph = ppath("intent.fsticiffs.intent_graph", "intent.json", write=True)
     intent_fst = ppath("intent.fsticiffs.intent_fst", "intent.fst", write=True)
     vocab = ppath(f"{stt_prefix}.vocabulary", "vocab.txt", write=True)
     unknown_words = ppath(
@@ -106,176 +116,270 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
 
     # -----------------------------------------------------------------------------
 
-    # Set of used intents
-    intents: Set[str] = set()
-    whitelist = None
-
-    # Default to using all intents
-    intents.update(_get_intents(sentences_ini))
+    # Parse sentences.ini
+    intents = parse_ini(sentences_ini)
 
     # -----------------------------------------------------------------------------
 
-    def task_grammars():
-        """Transforms sentences.ini into JSGF grammars, one per intent."""
-        maybe_deps = []
+    # def task_grammars():
+    #     """Transforms sentences.ini into JSGF grammars, one per intent."""
+    #     maybe_deps = []
+
+    #     # Add profile itself as a dependency
+    #     profile_json_path = profile_dir / "profile.json"
+    #     if profile_json_path.is_file():
+    #         maybe_deps.append(profile_json_path)
+
+    #     def ini_to_grammars(targets):
+    #         with open(sentences_ini, "r") as sentences_file:
+    #             make_grammars(sentences_file, grammar_dir, whitelist=whitelist)
+
+    #     return {
+    #         "file_dep": [sentences_ini] + maybe_deps,
+    #         "targets": [grammar_dir / f"{intent}.gram" for intent in intents],
+    #         "actions": [ini_to_grammars],
+    #     }
+
+    # # -----------------------------------------------------------------------------
+
+    # def do_slots_to_fst(slot_names, targets):
+    #     # Extra arguments for word casing
+    #     kwargs = {}
+    #     if word_casing == "upper":
+    #         kwargs["upper"] = True
+    #     elif word_casing == "lower":
+    #         kwargs["lower"] = True
+
+    #     slot_fsts = slots_to_fsts(slots_dir, slot_names=slot_names, **kwargs)
+    #     for slot_name, slot_fst in slot_fsts.items():
+    #         # Slot name will already have "$"
+    #         slot_fst.write(str(fsts_dir / f"{slot_name}.fst"))
+
+    # def do_grammar_to_fsts(
+    #     grammar_path: Path, replace_fst_paths: Dict[str, Path], targets
+    # ):
+    #     # Load dependent FSTs
+    #     replace_fsts = {
+    #         replace_name: fst.Fst.read(str(replace_path))
+    #         for replace_name, replace_path in replace_fst_paths.items()
+    #     }
+
+    #     # Extra arguments for word casing
+    #     kwargs = {}
+    #     if word_casing == "upper":
+    #         kwargs["upper"] = True
+    #     elif word_casing == "lower":
+    #         kwargs["lower"] = True
+
+    #     grammar = grammar_path.read_text()
+    #     listener = grammar_to_fsts(grammar, replace_fsts=replace_fsts, **kwargs)
+    #     grammar_name = listener.grammar_name
+
+    #     # Write FST for each JSGF rule
+    #     for rule_name, rule_fst in listener.fsts.items():
+    #         fst_path = fsts_dir / f"{rule_name}.fst"
+    #         rule_fst.write(str(fst_path))
+
+    #     # Write FST for main grammar rule
+    #     grammar_fst_path = fsts_dir / f"{grammar_name}.fst"
+    #     assert listener.grammar_fst is not None
+    #     listener.grammar_fst.write(str(grammar_fst_path))
+
+    # # -----------------------------------------------------------------------------
+
+    # def do_grammar_dependencies(grammar_path: Path, targets):
+    #     grammar = grammar_path.read_text()
+    #     grammar_deps = get_grammar_dependencies(grammar).graph
+    #     graph_json = nx.readwrite.json_graph.node_link_data(grammar_deps)
+    #     with open(targets[0], "w") as graph_file:
+    #         json.dump(graph_json, graph_file)
+
+    # @create_after(executed="grammars")
+    # def task_grammar_dependencies():
+    #     """Creates grammar dependency graphs from JSGF grammars and relevant slots."""
+
+    #     for intent in intents:
+    #         grammar_path = grammar_dir / f"{intent}.gram"
+    #         yield {
+    #             "name": intent + "_dependencies",
+    #             "file_dep": [grammar_path],
+    #             "targets": [str(grammar_path) + ".json"],
+    #             "actions": [(do_grammar_dependencies, [grammar_path])],
+    #         }
+
+    # # -----------------------------------------------------------------------------
+
+    # @create_after(executed="grammar_dependencies")
+    # def task_grammar_fsts():
+    #     """Creates grammar FSTs from JSGF grammars and relevant slots."""
+    #     used_slots: Set[str] = set()
+
+    #     for intent in intents:
+    #         grammar_path = grammar_dir / f"{intent}.gram"
+    #         grammar_dep_path = str(grammar_path) + ".json"
+
+    #         # Load dependency graph
+    #         with open(grammar_dep_path, "r") as graph_file:
+    #             graph_data = json.load(graph_file)
+    #             grammar_deps = nx.readwrite.json_graph.node_link_graph(graph_data)
+
+    #         rule_names: Set[str] = set()
+    #         replace_fst_paths: Dict[str, Path] = {}
+
+    #         # Process dependencies
+    #         for node, data in grammar_deps.nodes(data=True):
+    #             node_type = data["type"]
+
+    #             if node_type == "slot":
+    #                 # Strip "$"
+    #                 slot_name = node[1:]
+    #                 used_slots.add(slot_name)
+
+    #                 # Path to slot FST
+    #                 replace_fst_paths[node] = fsts_dir / f"{node}.fst"
+    #             elif node_type == "remote rule":
+    #                 # Path to rule FST
+    #                 replace_fst_paths[node] = fsts_dir / f"{node}.fst"
+    #             elif node_type == "local rule":
+    #                 rule_names.add(node)
+
+    #         # All rule/grammar FSTs that will be generated
+    #         grammar_fst_paths = [
+    #             fsts_dir / f"{rule_name}.fst" for rule_name in rule_names
+    #         ]
+    #         grammar_fst_paths.append(fsts_dir / f"{intent}.fst")
+
+    #         yield {
+    #             "name": intent + "_fst",
+    #             "file_dep": [grammar_path, grammar_dep_path]
+    #             + list(replace_fst_paths.values()),
+    #             "targets": grammar_fst_paths,
+    #             "actions": [(do_grammar_to_fsts, [grammar_path, replace_fst_paths])],
+    #         }
+
+    #     # slots -> FST
+    #     if len(used_slots) > 0:
+    #         yield {
+    #             "name": "slot_fsts",
+    #             "file_dep": [slots_dir / slot_name for slot_name in used_slots],
+    #             "targets": [fsts_dir / f"${slot_name}.fst" for slot_name in used_slots],
+    #             "actions": [(do_slots_to_fst, [used_slots])],
+    #         }
+
+    # # -----------------------------------------------------------------------------
+
+    # def do_intent_fst(intents: Iterable[str], targets):
+    #     intent_fsts = {
+    #         intent: fst.Fst.read(str(fsts_dir / f"{intent}.fst")) for intent in intents
+    #     }
+    #     intent_fst = make_intent_fst(intent_fsts)
+    #     intent_fst.write(targets[0])
+
+    # @create_after(executed="grammar_fsts")
+    # def task_intent_fst():
+    #     """Merges grammar FSTs into single intent.fst."""
+    #     return {
+    #         "file_dep": [fsts_dir / f"{intent}.fst" for intent in intents],
+    #         "targets": [intent_fst],
+    #         "actions": [(do_intent_fst, [intents])],
+    #     }
+
+    # -----------------------------------------------------------------------------
+
+    def get_slot_names(item):
+        if isinstance(item, jsgf.SlotReference):
+            yield item.slot_name
+        elif isinstance(item, jsgf.Sequence):
+            for sub_item in item.items:
+                for slot_name in get_slot_names(sub_item):
+                    yield slot_name
+        elif isinstance(item, jsgf.Rule):
+            for slot_name in get_slot_names(item.rule_body):
+                yield slot_name
+
+    def do_intents_to_graph(intents, slot_names, targets):
+        # Load slot values
+        replacements = {}
+        for slot_name in slot_names:
+            slot_path = slots_dir / slot_name
+            assert slot_path.is_file(), f"Missing slot file at {slot_path}"
+
+            # Parse each non-empty line as a JSGF sentence
+            slot_values = []
+            with open(slot_path, "r") as slot_file:
+                for line in slot_file:
+                    line = line.strip()
+                    if line:
+                        slot_values.append(jsgf.Sentence.parse(line))
+
+            # Replace $slot with sentences
+            replacements[f"${slot_name}"] = slot_values
+
+        # Convert to directed graph
+        graph = intents_to_graph(intents, replacements)
+
+        # Write graph to JSON file
+        json_graph = graph_to_json(graph)
+        with open(targets[0], "w") as graph_file:
+            json.dump(json_graph, graph_file)
+
+    def task_ini_graph():
+        """sentences.ini -> intent.json"""
+        slot_names = set()
+        for intent_name in intents:
+            for item in intents[intent_name]:
+                for slot_name in get_slot_names(item):
+                    slot_names.add(slot_name)
+
+        # Add slot files as dependencies
+        deps = [slots_dir / slot_name for slot_name in slot_names]
 
         # Add profile itself as a dependency
         profile_json_path = profile_dir / "profile.json"
         if profile_json_path.is_file():
-            maybe_deps.append(profile_json_path)
-
-        def ini_to_grammars(targets):
-            with open(sentences_ini, "r") as sentences_file:
-                make_grammars(sentences_file, grammar_dir, whitelist=whitelist)
+            deps.append(profile_json_path)
 
         return {
-            "file_dep": [sentences_ini] + maybe_deps,
-            "targets": [grammar_dir / f"{intent}.gram" for intent in intents],
-            "actions": [ini_to_grammars],
+            "file_dep": [sentences_ini] + deps,
+            "targets": [intent_graph],
+            "actions": [(do_intents_to_graph, [intents, slot_names])],
         }
 
     # -----------------------------------------------------------------------------
 
-    def do_slots_to_fst(slot_names, targets):
-        # Extra arguments for word casing
-        kwargs = {}
-        if word_casing == "upper":
-            kwargs["upper"] = True
-        elif word_casing == "lower":
-            kwargs["lower"] = True
+    def do_graph_to_fst(intent_graph, targets):
+        with open(intent_graph, "r") as graph_file:
+            json_graph = json.load(graph_file)
 
-        slot_fsts = slots_to_fsts(slots_dir, slot_names=slot_names, **kwargs)
-        for slot_name, slot_fst in slot_fsts.items():
-            # Slot name will already have "$"
-            slot_fst.write(str(fsts_dir / f"{slot_name}.fst"))
+        graph = json_to_graph(json_graph)
+        graph_fst = graph_to_fst(graph)
 
-    def do_grammar_to_fsts(
-        grammar_path: Path, replace_fst_paths: Dict[str, Path], targets
-    ):
-        # Load dependent FSTs
-        replace_fsts = {
-            replace_name: fst.Fst.read(str(replace_path))
-            for replace_name, replace_path in replace_fst_paths.items()
-        }
+        # Create symbol tables
+        isymbols = fst.SymbolTable()
+        for symbol, number in graph_fst.input_symbols.items():
+            isymbols.add_symbol(symbol, number)
 
-        # Extra arguments for word casing
-        kwargs = {}
-        if word_casing == "upper":
-            kwargs["upper"] = True
-        elif word_casing == "lower":
-            kwargs["lower"] = True
+        osymbols = fst.SymbolTable()
+        for symbol, number in graph_fst.output_symbols.items():
+            osymbols.add_symbol(symbol, number)
 
-        grammar = grammar_path.read_text()
-        listener = grammar_to_fsts(grammar, replace_fsts=replace_fsts, **kwargs)
-        grammar_name = listener.grammar_name
+        # Compile FST
+        compiler = fst.Compiler(
+            isymbols=isymbols, osymbols=osymbols, keep_isymbols=True, keep_osymbols=True
+        )
 
-        # Write FST for each JSGF rule
-        for rule_name, rule_fst in listener.fsts.items():
-            fst_path = fsts_dir / f"{rule_name}.fst"
-            rule_fst.write(str(fst_path))
+        compiler.write(graph_fst.intent_fst)
+        compiled_fst = compiler.compile()
 
-        # Write FST for main grammar rule
-        grammar_fst_path = fsts_dir / f"{grammar_name}.fst"
-        assert listener.grammar_fst is not None
-        listener.grammar_fst.write(str(grammar_fst_path))
+        # Write to file
+        compiled_fst.write(str(targets[0]))
 
-    # -----------------------------------------------------------------------------
-
-    def do_grammar_dependencies(grammar_path: Path, targets):
-        grammar = grammar_path.read_text()
-        grammar_deps = get_grammar_dependencies(grammar).graph
-        graph_json = nx.readwrite.json_graph.node_link_data(grammar_deps)
-        with open(targets[0], "w") as graph_file:
-            json.dump(graph_json, graph_file)
-
-    @create_after(executed="grammars")
-    def task_grammar_dependencies():
-        """Creates grammar dependency graphs from JSGF grammars and relevant slots."""
-
-        for intent in intents:
-            grammar_path = grammar_dir / f"{intent}.gram"
-            yield {
-                "name": intent + "_dependencies",
-                "file_dep": [grammar_path],
-                "targets": [str(grammar_path) + ".json"],
-                "actions": [(do_grammar_dependencies, [grammar_path])],
-            }
-
-    # -----------------------------------------------------------------------------
-
-    @create_after(executed="grammar_dependencies")
-    def task_grammar_fsts():
-        """Creates grammar FSTs from JSGF grammars and relevant slots."""
-        used_slots: Set[str] = set()
-
-        for intent in intents:
-            grammar_path = grammar_dir / f"{intent}.gram"
-            grammar_dep_path = str(grammar_path) + ".json"
-
-            # Load dependency graph
-            with open(grammar_dep_path, "r") as graph_file:
-                graph_data = json.load(graph_file)
-                grammar_deps = nx.readwrite.json_graph.node_link_graph(graph_data)
-
-            rule_names: Set[str] = set()
-            replace_fst_paths: Dict[str, Path] = {}
-
-            # Process dependencies
-            for node, data in grammar_deps.nodes(data=True):
-                node_type = data["type"]
-
-                if node_type == "slot":
-                    # Strip "$"
-                    slot_name = node[1:]
-                    used_slots.add(slot_name)
-
-                    # Path to slot FST
-                    replace_fst_paths[node] = fsts_dir / f"{node}.fst"
-                elif node_type == "remote rule":
-                    # Path to rule FST
-                    replace_fst_paths[node] = fsts_dir / f"{node}.fst"
-                elif node_type == "local rule":
-                    rule_names.add(node)
-
-            # All rule/grammar FSTs that will be generated
-            grammar_fst_paths = [
-                fsts_dir / f"{rule_name}.fst" for rule_name in rule_names
-            ]
-            grammar_fst_paths.append(fsts_dir / f"{intent}.fst")
-
-            yield {
-                "name": intent + "_fst",
-                "file_dep": [grammar_path, grammar_dep_path]
-                + list(replace_fst_paths.values()),
-                "targets": grammar_fst_paths,
-                "actions": [(do_grammar_to_fsts, [grammar_path, replace_fst_paths])],
-            }
-
-        # slots -> FST
-        if len(used_slots) > 0:
-            yield {
-                "name": "slot_fsts",
-                "file_dep": [slots_dir / slot_name for slot_name in used_slots],
-                "targets": [fsts_dir / f"${slot_name}.fst" for slot_name in used_slots],
-                "actions": [(do_slots_to_fst, [used_slots])],
-            }
-
-    # -----------------------------------------------------------------------------
-
-    def do_intent_fst(intents: Iterable[str], targets):
-        intent_fsts = {
-            intent: fst.Fst.read(str(fsts_dir / f"{intent}.fst")) for intent in intents
-        }
-        intent_fst = make_intent_fst(intent_fsts)
-        intent_fst.write(targets[0])
-
-    @create_after(executed="grammar_fsts")
     def task_intent_fst():
-        """Merges grammar FSTs into single intent.fst."""
+        """intent.json -> intent.fst"""
         return {
-            "file_dep": [fsts_dir / f"{intent}.fst" for intent in intents],
+            "file_dep": [intent_graph],
             "targets": [intent_fst],
-            "actions": [(do_intent_fst, [intents])],
+            "actions": [(do_graph_to_fst, [intent_graph])],
         }
 
     # -----------------------------------------------------------------------------
@@ -339,8 +443,11 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
         with open(targets[0], "w") as vocab_file:
             input_symbols = fst.Fst.read(str(intent_fst)).input_symbols()
             for i in range(input_symbols.num_symbols()):
-                symbol = input_symbols.find(i).decode().strip()
-                if not (symbol.startswith("__") or symbol.startswith("<")):
+                # Critical that we use get_nth_key here when input symbols
+                # numbering is discontiguous.
+                key = input_symbols.get_nth_key(i)
+                symbol = input_symbols.find(key).decode().strip()
+                if symbol and not (symbol.startswith("__") or symbol.startswith("<")):
                     print(symbol, file=vocab_file)
 
             if base_language_model_weight > 0:
@@ -487,14 +594,14 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
 # -----------------------------------------------------------------------------
 
 # Matches an ini header, e.g. [LightState]
-intent_pattern = re.compile(r"^\[([^\]]+)\]")
+# intent_pattern = re.compile(r"^\[([^\]]+)\]")
 
 
-def _get_intents(ini_path):
-    """Yields the names of all intents in a sentences.ini file."""
-    with open(ini_path, "r") as ini_file:
-        for line in ini_file:
-            line = line.strip()
-            match = intent_pattern.match(line)
-            if match:
-                yield match.group(1)
+# def _get_intents(ini_path):
+#     """Yields the names of all intents in a sentences.ini file."""
+#     with open(ini_path, "r") as ini_file:
+#         for line in ini_file:
+#             line = line.strip()
+#             match = intent_pattern.match(line)
+#             if match:
+#                 yield match.group(1)

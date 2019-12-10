@@ -2,46 +2,31 @@
 import argparse
 import asyncio
 import io
-import itertools
 import json
 import logging
 
 # Configure logging
 import logging.config
-import math
 import os
-import random
 import sys
-import tempfile
 import threading
 import time
 import wave
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
-import pydash
-
-from rhasspy.actor import ActorSystem, Configured, ConfigureEvent, RhasspyActor
-from rhasspy.audio_player import DummyAudioPlayer
-from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
+from rhasspy.audio_recorder import AudioData
 from rhasspy.core import RhasspyCore
-from rhasspy.dialogue import DialogueManager
 from rhasspy.profiles import Profile
-from rhasspy.utils import buffer_to_wav, maybe_convert_wav
-from rhasspy.wake import (
-    ListenForWakeWord,
-    PocketsphinxWakeListener,
-    StopListeningForWakeWord,
-    WakeWordDetected,
-    WakeWordNotDetected,
-)
+from rhasspy.utils import buffer_to_wav
+from rhasspy.wake import WakeWordDetected
 
 logger = logging.getLogger("rhasspy")
 
 
 try:
     # Need to import here because they screw with logging
-    import flair
-except:
+    import flair  # noqa: F401
+except Exception:
     pass
 
 
@@ -127,15 +112,6 @@ async def main() -> None:
         "--defaults", action="store_true", help="Only print default settings"
     )
 
-    sentences_parser = sub_parsers.add_parser(
-        "sentences", help="Print profile sentences.ini"
-    )
-
-    # validate
-    # validate_parser = sub_parsers.add_parser(
-    #     "validate", help="Validate profile against schema"
-    # )
-
     # wav2text
     wav2text_parser = sub_parsers.add_parser(
         "wav2text", help="WAV file to text transcription"
@@ -165,39 +141,6 @@ async def main() -> None:
     train_parser.add_argument(
         "--no-cache", action="store_true", help="Clear training cache"
     )
-
-    # record
-    # record_parser = sub_parsers.add_parser('record', help='Record test phrases for profile')
-    # record_parser.add_argument('--directory', help='Directory to write WAV files and intent JSON files')
-
-    # record-wake
-    # record_wake_parser = sub_parsers.add_parser('record-wake', help='Record wake word examples for profile')
-    # record_wake_parser.add_argument('--directory', help='Directory to write WAV files')
-    # record_wake_parser.add_argument('--negative', action='store_true', help='Record negative examples (not the wake word)')
-
-    # tune
-    # tune_parser = sub_parsers.add_parser('tune', help='Tune speech acoustic model for profile')
-    # tune_parser.add_argument('--directory', help='Directory with WAV files and intent JSON files')
-
-    # tune-wake
-    # tune_wake_parser = sub_parsers.add_parser('tune-wake', help='Tune wake acoustic model for profile')
-    # tune_wake_parser.add_argument('--directory', help='Directory with WAV files')
-
-    # test
-    # test_parser = sub_parsers.add_parser('test', help='Test speech/intent recognizers for profile')
-    # test_parser.add_argument('directory', help='Directory with WAV files and intent JSON files')
-
-    # test-wake
-    # test_wake_parser = sub_parsers.add_parser(
-    #     "test-wake", help="Test wake word examples for profile"
-    # )
-    # test_wake_parser.add_argument("directory", help="Directory with WAV files")
-    # test_wake_parser.add_argument(
-    #     "--threads", type=int, default=4, help="Number of threads to use"
-    # )
-    # test_wake_parser.add_argument(
-    #     "--system", type=str, default=None, help="Override wake word system"
-    # )
 
     # mic2wav
     mic2wav_parser = sub_parsers.add_parser("mic2wav", help="Voice command to WAV data")
@@ -295,7 +238,7 @@ async def main() -> None:
     text2speech_parser.add_argument("sentences", nargs="*", help="Sentences to speak")
 
     # sleep
-    sleep_parser = sub_parsers.add_parser("sleep", help="Wait for wake word")
+    sub_parsers.add_parser("sleep", help="Wait for wake word")
 
     # download
     download_parser = sub_parsers.add_parser("download", help="Download profile files")
@@ -304,7 +247,7 @@ async def main() -> None:
     )
 
     # check
-    check_parser = sub_parsers.add_parser(
+    sub_parsers.add_parser(
         "check", help="Check downloaded profile files"
     )
 
@@ -318,8 +261,6 @@ async def main() -> None:
     profiles_dirs = [args.system_profiles, args.user_profiles]
     logger.debug(profiles_dirs)
 
-    default_settings = Profile.load_defaults(args.system_profiles)
-
     # Create rhasspy core
     from rhasspy.core import RhasspyCore
 
@@ -330,7 +271,7 @@ async def main() -> None:
     for key, value in args.set:
         try:
             value = json.loads(value)
-        except:
+        except Exception:
             pass
 
         logger.debug("Profile: {0}={1}".format(key, value))
@@ -345,18 +286,6 @@ async def main() -> None:
         else:
             # Print profile settings
             json.dump(core.profile.json, sys.stdout, indent=4)
-    # elif args.command == "validate":
-    #     from cerberus import Validator
-
-    #     schema_path = os.path.join(os.path.dirname(__file__), "profile_schema.json")
-    #     with open(schema_path, "r") as schema_file:
-    #         v = Validator(json.load(schema_file))
-    #         if v.validate(core.profile.json):
-    #             print("VALID")
-    #         else:
-    #             print("INVALID")
-    #             for err in v._errors:
-    #                 print(err)
     elif args.command == "sentences":
         sentences_path = core.profile.read_path(
             core.profile.get("speech_to_text.sentences_ini", "sentences.ini")
@@ -390,12 +319,6 @@ async def main() -> None:
             "text2intent": text2intent,
             "wav2intent": wav2intent,
             "train": train_profile,
-            # 'record': record,
-            # 'record-wake': record_wake,
-            # 'tune': tune,
-            # 'tune-wake': tune_wake,
-            # 'test': test,
-            # "test-wake": test_wake,
             "mic2text": mic2text,
             "mic2intent": mic2intent,
             "mic2wav": mic2wav,
@@ -409,9 +332,8 @@ async def main() -> None:
             "check": check,
         }
 
-        if not args.command in ["test-wake"]:
-            # Automatically start core
-            await core.start()
+        # Automatically start core
+        await core.start()
 
         if not args.no_check and (args.command not in ["check", "download"]):
             # Verify that profile has necessary files
@@ -532,443 +454,6 @@ async def wav2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
 async def train_profile(core: RhasspyCore, profile: Profile, args: Any) -> None:
     result = await core.train(reload_actors=False, no_cache=args.no_cache)
     print(result)
-
-
-# -----------------------------------------------------------------------------
-# record: record phrases for testing/tuning
-# -----------------------------------------------------------------------------
-
-# def record(core:RhasspyCore, profile:Profile, args:Any) -> None:
-#     dir_path = args.directory or profile.write_dir('record')
-#     dir_name = os.path.split(dir_path)[1]
-#     os.makedirs(dir_path, exist_ok=True)
-
-#     tagged_path = profile.read_path(profile.get('training.tagged_sentences'))
-#     assert os.path.exists(tagged_path), 'Missing tagged sentences (%s). Need to train?' % tagged_path
-
-#     # Load and parse tagged sentences
-#     intent_sentences = []
-#     intent_name = ''
-#     with open(tagged_path, 'r') as tagged_file:
-#         for line in tagged_file:
-#             line = line.strip()
-#             if len(line) == 0:
-#                 continue  # skip blank lines
-
-#             if line.startswith('# intent:'):
-#                 intent_name = line.split(':', maxsplit=1)[1]
-#             elif line.startswith('-'):
-#                 tagged_sentence = line[1:].strip()
-#                 sentence, entities = extract_entities(tagged_sentence)
-#                 intent_sentences.append((intent_name, sentence, entities))
-
-#     assert len(intent_sentences) > 0, 'No tagged sentences available'
-#     print('Loaded %s sentence(s)' % len(intent_sentences))
-
-#     # Record WAV files
-#     audio_recorder = core.get_audio_recorder()
-#     wav_prefix = dir_name
-#     wav_num = 0
-#     try:
-#         while True:
-#             intent_name, sentence, entities = random.choice(intent_sentences)
-#             print('Speak the following sentence. Press ENTER to start (CTRL+C to quit).')
-#             print(sentence)
-#             input()
-#             audio_recorder.start_recording(True, False)
-#             print('Recording. Press ENTER to stop (CTRL+C to quit).')
-#             input()
-#             wav_data = audio_recorder.stop_recording(True, False)
-
-#             # Determine WAV file name
-#             wav_path = os.path.join(dir_path, '%s-%03d.wav' % (wav_prefix, wav_num))
-#             while os.path.exists(wav_path):
-#                 wav_num += 1
-#                 wav_path = os.path.join(dir_path, '%s-%03d.wav' % (wav_prefix, wav_num))
-
-#             # Write WAV data
-#             with open(wav_path, 'wb') as wav_file:
-#                 wav_file.write(wav_data)
-
-#             # Write intent (with transcription)
-#             intent_path = os.path.join(dir_path, '%s-%03d.wav.json' % (wav_prefix, wav_num))
-#             with open(intent_path, 'w') as intent_file:
-#                 # Use Rasa NLU format
-#                 intent = {
-#                     'text': sentence,
-#                     'intent': { 'name': intent_name },
-#                     'entities': [
-#                         { 'entity': entity, 'value': value }
-#                         for entity, value in entities
-#                     ]
-#                 }
-
-#                 json.dump(intent, intent_file, indent=4)
-
-#             print('')
-#     except KeyboardInterrupt:
-#         print('Done')
-
-# -----------------------------------------------------------------------------
-# record-wake: record wake word examples
-# -----------------------------------------------------------------------------
-
-# def record_wake(core:RhasspyCore, profile:Profile, args:Any) -> None:
-#     keyphrase = profile.get('wake.pocketsphinx.keyphrase', '')
-#     assert len(keyphrase) > 0, 'No wake word'
-
-#     wav_prefix = keyphrase.replace(' ', '-')
-#     base_dir_path = args.directory or profile.write_dir('record')
-
-#     if args.negative:
-#         dir_path = os.path.join(base_dir_path, wav_prefix, 'not-wake-word')
-#     else:
-#         dir_path = os.path.join(base_dir_path, wav_prefix, 'wake-word')
-
-#     os.makedirs(dir_path, exist_ok=True)
-
-#     # Record WAV files
-#     audio_recorder = core.get_audio_recorder()
-#     wav_num = 0
-#     try:
-#         while True:
-#             # Determine WAV file name
-#             wav_path = os.path.join(dir_path, '%s-%02d.wav' % (wav_prefix, wav_num))
-#             while os.path.exists(wav_path):
-#                 wav_num += 1
-#                 wav_path = os.path.join(dir_path, '%s-%02d.wav' % (wav_prefix, wav_num))
-
-#             if args.negative:
-#                 print('Speak anything EXCEPT the wake word. Press ENTER to start (CTRL+C to quit).')
-#                 print('NOT %s (%s)' % (keyphrase, wav_num))
-#             else:
-#                 print('Speak your wake word. Press ENTER to start (CTRL+C to quit).')
-#                 print('%s (%s)' % (keyphrase, wav_num))
-
-#             input()
-#             audio_recorder.start_recording(True, False)
-#             print('Recording. Press ENTER to stop (CTRL+C to quit).')
-#             input()
-#             wav_data = audio_recorder.stop_recording(True, False)
-
-#             # Write WAV data
-#             with open(wav_path, 'wb') as wav_file:
-#                 wav_file.write(wav_data)
-
-#             print('')
-#     except KeyboardInterrupt:
-#         print('Done')
-
-# -----------------------------------------------------------------------------
-# tune: fine tune speech acoustic model
-# -----------------------------------------------------------------------------
-
-# def tune(core:RhasspyCore, profile:Profile, args:Any) -> None:
-#     dir_path = args.directory or profile.read_path('record')
-#     assert os.path.exists(dir_path), 'Directory does not exist'
-#     wav_paths = [os.path.join(dir_path, name)
-#                  for name in os.listdir(dir_path)
-#                  if name.endswith('.wav')]
-
-#     # Load intents for each WAV
-#     wav_intents = {}
-#     for wav_path in wav_paths:
-#         intent_path = wav_path + '.json'
-#         if os.path.exists(intent_path):
-#             with open(intent_path, 'r') as intent_file:
-#                 wav_intents[wav_path] = json.load(intent_file)
-
-#     # Do tuning
-#     tuner = core.get_speech_tuner(profile.name)
-#     tuner.preload()
-
-#     print('Tuning speech system with %s WAV file(s)' % len(wav_intents))
-#     tune_start = time.time()
-#     tuner.tune(wav_intents)
-#     print('Finished tuning in %s second(s)' % (time.time() - tune_start))
-
-# -----------------------------------------------------------------------------
-# tune-wake: fine tune wake acoustic model
-# -----------------------------------------------------------------------------
-
-# def tune_wake(core:RhasspyCore, profile:Profile, args:Any) -> None:
-#     keyphrase = profile.get('wake.pocketsphinx.keyphrase', '')
-#     assert len(keyphrase) > 0, 'No wake word'
-
-#     wav_prefix = keyphrase.replace(' ', '-')
-#     base_dir_path = args.directory or profile.read_path('record')
-
-#     # Path to positive examples
-#     true_path = os.path.join(base_dir_path, wav_prefix, 'wake-word')
-#     if os.path.exists(true_path):
-#         true_wav_paths = [os.path.join(true_path, name)
-#                           for name in os.listdir(true_path)
-#                           if name.endswith('.wav')]
-#     else:
-#         true_wav_paths = []
-
-#     # Path to negative examples
-#     false_path = os.path.join(base_dir_path, wav_prefix, 'not-wake-word')
-#     if os.path.exists(false_path):
-#         false_wav_paths = [os.path.join(false_path, name)
-#                           for name in os.listdir(false_path)
-#                           if name.endswith('.wav')]
-#     else:
-#         false_wav_paths = []
-
-#     # Do tuning
-#     mllr_path = profile.write_path(
-#         profile.get('wake.pocketsphinx.mllr_matrix'))
-
-#     tuner = SphinxTrainSpeechTuner(profile)
-#     tuner.preload()
-
-#     # Add "transcriptions"
-#     wav_intents = {}
-#     for wav_path in true_wav_paths:
-#         wav_intents[wav_path] = { 'text': keyphrase }
-
-#     for wav_path in false_wav_paths:
-#         wav_intents[wav_path] = { 'text': '' }
-
-#     print('Tuning wake word system with %s positive and %s negative example(s)' % (len(true_wav_paths), len(false_wav_paths)))
-#     tune_start = time.time()
-#     tuner.tune(wav_intents, mllr_path=mllr_path)
-#     print('Finished tuning in %s second(s)' % (time.time() - tune_start))
-
-# -----------------------------------------------------------------------------
-# test: test speech/intent recognizers
-# -----------------------------------------------------------------------------
-
-# def test(core:RhasspyCore, profile:Profile, args:Any) -> None:
-#     dir_path = args.directory or profile.read_path('record')
-#     assert os.path.exists(dir_path), 'Directory does not exist'
-#     wav_paths = [os.path.join(dir_path, name)
-#                  for name in os.listdir(dir_path)
-#                  if name.endswith('.wav')]
-
-#     # Load intents for each WAV
-#     wav_intents = {}
-#     for wav_path in wav_paths:
-#         intent_path = wav_path + '.json'
-#         if os.path.exists(intent_path):
-#             with open(intent_path, 'r') as intent_file:
-#                 wav_intents[wav_path] = json.load(intent_file)
-
-#     # Transcribe and match intent names/entities
-#     decoder = core.get_speech_decoder(profile.name)
-#     decoder.preload()
-
-#     recognizer = core.get_intent_recognizer(profile.name)
-#     recognizer.preload()
-
-#     # TODO: parallelize
-#     results = {}
-#     for wav_path, expected_intent in wav_intents.items():
-#         # Transcribe
-#         decode_start = time.time()
-#         with open(wav_path, 'rb') as wav_file:
-#             actual_sentence = decoder.transcribe_wav(wav_file.read())
-
-#         decode_sec = time.time() - decode_start
-
-#         # Recognize
-#         recognize_start = time.time()
-#         actual_intent = recognizer.recognize(actual_sentence)
-#         recognize_sec = time.time() - recognize_start
-
-#         wav_name = os.path.split(wav_path)[1]
-#         results[wav_name] = {
-#             'profile': profile.name,
-#             'expected': expected_intent,
-#             'actual': actual_intent,
-#             'speech': {
-#                 'system': profile.get('speech_to_text.system'),
-#                 'time_sec': decode_sec
-#             },
-#             'intent': {
-#                 'system': profile.get('intent.system'),
-#                 'time_sec': recognize_sec
-#             }
-#         }
-
-#     json.dump(results, sys.stdout, indent=4)
-
-# -----------------------------------------------------------------------------
-# test-wake: test wake word examples
-# -----------------------------------------------------------------------------
-
-
-# def test_wake(core: RhasspyCore, profile: Profile, args: Any) -> None:
-#     base_dir_path = args.directory
-#     wake_system = args.system or profile.get("wake.system", "pocketsphinx")
-
-#     # Path to positive examples
-#     true_path = os.path.join(base_dir_path, "wake-word")
-#     true_wav_paths: List[str] = []
-#     if os.path.exists(true_path):
-#         true_wav_paths = [
-#             os.path.join(true_path, name)
-#             for name in os.listdir(true_path)
-#             if name.endswith(".wav")
-#         ]
-
-#     # Path to negative examples
-#     false_path = os.path.join(base_dir_path, "not-wake-word")
-#     false_wav_paths: List[str] = []
-#     if os.path.exists(false_path):
-#         false_wav_paths = [
-#             os.path.join(false_path, name)
-#             for name in os.listdir(false_path)
-#             if name.endswith(".wav")
-#         ]
-
-#     # Spin up actors
-#     kwargs: Dict[str, Any] = {}
-#     if not args.debug:
-#         kwargs = {"logDefs": {"version": 1, "loggers": {"": {}}}}
-
-#     system = ActorSystem("multiprocTCPBase", **kwargs)
-#     detected_paths: Set[str] = set()
-
-#     try:
-#         test_actor = system.createActor(TestWakeActor)
-#         all_wav_paths = true_wav_paths + false_wav_paths
-
-#         start_time = time.time()
-#         with system.private() as private:
-#             private.tell(test_actor, ConfigureEvent(profile, transitions=False))
-#             result = private.listen()
-#             assert isinstance(result, Configured)
-
-#             private.tell(test_actor, (wake_system, args.threads, all_wav_paths))
-
-#             # Collect WAV paths that had a positive detection
-#             detected_paths = private.listen()
-
-#         end_time = time.time()
-#     finally:
-#         system.shutdown()
-
-#     # Compute statistics
-#     expected_true = len(true_wav_paths)
-#     expected_false = len(false_wav_paths)
-
-#     true_positives = 0
-#     false_positives = 0
-#     true_negatives = 0
-#     false_negatives = 0
-
-#     should_be_true = True
-#     for wav_path in itertools.chain(true_wav_paths, [None], false_wav_paths):
-#         # Switch between true and false examples
-#         if wav_path is None:
-#             should_be_true = not should_be_true
-#             continue
-
-#         detected = wav_path in detected_paths
-#         if detected:
-#             if should_be_true:
-#                 true_positives += 1
-#                 status = ""
-#             else:
-#                 false_positives += 1
-#                 status = ":("
-#         else:
-#             if should_be_true:
-#                 false_negatives += 1
-#                 status = ":("
-#             else:
-#                 true_negatives += 1
-#                 status = ""
-
-#     # Report
-#     result = {
-#         "system": wake_system,
-#         "settings": profile.get("wake.%s" % wake_system, {}),
-#         "detected": list(detected_paths),
-#         "not_detected": list(set(all_wav_paths) - set(detected_paths)),
-#         "time_sec": end_time - start_time,
-#         "statistics": {
-#             "true_positives": true_positives,
-#             "true_negatives": true_negatives,
-#             "false_positives": false_positives,
-#             "false_negatives": false_negatives,
-#         },
-#     }
-
-#     json.dump(result, sys.stdout, indent=4)
-
-
-# # -----------------------------------------------------------------------------
-
-
-# class TestWakeActor(RhasspyActor):
-#     def __init__(self):
-#         RhasspyActor.__init__(self)
-#         self.actors: List[RhasspyActor] = []
-#         self.wav_paths: List[str] = []
-#         self.wav_paths_left: List[str] = []
-#         self.detected_paths: Set[str] = set()
-
-#     def in_started(self, message: Any, sender: RhasspyActor) -> None:
-#         if isinstance(message, tuple):
-#             # Start up
-#             self.parent = sender
-#             wake_system, num_actors, self.wav_paths = message
-#             self.wav_paths_left = list(self.wav_paths)
-
-#             # Create actors
-#             wake_class = DialogueManager.get_wake_class(wake_system)
-#             for i in range(num_actors):
-#                 actor = self.createActor(wake_class)
-#                 self.send(
-#                     actor,
-#                     ConfigureEvent(
-#                         profile=self.profile,
-#                         preload=True,
-#                         recorder=self.myAddress,
-#                         transitions=False,
-#                         not_detected=True,
-#                     ),
-#                 )
-
-#             self.transition("loaded")
-
-#     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
-#         if isinstance(message, Configured):
-#             self.send(sender, ListenForWakeWord())
-#         elif isinstance(message, StartStreaming):
-#             if len(self.wav_paths) > 0:
-#                 self.send_random_wav(sender)
-#         elif isinstance(message, WakeWordDetected):
-#             # Detected
-#             wav_path = message.audio_data_info["path"]
-#             # print('!', end='', flush=True)
-#             self.detected_paths.add(wav_path)
-#             if wav_path in self.wav_paths_left:
-#                 self.wav_paths_left.remove(wav_path)
-
-#                 if len(self.wav_paths) > 0:
-#                     self.send_random_wav(sender)
-
-#         elif isinstance(message, WakeWordNotDetected):
-#             # Not detected
-#             wav_path = message.audio_data_info["path"]
-#             # print('.', end='', flush=True)
-#             self.wav_paths_left.remove(wav_path)
-#             if len(self.wav_paths) > 0:
-#                 self.send_random_wav(sender)
-
-#         if len(self.wav_paths_left) == 0:
-#             self.send(self.parent, self.detected_paths)
-
-#     def send_random_wav(self, receiver):
-#         index = random.randint(0, len(self.wav_paths) - 1)
-#         wav_path = self.wav_paths.pop(index)
-#         with open(wav_path, "rb") as wav_file:
-#             audio_data = maybe_convert_wav(wav_file.read())
-#             self.send(receiver, AudioData(audio_data, path=wav_path))
 
 
 # -----------------------------------------------------------------------------

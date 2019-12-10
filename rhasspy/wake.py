@@ -419,7 +419,7 @@ class SnowboyWakeListener(RhasspyActor):
         """Get problems at startup."""
         problems: Dict[str, Any] = {}
         try:
-            from snowboy import snowboydetect, snowboydecoder
+            from snowboy import snowboydetect, snowboydecoder  # noqa: F401
         except Exception:
             problems[
                 "snowboy not installed"
@@ -607,7 +607,7 @@ class PreciseWakeListener(RhasspyActor):
         """Get problems at startup."""
         problems: Dict[str, Any] = {}
         try:
-            from precise_runner import PreciseRunner, ReadWriteStream
+            from precise_runner import PreciseRunner, ReadWriteStream  # noqa: F401
         except Exception:
             problems[
                 "precise_runner not installed"

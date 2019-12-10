@@ -10,9 +10,9 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Type
 from urllib.parse import urljoin
 
 import networkx as nx
-import pywrapfst as fst
 import pydash
 import requests
+from rhasspynlu import recognize, json_to_graph
 
 from rhasspy.actor import RhasspyActor
 from rhasspy.tts import SpeakSentence
@@ -169,8 +169,7 @@ class FsticuffsRecognizer(RhasspyActor):
 
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
-        self.fst: Optional[Any] = None
-        self.graph: Optional[Any] = None
+        self.graph: Optional[nx.DiGraph] = None
         self.words: Set[str] = set()
         self.stop_words: Set[str] = set()
         self.fuzzy: bool = True
@@ -181,7 +180,7 @@ class FsticuffsRecognizer(RhasspyActor):
         self.preload = self.config.get("preload", False)
         if self.preload:
             try:
-                self.load_fst()
+                self.load_graph()
             except Exception as e:
                 self._logger.warning("preload: %s", e)
 
@@ -193,14 +192,26 @@ class FsticuffsRecognizer(RhasspyActor):
         """Handle messages in loaded state."""
         if isinstance(message, RecognizeIntent):
             try:
-                self.load_fst()
+                self.load_graph()
 
-                if self.fuzzy:
-                    # Fuzzy search
-                    intent = self.recognize_fuzzy(message.text)
-                else:
-                    # Strict search
-                    intent = self.recognize(message.text)
+                # Assume lower case, white-space separated tokens
+                text = message.text
+                tokens = re.split(r"\s+", text)
+
+                if self.profile.get("intent.fsticuffs.ignore_unknown_words", True):
+                    # Filter tokens
+                    tokens = [w for w in tokens if w in self.words]
+
+                recognitions = recognize(
+                    tokens, self.graph, fuzzy=self.fuzzy, stop_words=self.stop_words
+                )
+                assert recognitions, "No intent recognized"
+
+                # Use first intent
+                recognition = recognitions[0]
+
+                # Convert to JSON
+                intent = recognition.asdict()
             except Exception:
                 self._logger.exception("in_loaded")
                 intent = empty_intent()
@@ -213,239 +224,94 @@ class FsticuffsRecognizer(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def recognize(self, text: str) -> Dict[str, Any]:
-        """Use FST as acceptor."""
-        from rhasspy.train.jsgf2fst import fstaccept
+    # def recognize(self, text: str) -> Dict[str, Any]:
+    #     """Use FST as acceptor."""
+    #     from rhasspy.train.jsgf2fst import fstaccept
 
-        # Assume lower case, white-space separated tokens
-        tokens = re.split(r"\s+", text.lower())
+    #     # Assume lower case, white-space separated tokens
+    #     tokens = re.split(r"\s+", text.lower())
 
-        if self.profile.get("intent.fsticuffs.ignore_unknown_words", True):
-            tokens = [w for w in tokens if w in self.words]
+    #     if self.profile.get("intent.fsticuffs.ignore_unknown_words", True):
+    #         tokens = [w for w in tokens if w in self.words]
 
-        intents = fstaccept(self.fst, tokens)
-        self._logger.debug("Got %s intent(s)", len(intents))
+    #     intents = fstaccept(self.fst, tokens)
+    #     self._logger.debug("Got %s intent(s)", len(intents))
 
-        if len(intents) > 0:
-            self._logger.debug(intents)
+    #     if len(intents) > 0:
+    #         self._logger.debug(intents)
 
-        return intents[0]
+    #     return intents[0]
 
-    def recognize_fuzzy(self, text: str, eps: str = "<eps>") -> Dict[str, Any]:
-        """Do fuzzy breadth-first search on FST as graph."""
-        from rhasspy.train.jsgf2fst import symbols2intent
+    # def recognize_fuzzy(self, text: str, eps: str = "<eps>") -> Dict[str, Any]:
+    #     """Do fuzzy breadth-first search on FST as graph."""
+    #     from rhasspy.train.jsgf2fst import symbols2intent
 
-        # Assume lower case, white-space separated tokens
-        tokens = re.split(r"\s+", text)
+    #     # Assume lower case, white-space separated tokens
+    #     tokens = re.split(r"\s+", text)
 
-        if self.profile.get("intent.fsticuffs.ignore_unknown_words", True):
-            # Filter tokens
-            tokens = [w for w in tokens if w in self.words]
+    #     if self.profile.get("intent.fsticuffs.ignore_unknown_words", True):
+    #         # Filter tokens
+    #         tokens = [w for w in tokens if w in self.words]
 
-        # Only run search if there are any tokens
-        intents = []
-        if len(tokens) > 0:
-            intent_symbols_and_costs = FsticuffsRecognizer._get_symbols_and_costs(
-                self.graph, tokens, stop_words=self.stop_words, eps=eps
-            )
-            for symbols, cost in intent_symbols_and_costs.values():
-                intent = symbols2intent(symbols, eps=eps)
-                intent["intent"]["confidence"] = (len(tokens) - cost) / len(tokens)
-                intents.append(intent)
+    #     # Only run search if there are any tokens
+    #     intents = []
+    #     if len(tokens) > 0:
+    #         intent_symbols_and_costs = FsticuffsRecognizer._get_symbols_and_costs(
+    #             self.graph, tokens, stop_words=self.stop_words, eps=eps
+    #         )
+    #         for symbols, cost in intent_symbols_and_costs.values():
+    #             intent = symbols2intent(symbols, eps=eps)
+    #             intent["intent"]["confidence"] = (len(tokens) - cost) / len(tokens)
+    #             intents.append(intent)
 
-            intents = sorted(
-                intents, key=lambda i: i["intent"]["confidence"], reverse=True
-            )
+    #         intents = sorted(
+    #             intents, key=lambda i: i["intent"]["confidence"], reverse=True
+    #         )
 
-        self._logger.debug("Recognized %s intent(s)", len(intents))
+    #     self._logger.debug("Recognized %s intent(s)", len(intents))
 
-        # Use first intent
-        if len(intents) > 0:
-            intent = intents[0]
+    #     # Use first intent
+    #     if len(intents) > 0:
+    #         intent = intents[0]
 
-            # Add slots
-            intent["slots"] = {}
-            for ev in intent["entities"]:
-                intent["slots"][ev["entity"]] = ev["value"]
+    #         # Add slots
+    #         intent["slots"] = {}
+    #         for ev in intent["entities"]:
+    #             intent["slots"][ev["entity"]] = ev["value"]
 
-            # Add alternative intents
-            intent["intents"] = []
-            for other_intent in intents[1:]:
-                intent["intents"].append(other_intent)
+    #         # Add alternative intents
+    #         intent["intents"] = []
+    #         for other_intent in intents[1:]:
+    #             intent["intents"].append(other_intent)
 
-            self._logger.debug(intents)
-        else:
-            intent = empty_intent()
-            intent["text"] = text
+    #         self._logger.debug(intents)
+    #     else:
+    #         intent = empty_intent()
+    #         intent["text"] = text
 
-        return intent
-
-    # -------------------------------------------------------------------------
-
-    @classmethod
-    def _get_symbols_and_costs(
-        cls,
-        intent_graph: nx.MultiDiGraph,
-        tokens: List[str],
-        stop_words: Set[str] = None,
-        eps: str = "<eps>",
-    ) -> Dict[str, Tuple[List[str], float]]:
-        """Get FST paths and costs via BFS."""
-        stop_words = stop_words or set()
-
-        # node -> attrs
-        n_data = intent_graph.nodes(data=True)
-
-        # start state
-        start_node = [n for n, data in n_data if data["start"]][0]
-
-        # intent -> (symbols, cost)
-        intent_symbols_and_costs: Dict[str, Tuple[List[str], float]] = {}
-
-        # Lowest cost so far
-        best_cost: float = len(n_data)
-
-        # (node, in_tokens, out_tokens, cost, intent_name)
-        q: List[Tuple[int, List[str], List[str], float, str]] = [
-            (start_node, tokens, [], 0, "")
-        ]
-
-        # BFS it up
-        while len(q) > 0:
-            q_node, q_in_tokens, q_out_tokens, q_cost, q_intent = q.pop()
-
-            # Update best intent cost on final state.
-            # Don't bother reporting intents that failed to consume any tokens.
-            if (n_data[q_node]["final"]) and (q_cost < len(tokens)):
-                best_intent_cost = intent_symbols_and_costs.get(q_intent, (None, None))[
-                    1
-                ]
-                final_cost: float = q_cost + len(
-                    q_in_tokens
-                )  # remaning tokens count against
-
-                if (best_intent_cost is None) or (final_cost < best_intent_cost):
-                    intent_symbols_and_costs[q_intent] = (q_out_tokens, final_cost)
-
-                if final_cost < best_cost:
-                    best_cost = final_cost
-
-            if q_cost > best_cost:
-                continue
-
-            # Process child edges
-            for next_node, edges in intent_graph[q_node].items():
-                for edge_data in edges.values():
-                    in_label = edge_data["in_label"]
-                    out_label = edge_data["out_label"]
-                    next_in_tokens = q_in_tokens[:]
-                    next_out_tokens = q_out_tokens[:]
-                    next_cost = q_cost
-                    next_intent = q_intent
-
-                    if out_label.startswith("__label__"):
-                        next_intent = out_label[9:]
-
-                    if in_label != eps:
-                        if (len(next_in_tokens) > 0) and (
-                            in_label == next_in_tokens[0]
-                        ):
-                            # Consume matching token immediately
-                            next_in_tokens.pop(0)
-
-                            if out_label != eps:
-                                next_out_tokens.append(out_label)
-                        else:
-                            # Consume non-matching tokens and increase cost unless stop word
-                            while (len(next_in_tokens) > 0) and (
-                                in_label != next_in_tokens[0]
-                            ):
-                                bad_token = next_in_tokens.pop(0)
-                                if bad_token not in stop_words:
-                                    next_cost += 1
-                                else:
-                                    # Need a non-zero cost for stop words to
-                                    # avoid case where two FST paths are
-                                    # identical, save for stop words.
-                                    next_cost += 0.1
-
-                            if len(next_in_tokens) > 0:
-                                # Consume matching token
-                                next_in_tokens.pop(0)
-
-                                if out_label != eps:
-                                    next_out_tokens.append(out_label)
-                            else:
-                                # No matching token
-                                continue
-                    else:
-                        # Consume epsilon
-                        if out_label != eps:
-                            next_out_tokens.append(out_label)
-
-                    q.append(
-                        (
-                            next_node,
-                            next_in_tokens,
-                            next_out_tokens,
-                            next_cost,
-                            next_intent,
-                        )
-                    )
-
-        return intent_symbols_and_costs
+    #     return intent
 
     # -------------------------------------------------------------------------
 
-    @classmethod
-    def _fst_to_graph(cls, the_fst: fst.Fst) -> nx.MultiDiGraph:
-        """Convert a finite state transducer to a directed graph."""
-        zero_weight = fst.Weight.Zero(the_fst.weight_type())
-        in_symbols = the_fst.input_symbols()
-        out_symbols = the_fst.output_symbols()
-
-        g = nx.MultiDiGraph()
-
-        # Add nodes
-        for state in the_fst.states():
-            # Mark final states
-            is_final = the_fst.final(state) != zero_weight
-            g.add_node(state, final=is_final, start=False)
-
-            # Add edges
-            for arc in the_fst.arcs(state):
-                in_label = in_symbols.find(arc.ilabel).decode()
-                out_label = out_symbols.find(arc.olabel).decode()
-
-                g.add_edge(state, arc.nextstate, in_label=in_label, out_label=out_label)
-
-        # Mark start state
-        g.add_node(the_fst.start(), start=True)
-
-        return g
-
-    # -------------------------------------------------------------------------
-
-    def load_fst(self):
-        """Load intent FST."""
-        if self.fst is None:
-            fst_path = self.profile.read_path(
-                self.profile.get("intent.fsticuffs.intent_fst", "intent.fst")
+    def load_graph(self):
+        """Load intent graph from JSON file."""
+        if self.graph is None:
+            graph_path = self.profile.read_path(
+                self.profile.get("intent.fsticuffs.intent_graph", "intent.json")
             )
 
-            self.fst = fst.Fst.read(fst_path)
+            with open(graph_path, "r") as graph_file:
+                json_graph = json.load(graph_file)
+
+            self.graph = json_to_graph(json_graph)
 
             # Add words from FST
-            in_symbols = self.fst.input_symbols()
             self.words = set()
-            for i in range(in_symbols.num_symbols()):
-                key = in_symbols.get_nth_key(i)
-                word = in_symbols.find(key).decode()
-                self.words.add(word)
+            for node, data in self.graph.nodes(data=True):
+                if "word" in data:
+                    self.words.add(data["word"])
 
-            # Convert to graph
-            self.graph = FsticuffsRecognizer._fst_to_graph(self.fst)
-
+            # Load stop words
             stop_words_path = self.profile.read_path("stop_words.txt")
             if os.path.exists(stop_words_path):
                 self._logger.debug(f"Using stop words at {stop_words_path}")
