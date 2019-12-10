@@ -99,6 +99,7 @@ class RhasspyTestCase(unittest.TestCase):
                 intent = (await core.recognize_intent(test_info["text"])).intent
                 self.assertEqual(intent["intent"]["name"], test_info["intent"]["name"])
 
+                print(intent)
                 expected_entities = test_info["entities"]
                 for ev in intent["entities"]:
                     entity = ev["entity"]
