@@ -15,4 +15,4 @@ num2words
 quart
 quart-cors
 aiohttp
-rhasspy-nlu==0.1
+rhasspy-nlu==0.1.1
