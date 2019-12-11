@@ -43,7 +43,7 @@ See `rhasspy.wake.PorcupineWakeListener` for details.
 
 ## Snowboy
 
-Listens for a wake word with [snowboy](https://snowboy.kitt.ai). This system has the good performance out of the box, but requires an online service to train.
+Listens for one or more wake words with [snowboy](https://snowboy.kitt.ai). This system has the good performance out of the box, but requires an online service to train.
 
 Add to your [profile](profiles.md):
 
@@ -54,10 +54,10 @@ Add to your [profile](profiles.md):
     "wakeword_id": "default"
   },
   "snowboy": {
-    "model": "model-name-in-profile.(u|p)mdl",
+    "model": "snowboy/snowboy.umdl",
     "audio_gain": 1,
-    "sensitivity": 0.5,
-    "chunk_size": 960
+    "sensitivity": "0.5",
+    "apply_frontend": false
   }
 },
 
@@ -65,10 +65,41 @@ Add to your [profile](profiles.md):
   "listen_on_start": true
 }
 ```
+
+If your hotword model has multiple embedded hotwords (such as `jarvis.umdl`), the "sensitivity" parameter should contain sensitivities for each embedded hotword separated by commas (e.g., "0.5,0.5").
     
 Visit [the snowboy website](https://snowboy.kitt.ai) to train your own wake word model (requires linking to a GitHub/Google/Facebook account). This *personal* model with end with `.pmdl`, and should go in your profile directory. Then, set `wake.snowboy.model` to the name of that file.
 
-You also have the option of using a pre-train *universal* model (`.umdl`) from [Kitt.AI](https://github.com/Kitt-AI/snowboy/tree/master/resources/models). I've received errors using anything but `snowboy.umdl`, but YMMV.
+You also have the option of using a pre-train *universal* model (`.umdl`) from [Kitt.AI](https://github.com/Kitt-AI/snowboy/tree/master/resources/models).
+
+### Multiple Wake Words
+
+You can have `snowboy` listen for multiple wake words with different models, each with their own settings. You will need to download each model file to the `snowboy` directory in your profile.
+
+For example, to use both the `snowboy.umdl` and `jarvis.umdl` models, add this to your profile:
+
+```json
+"wake": {
+  "system": "snowboy",
+  "snowboy": {
+    "model": "snowboy/snowboy.umdl,snowboy/jarvis.umdl",
+    "model_settings": {
+      "snowboy/snowboy.umdl": {
+        "sensitivity": "0.5",
+        "audio_gain": 1,
+        "apply_frontend": false
+      },
+      "snowboy/jarvis.umdl": {
+        "sensitivity": "0.5,0.5",
+        "audio_gain": 1,
+        "apply_frontend": false
+      }
+    }
+  }
+}
+```
+
+Make sure to include all models you want in the `model` setting (separated by commas). Each model may have different settings in `model_settings`. If a setting is not present, the default values under `snowboy` will be used.
 
 See `rhasspy.wake.SnowboyWakeListener` for details.
 

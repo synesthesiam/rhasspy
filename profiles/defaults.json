@@ -256,7 +256,8 @@
       "audio_gain": 1,
       "chunk_size": 960,
       "model": "snowboy/snowboy.umdl",
-      "sensitivity": 0.5
+      "sensitivity": 0.5,
+      "model_settings": {}
     },
     "porcupine": {
       "library_path": "porcupine/libpv_porcupine.so",

@@ -170,10 +170,16 @@ All available profile sections and settings are listed below:
         * `threshold` - sensitivity of detection (recommended range 1e-50 to 1e-5)
         * `chunk_size` - number of bytes per chunk to feed to Pocketsphinx (default 960)
     * `snowboy` - configuration for [snowboy](https://snowboy.kitt.ai)
-        * `model` - path to model file (in profile directory)
+        * `model` - path to model file(s), separated by commas (in profile directory)
         * `sensitivity` - model sensitivity (0-1, default 0.5)
         * `audio_gain` - audio gain (default 1)
+        * `apply_frontend` - true if ApplyFrontend should be set
         * `chunk_size` - number of bytes per chunk to feed to snowboy (default 960)
+        * `model_settings` - settings for each snowboy model path (e.g., `snowboy/snowboy.umdl`)
+            * <MODEL_PATH>
+                * `sensitivity` - model sensitivity
+                * `audio_gain` - audio gain 
+                * `apply_frontend` - true if ApplyFrontend should be set
     * `precise` - configuration for [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise)
         * `engine_path` - path to the precise-engine binary
         * `model` - path to model file (in profile directory)

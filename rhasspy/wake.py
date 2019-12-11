@@ -7,7 +7,8 @@ import struct
 import subprocess
 import threading
 import time
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, Iterable, List, Optional, Type
+from pathlib import Path
 
 from rhasspy.actor import RhasspyActor
 from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
@@ -288,13 +289,14 @@ class SnowboyWakeListener(RhasspyActor):
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.receivers: List[RhasspyActor] = []
-        self.detector = None
+        self.detectors: List[Any] = []
         self.preload = False
         self.not_detected = False
         self.chunk_size = 960
         self.recorder: Optional[RhasspyActor] = None
         self.apply_frontend = False
-        self.model_name = ""
+        self.models: Dict[str, Any] = {}
+        self.model_names: List[str] = []
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
@@ -302,10 +304,9 @@ class SnowboyWakeListener(RhasspyActor):
         self.preload = self.config.get("preload", False)
         self.not_detected = self.config.get("not_detected", False)
         self.chunk_size = self.profile.get("wake.snowboy.chunk_size", 960)
-        self.apply_frontend = self.profile.get("wake.snowboy.apply_frontend", False)
         if self.preload:
             try:
-                self.load_detector()
+                self.load_detectors()
             except Exception as e:
                 self._logger.warning("preload: %s", e)
 
@@ -315,7 +316,7 @@ class SnowboyWakeListener(RhasspyActor):
         """Handle messages in loaded state."""
         if isinstance(message, ListenForWakeWord):
             try:
-                self.load_detector()
+                self.load_detectors()
                 self.receivers.append(message.receiver or sender)
                 self.transition("listening")
                 if message.record:
@@ -328,31 +329,41 @@ class SnowboyWakeListener(RhasspyActor):
         if isinstance(message, AudioData):
             audio_data = message.data
             chunk = audio_data[: self.chunk_size]
-            detected = False
+            detected = []
             while len(chunk) > 0:
-                index = self.process_data(chunk)
-                if index > 0:
-                    detected = True
+                for detector_index, result_index in enumerate(self.process_data(chunk)):
+                    if result_index > 0:
+                        detected.append(detector_index)
+
+                if detected:
+                    # Don't process the rest of the audio data if hotword has
+                    # already been detected.
                     break
 
                 audio_data = audio_data[self.chunk_size :]
                 chunk = audio_data[: self.chunk_size]
 
+            # Handle results
             if detected:
                 # Detected
-                self._logger.debug("Hotword detected (%s)", self.model_name)
-                detected_event = WakeWordDetected(
-                    self.model_name, audio_data_info=message.info
-                )
-                for receiver in self.receivers:
-                    self.send(receiver, detected_event)
+                detected_names = [self.model_names[i] for i in detected]
+                self._logger.debug("Hotword(s) detected: %s", detected_names)
+
+                # Send events
+                for model_name in detected_names:
+                    detected_event = WakeWordDetected(
+                        model_name, audio_data_info=message.info
+                    )
+                    for receiver in self.receivers:
+                        self.send(receiver, detected_event)
             elif self.not_detected:
                 # Not detected
-                not_detected_event = WakeWordNotDetected(
-                    self.model_name, audio_data_info=message.info
-                )
-                for receiver in self.receivers:
-                    self.send(receiver, not_detected_event)
+                for model_name in self.model_names:
+                    not_detected_event = WakeWordNotDetected(
+                        model_name, audio_data_info=message.info
+                    )
+                    for receiver in self.receivers:
+                        self.send(receiver, not_detected_event)
         elif isinstance(message, StopListeningForWakeWord):
             self.receivers.remove(message.receiver or sender)
             if len(self.receivers) == 0:
@@ -362,56 +373,89 @@ class SnowboyWakeListener(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def process_data(self, data: bytes) -> int:
+    def process_data(self, data: bytes) -> Iterable[int]:
         """Process single chunk of audio data."""
-        assert self.detector is not None
         try:
-            # Return is:
-            # -2 silence
-            # -1 error
-            #  0 voice
-            #  n index n-1
-            return self.detector.RunDetection(data)
+            for detector in self.detectors:
+                # Return is:
+                # -2 silence
+                # -1 error
+                #  0 voice
+                #  n index n-1
+                yield detector.RunDetection(data)
         except Exception:
             self._logger.exception("process_data")
 
-        return -2
+        # All silences
+        return [-2] * len(self.detectors)
 
     # -------------------------------------------------------------------------
 
-    def load_detector(self) -> None:
+    def load_detectors(self) -> None:
         """Load snowboy detector."""
-        if self.detector is None:
+        if not self.detectors:
             from snowboy import snowboydetect, snowboydecoder
 
-            self.model_name = self.profile.get("wake.snowboy.model", "snowboy.umdl")
-            model_path = os.path.realpath(self.profile.read_path(self.model_name))
-            assert os.path.exists(
-                model_path
-            ), f"Can't find snowboy model file (expected at {model_path})"
+            # Load model names and settings
+            self.models = self._parse_models()
+            self.model_names = sorted(list(self.models.keys()))
 
-            sensitivity = float(self.profile.get("wake.snowboy.sensitivity", 0.5))
-            audio_gain = float(self.profile.get("wake.snowboy.audio_gain", 1.0))
+            # Create snowboy detectors
+            for model_name in self.model_names:
+                model_settings = self.models[model_name]
+                model_path = Path(self.profile.read_path(model_name))
+                self._logger.debug("Loading snowboy model from %s", model_path)
 
-            self._logger.debug("Loading snowboy model from %s", model_path)
+                detector = snowboydetect.SnowboyDetect(
+                    snowboydecoder.RESOURCE_FILE.encode(), str(model_path).encode()
+                )
 
-            self.detector = snowboydetect.SnowboyDetect(
-                snowboydecoder.RESOURCE_FILE.encode(), model_path.encode()
-            )
+                detector.SetSensitivity(str(model_settings["sensitivity"]).encode())
+                detector.SetAudioGain(float(model_settings["audio_gain"]))
+                detector.ApplyFrontend(bool(model_settings["apply_frontend"]))
 
-            assert self.detector is not None
+                self.detectors.append(detector)
+                self._logger.debug(
+                    "Loaded snowboy model %s (%s)", model_name, model_settings
+                )
 
-            sensitivity_str = str(sensitivity).encode()
-            self.detector.SetSensitivity(sensitivity_str)
-            self.detector.SetAudioGain(audio_gain)
-            self.detector.ApplyFrontend(self.apply_frontend)
+    # -------------------------------------------------------------------------
 
-            self._logger.debug(
-                "Loaded snowboy (model=%s, sensitivity=%s, audio_gain=%s)",
-                model_path,
-                sensitivity,
-                audio_gain,
-            )
+    def _parse_models(self) -> Dict[str, Dict[str, Any]]:
+        # Default sensitivity
+        sensitivity: str = str(self.profile.get("wake.snowboy.sensitivity", "0.5"))
+
+        # Default audio gain
+        audio_gain: float = float(self.profile.get("wake.snowboy.audio_gain", "1.0"))
+
+        # Default frontend
+        apply_frontend: bool = self.profile.get("wake.snowboy.apply_frontend", False)
+
+        model_names: List[str] = self.profile.get(
+            "wake.snowboy.model", "snowboy/snowboy.umdl"
+        ).split(",")
+
+        model_settings: Dict[str, Dict[str, Any]] = self.profile.get(
+            "wake.snowboy.model_settings", {}
+        )
+
+        models_dict = {}
+
+        for model_name in model_names:
+            # Add default settings
+            settings = model_settings.get(model_name, {})
+            if "sensitivity" not in settings:
+                settings["sensitivity"] = sensitivity
+
+            if "audio_gain" not in settings:
+                settings["audio_gain"] = audio_gain
+
+            if "apply_frontend" not in settings:
+                settings["apply_frontend"] = apply_frontend
+
+            models_dict[model_name] = settings
+
+        return models_dict
 
     # -------------------------------------------------------------------------
 
@@ -425,13 +469,17 @@ class SnowboyWakeListener(RhasspyActor):
                 "snowboy not installed"
             ] = "The snowboy Python library is not installed. Try pip3 install snowboy"
 
-        model_path = self.profile.read_path(
-            self.profile.get("wake.snowboy.model", "snowboy.umdl")
-        )
-        if not os.path.exists(model_path):
-            problems[
-                "Missing model"
-            ] = f"Your snowboy model could not be loaded from {model_path}"
+        # Verify that all snowboy models exist
+        models = self._parse_models()
+        model_paths = [
+            Path(self.profile.read_path(model_name)) for model_name in models
+        ]
+
+        for model_path in model_paths:
+            if not model_path.is_file():
+                problems[
+                    "Missing model"
+                ] = f"Snowboy model could not be loaded from {model_path}"
 
         return problems
 
