@@ -41,7 +41,7 @@ from rhasspy.utils import (
 # -----------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
-logging.root.setLevel(logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
 loop = asyncio.get_event_loop()
 

@@ -223,7 +223,7 @@ class RhasspyCore:
             # Replace numbers
             if self.profile.get("intent.replace_numbers", True):
                 language = self.profile.get("language", "")
-                if len(language) == 0:
+                if not language:
                     language = None
 
                 # 75 -> seventy five

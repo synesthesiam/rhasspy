@@ -403,6 +403,10 @@ def numbers_to_words(
     sentence: str, language: Optional[str] = None, add_substitution: bool = False
 ) -> str:
     """Replaces numbers with words in a sentence. Optionally substitues number back in."""
+    if not language:
+        # Default language
+        language = None
+
     words = split_whitespace(sentence)
     changed = False
     for i, word in enumerate(words):

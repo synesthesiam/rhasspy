@@ -198,9 +198,12 @@ def fstprintall(
     out_file: Optional[TextIO] = None,
     exclude_meta: bool = True,
     eps: str = "<eps>",
+    substitute: bool = False,
 ) -> List[List[str]]:
     sentences = []
+    input_symbols = in_fst.input_symbols()
     output_symbols = in_fst.output_symbols()
+    in_eps = input_symbols.find(eps)
     out_eps = output_symbols.find(eps)
     zero_weight = fst.Weight.Zero(in_fst.weight_type())
 
@@ -218,12 +221,25 @@ def fstprintall(
 
         for arc in in_fst.arcs(state):
             arc_sentence = list(sentence)
-            if arc.olabel != out_eps:
-                out_symbol = output_symbols.find(arc.olabel).decode()
-                if exclude_meta and out_symbol.startswith("__"):
-                    pass  # skip __label__, etc.
-                else:
-                    arc_sentence.append(out_symbol)
+            if substitute:
+                # Use output label
+                if arc.olabel != out_eps:
+                    out_symbol = output_symbols.find(arc.olabel).decode()
+                    if exclude_meta and out_symbol.startswith("__"):
+                        pass  # skip __label__, etc.
+                    else:
+                        arc_sentence.append(out_symbol)
+            else:
+                # Use input label
+                if arc.ilabel != in_eps:
+                    in_symbol = input_symbols.find(arc.ilabel).decode()
+                    arc_sentence.append(in_symbol)
+
+                # Use meta output labels
+                if not exclude_meta and (arc.olabel != out_eps):
+                    out_symbol = output_symbols.find(arc.olabel).decode()
+                    if out_symbol.startswith("__"):
+                        arc_sentence.append(out_symbol)
 
             state_queue.append((arc.nextstate, arc_sentence))
 

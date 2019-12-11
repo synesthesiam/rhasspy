@@ -22,41 +22,6 @@ from rhasspy.wake import WakeWordDetected
 
 logger = logging.getLogger("rhasspy")
 
-
-try:
-    # Need to import here because they screw with logging
-    import flair  # noqa: F401
-except Exception:
-    pass
-
-
-logging.config.dictConfig(
-    {
-        "version": 1,
-        "disable_existing_loggers": True,
-        "formatters": {
-            "rhasspy.format": {"format": "%(levelname)s:%(name)s:%(message)s"}
-        },
-        "handlers": {
-            "rhasspy.handler": {
-                "class": "logging.StreamHandler",
-                "formatter": "rhasspy.format",
-                "stream": "ext://sys.stderr",
-            }
-        },
-        "loggers": {
-            "rhasspy": {"handlers": ["rhasspy.handler"], "propagate": False},
-            "flair": {
-                "handlers": ["rhasspy.handler"],
-                "level": "INFO",
-                "propagate": False,
-            },
-        },
-        "root": {"handlers": ["rhasspy.handler"]},
-    }
-)
-
-
 # -----------------------------------------------------------------------------
 # Globals
 # -----------------------------------------------------------------------------
@@ -247,9 +212,7 @@ async def main() -> None:
     )
 
     # check
-    sub_parsers.add_parser(
-        "check", help="Check downloaded profile files"
-    )
+    sub_parsers.add_parser("check", help="Check downloaded profile files")
 
     # -------------------------------------------------------------------------
 
