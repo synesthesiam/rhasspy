@@ -147,6 +147,15 @@ async def start_rhasspy() -> None:
 # -----------------------------------------------------------------------------
 
 
+@app.route("/api/version")
+async def api_version() -> Response:
+    """Get Rhasspy version."""
+    return await send_file(Path("VERSION"))
+
+
+# -----------------------------------------------------------------------------
+
+
 @app.route("/api/profiles")
 async def api_profiles() -> Response:
     """Get list of available profiles and verify necessary files."""
@@ -835,31 +844,38 @@ async def handle_error(err) -> Tuple[str, int]:
 # Static Routes
 # ---------------------------------------------------------------------
 
-web_dir = os.path.join(os.getcwd(), "dist")
+web_dir = Path("dist")
+assert web_dir.is_dir(), f"Missing web directory {web_dir}"
+
+
+css_dir = web_dir / "css"
+js_dir = web_dir / "js"
+img_dir = web_dir / "img"
+webfonts_dir = web_dir / "webfonts"
 
 
 @app.route("/css/<path:filename>", methods=["GET"])
 async def css(filename) -> Response:
     """CSS static endpoint."""
-    return await send_from_directory(os.path.join(web_dir, "css"), filename)
+    return await send_from_directory(css_dir, filename)
 
 
 @app.route("/js/<path:filename>", methods=["GET"])
 async def js(filename) -> Response:
     """Javascript static endpoint."""
-    return await send_from_directory(os.path.join(web_dir, "js"), filename)
+    return await send_from_directory(js_dir, filename)
 
 
 @app.route("/img/<path:filename>", methods=["GET"])
 async def img(filename) -> Response:
     """Image static endpoint."""
-    return await send_from_directory(os.path.join(web_dir, "img"), filename)
+    return await send_from_directory(img_dir, filename)
 
 
 @app.route("/webfonts/<path:filename>", methods=["GET"])
 async def webfonts(filename) -> Response:
     """Web font static endpoint."""
-    return await send_from_directory(os.path.join(web_dir, "webfonts"), filename)
+    return await send_from_directory(webfonts_dir, filename)
 
 
 # ----------------------------------------------------------------------------
@@ -870,13 +886,13 @@ async def webfonts(filename) -> Response:
 @app.route("/", methods=["GET"])
 async def index() -> Response:
     """Render main web page."""
-    return await send_file(os.path.join(web_dir, "index.html"))
+    return await send_file(web_dir / "index.html")
 
 
 @app.route("/swagger.yaml", methods=["GET"])
 async def swagger_yaml() -> Response:
     """OpenAPI static endpoint."""
-    return await send_file(os.path.join(web_dir, "swagger.yaml"))
+    return await send_file(web_dir / "swagger.yaml")
 
 
 # -----------------------------------------------------------------------------

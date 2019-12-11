@@ -7,5 +7,9 @@ export default {
 
     getProblems() {
         return new Api().get('/api/problems')
+    },
+
+    getVersion() {
+        return new Api().get('/api/version')
     }
 }

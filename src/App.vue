@@ -13,7 +13,7 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <div class="navbar-container">
                     <a href="/" class="text-white font-weight-bold">Rhasspy</a>
-                    <span class="badge badge-info ml-2">2.4</span>
+                    <span class="badge badge-info ml-2">{{ this.version }}</span>
                     <span class="badge badge-pill badge-danger ml-2" v-if="this.numProblems > 0" title="Problems were detected"><i class="fas fa-exclamation"></i></span>
                 </div>
                 <div class="navbar-container ml-auto">
@@ -176,7 +176,9 @@
              problems: {},
              numProblems: 0,
 
-             missingFiles: {}
+             missingFiles: {},
+
+             version: ''
          }
      },
 
@@ -262,6 +264,7 @@
                                      this.training = false
                                      this.endAsync()
                                      this.getCustomWords()
+                                     this.getProblems()
                                  })
          },
 
@@ -298,12 +301,20 @@
 
          getProblems: function() {
              RhasspyService.getProblems()
+                           .then(request => {
+                               this.problems = request.data
+                               this.numProblems = 0
+                               for (var actor in this.problems) {
+                                   this.numProblems += Object.keys(this.problems[actor]).length
+                               }
+                           })
+                           .catch(err => this.error(err))
+         },
+
+         getVersion: function() {
+             RhasspyService.getVersion()
                              .then(request => {
-                                 this.problems = request.data
-                                 this.numProblems = 0
-                                 for (var actor in this.problems) {
-                                     this.numProblems += Object.keys(this.problems[actor]).length
-                                 }
+                                 this.version = request.data
                              })
                              .catch(err => this.error(err))
          },
@@ -329,6 +340,7 @@
      },
 
      mounted: function() {
+         this.getVersion()
          this.getProfile()
          this.getProfiles()
          this.getDefaults()

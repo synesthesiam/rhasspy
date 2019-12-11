@@ -214,6 +214,7 @@ COPY rhasspy/train/jsgf2fst/*.py ${RHASSPY_APP}/rhasspy/train/jsgf2fst/
 COPY rhasspy/train/*.py ${RHASSPY_APP}/rhasspy/train/
 COPY *.py ${RHASSPY_APP}/
 COPY rhasspy/*.py ${RHASSPY_APP}/rhasspy/
+COPY VERSION ${RHASSPY_APP}/
 
 ENV CONFIG_PATH /data/options.json
 ENV KALDI_PREFIX /opt

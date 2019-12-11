@@ -1,11 +1,21 @@
 openapi: "3.0.0"
 info:
   title: 'Rhasspy Voice Assistant'
-  version: '2.0'
+  version: '2.4'
   description: 'API for Rhasspy Voice Assistant Toolkit'
 schemes:
   - http
 paths:
+  /api/version:
+    get:
+      summary: 'Get Rhasspy version'
+      produces:
+        - text/plain
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: string
   /api/profiles:
     get:
       summary: 'Get available profiles'
