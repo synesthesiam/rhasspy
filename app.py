@@ -22,6 +22,7 @@ from quart import (
     websocket,
 )
 from quart_cors import cors
+from swagger_ui import quart_api_doc
 
 from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
@@ -983,6 +984,13 @@ async def api_events_log() -> None:
     async with ws_locks[WS_EVENT_LOG]:
         ws_queues[WS_EVENT_LOG].remove(q)
 
+
+# -----------------------------------------------------------------------------
+
+# Swagger UI
+quart_api_doc(
+    app, config_path=(web_dir / "swagger.yaml"), url_prefix="/api", title="Rhasspy API"
+)
 
 # -----------------------------------------------------------------------------
 

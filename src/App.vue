@@ -13,7 +13,7 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <div class="navbar-container">
                     <a href="/" class="text-white font-weight-bold">Rhasspy</a>
-                    <span class="badge badge-info ml-2">{{ this.version }}</span>
+                    <a href="/api/" class="badge badge-info ml-2">{{ this.version }}</a>
                     <span class="badge badge-pill badge-danger ml-2" v-if="this.numProblems > 0" title="Problems were detected"><i class="fas fa-exclamation"></i></span>
                 </div>
                 <div class="navbar-container ml-auto">
