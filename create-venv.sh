@@ -209,7 +209,7 @@ export LD_LIBRARY_PATH="${venv}/lib:${LD_LIBRARY_PATH}"
 source "${venv}/bin/activate"
 
 echo "Upgrading pip"
-pip install --upgrade pip
+"${PYTHON}" -m pip install --upgrade pip
 
 echo "Installing Python requirements"
 "${PYTHON}" -m pip install wheel setuptools
