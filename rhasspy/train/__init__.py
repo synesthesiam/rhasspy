@@ -107,19 +107,8 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
 
     # -----------------------------------------------------------------------------
 
-    # Create sentence transform for ini parse
-    if word_casing == "upper":
-        # Upper case
-        sentence_transform = str.upper
-    elif word_casing == "lower":
-        # Lower case
-        sentence_transform = str.lower
-    else:
-        # Identity
-        sentence_transform = lambda s: s
-
     # Parse sentences.ini
-    intents = parse_ini(sentences_ini, sentence_transform=sentence_transform)
+    intents = parse_ini(sentences_ini)
 
     # -----------------------------------------------------------------------------
 
