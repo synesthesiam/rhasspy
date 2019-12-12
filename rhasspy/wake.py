@@ -780,11 +780,16 @@ class PorcupineWakeListener(RhasspyActor):
             self.profile.read_path(
                 self.profile.get(
                     "wake.porcupine.keyword_path", "porcupine/porcupine.ppn"
-                )
+                ).split(",")
             )
         ]
         self.sensitivities = [
-            float(self.profile.get("wake.porcupine.sensitivity", 0.5))
+            [
+                float(s)
+                for s in str(
+                    self.profile.get("wake.porcupine.sensitivity", "0.5")
+                ).split(",")
+            ]
         ]
 
         self.preload = self.config.get("preload", False)

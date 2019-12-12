@@ -53,6 +53,9 @@
                     <a class="nav-link" id="problems-tab" data-toggle="tab" href="#problems" role="tab" aria-controls="problems" aria-selected="true">Problems <span class="badge badge-pill badge-danger">{{ this.numProblems }}</span></a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" id="advanced-tab" data-toggle="tab" href="#advanced" role="tab" aria-controls="advanced" aria-selected="true">Advanced</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" id="log-tab" data-toggle="tab" href="#log" role="tab" aria-controls="log" aria-selected="true">Log</a>
                 </li>
             </ul>
@@ -82,6 +85,9 @@
                 </div>
                 <div class="tab-pane fade" id="log" role="tabpanel" aria-labelledby="log-tab">
                     <RhasspyLog :rhasspyLog="rhasspyLog" />
+                </div>
+                <div class="tab-pane fade" id="advanced" role="tabpanel" aria-labelledby="advanced-tab">
+                    <AdvancedSettings />
                 </div>
             </div>
 
@@ -138,6 +144,7 @@
  import Problems from './components/Problems.vue'
  import RhasspyLog from './components/RhasspyLog.vue'
  import Slots from './components/Slots.vue'
+ import AdvancedSettings from './components/AdvancedSettings.vue'
 
  import ProfileDefaults from '@/assets/ProfileDefaults'
 
@@ -150,7 +157,8 @@
          ProfileSettings,
          Problems,
          RhasspyLog,
-         Slots
+         Slots,
+         AdvancedSettings
      },
 
      data: function() {

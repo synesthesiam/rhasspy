@@ -58,12 +58,14 @@
             </div>
             <div class="form-group">
                 <div class="form-row">
-                    <label for="snowboy-model" class="col-form-label">Model Name</label>
+                    <label for="snowboy-model" class="col-form-label">Model Names</label>
                     <div class="col-sm-auto">
                         <input id="snowboy-model" type="text" class="form-control" v-model="profile.wake.snowboy.model" :disabled="profile.wake.system != 'snowboy'">
                     </div>
+                </div>
+                <div class="form-row">
                     <div class="col text-muted">
-                        Put models in your profile directory
+                        Put models in the <tt>snowboy</tt> directory in your profile
                     </div>
                 </div>
             </div>
@@ -71,7 +73,7 @@
                 <div class="form-row">
                     <label for="wake-snowboy-sensitivity" class="col-form-label">Sensitivity</label>
                     <div class="col-sm-auto">
-                        <input id="wake-snowboy-sensitivity" type="number" min="0" max="1" step="0.1" class="form-control" v-model="profile.wake.snowboy.sensitivity" :disabled="profile.wake.system != 'snowboy'">
+                        <input id="wake-snowboy-sensitivity" type="text" class="form-control" v-model="profile.wake.snowboy.sensitivity" :disabled="profile.wake.system != 'snowboy'"> <span class="text-muted">(comma-separated)</span>
                     </div>
                 </div>
             </div>
@@ -80,6 +82,11 @@
                     <input type="checkbox" id="wake-snowboy-applyfrontend" v-model="profile.wake.snowboy.apply_frontend" :disabled="profile.wake.system != 'snowboy'">
                     <label for="wake-snowboy-applyfrontend" class="col-form-label">Apply Frontend (<a href="https://github.com/kitt-ai/snowboy#pretrained-universal-models" title="Parameters for pre-trained models">more info</a>)</label>
                 </div>
+            </div>
+            <div class="form-group">
+                <p>
+                    See <a href="https://rhasspy.readthedocs.io/en/latest/wake-word/#snowboy">documentation</a> for how to use multiple wake words.
+                </p>
             </div>
             <hr>
             <!-- <div class="form-group"> -->
@@ -116,12 +123,22 @@
             </div>
             <div class="form-group">
                 <div class="form-row">
-                    <label for="porcupine-model" class="col-form-label">Keyword File</label>
+                    <label for="porcupine-model" class="col-form-label">Keyword Files</label>
                     <div class="col-sm-auto">
                         <input id="porcupine-keyword" type="text" class="form-control" v-model="profile.wake.porcupine.keyword_path" :disabled="profile.wake.system != 'porcupine'">
                     </div>
+                </div>
+                <div class="form-row">
                     <div class="col text-muted">
                         Put keyword files in the <tt>porcupine</tt> directory in your profile
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="wake-porcupine-sensitivity" class="col-form-label">Sensitivity</label>
+                    <div class="col-sm-auto">
+                        <input id="wake-porcupine-sensitivity" type="text" class="form-control" v-model="profile.wake.porcupine.sensitivity" :disabled="profile.wake.system != 'porcupine'"> <span class="text-muted">(comma-separated)</span>
                     </div>
                 </div>
             </div>

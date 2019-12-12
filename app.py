@@ -303,7 +303,7 @@ async def api_profile() -> Union[str, Response]:
     if layers == "profile":
         # Local settings only
         profile_path = Path(core.profile.read_path("profile.json"))
-        return send_file(profile_path)  # , mimetype="application/json")
+        return await send_file(profile_path)
 
     return jsonify(core.profile.json)
 

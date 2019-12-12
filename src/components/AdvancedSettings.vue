@@ -2,16 +2,12 @@
     <div class="container">
         <div class="text-muted pl-1">
             <p>
-                You can edit <a href="https://rhasspy.readthedocs.io/en/latest/profiles/">your Rhasspy profile</a> directly here as JSON. These settings will override the defaults below.
+                You can edit <a href="https://rhasspy.readthedocs.io/en/latest/profiles/">your Rhasspy profile</a> directly here as JSON.
+                <br>
+                Only settings that <strong>differ from the defaults</strong> are shown.
             </p>
         </div>
-        <div class="pl-1">
-            <p><strong>Restart required if changes are made</strong></p>
-        </div>
-
         <form class="form" v-on:submit.prevent="saveProfile">
-            <h2>{{ this.profile.name }}</h2>
-
             <div class="form-group">
                 <div class="form-row">
                     <button type="submit" class="btn btn-primary"
@@ -32,20 +28,6 @@
                 </div>
             </div>
         </form>
-
-        <hr />
-
-        <form class="form" v-on:submit.prevent="saveDefaults">
-            <h2>Defaults</h2>
-
-            <div class="text-muted pl-1">
-                <p>
-                    These are the default settings for all <a href="https://rhasspy.readthedocs.io/en/latest/profiles/">your Rhasspy profiles</a>. If a setting is missing in any profile, the value here will be used.
-                </p>
-            </div>
-
-            <textarea id="default-settings" class="form-control" type="text" rows="15" v-model="defaultSettings"></textarea>
-        </form>
     </div> <!-- container -->
 </template>
 
@@ -54,20 +36,22 @@
 
  export default {
      name: 'AdvancedSettings',
-     props: {
-         profile : Object,
-         defaults: Object
-     },
      data: function () {
          return {
              profileSettings: '',
-             profileSettingsDirty: false,
-
-             defaultSettings: ''
+             profileSettingsDirty: false
          }
      },
 
      methods: {
+         getProfile: function() {
+             ProfileService.getProfileSettings('profile')
+                           .then(request => {
+                               this.profileSettings = JSON.stringify(request.data, null, 4)
+                           })
+                           .catch(err => this.error(err))
+         },
+
          saveProfile: function() {
              this.$parent.beginAsync()
              ProfileService.updateProfileSettings(this.profileSettings)
@@ -76,14 +60,15 @@
                  .then(() => {
                      this.$parent.endAsync()
                      this.profileSettingsDirty = false
+                     if (confirm("Profile saved. Restart Rhasspy?")) {
+                         this.$parent.restart()
+                     }
                  })
          }
      },
 
-     watch: {
-         profile: function() {
-             this.profileSettings = JSON.stringify(this.profile, null, 4)
-         }
+     mounted: function() {
+         this.getProfile()
      }
  }
 </script>
