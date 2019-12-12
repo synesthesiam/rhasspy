@@ -54,7 +54,7 @@ function maybe_download {
         fi
 
         mkdir -p "$(dirname "$2")"
-        curl -sSfL -o "$2" "$1"
+        curl -sSfL -o "$2" "$1" || { echo "Can't download $1"; exit 1; }
         echo "$1 => $2"
     fi
 }
