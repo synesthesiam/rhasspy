@@ -323,13 +323,6 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
             if acoustic_model_type == "julius":
                 dictionary_format = FORMAT_JULIUS
 
-            # Extra arguments for word casing
-            kwargs = {}
-            if word_casing == "upper":
-                kwargs["upper"] = True
-            elif word_casing == "lower":
-                kwargs["lower"] = True
-
             make_dict(
                 vocab,
                 dictionary_paths,
@@ -337,7 +330,8 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
                 unknown_path=unknown_words,
                 dictionary_format=dictionary_format,
                 merge_rule=dict_merge_rule,
-                **kwargs,
+                upper=(word_casing == "upper"),
+                lower=(word_casing == "lower"),
             )
 
             if unknown_words.exists() and g2p_model.exists():
@@ -440,19 +434,3 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
     # Run doit main
     result = DoitMain(ModuleTaskLoader(locals())).run(sys.argv[1:])
     return (result, errors)
-
-
-# -----------------------------------------------------------------------------
-
-# Matches an ini header, e.g. [LightState]
-# intent_pattern = re.compile(r"^\[([^\]]+)\]")
-
-
-# def _get_intents(ini_path):
-#     """Yields the names of all intents in a sentences.ini file."""
-#     with open(ini_path, "r") as ini_file:
-#         for line in ini_file:
-#             line = line.strip()
-#             match = intent_pattern.match(line)
-#             if match:
-#                 yield match.group(1)

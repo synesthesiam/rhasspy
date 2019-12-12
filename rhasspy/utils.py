@@ -469,9 +469,9 @@ def hass_request_kwargs(
         headers["X-HA-Access"] = hass_config["api_password"]
     elif "HASSIO_TOKEN" in os.environ:
         # Use token from hass.io
-        headers["Authorization"] = "Bearer %s" % os.environ["HASSIO_TOKEN"]
+        headers["X-HASSIO-KEY"] = os.environ["HASSIO_TOKEN"]
 
-    kwargs = {"headers": headers}
+    kwargs: Dict[str, Any] = {"headers": headers}
 
     if pem_file is not None:
         kwargs["verify"] = pem_file

@@ -8,7 +8,7 @@ import shutil
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import aiohttp
 
@@ -479,7 +479,7 @@ class RhasspyCore:
         conditions = self.profile.get("download.conditions", {})
         all_files = self.profile.get("download.files", {})
         files_to_copy = {}
-        files_to_extract: Dict[str, List[Any]] = defaultdict(list)
+        files_to_extract: Dict[str, List[Tuple[str, str]]] = defaultdict(list)
         files_to_download: Set[str] = set()
 
         async def download_file(url, filename):

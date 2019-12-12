@@ -725,7 +725,7 @@ class HomeAssistantConversationRecognizer(RhasspyActor):
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.hass_config: Dict[str, Any] = {}
-        self.pem_file: bool = ""
+        self.pem_file: Optional[str] = ""
         self.handle_speech: bool = True
 
     def to_started(self, from_state: str) -> None:
