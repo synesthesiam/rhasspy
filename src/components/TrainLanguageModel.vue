@@ -15,6 +15,12 @@
                     </div>
                 </div>
                 <div class="form-row">
+                    <input type="text" name="iniPath" list="iniPaths" />
+                    <datalist id="iniPaths">
+                        <option value="sentences.ini">sentences.ini</option>
+                    </datalist>
+                </div>
+                <div class="form-row">
                     <textarea id="sentences" class="form-control" style="border-width: 3px" type="text" rows="25"
                               v-model="sentences" v-bind:class="{ 'border-danger': sentencesDirty }"
                               @input="sentencesDirty=true"></textarea>
@@ -47,7 +53,7 @@
      methods: {
          saveSentences: function() {
              this.$parent.beginAsync()
-             LanguageModelService.update_sentences(this.sentences)
+             LanguageModelService.update_sentences(JSON.stringify({'sentences.ini': this.sentences}))
                  .then(request => this.$parent.alert(request.data, 'success'))
                  .then(() => {
                      this.$parent.endAsync()
@@ -62,7 +68,7 @@
          getSentences: function() {
              LanguageModelService.getSentences()
                                  .then(request => {
-                                     this.sentences = request.data
+                                     this.sentences = request.data['sentences.ini']
                                  })
                                  .catch(err => this.$parent.error(err))
          }

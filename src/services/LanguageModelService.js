@@ -3,11 +3,12 @@ import Api from '@/services/Api'
 export default {
     update_sentences(sentences) {
         return Api().post('/api/sentences', sentences,
-                          { headers: { 'Content-Type': 'text/plain' } })
+                          { headers: { 'Content-Type': 'application/json' } })
     },
 
     getSentences() {
-        return Api().get('/api/sentences')
+        return Api().get('/api/sentences',
+                         { headers: { 'Accept': 'application/json' } })
     },
 
     update_slots(slots) {

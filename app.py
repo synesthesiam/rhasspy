@@ -425,26 +425,70 @@ async def api_sentences():
     assert core is not None
 
     if request.method == "POST":
-        # Update sentences
-        sentences_path = Path(
-            core.profile.write_path(core.profile.get("speech_to_text.sentences_ini"))
+        if request.mimetype == "application/json":
+            # Update multiple ini files at once.
+            # Paths as keys, sentences as values.
+            num_chars = 0
+            paths_written = []
+
+            sentences_dict = await request.json
+            for sentences_path, sentences_text in sentences_dict.items():
+                logger.debug("Writing %s", sentences_path)
+
+                # Path is relative to profile directory
+                sentences_path = Path(core.profile.write_path(sentences_path))
+                sentences_path.parent.mkdirs(parents=True, exist_ok=True)
+                sentences_path.write_text(sentences_text)
+
+                num_chars += len(sentences_text)
+                paths_written.append(sentences_path)
+
+            return "Wrote %s char(s) to %s".format(
+                num_chars, [str(p) for p in paths_written]
+            )
+        else:
+            # Update sentences.ini only
+            sentences_path = Path(
+                core.profile.write_path(
+                    core.profile.get("speech_to_text.sentences_ini")
+                )
+            )
+
+            data = await request.data
+            with open(sentences_path, "wb") as sentences_file:
+                sentences_file.write(data)
+                return "Wrote %s byte(s) to %s" % (len(data), sentences_path)
+
+    # GET
+    sentences_path_rel = core.profile.read_path(
+        core.profile.get("speech_to_text.sentences_ini")
+    )
+    sentences_path = Path(sentences_path_rel)
+
+    if prefers_json():
+        sentences_dict = {}
+        if sentences_path.is_file():
+            key = str(sentences_path.relative_to(core.profile.read_path()))
+            sentences_dict[key] = sentences_path.read_text()
+
+        ini_dir = Path(
+            core.profile.read_path(core.profile.get("speech_to_text.sentences_dir"))
         )
 
-        data = await request.data
-        with open(sentences_path, "wb") as sentences_file:
-            sentences_file.write(data)
-            return "Wrote %s byte(s) to %s" % (len(data), sentences_path)
+        # Add all .ini files from sentences_dir
+        if ini_dir.is_dir():
+            for ini_path in ini_dir.glob("*.ini"):
+                key = str(ini_path.relative_to(core.profile.read_path()))
+                sentences_dict[key] = ini_path.read_text()
 
-    # Return sentences
-    sentences_path = Path(
-        core.profile.read_path(core.profile.get("speech_to_text.sentences_ini"))
-    )
+        return jsonify(sentences_dict)
 
+    # Return sentences.ini only
     if not sentences_path.is_file():
         return ""  # no sentences yet
 
     # Return file contents
-    return await send_file(sentences_path)  # , mimetype="text/plain")
+    return await send_file(sentences_path)
 
 
 # -----------------------------------------------------------------------------

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import io
 import os
 import re
 import sys
@@ -49,6 +50,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
 
     # intent_whitelist = ppath("training.intent-whitelist", "intent_whitelist")
     sentences_ini = ppath("speech_to_text.sentences_ini", "sentences.ini")
+    sentences_dir = ppath("speech_to_text.sentences_dir", "sentences.dir")
     base_dictionary = ppath(f"{stt_prefix}.base_dictionary", "base_dictionary.txt")
     base_language_model = ppath(
         f"{stt_prefix}.base_language_model", "base_language_model.txt"
@@ -107,8 +109,23 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
 
     # -----------------------------------------------------------------------------
 
-    # Parse sentences.ini
-    intents = parse_ini(sentences_ini)
+    ini_paths: List[Path] = []
+    if sentences_ini.is_file():
+        ini_paths = [sentences_ini]
+
+    # Add .ini files from intents directory
+    if sentences_dir.is_dir():
+        for ini_path in sentences_dir.rglob("*.ini"):
+            ini_paths.append(ini_path)
+
+    # Join ini files into a single combined file and parse
+    _LOGGER.debug("Parsing ini file(s): %s", [str(p) for p in ini_paths])
+    with io.StringIO() as combined_ini_file:
+        for ini_path in ini_paths:
+            combined_ini_file.write(ini_path.read_text())
+            print("", file=combined_ini_file)
+
+        intents = parse_ini(combined_ini_file.getvalue())
 
     # -----------------------------------------------------------------------------
 
@@ -183,7 +200,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
                     slot_names.add(slot_name)
 
         # Add slot files as dependencies
-        deps = [slots_dir / slot_name for slot_name in slot_names]
+        deps = [(slots_dir / slot_name) for slot_name in slot_names]
 
         # Add profile itself as a dependency
         profile_json_path = profile_dir / "profile.json"
@@ -191,7 +208,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
             deps.append(profile_json_path)
 
         return {
-            "file_dep": [sentences_ini] + deps,
+            "file_dep": ini_paths + deps,
             "targets": [intent_graph],
             "actions": [(do_intents_to_graph, [intents, slot_names])],
         }

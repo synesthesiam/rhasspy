@@ -171,6 +171,7 @@
       "url": "http://my-server:12101/api/speech-to-text"
     },
     "sentences_ini": "sentences.ini",
+    "sentences_dir": "intents",
     "slots_dir": "slots",
     "system": "dummy"
   },
