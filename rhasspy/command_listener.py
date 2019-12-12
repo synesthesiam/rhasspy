@@ -167,7 +167,8 @@ class WebrtcvadCommandListener(RhasspyActor):
 
     def to_listening(self, from_state: str) -> None:
         """Transition to listening state."""
-        self.wakeupAfter(timedelta(seconds=self.timeout_sec))
+        self.timeout_id = str(uuid.uuid4())
+        self.wakeupAfter(timedelta(seconds=self.timeout_sec), payload=self.timeout_id)
 
         # Reset state
         self.chunk = bytes()
@@ -184,16 +185,19 @@ class WebrtcvadCommandListener(RhasspyActor):
     def in_listening(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in listening state."""
         if isinstance(message, WakeupMessage):
-            # Timeout
-            self._logger.warning("Timeout")
-            self.send(self.recorder, StopStreaming(self.myAddress))
-            self.send(
-                self.receiver,
-                VoiceCommand(self.buffer or bytes(), timeout=True, handle=self.handle),
-            )
+            if message.payload == self.timeout_id:
+                # Timeout
+                self._logger.warning("Timeout")
+                self.send(self.recorder, StopStreaming(self.myAddress))
+                self.send(
+                    self.receiver,
+                    VoiceCommand(
+                        self.buffer or bytes(), timeout=True, handle=self.handle
+                    ),
+                )
 
-            self.buffer = bytes()
-            self.transition("loaded")
+                self.buffer = bytes()
+                self.transition("loaded")
         elif isinstance(message, AudioData):
             self.chunk += message.data
             if len(self.chunk) >= self.chunk_size:
