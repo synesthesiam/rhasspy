@@ -425,25 +425,33 @@ async def api_sentences():
     assert core is not None
 
     if request.method == "POST":
+        # POST
         if request.mimetype == "application/json":
-            # Update multiple ini files at once.
-            # Paths as keys, sentences as values.
+            # Update multiple ini files at once. Paths as keys (relative to
+            # profile directory), sentences as values.
             num_chars = 0
             paths_written = []
 
             sentences_dict = await request.json
             for sentences_path, sentences_text in sentences_dict.items():
-                logger.debug("Writing %s", sentences_path)
-
                 # Path is relative to profile directory
                 sentences_path = Path(core.profile.write_path(sentences_path))
-                sentences_path.parent.mkdirs(parents=True, exist_ok=True)
-                sentences_path.write_text(sentences_text)
 
-                num_chars += len(sentences_text)
-                paths_written.append(sentences_path)
+                if sentences_text.strip():
+                    # Overwrite file
+                    logger.debug("Writing %s", sentences_path)
 
-            return "Wrote %s char(s) to %s".format(
+                    sentences_path.parent.mkdir(parents=True, exist_ok=True)
+                    sentences_path.write_text(sentences_text)
+
+                    num_chars += len(sentences_text)
+                    paths_written.append(sentences_path)
+                elif sentences_path.is_file():
+                    # Remove file
+                    logger.debug("Removing %s", sentences_path)
+                    sentences_path.unlink()
+
+            return "Wrote {} char(s) to {}".format(
                 num_chars, [str(p) for p in paths_written]
             )
         else:
@@ -457,7 +465,7 @@ async def api_sentences():
             data = await request.data
             with open(sentences_path, "wb") as sentences_file:
                 sentences_file.write(data)
-                return "Wrote %s byte(s) to %s" % (len(data), sentences_path)
+                return "Wrote {} byte(s) to {}".format(len(data), sentences_path)
 
     # GET
     sentences_path_rel = core.profile.read_path(
@@ -466,6 +474,8 @@ async def api_sentences():
     sentences_path = Path(sentences_path_rel)
 
     if prefers_json():
+        # Return multiple .ini files, keyed by path relative to profile
+        # directory.
         sentences_dict = {}
         if sentences_path.is_file():
             key = str(sentences_path.relative_to(core.profile.read_path()))
@@ -483,7 +493,7 @@ async def api_sentences():
 
         return jsonify(sentences_dict)
 
-    # Return sentences.ini only
+    # Return sentences.ini contents only
     if not sentences_path.is_file():
         return ""  # no sentences yet
 
