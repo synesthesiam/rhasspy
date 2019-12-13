@@ -723,7 +723,10 @@ class DialogueManager(RhasspyActor):
             )
         elif isinstance(message, SpeakSentence):
             # text -> speech
-            self.send(self.speech, SpeakSentence(message.sentence, receiver=sender))
+            self.send(
+                self.speech,
+                SpeakSentence(message.sentence, receiver=sender, play=message.play),
+            )
         elif isinstance(message, TrainProfile):
             # Training
             self.reload_actors_after_training = message.reload_actors

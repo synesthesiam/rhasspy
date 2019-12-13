@@ -312,11 +312,13 @@ class RhasspyCore:
             assert isinstance(result, WordSpoken), result
             return result
 
-    async def speak_sentence(self, sentence: str) -> SentenceSpoken:
+    async def speak_sentence(self, sentence: str, play: bool = True) -> SentenceSpoken:
         """Speak an entire sentence using text to speech system."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
-            result = await sys.async_ask(self.dialogue_manager, SpeakSentence(sentence))
+            result = await sys.async_ask(
+                self.dialogue_manager, SpeakSentence(sentence, play=play)
+            )
             assert isinstance(result, SentenceSpoken), result
             return result
 

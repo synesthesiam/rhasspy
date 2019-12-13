@@ -19,16 +19,19 @@ from rhasspy.audio_player import PlayWavData, WavPlayed
 class SpeakSentence:
     """Request to speak a sentence."""
 
-    def __init__(self, sentence: str, receiver: Optional[RhasspyActor] = None) -> None:
+    def __init__(
+        self, sentence: str, receiver: Optional[RhasspyActor] = None, play: bool = True
+    ) -> None:
         self.sentence = sentence
         self.receiver = receiver
+        self.play = play
 
 
 class SentenceSpoken:
     """Response when sentence is spoken."""
 
-    def __init__(self, wav_data: bytes):
-        self.wav_data = wav_data
+    def __init__(self, wav_data: Optional[bytes] = None):
+        self.wav_data: bytes = wav_data or bytes()
 
 
 # -----------------------------------------------------------------------------
@@ -78,7 +81,7 @@ class DummySentenceSpeaker(RhasspyActor):
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in started state."""
         if isinstance(message, SpeakSentence):
-            self.send(message.receiver or sender, SentenceSpoken(bytes()))
+            self.send(message.receiver or sender, SentenceSpoken())
 
 
 # -----------------------------------------------------------------------------
@@ -110,8 +113,13 @@ class EspeakSentenceSpeaker(RhasspyActor):
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
             self.wav_data = self.speak(message.sentence)
-            self.transition("speaking")
-            self.send(self.player, PlayWavData(self.wav_data))
+
+            if message.play:
+                self.transition("speaking")
+                self.send(self.player, PlayWavData(self.wav_data))
+            else:
+                self.transition("ready")
+                self.send(self.receiver, SentenceSpoken(self.wav_data))
 
     def in_speaking(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in speaking state."""
@@ -177,8 +185,13 @@ class FliteSentenceSpeaker(RhasspyActor):
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
             self.wav_data = self.speak(message.sentence)
-            self.transition("speaking")
-            self.send(self.player, PlayWavData(self.wav_data))
+
+            if message.play:
+                self.transition("speaking")
+                self.send(self.player, PlayWavData(self.wav_data))
+            else:
+                self.transition("ready")
+                self.send(self.receiver, SentenceSpoken(self.wav_data))
 
     def in_speaking(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in speaking state."""
@@ -249,8 +262,13 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
             self.wav_data = self.speak(message.sentence)
-            self.transition("speaking")
-            self.send(self.player, PlayWavData(self.wav_data))
+
+            if message.play:
+                self.transition("speaking")
+                self.send(self.player, PlayWavData(self.wav_data))
+            else:
+                self.transition("ready")
+                self.send(self.receiver, SentenceSpoken(self.wav_data))
 
     def in_speaking(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in speaking state."""
@@ -332,8 +350,13 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
             self.wav_data = self.speak(message.sentence)
-            self.transition("speaking")
-            self.send(self.player, PlayWavData(self.wav_data))
+
+            if message.play:
+                self.transition("speaking")
+                self.send(self.player, PlayWavData(self.wav_data))
+            else:
+                self.transition("ready")
+                self.send(self.receiver, SentenceSpoken(self.wav_data))
 
     def in_speaking(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in speaking state."""
@@ -417,8 +440,13 @@ class CommandSentenceSpeaker(RhasspyActor):
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
             self.wav_data = self.speak(message.sentence)
-            self.transition("speaking")
-            self.send(self.player, PlayWavData(self.wav_data))
+
+            if message.play:
+                self.transition("speaking")
+                self.send(self.player, PlayWavData(self.wav_data))
+            else:
+                self.transition("ready")
+                self.send(self.receiver, SentenceSpoken(self.wav_data))
 
     def in_speaking(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in speaking state."""
@@ -517,8 +545,13 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
             self.receiver = message.receiver or sender
             try:
                 self.wav_data = self.speak(message.sentence)
-                self.transition("speaking")
-                self.send(self.player, PlayWavData(self.wav_data))
+
+                if message.play:
+                    self.transition("speaking")
+                    self.send(self.player, PlayWavData(self.wav_data))
+                else:
+                    self.transition("ready")
+                    self.send(self.receiver, SentenceSpoken(self.wav_data))
             except Exception:
                 self._logger.exception("speak")
 
@@ -530,7 +563,10 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
 
                     self._logger.debug("Falling back to %s", self.fallback_actor)
                     self.transition("speaking")
-                    self.send(self.fallback_actor, SpeakSentence(message.sentence))
+                    self.send(
+                        self.fallback_actor,
+                        SpeakSentence(message.sentence, play=message.play),
+                    )
                 except Exception:
                     # Give up
                     self.transition("ready")

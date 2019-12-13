@@ -888,6 +888,21 @@ def api_slots_by_name(name: str) -> Union[str, Response]:
 # -----------------------------------------------------------------------------
 
 
+@app.route("/process", methods=["GET"])
+async def marytts_process():
+    """Emulate MaryTTS /process API"""
+    global last_sentence
+
+    assert core is not None
+    sentence = request.args.get("INPUT_TEXT", "")
+    spoken = await core.speak_sentence(sentence, play=False)
+
+    return spoken.wav_data
+
+
+# -----------------------------------------------------------------------------
+
+
 @app.errorhandler(Exception)
 async def handle_error(err) -> Tuple[str, int]:
     """Return error as text."""
