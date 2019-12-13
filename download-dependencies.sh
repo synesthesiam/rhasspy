@@ -47,7 +47,7 @@ fi
 # -----------------------------------------------------------------------------
 
 function maybe_download {
-    if [[ ! -f "$2" ]]; then
+    if [[ ! -s "$2" ]]; then
         if [[ -n "${offline}" ]]; then
             echo "Need to download $1 but offline."
             exit 1

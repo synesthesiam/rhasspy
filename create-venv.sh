@@ -76,14 +76,14 @@ trap cleanup EXIT
 # -----------------------------------------------------------------------------
 
 function maybe_download {
-    if [[ ! -f "$2" ]]; then
+    if [[ ! -s "$2" ]]; then
         if [[ -n "${offline}" ]]; then
             echo "Need to download $1 but offline."
             exit 1
         fi
 
         mkdir -p "$(dirname "$2")"
-        curl -sSfL -o "$2" "$1"
+        curl -sSfL -o "$2" "$1" || { echo "Can't download $1"; exit 1; }
         echo "$1 => $2"
     fi
 }
@@ -245,11 +245,16 @@ if [[ -n "${no_google}" ]]; then
     sed -i '/^google-cloud-texttospeech/d' "${requirements_file}"
 fi
 
+# Install everything except openfst first
+sed -i '/^openfst/d' "${requirements_file}"
+python3 -m pip install -r "${requirements_file}"
+
+# Install Python openfst wrapper
 "${PYTHON}" -m pip install \
             --global-option=build_ext \
             --global-option="-I${venv}/include" \
             --global-option="-L${venv}/lib" \
-            -r "${requirements_file}"
+            -r <(grep '^openfst' "${this_dir}/requirements.txt")
 
 # -----------------------------------------------------------------------------
 # Pocketsphinx for Python
