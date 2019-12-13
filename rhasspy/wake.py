@@ -777,11 +777,10 @@ class PorcupineWakeListener(RhasspyActor):
             )
         )
         self.keyword_paths = [
-            self.profile.read_path(
-                self.profile.get(
-                    "wake.porcupine.keyword_path", "porcupine/porcupine.ppn"
-                ).split(",")
-            )
+            self.profile.read_path(p)
+            for p in self.profile.get(
+                "wake.porcupine.keyword_path", "porcupine/porcupine.ppn"
+            ).split(",")
         ]
         self.sensitivities = [
             [
