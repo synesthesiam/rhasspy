@@ -3,7 +3,7 @@
         <form class="form" v-on:submit.prevent="getIntent">
             <div class="form-group">
                 <div class="form-row text-muted">
-                    <p>Press and hold the "Hold to Record" button, speaking a command, then release the button to test.</p>
+                    <p>Press "Hold to Record", speak a command, then release</p>
                 </div>
                 <div class="form-row">
                     <div class="col-auto">
@@ -28,7 +28,7 @@
                         <input type="radio" name="microphone" id="rhasspy-microphone" value="rhasspy" v-model="microphone">
                         <label class="ml-2" for="rhasspy-microphone">
                             <i class="fas fa-crow"></i>
-                            Use Rhasspy's microphone
+                            Use Rhasspy microphone
                         </label>
                     </div>
                     <div class="col">
@@ -36,7 +36,7 @@
                                @click="getMicrophonePermission">
                         <label class="ml-2" for="browser-microphone">
                             <i class="fas fa-laptop"></i>
-                            Use this web browser's microphone
+                            Use browser microphone
                         </label>
                     </div>
                 </div>

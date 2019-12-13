@@ -1,8 +1,34 @@
-![Rhasspy logo](img/rhasspy.svg)
+<img src="img/rhasspy.svg" style="max-height: 200px;" title="Rhasspy logo">
 
 Rhasspy (pronounced RAH-SPEE) is an [open source](https://github.com/synesthesiam/rhasspy), fully offline voice assistant toolkit for [many languages](#supported-languages) that works well with [Home Assistant](https://www.home-assistant.io/), [Hass.io](https://www.home-assistant.io/hassio/), and [Node-RED](https://nodered.org).
 
-Rhasspy transforms voice commands into [JSON](https://json.org) events that can trigger actions in home automation software, like [Home Assistant automations](https://www.home-assistant.io/docs/automation/trigger/#event-trigger) or [Node-RED flows](usage.md#node-red). You define custom voice commands in a [profile](profiles.md) using a [specialized template syntax](training.md), and Rhasspy takes care of the rest.
+You specify voice commands in a [template language](training.md):
+
+```
+[LightState]
+states = (on | off)
+turn (<states>){state} [the] light
+```
+
+and Rhasspy will produce [JSON](https://json.org) events that can trigger actions in [home automation software](https://www.home-assistant.io/docs/automation/trigger/#event-trigger) or [Node-RED flows](usage.md#node-red):
+
+```json
+{
+    "text": "turn on the light",
+    "intent": {
+        "name": "LightState"
+    },
+    "slots": {
+        "state": "on"
+    }
+}
+```
+
+Rhasspy is <strong>optimized for</strong>:
+
+* Working with external services via [MQTT](usage.md#mqtt), [HTTP](usage.md#http-api), and [Websockets](usage.md#websocket-events)
+* Sets of voice commands that are described well [by a grammar](training.md#sentencesini)
+* Commands with [uncommon words or pronunciations](usage.md#words-tab)
 
 ## Motivation
 

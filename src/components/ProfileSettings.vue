@@ -4,11 +4,8 @@
             <div class="form-group">
                 <div class="form-row text-muted pl-1">
                     <p>
-                        This is a simplified interface to edit your <a href="https://rhasspy.readthedocs.io/en/latest/profiles/">your Rhasspy profile</a>. If you want to access the JSON directly, see <tt>profile.json</tt>.
+                        This is a simplified interface to edit your <a href="https://rhasspy.readthedocs.io/en/latest/profiles/">your Rhasspy profile</a>. If you want to access the JSON directly, see the Advanced tab or <tt>profile.json</tt>.
                     </p>
-                </div>
-                <div class="form-row pl-1">
-                    <p><strong>Restart required if changes are made</strong></p>
                 </div>
             </div>
 

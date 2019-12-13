@@ -155,6 +155,12 @@ Because Home Assistant will already handle your intent (probably using an [inten
 
 See `rhasspy.intent.HomeAssistantConversationRecognizer` for details.
 
+## MQTT/Hermes
+
+Publishes intent recognitions/failures to `hermes/intent/<INTENT_NAME>` or `hermes/nlu/intentNotRecognized` ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)). 
+
+This is enabled by default and controlled by the `mqtt.publish_intents` setting in your [profile](profiles.md).
+
 ## Command
 
 Recognizes intents from text using a custom external program.

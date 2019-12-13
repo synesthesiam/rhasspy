@@ -98,6 +98,12 @@ During speech recognition, 16-bit 16 kHz mono WAV data will be POST-ed to the en
 
 See `rhasspy.stt.RemoteDecoder` for details.
 
+## MQTT/Hermes
+
+Publishes transcriptions to `hermes/asr/textCaptured` ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)) each time a voice command is spoken.
+
+This is enabled by default.
+
 ## Command
 
 Calls a custom external program to do speech recognition.

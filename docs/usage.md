@@ -82,7 +82,7 @@ Rhasspy features a comprehensive HTTP API available at `/api`, documented with [
     
 See `public/swagger.yaml` in Rhasspy's repository for all available endpoints, or visit `/api` on your Rhasspy web server (e.g., [http://localhost:12101/api](http://localhost:12101/api)).
 
-## Secure Hosting with HTTPS
+### Secure Hosting with HTTPS
 
 If you need to access Rhasspy's web interface/API through HTTPS (formally SSL), you can provide a certificate and key file via command-line parameters or the Hass.io configuration.
 
@@ -134,6 +134,16 @@ For the `ChangLightState` intent from the [RGB Light Example](index.md#rgb-light
   }
 }
 ```
+
+## MQTT
+
+Rhasspy is able to interoperate with Snips.AI services using the [Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol) over [MQTT](http://mqtt.org). The following components are Hermes compatible:
+
+* [Microphone input](audio-input.md#mqtthermes)
+* [Wake word](wake-word.md#mqtthermes)
+* [Speech to text](speech-to-text.md#mqtthermes)
+* [Intent recognition](intent-recognition.md#mqtthermes)
+* [Audio output](audio-output.md#mqtthermes)
 
 ## Home Assistant
 
