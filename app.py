@@ -770,11 +770,13 @@ async def api_text_to_speech() -> str:
     """Speak a sentence with text to speech system."""
     global last_sentence
     repeat = request.args.get("repeat", "false").strip().lower() == "true"
+    language = request.args.get("language")
+    voice = request.args.get("voice")
     data = await request.data
     sentence = last_sentence if repeat else data.decode().strip()
 
     assert core is not None
-    await core.speak_sentence(sentence)
+    await core.speak_sentence(sentence, language=language, voice=voice)
 
     last_sentence = sentence
 

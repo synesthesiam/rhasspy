@@ -20,11 +20,18 @@ class SpeakSentence:
     """Request to speak a sentence."""
 
     def __init__(
-        self, sentence: str, receiver: Optional[RhasspyActor] = None, play: bool = True
+        self,
+        sentence: str,
+        receiver: Optional[RhasspyActor] = None,
+        play: bool = True,
+        voice: Optional[str] = None,
+        language: Optional[str] = None,
     ) -> None:
         self.sentence = sentence
         self.receiver = receiver
         self.play = play
+        self.voice = voice
+        self.language = language
 
 
 class SentenceSpoken:
@@ -112,7 +119,8 @@ class EspeakSentenceSpeaker(RhasspyActor):
         """Handle messages in ready state."""
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
-            self.wav_data = self.speak(message.sentence)
+            voice = message.voice or message.language or self.voice
+            self.wav_data = self.speak(message.sentence, voice=voice)
 
             if message.play:
                 self.transition("speaking")
@@ -129,12 +137,12 @@ class EspeakSentenceSpeaker(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def speak(self, sentence: str) -> bytes:
+    def speak(self, sentence: str, voice: Optional[str] = None) -> bytes:
         """Get WAV buffer for sentence."""
         try:
             espeak_cmd = ["espeak"]
-            if self.voice is not None:
-                espeak_cmd.extend(["-v", str(self.voice)])
+            if voice:
+                espeak_cmd.extend(["-v", str(voice)])
 
             espeak_cmd.append("--stdout")
             espeak_cmd.append(sentence)
@@ -184,7 +192,8 @@ class FliteSentenceSpeaker(RhasspyActor):
         """Handle messages in ready state."""
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
-            self.wav_data = self.speak(message.sentence)
+            voice = message.voice or message.language or self.voice
+            self.wav_data = self.speak(message.sentence, voice=voice)
 
             if message.play:
                 self.transition("speaking")
@@ -201,12 +210,12 @@ class FliteSentenceSpeaker(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def speak(self, sentence: str) -> bytes:
+    def speak(self, sentence: str, voice: Optional[str] = None) -> bytes:
         """Get WAV buffer for sentence."""
         try:
             flite_cmd = ["flite", "-t", sentence, "-o", "/dev/stdout"]
-            if len(self.voice) > 0:
-                flite_cmd.extend(["-voice", str(self.voice)])
+            if voice:
+                flite_cmd.extend(["-voice", str(voice)])
 
             self._logger.debug(flite_cmd)
 
@@ -261,7 +270,8 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
         """Handle messages in ready state."""
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
-            self.wav_data = self.speak(message.sentence)
+            language = message.language or message.voice or self.language
+            self.wav_data = self.speak(message.sentence, language=language)
 
             if message.play:
                 self.transition("speaking")
@@ -284,12 +294,12 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def speak(self, sentence: str) -> bytes:
+    def speak(self, sentence: str, language: Optional[str] = None) -> bytes:
         """Get WAV buffer for sentence."""
         try:
             pico_cmd = ["pico2wave", "-w", self.wav_path]
-            if len(self.language) > 0:
-                pico_cmd.extend(["-l", str(self.language)])
+            if language:
+                pico_cmd.extend(["-l", str(language)])
 
             pico_cmd.append(sentence)
             self._logger.debug(pico_cmd)
@@ -324,8 +334,8 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
     def __init__(self) -> None:
         RhasspyActor.__init__(self)
         self.url = ""
-        self.voice = None
-        self.locale = ""
+        self.voice: Optional[str] = None
+        self.locale: str = ""
         self.player: Optional[RhasspyActor] = None
         self.receiver: Optional[RhasspyActor] = None
         self.wav_data = bytes()
@@ -349,7 +359,9 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
         """Handle messages in ready state."""
         if isinstance(message, SpeakSentence):
             self.receiver = message.receiver or sender
-            self.wav_data = self.speak(message.sentence)
+            voice = message.voice or self.voice
+            locale = message.language or self.locale or "en-US"
+            self.wav_data = self.speak(message.sentence, locale, voice=voice)
 
             if message.play:
                 self.transition("speaking")
@@ -366,7 +378,7 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def speak(self, sentence: str) -> bytes:
+    def speak(self, sentence: str, locale: str, voice: Optional[str] = None) -> bytes:
         """Get WAV buffer for sentence."""
         try:
             params = {
@@ -374,11 +386,11 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
                 "INPUT_TYPE": "TEXT",
                 "AUDIO": "WAVE",
                 "OUTPUT_TYPE": "AUDIO",
-                "LOCALE": self.locale,
+                "LOCALE": locale,
             }
 
-            if self.voice is not None:
-                params["VOICE"] = self.voice
+            if voice is not None:
+                params["VOICE"] = voice
 
             self._logger.debug(params)
 
@@ -544,7 +556,9 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
             self.wav_data = bytes()
             self.receiver = message.receiver or sender
             try:
-                self.wav_data = self.speak(message.sentence)
+                voice = message.voice or self.voice
+                language_code = message.language or self.language_code
+                self.wav_data = self.speak(message.sentence, voice, language_code)
 
                 if message.play:
                     self.transition("speaking")
@@ -565,7 +579,12 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
                     self.transition("speaking")
                     self.send(
                         self.fallback_actor,
-                        SpeakSentence(message.sentence, play=message.play),
+                        SpeakSentence(
+                            message.sentence,
+                            play=message.play,
+                            voice=message.voice,
+                            language=message.language,
+                        ),
                     )
                 except Exception:
                     # Give up
@@ -587,10 +606,10 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def speak(self, sentence: str) -> bytes:
+    def speak(self, sentence: str, voice: str, language_code: str) -> bytes:
         """Get WAV buffer for sentence."""
         # Try to pull WAV from cache first
-        sentence_hash = self._get_sentence_hash(sentence)
+        sentence_hash = self._get_sentence_hash(sentence, voice, language_code)
         cached_wav_path = os.path.join(
             self.cache_dir, "{}.wav".format(sentence_hash.hexdigest())
         )
@@ -618,8 +637,8 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
 
         self._logger.debug(
             "Calling Wavenet (lang=%s, voice=%s, gender=%s, rate=%s)",
-            self.language_code,
-            self.voice,
+            language_code,
+            voice,
             self.gender,
             self.sample_rate,
         )
@@ -628,16 +647,16 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
 
         client = texttospeech.TextToSpeechClient()
         synthesis_input = texttospeech.types.SynthesisInput(text=sentence)
-        voice = texttospeech.types.VoiceSelectionParams(
-            language_code=self.language_code,
-            name=self.language_code + "-" + self.voice,
+        voice_params = texttospeech.types.VoiceSelectionParams(
+            language_code=language_code,
+            name=language_code + "-" + voice,
             ssml_gender=self.gender,
         )
         audio_config = texttospeech.types.AudioConfig(
             audio_encoding="LINEAR16", sample_rate_hertz=self.sample_rate
         )
 
-        response = client.synthesize_speech(synthesis_input, voice, audio_config)
+        response = client.synthesize_speech(synthesis_input, voice_params, audio_config)
 
         # Save to cache
         with open(cached_wav_path, "wb") as cached_wav_file:
@@ -647,17 +666,17 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
 
     # -------------------------------------------------------------------------
 
-    def _get_sentence_hash(self, sentence: str):
+    def _get_sentence_hash(self, sentence: str, voice: str, language_code: str):
         """Get hash for cache."""
         m = hashlib.md5()
         m.update(
             "_".join(
                 [
                     sentence,
-                    self.language_code + "-" + self.voice,
+                    language_code + "-" + voice,
                     self.gender,
                     str(self.sample_rate),
-                    self.language_code,
+                    language_code,
                 ]
             ).encode("utf-8")
         )

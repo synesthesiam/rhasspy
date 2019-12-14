@@ -367,6 +367,16 @@ paths:
           schema:
             type: boolean
             default: false
+        - in: query
+          name: voice
+          description: 'Override default voice'
+          schema:
+            type: string
+        - in: query
+          name: language
+          description: 'Override default language'
+          schema:
+            type: string
       responses:
         '200':
           description: OK
