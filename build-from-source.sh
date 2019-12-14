@@ -131,7 +131,7 @@ pocketsphinx_file="${download_dir}/pocketsphinx-python.tar.gz"
 if [[ ! -s "${pocketsphinx_file}" ]]; then
     pocketsphinx_url='https://github.com/synesthesiam/pocketsphinx-python/releases/download/v1.0/pocketsphinx-python.tar.gz'
     echo "Downloading pocketsphinx (${pocketsphinx_url})"
-    download "${pocketsphinx_url}" "${pocketsphinx_file}"
+    maybe_download "${pocketsphinx_url}" "${pocketsphinx_file}"
 fi
 
 # OpenFST
@@ -142,7 +142,7 @@ if [[ ! -d "${openfst_dir}/build" ]]; then
     if [[ ! -s "${openfst_file}" ]]; then
         openfst_url='http://openfst.org/twiki/pub/FST/FstDownload/openfst-1.6.9.tar.gz'
         echo "Downloading openfst (${openfst_url})"
-        download "${openfst_url}" "${openfst_file}"
+        maybe_download "${openfst_url}" "${openfst_file}"
     fi
 fi
 
@@ -154,7 +154,7 @@ if [[ ! -d "${opengrm_dir}/build" ]]; then
     if [[ ! -s "${opengrm_file}" ]]; then
         opengrm_url='http://www.opengrm.org/twiki/pub/GRM/NGramDownload/opengrm-ngram-1.3.4.tar.gz'
         echo "Downloading opengrm (${opengrm_url})"
-        download "${opengrm_url}" "${opengrm_file}"
+        maybe_download "${opengrm_url}" "${opengrm_file}"
     fi
 fi
 
@@ -166,7 +166,7 @@ if [[ ! -d "${phonetisaurus_dir}/build" ]]; then
     if [[ ! -s "${phonetisaurus_file}" ]]; then
         phonetisaurus_url='https://github.com/synesthesiam/phonetisaurus-2019/releases/download/v1.0/phonetisaurus-2019.tar.gz'
         echo "Downloading phonetisaurus (${phonetisaurus_url})"
-        download "${phonetisaurus_url}" "${phonetisaurus_file}"
+        maybe_download "${phonetisaurus_url}" "${phonetisaurus_file}"
     fi
 fi
 
@@ -180,7 +180,7 @@ if [[ ! -d "${kaldi_dir}" ]]; then
     if [[ ! -s "${kaldi_file}" ]]; then
         kaldi_url='https://github.com/kaldi-asr/kaldi/archive/master.tar.gz'
         echo "Downloading kaldi (${kaldi_url})"
-        download "${kaldi_url}" "${kaldi_file}"
+        maybe_download "${kaldi_url}" "${kaldi_file}"
     fi
 fi
 
