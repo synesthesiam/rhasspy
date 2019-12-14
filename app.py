@@ -897,7 +897,11 @@ async def marytts_process():
 
     assert core is not None
     sentence = request.args.get("INPUT_TEXT", "")
-    spoken = await core.speak_sentence(sentence, play=False)
+    voice = request.args.get("VOICE")
+    locale = request.args.get("LOCALE")
+    spoken = await core.speak_sentence(
+        sentence, play=False, voice=voice, language=locale
+    )
 
     return spoken.wav_data
 
