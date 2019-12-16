@@ -11,8 +11,16 @@ from pathlib import Path
 from typing import Any, List, Tuple, Union
 from uuid import uuid4
 
-from quart import (Quart, Response, jsonify, request, safe_join, send_file,
-                   send_from_directory, websocket)
+from quart import (
+    Quart,
+    Response,
+    jsonify,
+    request,
+    safe_join,
+    send_file,
+    send_from_directory,
+    websocket,
+)
 from quart_cors import cors
 from swagger_ui import quart_api_doc
 
@@ -20,16 +28,20 @@ from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
 from rhasspy.dialogue import ProfileTrainingFailed
 from rhasspy.intent import IntentRecognized
-from rhasspy.utils import (FunctionLoggingHandler, buffer_to_wav,
-                           get_wav_duration, load_phoneme_examples, read_dict,
-                           recursive_remove)
+from rhasspy.utils import (
+    FunctionLoggingHandler,
+    buffer_to_wav,
+    get_wav_duration,
+    load_phoneme_examples,
+    read_dict,
+    recursive_remove,
+)
 
 # -----------------------------------------------------------------------------
-# Flask Web App Setup
+# Quart Web App Setup
 # -----------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
 
 loop = asyncio.get_event_loop()
 
@@ -70,8 +82,19 @@ parser.add_argument(
 parser.add_argument(
     "--ssl", nargs=2, help="Use SSL with <CERT_FILE <KEY_FILE>", default=None
 )
+parser.add_argument(
+    "--log-level", default="INFO", help="Set logging level"
+)
 
 args = parser.parse_args()
+
+# Set log level
+log_level = getattr(
+    logging, args.log_level.upper()
+)
+logging.basicConfig(level=log_level)
+
+
 logger.debug(args)
 
 system_profiles_dir = os.path.abspath(args.system_profiles)
@@ -444,9 +467,7 @@ async def api_sentences():
 
         # Update sentences.ini only
         sentences_path = Path(
-            core.profile.write_path(
-                core.profile.get("speech_to_text.sentences_ini")
-            )
+            core.profile.write_path(core.profile.get("speech_to_text.sentences_ini"))
         )
 
         data = await request.data
