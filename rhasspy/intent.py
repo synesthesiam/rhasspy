@@ -12,7 +12,7 @@ from urllib.parse import urljoin
 import networkx as nx
 import pydash
 import requests
-from rhasspynlu import recognize, json_to_graph
+from rhasspynlu import json_to_graph, recognize
 
 from rhasspy.actor import RhasspyActor
 from rhasspy.tts import SpeakSentence

@@ -7,8 +7,8 @@ import struct
 import subprocess
 import threading
 import time
-from typing import Any, Dict, Iterable, List, Optional, Type
 from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
 from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming

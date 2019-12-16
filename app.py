@@ -11,16 +11,8 @@ from pathlib import Path
 from typing import Any, List, Tuple, Union
 from uuid import uuid4
 
-from quart import (
-    Quart,
-    Response,
-    jsonify,
-    request,
-    safe_join,
-    send_file,
-    send_from_directory,
-    websocket,
-)
+from quart import (Quart, Response, jsonify, request, safe_join, send_file,
+                   send_from_directory, websocket)
 from quart_cors import cors
 from swagger_ui import quart_api_doc
 
@@ -28,14 +20,9 @@ from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
 from rhasspy.dialogue import ProfileTrainingFailed
 from rhasspy.intent import IntentRecognized
-from rhasspy.utils import (
-    FunctionLoggingHandler,
-    buffer_to_wav,
-    load_phoneme_examples,
-    recursive_remove,
-    get_wav_duration,
-    read_dict,
-)
+from rhasspy.utils import (FunctionLoggingHandler, buffer_to_wav,
+                           get_wav_duration, load_phoneme_examples, read_dict,
+                           recursive_remove)
 
 # -----------------------------------------------------------------------------
 # Flask Web App Setup
@@ -454,18 +441,18 @@ async def api_sentences():
             return "Wrote {} char(s) to {}".format(
                 num_chars, [str(p) for p in paths_written]
             )
-        else:
-            # Update sentences.ini only
-            sentences_path = Path(
-                core.profile.write_path(
-                    core.profile.get("speech_to_text.sentences_ini")
-                )
-            )
 
-            data = await request.data
-            with open(sentences_path, "wb") as sentences_file:
-                sentences_file.write(data)
-                return "Wrote {} byte(s) to {}".format(len(data), sentences_path)
+        # Update sentences.ini only
+        sentences_path = Path(
+            core.profile.write_path(
+                core.profile.get("speech_to_text.sentences_ini")
+            )
+        )
+
+        data = await request.data
+        with open(sentences_path, "wb") as sentences_file:
+            sentences_file.write(data)
+            return "Wrote {} byte(s) to {}".format(len(data), sentences_path)
 
     # GET
     sentences_path_rel = core.profile.read_path(
@@ -1082,12 +1069,14 @@ quart_api_doc(
 
 
 def prefers_json() -> bool:
+    """True if client prefers JSON over plain text."""
     return quality(request.accept_mimetypes, "application/json") > quality(
         request.accept_mimetypes, "text/plain"
     )
 
 
 def quality(accept, key: str) -> float:
+    """Return Accept quality for media type."""
     for option in accept.options:
         if accept._values_match(key, option.value):
             return option.quality
