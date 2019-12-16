@@ -82,16 +82,12 @@ parser.add_argument(
 parser.add_argument(
     "--ssl", nargs=2, help="Use SSL with <CERT_FILE <KEY_FILE>", default=None
 )
-parser.add_argument(
-    "--log-level", default="DEBUG", help="Set logging level"
-)
+parser.add_argument("--log-level", default="DEBUG", help="Set logging level")
 
 args = parser.parse_args()
 
 # Set log level
-log_level = getattr(
-    logging, args.log_level.upper()
-)
+log_level = getattr(logging, args.log_level.upper())
 logging.basicConfig(level=log_level)
 
 
@@ -521,7 +517,9 @@ async def api_custom_words():
     if request.method == "POST":
         custom_words_path = Path(
             core.profile.write_path(
-                core.profile.get(f"speech_to_text.{speech_system}.custom_words")
+                core.profile.get(
+                    f"speech_to_text.{speech_system}.custom_words", "custom_words.txt"
+                )
             )
         )
 
@@ -542,7 +540,9 @@ async def api_custom_words():
 
     custom_words_path = Path(
         core.profile.read_path(
-            core.profile.get(f"speech_to_text.{speech_system}.custom_words")
+            core.profile.get(
+                f"speech_to_text.{speech_system}.custom_words", "custom_words.txt"
+            )
         )
     )
 
@@ -754,7 +754,9 @@ async def api_unknown_words() -> Response:
     unknown_words = {}
     unknown_path = Path(
         core.profile.read_path(
-            core.profile.get(f"speech_to_text.{speech_system}.unknown_words")
+            core.profile.get(
+                f"speech_to_text.{speech_system}.unknown_words", "unknown_words.txt"
+            )
         )
     )
 

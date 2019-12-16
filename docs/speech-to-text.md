@@ -104,6 +104,34 @@ Publishes transcriptions to `hermes/asr/textCaptured` ([Hermes protocol](https:/
 
 This is enabled by default.
 
+## Home Assistant STT Platform
+
+Use an [STT platform](https://www.home-assistant.io/integrations/stt) on your Home Assistant server.
+This is the same way [Ada](https://github.com/home-assistant/ada) sends speech to Home Assistant.
+
+Add to your [profile](profiles.md):
+
+```json
+"speech_to_text": {
+  "system": "hass_stt",
+  "hass_stt": {
+    "platform": "...",
+    "sample_rate": 16000,
+    "bit_size": 16,
+    "channels": 1,
+    "language": "en-US"
+  }
+}
+```
+
+The settings from your profile's `home_assistant` section are automatically used (URL, access token, etc.).
+
+Rhasspy will convert audio to the configured format before streaming it to Home Assistant.
+In the future, this will be auto-detected from the STT platform API.
+
+See `rhasspy.stt.HomeAssistantSTTIntegration` for details.
+
+
 ## Command
 
 Calls a custom external program to do speech recognition.

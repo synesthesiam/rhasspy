@@ -207,7 +207,6 @@ if [[ ! -d "${openfst_dir}/build" ]]; then
         ./configure "--prefix=${openfst_dir}/build" \
                     --enable-far \
                     --disable-static \
-                    --disable-bin \
                     --enable-shared \
                     --enable-ngram-fsts && \
         make -j "${make_threads}" && \

@@ -13,8 +13,7 @@ import threading
 import wave
 from collections import defaultdict
 from pathlib import Path
-from typing import (Any, Callable, Dict, Iterable, List, Mapping, Optional,
-                    Set, Tuple)
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
 import pywrapfst as fst
 from num2words import num2words
@@ -150,7 +149,7 @@ def buffer_to_wav(buffer: bytes) -> bytes:
         return wav_buffer.getvalue()
 
 
-def convert_wav(wav_data: bytes) -> bytes:
+def convert_wav(wav_data: bytes, rate=16000, width=16, channels=1) -> bytes:
     """Converts WAV data to 16-bit, 16Khz mono with sox."""
     return subprocess.run(
         [
@@ -159,13 +158,13 @@ def convert_wav(wav_data: bytes) -> bytes:
             "wav",
             "-",
             "-r",
-            "16000",
+            str(rate),
             "-e",
             "signed-integer",
             "-b",
-            "16",
+            str(width),
             "-c",
-            "1",
+            str(channels),
             "-t",
             "wav",
             "-",
@@ -176,17 +175,16 @@ def convert_wav(wav_data: bytes) -> bytes:
     ).stdout
 
 
-def maybe_convert_wav(wav_data: bytes) -> bytes:
+def maybe_convert_wav(wav_data: bytes, rate=16000, width=16, channels=1) -> bytes:
     """Converts WAV data to 16-bit, 16Khz mono if necessary."""
     with io.BytesIO(wav_data) as wav_io:
         with wave.open(wav_io, "rb") as wav_file:
-            rate, width, channels = (
-                wav_file.getframerate(),
-                wav_file.getsampwidth(),
-                wav_file.getnchannels(),
-            )
-            if (rate != 16000) or (width != 2) or (channels != 1):
-                return convert_wav(wav_data)
+            if (
+                (wav_file.getframerate() != rate)
+                or (wav_file.getsampwidth() != width)
+                or (wav_file.getnchannels() != channels)
+            ):
+                return convert_wav(wav_data, rate=rate, width=width, channels=channels)
 
             return wav_file.readframes(wav_file.getnframes())
 

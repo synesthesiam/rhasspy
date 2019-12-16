@@ -94,6 +94,64 @@
                     </div>
                 </div>
             </div>
+            <hr>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="stt-system" id="stt-system-hass_stt" value="hass_stt" v-model="profile.speech_to_text.system">
+                        <label class="form-check-label" for="stt-system-hass_stt">
+                            Use a Home Assistant <a href="https://www.home-assistant.io/integrations/stt">STT Platform</a>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="stt-hass-platform" class="col-form-label">STT Platform Name</label>
+                    <div class="col">
+                        <input id="stt-hass-platform" type="text" class="form-control" v-model="profile.speech_to_text.hass_stt.platform" :disabled="profile.speech_to_text.system != 'hass_stt'">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="col text-muted">
+                        Rhasspy will stream audio to: {{ profile.home_assistant.url }}api/stt/{{ profile.speech_to_text.hass_stt.platform }}
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="stt-hass-rate" class="col-form-label">Sample Rate</label>
+                    <div class="col">
+                        <input id="stt-hass-rate" type="text" class="form-control" v-model="profile.speech_to_text.hass_stt.sample_rate" :disabled="profile.speech_to_text.system != 'hass_stt'">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="stt-hass-bitsize" class="col-form-label">Bit Size</label>
+                    <div class="col">
+                        <input id="stt-hass-bitsize" type="text" class="form-control" v-model="profile.speech_to_text.hass_stt.bit_size" :disabled="profile.speech_to_text.system != 'hass_stt'">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="stt-hass-channels" class="col-form-label">Channels</label>
+                    <div class="col">
+                        <input id="stt-hass-channels" type="text" class="form-control" v-model="profile.speech_to_text.hass_stt.channels" :disabled="profile.speech_to_text.system != 'hass_stt'">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="stt-hass-language" class="col-form-label">Language</label>
+                    <div class="col">
+                        <input id="stt-hass-language" type="text" class="form-control" v-model="profile.speech_to_text.hass_stt.language" :disabled="profile.speech_to_text.system != 'hass_stt'">
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
