@@ -377,6 +377,12 @@ paths:
           description: 'Override default language'
           schema:
             type: string
+        - in: query
+          name: play
+          description: 'Speak if true, return WAV data if false'
+          schema:
+            type: boolean
+            default: true
       responses:
         '200':
           description: OK
@@ -469,8 +475,51 @@ paths:
             default: false
       responses:
         '200':
-          description: Log
+          description: OK
           content:
             text/plain:
               schema:
                 type: string
+  /api/slots:
+    get:
+      summary: 'Get all slot values'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+    post:
+      summary: 'Add to or overwrite slot values'
+      requestBody:
+        description: 'JSON with slot names and value lists'
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      parameters:
+        - in: query
+          name: overwrite_all
+          description: 'True if slots in JSON should be overwritten'
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+  /api/version:
+    get:
+      summary: 'Get Rhasspy version'
+      produces:
+        - text/plain
+      responses:
+        '200':
+          description: Version
+          schema:
+            type: string

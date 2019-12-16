@@ -84,12 +84,7 @@ If all is well, the web interface will be available at [http://localhost:12101](
 
 At its core, Rhasspy requires:
 
-* Linux
-* Python 3.6
-* [Flask](https://pypi.org/project/Flask/) web server, including
-    * [flask-swagger-ui](https://pypi.org/project/flask-swagger-ui/) for HTTP API documentation
-    * [Flask-Cors](https://pypi.org/project/Flask-Cors/) for [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) stuff
-    * [Flask-Sockets](https://pypi.org/project/Flask-Sockets/) for websocket support
-* [pydash](https://pypi.org/project/pydash/) utility library
+* Linux (preferrably Debian)
+* Python 3.6 or higher
 
 To actually use any components, however, requires a lot of [extra software](about.md#supporting-tools).

@@ -770,15 +770,22 @@ async def api_text_to_speech() -> str:
     """Speak a sentence with text to speech system."""
     global last_sentence
     repeat = request.args.get("repeat", "false").strip().lower() == "true"
+    play = request.args.get("play", "true").strip().lower() == "true"
     language = request.args.get("language")
     voice = request.args.get("voice")
     data = await request.data
     sentence = last_sentence if repeat else data.decode().strip()
 
     assert core is not None
-    await core.speak_sentence(sentence, language=language, voice=voice)
+    result = await core.speak_sentence(
+        sentence, play=play, language=language, voice=voice
+    )
 
     last_sentence = sentence
+
+    if not play:
+        # Return WAV data instead of speaking
+        return result.wav_data
 
     return sentence
 
@@ -791,13 +798,15 @@ async def api_slots() -> Union[str, Response]:
     """Get the values of all slots."""
     assert core is not None
 
-    slots_dir = Path(
-        core.profile.read_path(core.profile.get("speech_to_text.slots_dir"))
-    )
-
     if request.method == "POST":
         overwrite_all = request.args.get("overwrite_all", "false").lower() == "true"
         new_slot_values = await request.json
+
+        slots_dir = Path(
+            core.profile.write_path(
+                core.profile.get("speech_to_text.slots_dir", "slots")
+            )
+        )
 
         if overwrite_all:
             # Remote existing values first
@@ -813,17 +822,13 @@ async def api_slots() -> Union[str, Response]:
             if isinstance(values, str):
                 values = [values]
 
-            slots_path = Path(
-                core.profile.write_path(
-                    core.profile.get("speech_to_text.slots_dir", "slots"), f"{name}"
-                )
-            )
+            slots_path = slots_dir / name
 
             # Create directories
             slots_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Write data
-            with open(slots_path, "w") as slots_file:
+            with open(slots_path, "a") as slots_file:
                 for value in values:
                     value = value.strip()
                     if value:
@@ -832,13 +837,19 @@ async def api_slots() -> Union[str, Response]:
         return "OK"
 
     # Read slots into dictionary
+    slots_dir = Path(
+        core.profile.read_path(core.profile.get("speech_to_text.slots_dir", "slots"))
+    )
+
     slots_dict = {}
-    for slot_file_path in slots_dir.glob("*"):
-        if slot_file_path.is_file():
-            slot_name = slot_file_path.name
-            slots_dict[slot_name] = [
-                line.strip() for line in slot_file_path.read_text().splitlines()
-            ]
+
+    if slots_dir.is_dir():
+        for slot_file_path in slots_dir.glob("*"):
+            if slot_file_path.is_file():
+                slot_name = slot_file_path.name
+                slots_dict[slot_name] = [
+                    line.strip() for line in slot_file_path.read_text().splitlines()
+                ]
 
     return jsonify(slots_dict)
 
