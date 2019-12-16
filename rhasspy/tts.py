@@ -12,6 +12,7 @@ import requests
 
 from rhasspy.actor import Configured, ConfigureEvent, RhasspyActor
 from rhasspy.audio_player import PlayWavData, WavPlayed
+from rhasspy.utils import hass_request_kwargs
 
 # -----------------------------------------------------------------------------
 
@@ -54,6 +55,7 @@ def get_speech_class(system: str) -> Type[RhasspyActor]:
         "picotts",
         "command",
         "wavenet",
+        "hass_tts",
     ], ("Invalid text to speech system: %s" % system)
 
     if system == "espeak":
@@ -74,6 +76,9 @@ def get_speech_class(system: str) -> Type[RhasspyActor]:
     if system == "wavenet":
         # Use WaveNet text-to-speech system
         return GoogleWaveNetSentenceSpeaker
+    if system == "hass_tts":
+        # Use Home Assistant TTS platform
+        return HomeAssistantSentenceSpeaker
 
     # Use dummy as a fallback
     return DummySentenceSpeaker
@@ -682,3 +687,133 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
         )
 
         return m
+
+
+# -----------------------------------------------------------------------------
+# HomeAssistant TTS
+# https://www.home-assistant.io/integrations/tts
+# -----------------------------------------------------------------------------
+
+
+class HomeAssistantSentenceSpeaker(RhasspyActor):
+    """Use Home Assistant TTS platform to generate speech"""
+
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.command: List[str] = []
+        self.hass_config: Dict[str, Any] = {}
+        self.pem_file: Optional[str] = ""
+        self.platform: Optional[str] = None
+
+        self.player: Optional[RhasspyActor] = None
+        self.receiver: Optional[RhasspyActor] = None
+        self.wav_data = bytes()
+
+    def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
+        self.hass_config = self.profile.get("home_assistant", {})
+
+        # PEM file for self-signed HA certificates
+        self.pem_file = self.hass_config.get("pem_file", "")
+        if self.pem_file:
+            self.pem_file = os.path.expandvars(self.pem_file)
+            self._logger.debug("Using PEM file at %s", self.pem_file)
+        else:
+            self.pem_file = None  # disabled
+
+        self.platform = self.profile.get("text_to_speech.hass_tts.platform")
+
+        self.player = self.config["player"]
+        self.transition("ready")
+
+    def in_ready(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in ready state."""
+        if isinstance(message, SpeakSentence):
+            self.receiver = message.receiver or sender
+            self.wav_data = self.speak(message.sentence)
+
+            if message.play:
+                self.transition("speaking")
+                self.send(self.player, PlayWavData(self.wav_data))
+            else:
+                self.transition("ready")
+                self.send(self.receiver, SentenceSpoken(self.wav_data))
+
+    def in_speaking(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in speaking state."""
+        if isinstance(message, WavPlayed):
+            self.transition("ready")
+            self.send(self.receiver, SentenceSpoken(self.wav_data))
+
+    # -------------------------------------------------------------------------
+
+    def speak(self, sentence: str) -> bytes:
+        """Get WAV buffer for sentence."""
+        try:
+            tts_url = urljoin(self.hass_config["url"], "api/tts_get_url")
+
+            # Send to Home Assistant
+            kwargs = hass_request_kwargs(self.hass_config, self.pem_file)
+            kwargs["json"] = {"platform": self.platform, "message": sentence}
+
+            if self.pem_file is not None:
+                kwargs["verify"] = self.pem_file
+
+            # POST to /api/tts_get_url
+            response = requests.post(tts_url, **kwargs)
+            response.raise_for_status()
+
+            response_json = response.json()
+            self._logger.debug(response_json)
+
+            # Download MP3
+            audio_url = response_json["url"]
+            kwargs = hass_request_kwargs(self.hass_config, self.pem_file)
+
+            if self.pem_file is not None:
+                kwargs["verify"] = self.pem_file
+
+            # GET audio data
+            response = requests.get(audio_url, **kwargs)
+            response.raise_for_status()
+
+            audio_bytes = response.content
+            self._logger.debug("Received %s byte(s) of audio data", len(audio_bytes))
+
+            # Convert to WAV
+            if audio_url.endswith(".mp3"):
+                lame_command = ["lame", "--decode", "-", "-"]
+                self._logger.debug(lame_command)
+
+                return subprocess.check_output(lame_command, input=mp3_bytes)
+
+            # Assume WAV
+            return audio_bytes
+        except Exception:
+            self._logger.exception("speak")
+            return bytes()
+
+    def get_problems(self) -> Dict[str, Any]:
+        """Get problems at startup."""
+        problems: Dict[str, Any] = {}
+
+        if not shutil.which("lame"):
+            problems[
+                "Missing LAME MP3 encoding"
+            ] = "LAME MP3 encoder is not installed. Try apt-get install lame"
+
+        if not self.platform:
+            problems[
+                "Missing platform name"
+            ] = "Expected Home Assistant TTS platform name in text_to_speech.hass_tts.platform"
+
+        api_url = urljoin(self.hass_config["url"], "api/")
+        try:
+            kwargs = hass_request_kwargs(self.hass_config, self.pem_file)
+            requests.get(api_url, **kwargs)
+        except Exception:
+            problems[
+                "Can't contact server"
+            ] = f"Unable to reach your Home Assistant at {api_url}. Is it running?"
+
+        return problems

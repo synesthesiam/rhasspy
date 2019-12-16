@@ -119,7 +119,8 @@ if [[ -z "${no_system}" ]]; then
          gfortran \
          sphinxbase-utils sphinxtrain pocketsphinx \
          jq checkinstall unzip xz-utils \
-         curl
+         curl \
+         lame
 fi
 
 # -----------------------------------------------------------------------------
@@ -216,6 +217,7 @@ fi
 # Copy build artifacts into virtual environment
 cp -R "${openfst_dir}"/build/include/* "${venv}/include/"
 cp -R "${openfst_dir}"/build/lib/*.so* "${venv}/lib/"
+cp -R "${openfst_dir}"/build/bin/* "${venv}/bin/"
 
 # -----------------------------------------------------------------------------
 # opengrm

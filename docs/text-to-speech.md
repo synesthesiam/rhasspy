@@ -143,6 +143,25 @@ Contributed by [Romkabouter](https://github.com/Romkabouter).
 
 See `rhasspy.tts.GoogleWaveNetSentenceSpeaker` for details.
 
+## Home Assistant TTS Platform
+
+Use a [TTS platform](https://www.home-assistant.io/integrations/tts) on your Home Assistant server.
+
+Add to your [profile](profiles.md):
+
+```json
+"text_to_speech": {
+  "system": "hass_tts",
+  "hass_tts": {
+      "platform": "..."
+  }
+}
+```
+
+The settings from your profile's `home_assistant` section are automatically used (URL, access token, etc.).
+
+See `rhasspy.tts.HomeAssistantSentenceSpeaker` for details.
+
 ## Command
 
 You can extend Rhasspy easily with your own external text to speech system. When a sentence needs to be spoken, Rhasspy will call your custom program with the text given on standard in. Your program should return the corresponding WAV data on standard out.
