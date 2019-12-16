@@ -83,7 +83,7 @@ parser.add_argument(
     "--ssl", nargs=2, help="Use SSL with <CERT_FILE <KEY_FILE>", default=None
 )
 parser.add_argument(
-    "--log-level", default="INFO", help="Set logging level"
+    "--log-level", default="DEBUG", help="Set logging level"
 )
 
 args = parser.parse_args()

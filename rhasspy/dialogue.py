@@ -218,6 +218,9 @@ class DialogueManager(RhasspyActor):
         self._wake: Optional[RhasspyActor] = None
         self.wake_receiver: Optional[RhasspyActor] = None
 
+        # Name of most recently detected wake word
+        self.wake_detected_name: Optional[str] = None
+
         # Word pronunciations
         self.word_pronouncer_class: Optional[Type] = None
         self._word_pronouncer: Optional[RhasspyActor] = None
@@ -416,6 +419,7 @@ class DialogueManager(RhasspyActor):
         """Handle messages in asleep state."""
         if isinstance(message, WakeWordDetected):
             self._logger.debug("Awake!")
+            self.wake_detected_name = message.name
             self.transition("awake")
             if self.wake_receiver is not None:
                 self.send(self.wake_receiver, message)
@@ -480,6 +484,7 @@ class DialogueManager(RhasspyActor):
                     "text": message.text,
                     "likelihood": 1,
                     "seconds": 0,
+                    "wakeId": self.wake_detected_name or ""
                 }
             ).encode()
 
@@ -509,6 +514,9 @@ class DialogueManager(RhasspyActor):
             if self.recorder_class == HTTPAudioRecorder:
                 # Forward to audio recorder
                 self.send(self.recorder, message)
+
+            message.intent["wakeId"] = self.wake_detected_name or ""
+            message.intent["siteId"] = self.site_id
 
             # Augment with extra entities
             entities = message.intent.get("entities", [])
