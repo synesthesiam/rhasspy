@@ -218,7 +218,9 @@ async def main() -> None:
     args = parser.parse_args()
 
     if args.debug:
-        logging.root.setLevel(logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
 
     profiles_dirs = [args.system_profiles, args.user_profiles]
     logger.debug(profiles_dirs)

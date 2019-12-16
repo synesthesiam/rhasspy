@@ -120,12 +120,17 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
 
     # Join ini files into a single combined file and parse
     _LOGGER.debug("Parsing ini file(s): %s", [str(p) for p in ini_paths])
-    with io.StringIO() as combined_ini_file:
-        for ini_path in ini_paths:
-            combined_ini_file.write(ini_path.read_text())
-            print("", file=combined_ini_file)
 
-        intents = parse_ini(combined_ini_file.getvalue())
+    try:
+        with io.StringIO() as combined_ini_file:
+            for ini_path in ini_paths:
+                combined_ini_file.write(ini_path.read_text())
+                print("", file=combined_ini_file)
+
+            intents = parse_ini(combined_ini_file.getvalue())
+    except Exception:
+        _LOGGER.exception("Failed to parse %s", ini_paths)
+        return (1, ["Failed to parse sentences"])
 
     # -----------------------------------------------------------------------------
 

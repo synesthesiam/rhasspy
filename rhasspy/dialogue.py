@@ -358,7 +358,7 @@ class DialogueManager(RhasspyActor):
                 self._logger.debug("%s started", sender_name)
 
             if len(self.wait_actors) == 0:
-                self._logger.info("Actors loaded")
+                self._logger.debug("Actors loaded")
                 self.transition("ready")
 
                 # Inform all actors that we're ready
