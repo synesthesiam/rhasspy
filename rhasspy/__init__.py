@@ -535,7 +535,7 @@ def _send_frame(
             mqtt_file.setframerate(rate)
             mqtt_file.setsampwidth(width)
             mqtt_file.setnchannels(channels)
-            mqtt_file.writeframesraw(audio_data)
+            mqtt_file.writeframes(audio_data)
 
         # Send audio frame WAV
         mqtt_payload = mqtt_buffer.getvalue()

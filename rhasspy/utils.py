@@ -145,7 +145,7 @@ def buffer_to_wav(buffer: bytes) -> bytes:
             wav_file.setframerate(16000)
             wav_file.setsampwidth(2)
             wav_file.setnchannels(1)
-            wav_file.writeframesraw(buffer)
+            wav_file.writeframes(buffer)
 
         return wav_buffer.getvalue()
 
