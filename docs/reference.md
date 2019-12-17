@@ -3,6 +3,7 @@
 * [Supported Languages](#supported-languages)
 * [HTTP API](#http-api)
 * [Websocket API](#websocket-api)
+* [MQTT API](#mqtt-api)
 * [Command Line](#command-line)
 * [Profile Settings](#profile-settings)
 
@@ -114,6 +115,16 @@ Application authors may want to use the [rhasspy-client](https://pypi.org/projec
     * Listen for recognized intents published as JSON
 * `/api/events/log`
     * Listen for log messages published as plain text
+
+## MQTT API
+
+Rhasspy implements part of the [Hermes](https://docs.snips.ai/reference/hermes) protocol. Various services of Rhasspy can be configured to pass along MQTT messages or to react to MQTT messages following the Hermes protocol.
+
+* `hermes/audioServer/<SITE_ID>/playBytes/<REQUEST_ID>`
+    * Rhasspy publishes 16 kHz, 16-bit mono audio to this topic.
+    * `SITE_ID` is set in Rhasspy's `mqtt` configuration.
+    * `REQUEST_ID` is generated using `uuid.uuid4` each time a sound is played.
+* More to follow
 
 ## Command Line
 
