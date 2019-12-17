@@ -17,9 +17,9 @@ Let's say you have an RGB light of some kind in your bedroom that's [hooked up a
           rgb_color: [255, 0, 0]
           entity_id: light.bedroom
           
-Now you just need the trigger! Rhasspy will send events that can be caught with the [event trigger platform](https://www.home-assistant.io/docs/automation/trigger/#event-trigger). A different event will be sent for each *intent* that you define, with slot values corresponding to important parts of the command (like light name and color). Let's start by defining an intent in Rhasspy called `ChangeLightColor` that can be said a few different ways:
+Now you just need the trigger! Rhasspy will send events that can be caught with the [event trigger platform](https://www.home-assistant.io/docs/automation/trigger/#event-trigger). A different event will be sent for each *intent* that you define, with slot values corresponding to important parts of the command (like light name and color). Let's start by defining an intent in Rhasspy called `ChangeLightState` that can be said a few different ways:
 
-    [ChangeLightColor]
+    [ChangeLightState]
     colors = (red | green | blue) {color}
     set [the] (bedroom){name} [to] <colors>
     
