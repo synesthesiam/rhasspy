@@ -482,7 +482,15 @@ async def api_sentences():
         # directory.
         sentences_dict = {}
         if sentences_path.is_file():
-            key = str(sentences_path.relative_to(core.profile.read_path()))
+            try:
+                # Try user profile dir first
+                profile_dir = Path(core.profile.user_profiles_dir) / core.profile.name
+                key = str(sentences_path.relative_to(profile_dir))
+            except Exception:
+                # Fall back to system profile dir
+                profile_dir = Path(core.profile.system_profiles_dir) / core.profile.name
+                key = str(sentences_path.relative_to(profile_dir))
+
             sentences_dict[key] = sentences_path.read_text()
 
         ini_dir = Path(
