@@ -27,7 +27,7 @@ See `rhasspy.audio_player.APlayAudioPlayer` for details.
 Publishes WAV data to the `hermes/audioServer/<SITE_ID>/playBytes/<REQUEST_ID>` topic ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)).
 This allows Rhasspy to send audio to [Snips.AI](https://snips.ai/).
 
-Rhasspy will always try to send 16 kHz, 16-bit mono audio.
+Rhasspy will by default send 16 kHz, 16-bit mono audio, unless specified otherwise.
 The request id is generated each time a sound is played using `uuid.uuid4`.
 
 Add to your [profile](profiles.md):
