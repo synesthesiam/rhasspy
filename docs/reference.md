@@ -3,6 +3,7 @@
 * [Supported Languages](#supported-languages)
 * [HTTP API](#http-api)
 * [Websocket API](#websocket-api)
+* [MQTT API](#mqtt-api)
 * [Command Line](#command-line)
 * [Profile Settings](#profile-settings)
 
@@ -114,6 +115,34 @@ Application authors may want to use the [rhasspy-client](https://pypi.org/projec
     * Listen for recognized intents published as JSON
 * `/api/events/log`
     * Listen for log messages published as plain text
+
+## MQTT API
+
+Rhasspy implements part of the [Hermes](https://docs.snips.ai/reference/hermes) protocol. Various services of Rhasspy can be configured to pass along MQTT messages or to react to MQTT messages following the Hermes protocol.
+
+* `hermes/audioServer/<SITE_ID>/playBytes/<REQUEST_ID>`
+    * Rhasspy publishes audio in WAV format to this topic. By default it is 16 kHz, 16-bit mono for compatibility reaons, but other types are possible too.
+    * `SITE_ID` is set in Rhasspy's `mqtt` configuration.
+    * `REQUEST_ID` is generated using `uuid.uuid4` each time a sound is played.
+* `hermes/audioServer/<SITE_ID>/audioFrame`
+    * Rhasspy listens to this topic for WAV data. Audio is automatically converted to 16 kHz, 16-bit mono audio and played.
+    * `SITE_ID` is set in Rhasspy's `mqtt` configuration.
+* `hermes/asr/startListening`
+    * Rhasspy wakes up and starts recording on receiving this topic.
+    * The payload is a JSON object with a `siteId` key that holds Rhasspy's site ID.
+* `hermes/asr/stopListening`
+    * Rhasspy stops recording and processes the voice command on receiving this topic.
+    * The payload is a JSON object with a `siteId` key that holds Rhasspy's site ID.
+* `hermes/intent/<INTENT_NAME>`
+    * Rhasspy publishes a message to this topic on recognition of an intent.
+    * The payload is a JSON object with the recognized intent, entities and text.
+* `hermes/nlu/intentNotRecognized`
+    * Rhasspy publishes a message to this topic when it doesn't recognize an intent.
+* `hermes/asr/textCaptured`
+    * Rhasspy publishes a transcription to this topic each time a voice command is recognized.
+* `hermes/hotword/<WAKEWORD_ID>/detected`
+    * Rhasspy wakes up when a message is received on this topic.
+* More to follow
 
 ## Command Line
 

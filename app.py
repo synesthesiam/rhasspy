@@ -482,7 +482,15 @@ async def api_sentences():
         # directory.
         sentences_dict = {}
         if sentences_path.is_file():
-            key = str(sentences_path.relative_to(core.profile.read_path()))
+            try:
+                # Try user profile dir first
+                profile_dir = Path(core.profile.user_profiles_dir) / core.profile.name
+                key = str(sentences_path.relative_to(profile_dir))
+            except Exception:
+                # Fall back to system profile dir
+                profile_dir = Path(core.profile.system_profiles_dir) / core.profile.name
+                key = str(sentences_path.relative_to(profile_dir))
+
             sentences_dict[key] = sentences_path.read_text()
 
         ini_dir = Path(
@@ -837,12 +845,18 @@ async def api_slots() -> Union[str, Response]:
             # Create directories
             slots_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Write data
-            with open(slots_path, "a") as slots_file:
-                for value in values:
-                    value = value.strip()
-                    if value:
-                        print(value, file=slots_file)
+            # Merge with existing values
+            values = set(values)
+            if slots_path.is_file():
+                values.update(line for line in slots_path.read_text().splitlines())
+
+            # Write merged values
+            if values:
+                with open(slots_path, "w") as slots_file:
+                    for value in values:
+                        value = value.strip()
+                        if value:
+                            print(value, file=slots_file)
 
         return "OK"
 

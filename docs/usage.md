@@ -54,6 +54,9 @@ Edit your [slots lists](training.md#slots-lists) as JSON (keys = slot names, val
 
 ![Web interface slots tab](img/web-slots.png)
 
+* New slot values will overwrite previous ones
+* Delete a slot by providing an empty list for its JSON key
+
 ### Words Tab
 
 Teach Rhasspy how to pronounce new words.
