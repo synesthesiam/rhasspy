@@ -135,7 +135,7 @@ Rhasspy implements part of the [Hermes](https://docs.snips.ai/reference/hermes) 
     * The payload is a JSON object with a `siteId` key that holds Rhasspy's site ID.
 * `hermes/intent/<INTENT_NAME>`
     * Rhasspy publishes a message to this topic on recognition of an intent.
-    The payload is a JSON object with the recognized intent, entities and text.
+    * The payload is a JSON object with the recognized intent, entities and text.
 * `hermes/nlu/intentNotRecognized`
     * Rhasspy publishes a message to this topic when it doesn't recognize an intent.
 * `hermes/asr/textCaptured`
