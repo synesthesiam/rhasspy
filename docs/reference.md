@@ -567,10 +567,12 @@ All available profile sections and settings are listed below:
         * `timeout_sec` - maximum number of seconds before stopping
 * `handle`
     * `system` - which intent handling system to use (`hass`, `command`, or `dummy`)
-    * `forward_to_hass` - true if intents are always forwarded to Home Assistant (even if `system` is `command`)
+    * `forward_to_hass` - true if intents are always forwarded to Home Assistant (even if `system` is `command` or `remote`)
     * `command` - configuration for external speech-to-text program
         * `program` - path to executable
         * `arguments` - list of arguments to pass to program
+    * `remote` - configuration for remote HTTP intent handler
+        * `url` - URL to POST intent JSON to and receive response JSON from
 * `mqtt` - configuration for MQTT ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
     * `enabled` - true if MQTT client should be started
     * `host` - MQTT host
@@ -580,10 +582,6 @@ All available profile sections and settings are listed below:
     * `reconnect_sec` - number of seconds before client will reconnect
     * `site_id` - ID of site ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
     * `publish_intents` - true if intents are published to MQTT
-* `tuning` - configuration for acoustic model tuning
-    * `system` - system for tuning (currently only `sphinxtrain`)
-    * `sphinxtrain` - configuration for [sphinxtrain](https://github.com/cmusphinx/sphinxtrain) based acoustic model tuning
-        * `mllr_matrix` - name of generated MLLR matrix (should match `speech_to_text.pocketsphinx.mllr_matrix`)
 * `download` - configuration for profile file downloading
     * `cache_dir` - directory in your profile where downloaded files are cached
     * `conditions` - profile settings that will trigger file downloads
