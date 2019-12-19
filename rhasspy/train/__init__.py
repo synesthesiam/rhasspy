@@ -59,17 +59,20 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
     g2p_model = ppath(f"{stt_prefix}.g2p_model", "g2p.fst")
     acoustic_model_type = stt_system
 
-    if acoustic_model_type == "pocketsphinx":
-        acoustic_model = ppath(f"{stt_prefix}.acoustic_model", "acoustic_model")
-        kaldi_dir = None
-    elif acoustic_model_type == "kaldi":
-        kaldi_dir = Path(
-            os.path.expandvars(profile.get(f"{stt_prefix}.kaldi_dir", "/opt/kaldi"))
-        )
-        kaldi_graph_dir = acoustic_model / profile.get(f"{stt_prefix}.graph", "graph")
+    # Pocketsphinx
+    acoustic_model = ppath(f"{stt_prefix}.acoustic_model", "acoustic_model")
+
+    # Kaldi
+    kaldi_dir = Path(
+        os.path.expandvars(profile.get(f"{stt_prefix}.kaldi_dir", "/opt/kaldi"))
+    )
+    kaldi_graph_dir = acoustic_model / profile.get(f"{stt_prefix}.graph", "graph")
+
+    if acoustic_model_type == "kaldi":
+        # Kaldi acoustic models are inside model directory
         acoustic_model = ppath(f"{stt_prefix}.model_dir", "model")
     else:
-        _LOGGER.warning("Unknown acoustic model type: %s", acoustic_model_type)
+        _LOGGER.warning("Unsupported acoustic model type: %s", acoustic_model_type)
 
     # ignore/upper/lower
     word_casing = profile.get("speech_to_text.dictionary_casing", "ignore").lower()

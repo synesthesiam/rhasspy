@@ -785,7 +785,7 @@ class HomeAssistantSentenceSpeaker(RhasspyActor):
                 lame_command = ["lame", "--decode", "-", "-"]
                 self._logger.debug(lame_command)
 
-                return subprocess.check_output(lame_command, input=mp3_bytes)
+                return subprocess.check_output(lame_command, input=audio_bytes)
 
             # Assume WAV
             return audio_bytes
