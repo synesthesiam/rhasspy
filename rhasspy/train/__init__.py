@@ -66,9 +66,10 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
         kaldi_dir = Path(
             os.path.expandvars(profile.get(f"{stt_prefix}.kaldi_dir", "/opt/kaldi"))
         )
+        kaldi_graph_dir = acoustic_model / profile.get(f"{stt_prefix}.graph", "graph")
         acoustic_model = ppath(f"{stt_prefix}.model_dir", "model")
     else:
-        assert False, f"Unknown acoustic model type: {acoustic_model_type}"
+        _LOGGER.warning("Unknown acoustic model type: %s", acoustic_model_type)
 
     # ignore/upper/lower
     word_casing = profile.get("speech_to_text.dictionary_casing", "ignore").lower()
@@ -78,9 +79,6 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
 
     # all/first
     dict_merge_rule = profile.get("speech_to_text.dictionary_merge_rule", "all").lower()
-
-    # Kaldi
-    kaldi_graph_dir = acoustic_model / profile.get(f"{stt_prefix}.graph", "graph")
 
     # Outputs
     dictionary = ppath(f"{stt_prefix}.dictionary", "dictionary.txt", write=True)
