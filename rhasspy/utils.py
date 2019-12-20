@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
 import pywrapfst as fst
+import rhasspynlu
 from num2words import num2words
 
 WHITESPACE_PATTERN = re.compile(r"\s+")
@@ -476,3 +477,37 @@ def hass_request_kwargs(
         kwargs["verify"] = pem_file
 
     return kwargs
+
+
+# -----------------------------------------------------------------------------
+
+
+def get_ini_paths(
+    sentences_ini: Path, sentences_dir: Optional[Path] = None
+) -> List[Path]:
+    """Get paths to all .ini files in profile."""
+    ini_paths: List[Path] = []
+    if sentences_ini.is_file():
+        ini_paths = [sentences_ini]
+
+    # Add .ini files from intents directory
+    if sentences_dir and sentences_dir.is_dir():
+        for ini_path in sentences_dir.rglob("*.ini"):
+            ini_paths.append(ini_path)
+
+    return ini_paths
+
+
+def get_all_intents(ini_paths: List[Path]) -> Dict[str, Any]:
+    """Get intents from all .ini files in profile."""
+    try:
+        with io.StringIO() as combined_ini_file:
+            for ini_path in ini_paths:
+                combined_ini_file.write(ini_path.read_text())
+                print("", file=combined_ini_file)
+
+            return rhasspynlu.parse_ini(combined_ini_file.getvalue())
+    except Exception:
+        _LOGGER.exception("Failed to parse %s", ini_paths)
+
+    return {}

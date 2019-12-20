@@ -29,7 +29,12 @@ from rhasspynlu import (
 
 from rhasspy.train.vocab_dict import make_dict, FORMAT_CMU, FORMAT_JULIUS
 from rhasspy.profiles import Profile
-from rhasspy.utils import ppath as utils_ppath, read_dict
+from rhasspy.utils import (
+    ppath as utils_ppath,
+    read_dict,
+    get_ini_paths,
+    get_all_intents,
+)
 
 _LOGGER = logging.getLogger("train")
 
@@ -110,25 +115,13 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
 
     # -----------------------------------------------------------------------------
 
-    ini_paths: List[Path] = []
-    if sentences_ini.is_file():
-        ini_paths = [sentences_ini]
-
-    # Add .ini files from intents directory
-    if sentences_dir.is_dir():
-        for ini_path in sentences_dir.rglob("*.ini"):
-            ini_paths.append(ini_path)
+    ini_paths: List[Path] = get_ini_paths(sentences_ini, sentences_dir)
 
     # Join ini files into a single combined file and parse
     _LOGGER.debug("Parsing ini file(s): %s", [str(p) for p in ini_paths])
 
     try:
-        with io.StringIO() as combined_ini_file:
-            for ini_path in ini_paths:
-                combined_ini_file.write(ini_path.read_text())
-                print("", file=combined_ini_file)
-
-            intents = parse_ini(combined_ini_file.getvalue())
+        intents = get_all_intents(ini_paths)
     except Exception:
         _LOGGER.exception("Failed to parse %s", ini_paths)
         return (1, ["Failed to parse sentences"])

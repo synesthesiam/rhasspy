@@ -7,8 +7,9 @@ import logging
 import os
 import re
 import time
+from collections import defaultdict
 from pathlib import Path
-from typing import Any, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 from uuid import uuid4
 
 from quart import (
@@ -23,6 +24,8 @@ from quart import (
 )
 from quart_cors import cors
 from swagger_ui import quart_api_doc
+import rhasspynlu
+import attr
 
 from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
@@ -35,6 +38,8 @@ from rhasspy.utils import (
     load_phoneme_examples,
     read_dict,
     recursive_remove,
+    get_ini_paths,
+    get_all_intents,
 )
 
 # -----------------------------------------------------------------------------
@@ -920,6 +925,55 @@ def api_slots_by_name(name: str) -> Union[str, Response]:
         slot_values = [line.strip() for line in slot_file_path.read_text().splitlines()]
 
     return jsonify(slot_values)
+
+
+# -----------------------------------------------------------------------------
+
+
+@app.route("/api/intents")
+def api_intents():
+    """Return JSON with information about intents."""
+    assert core is not None
+
+    sentences_ini = Path(
+        core.profile.read_path(core.profile.get("speech_to_text.sentences_ini"))
+    )
+
+    sentences_dir = Path(
+        core.profile.read_path(core.profile.get("speech_to_text.sentences_dir"))
+    )
+
+    # Load all .ini files and parse
+    ini_paths: List[Path] = get_ini_paths(sentences_ini, sentences_dir)
+    intents: Dict[str, Any] = get_all_intents(ini_paths)
+
+    def add_type(item, item_dict: Dict[str, Any]):
+        """Add item_type to expression dictionary."""
+        item_dict["item_type"] = type(item).__name__
+        if hasattr(item, "items"):
+            # Group, alternative, etc.
+            for sub_item, sub_item_dict in zip(item.items, item_dict["items"]):
+                add_type(sub_item, sub_item_dict)
+        elif hasattr(item, "rule_body"):
+            # Rule
+            add_type(item.rule_body, item_dict["rule_body"])
+
+    # Convert to dictionary
+    replacements = defaultdict(list)
+    intents_dict = {}
+    for intent_name, intent_sentences in intents.items():
+        sentence_dicts = []
+        for sentence in intent_sentences:
+            sentence_dict = attr.asdict(sentence)
+
+            # Add item_type field
+            add_type(sentence, sentence_dict)
+            sentence_dicts.append(sentence_dict)
+
+        intents_dict[intent_name] = sentence_dicts
+
+    # Convert to JSON
+    return jsonify(intents_dict)
 
 
 # -----------------------------------------------------------------------------

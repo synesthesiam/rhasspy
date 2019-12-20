@@ -523,3 +523,13 @@ paths:
           description: Version
           schema:
             type: string
+  /api/intents:
+    get:
+      summary: 'Get all defined intents'
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: intents
+          schema:
+            type: object
