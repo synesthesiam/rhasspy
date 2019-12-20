@@ -148,7 +148,7 @@
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="wake-system" id="wake-system-hermes" value="hermes" v-model="profile.wake.system">
                         <label class="form-check-label" for="wake-system-hermes">
-                            Wake up on MQTT message (<a href="https://docs.snips.ai/ressources/hermes-protocol">Hermes protocol</a>)
+                            Wake up on MQTT message (<a href="https://docs.snips.ai/reference/hermes">Hermes protocol</a>)
                         </label>
                     </div>
                 </div>

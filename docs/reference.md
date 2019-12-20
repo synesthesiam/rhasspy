@@ -534,7 +534,7 @@ All available profile sections and settings are listed below:
     * `stop_after` - one of "never", "text", or "intent" ([see documentation](audio-input.md#http-stream))
   * `gstreamer` - configuration for GStreamer audio recorder
     * `pipeline` - GStreamer pipeline (e.g., `FILTER ! FILTER ! ...`) without sink
-  * `hermes` - configuration for MQTT "microphone" ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
+  * `hermes` - configuration for MQTT "microphone" ([Hermes protocol](https://docs.snips.ai/reference/hermes))
     * Subscribes to WAV data from `hermes/audioServer/<SITE_ID>/audioFrame`
     * Requires MQTT to be enabled
 * `sounds` - configuration for feedback sounds from Rhasspy
@@ -543,7 +543,7 @@ All available profile sections and settings are listed below:
   * `recorded` - path to WAV file to play when a command finishes recording
   * `aplay` - configuration for ALSA speakers
     * `device` - name of ALSA device (see `aplay -L`) to use or empty for default device
-  * `hermes` - configuration for MQTT "speakers" ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
+  * `hermes` - configuration for MQTT "speakers" ([Hermes protocol](https://docs.snips.ai/reference/hermes))
     * WAV data published to `hermes/audioServer/<SITE_ID>/playBytes/<REQUEST_ID>`
     * Requires MQTT to be enabled
 * `command`
@@ -562,7 +562,7 @@ All available profile sections and settings are listed below:
   * `command` - configuration for external voice command program
     * `program` - path to executable
     * `arguments` - list of arguments to pass to program
-  * `hermes` - configuration for MQTT-based voice command system that listens betweens `startListening` and `stopListening` commands ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
+  * `hermes` - configuration for MQTT-based voice command system that listens betweens `startListening` and `stopListening` commands ([Hermes protocol](https://docs.snips.ai/reference/hermes))
     * `timeout_sec` - maximum number of seconds before stopping
 * `handle`
   * `system` - which intent handling system to use (`hass`, `command`, or `dummy`)
@@ -572,14 +572,14 @@ All available profile sections and settings are listed below:
     * `arguments` - list of arguments to pass to program
   * `remote` - configuration for remote HTTP intent handler
     * `url` - URL to POST intent JSON to and receive response JSON from
-* `mqtt` - configuration for MQTT ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
+* `mqtt` - configuration for MQTT ([Hermes protocol](https://docs.snips.ai/reference/hermes))
   * `enabled` - true if MQTT client should be started
   * `host` - MQTT host
   * `port` - MQTT port
   * `username` - MQTT username (blank for anonymous)
   * `password` - MQTT password
   * `reconnect_sec` - number of seconds before client will reconnect
-  * `site_id` - ID of site ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol))
+  * `site_id` - ID of site ([Hermes protocol](https://docs.snips.ai/reference/hermes))
   * `publish_intents` - true if intents are published to MQTT
 * `download` - configuration for profile file downloading
   * `cache_dir` - directory in your profile where downloaded files are cached

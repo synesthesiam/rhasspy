@@ -52,7 +52,7 @@ See `rhasspy.audio_recorder.ARecordAudioRecorder` for details.
 
 ## MQTT/Hermes
 
-Listens to the `hermes/audioServer/<SITE_ID>/audioFrame` topic for WAV data ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)).
+Listens to the `hermes/audioServer/<SITE_ID>/audioFrame` topic for WAV data ([Hermes protocol](https://docs.snips.ai/reference/hermes)).
 This allows Rhasspy to receive audio from [Snips.AI](https://snips.ai/).
 Audio data is automatically converted to 16-bit, 16 kHz mono with [sox](http://sox.sourceforge.net).
 

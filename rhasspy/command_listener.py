@@ -400,7 +400,7 @@ class OneShotCommandListener(RhasspyActor):
 
 # -----------------------------------------------------------------------------
 # MQTT-Based Command Listener (Hermes Protocol)
-# https://docs.snips.ai/ressources/hermes-protocol
+# https://docs.snips.ai/reference/hermes
 # -----------------------------------------------------------------------------
 
 

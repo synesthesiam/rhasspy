@@ -29,7 +29,7 @@
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="command-system" id="command-system-hermes" value="hermes" v-model="profile.command.system">
                         <label class="form-check-label" for="command-system-hermes">
-                            Use MQTT (<a href="https://docs.snips.ai/ressources/hermes-protocol">Hermes protocol</a>)
+                            Use MQTT (<a href="https://docs.snips.ai/reference/hermes">Hermes protocol</a>)
                         </label>
                     </div>
                 </div>

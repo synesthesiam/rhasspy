@@ -43,7 +43,7 @@
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="sounds-system" id="sounds-system-mqtt" value="hermes" v-model="profile.sounds.system">
                         <label class="form-check-label" for="sounds-system-mqtt">
-                            Play sound remotely with MQTT (<a href="https://docs.snips.ai/ressources/hermes-protocol">Hermes protocol</a>)
+                            Play sound remotely with MQTT (<a href="https://docs.snips.ai/reference/hermes">Hermes protocol</a>)
                         </label>
                     </div>
                 </div>

@@ -100,7 +100,7 @@ See `rhasspy.stt.RemoteDecoder` for details.
 
 ## MQTT/Hermes
 
-Publishes transcriptions to `hermes/asr/textCaptured` ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)) each time a voice command is spoken.
+Publishes transcriptions to `hermes/asr/textCaptured` ([Hermes protocol](https://docs.snips.ai/reference/hermes)) each time a voice command is spoken.
 
 This is enabled by default.
 

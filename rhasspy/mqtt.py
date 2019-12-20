@@ -58,7 +58,7 @@ class MessageReady:
 
 # -----------------------------------------------------------------------------
 # Interoperability with Snips.AI Hermes protocol
-# https://docs.snips.ai/ressources/hermes-protocol
+# https://docs.snips.ai/reference/hermes
 # -----------------------------------------------------------------------------
 
 

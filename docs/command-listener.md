@@ -64,7 +64,7 @@ See `rhasspy.command_listener.OneShotCommandListener` for details.
 
 ## MQTT/Hermes
 
-Subscribes to the `hermes/asr/startListening` and `hermes/asr/stopListening` topics ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)).
+Subscribes to the `hermes/asr/startListening` and `hermes/asr/stopListening` topics ([Hermes protocol](https://docs.snips.ai/reference/hermes)).
 This allows Rhasspy to be controlled by [Snips.AI](https://snips.ai/).
 
 Wakes up Rhasspy when `startListening` is received and starts recording. Stops recording when `stopListening` is received and processes the voice command.

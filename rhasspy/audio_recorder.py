@@ -565,7 +565,7 @@ class ARecordAudioRecorder(RhasspyActor):
 
 # -----------------------------------------------------------------------------
 # MQTT based audio "recorder" for Snips.AI Hermes Protocol
-# https://docs.snips.ai/ressources/hermes-protocol
+# https://docs.snips.ai/reference/hermes
 # -----------------------------------------------------------------------------
 
 
