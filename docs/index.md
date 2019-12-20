@@ -41,7 +41,7 @@ Ready to try Rhasspy? Follow the steps below and check out the [tutorials](tutor
 2. Choose an [installation method](installation.md)
 3. Access the [web interface](usage.md#web-interface) to download a profile
 4. Author your [custom voice commands](training.md) and train Rhasspy
-5. Connect Rhasspy to [Home Assistant](usage.md#home-assistant) or a [Node-RED](usage.md#noe-red) flow
+5. Connect Rhasspy to [Home Assistant](usage.md#home-assistant) or a [Node-RED](usage.md#node-red) flow
 
 ## Supported Languages
 
