@@ -3,16 +3,16 @@
 Rhasspy is designed to recognize voice commands [in a template language](#sentencesini). These commands are categorized by **intent**, and may contain [slots](#slots-lists) or [named entities](#tags), such as the color and name of a light.
 
 * Intent Recognition
-    * [Basic Syntax](#basic-syntax)
-    * [Named Entities](#tags)
-    * [Slots](#slots-lists)
+  * [Basic Syntax](#basic-syntax)
+  * [Named Entities](#tags)
+  * [Slots](#slots-lists)
 * Speech Recognition
-    * [Custom Words](#custom-words)
-    * [Language Model Mixing](#language-model-mixing)
+  * [Custom Words](#custom-words)
+  * [Language Model Mixing](#language-model-mixing)
 
 ## sentences.ini
 
-Voice commands stored in an [ini file](https://docs.python.org/3/library/configparser.html) whose "sections" are intents and "values" are sentence templates. 
+Voice commands stored in an [ini file](https://docs.python.org/3/library/configparser.html) whose "sections" are intents and "values" are sentence templates.
 
 ### Basic Syntax
 
@@ -43,7 +43,9 @@ Groups (sometimes called sequences) can be [tagged](#tags) and [substituted](#su
 
 Within a sentence template, you can specify optional word(s) by surrounding them `[with brackets]`. For example:
 
-    [an] example sentence [with] some optional words
+```
+[an] example sentence [with] some optional words
+```
 
 will match:
 
@@ -335,7 +337,6 @@ $ echo 'would you please turn on the living room lamp' | \
 ```
 
 But this works only because the default intent recognizer ([fsticuffs](intent-recognition.md#fsticuffs)) ignores unknown words by default, so "would you please" is not interpreted. Changing "lamp" to "light" in the input sentence will reveal the problem:
-
 
 ```
 $ echo 'would you please turn on the living room light | \

@@ -16,13 +16,13 @@ Let's say you have an RGB light of some kind in your bedroom that's [hooked up a
         data:
           rgb_color: [255, 0, 0]
           entity_id: light.bedroom
-          
+
 Now you just need the trigger! Rhasspy will send events that can be caught with the [event trigger platform](https://www.home-assistant.io/docs/automation/trigger/#event-trigger). A different event will be sent for each *intent* that you define, with slot values corresponding to important parts of the command (like light name and color). Let's start by defining an intent in Rhasspy called `ChangeLightState` that can be said a few different ways:
 
     [ChangeLightState]
     colors = (red | green | blue) {color}
     set [the] (bedroom){name} [to] <colors>
-    
+
 This is a [simplified JSGF grammar](doc/sentences/md) that will generate the following sentences:
 
 * set the bedroom to red
@@ -46,9 +46,9 @@ If trained on these sentences, Rhasspy will now recognize commands like "*set th
       "name": "bedroom",
       "color": "red"
     }
-    
+
 You can now fill in the rest of the Home Assistant automation:
-    
+
     automation:
       # Change the light in the bedroom to red.
       trigger:
@@ -62,23 +62,22 @@ You can now fill in the rest of the Home Assistant automation:
         data:
           rgb_color: [255, 0, 0]
           entity_id: light.bedroom
-          
-This will handle the specific case of setting the bedroom light to red, but not any other color. You can either add additional automations to handle these, or make use of [automation templating](https://www.home-assistant.io/docs/automation/templating/) to do it all at once.
- 
 
-# Client/Server Setup
+This will handle the specific case of setting the bedroom light to red, but not any other color. You can either add additional automations to handle these, or make use of [automation templating](https://www.home-assistant.io/docs/automation/templating/) to do it all at once.
+
+## Client/Server Setup
 
 Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
 
 * Hardware used:
-    * Raspberry Pi 3B w/ 8GB SD card
-    * [Seeed 4 Mic Array](https://www.amazon.com/seeed-Studio-ReSpeaker-4-Mic-Raspberry/dp/B076SSR1W1)
+  * Raspberry Pi 3B w/ 8GB SD card
+  * [Seeed 4 Mic Array](https://www.amazon.com/seeed-Studio-ReSpeaker-4-Mic-Raspberry/dp/B076SSR1W1)
 * Software used:
-    * [Raspbian Buster Lite](https://downloads.raspberrypi.org/raspbian_lite_latest)
-    * [Etcher](https://www.balena.io/etcher/)
-    * Docker ([install Docker](installation.md#docker))
-    
-## Server Steps
+  * [Raspbian Buster Lite](https://downloads.raspberrypi.org/raspbian_lite_latest)
+  * [Etcher](https://www.balena.io/etcher/)
+  * Docker ([install Docker](installation.md#docker))
+
+### Server Steps
 
 1. Assuming you already have docker running, create a directory for Rhasspy, and subdirectory called profiles.
 2. Pull and Run docker image:
@@ -121,9 +120,9 @@ Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
         [Audio Playing]
         No Playback on this device
 
- 5. Check Slots, and Sentences tabs and make sure to hit `Train` and then `Restart`
+5. Check Slots, and Sentences tabs and make sure to hit `Train` and then `Restart`
 
-## Client Steps
+### Client Steps
 
 1. Flash 8Gb MicroSD Card with [Buster](https://downloads.raspberrypi.org/raspbian_lite_latest) with [Etcher](https://www.balena.io/etcher/).
 2. Remove and re-insert MicroSD card and add files to the root directory (for headless setup - meaning no screen needed). You only need `wpa_supplicant` if you plan to use WiFi.
@@ -136,7 +135,7 @@ Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
 
         sudo apt install git
 
-6. Install Seeed mic array based on info [here](https://github.com/respeaker/seeed-voicecard) 
+6. Install Seeed mic array based on info [here](https://github.com/respeaker/seeed-voicecard)
 
         git clone https://github.com/respeaker/seeed-voicecard
         cd seeed-voicecard
@@ -223,4 +222,3 @@ Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
 4. Add a call service node after the light text and leave it blank. Deploy and Enjoy offline voice assistant.
 
 Pick a light (that is a light domain not a switch), and say "Snowboy, turn bedroom light off" :)
-

@@ -119,7 +119,7 @@ Use the environment variable `RHASSPY_PROFILE_DIR` to reference your current pro
 ## Remote Server
 
 Rhasspy can POST the intent JSON to a remote URL.
-    
+
 Add to your [profile](profiles.md):
 
 ```json
@@ -146,7 +146,7 @@ When an intent is recognized, Rhasspy will POST to `handle.remote.url` with the 
   }
 }
 ```
-    
+
 Rhasspy will create the Home Assistant event based on this information. If it is **not** present, the remaining intent information will be used to construct the event as normal (i.e., `intent` and `entities`). If `handle.forward_to_hass` is `false`, the output of your program is not used.
 
 ### Speech
@@ -169,7 +169,7 @@ See `rhasspy.intent_handler.RemoteIntentHandler` for details.
 ## Command
 
 Once an intent is successfully recognized, Rhasspy will send an event to Home Assistant with the details. You can call a custom program instead *or in addition* to this behavior.
-    
+
 Add to your [profile](profiles.md):
 
 ```json
@@ -198,7 +198,7 @@ When an intent is recognized, Rhasspy will call your custom program with the int
   }
 }
 ```
-    
+
 Rhasspy will create the Home Assistant event based on this information. If it is **not** present, the remaining intent information will be used to construct the event as normal (i.e., `intent` and `entities`). If `handle.forward_to_hass` is `false`, the output of your program is not used.
 
 The following environment variables are available to your program:

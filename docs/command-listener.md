@@ -11,7 +11,6 @@ You can also make Rhasspy record a voice command using the [HTTP API](usage.md#h
 2. Speaking your voice command
 3. POST-ing to `/api/stop-recording`. Rhasspy will stop recording and process the voice command.
 
-
 ## WebRTCVAD
 
 Listens for a voice commands using [webrtcvad](https://github.com/wiseman/py-webrtcvad) to detect speech and silence.
@@ -33,7 +32,7 @@ Add to your [profile](profiles.md):
   }
 }
 ```
-    
+
 This system listens for up to `timeout_sec` for a voice command. The first few frames of audio data are discarded (`throwaway_buffers`) to avoid clicks from the microphone being engaged. When speech is detected for some number of successive frames (`speech_buffers`), the voice command is considered to have *started*. After `min_sec`, Rhasspy will start listening for silence. If at least `silence_sec` goes by without any speech detected, the command is considered *finished*, and the recorded WAV data is sent to the [speech recognition system](speech-to-text.md).
 
 You may want to adjust `min_sec`, `silence_sec`, and `vad_mode` for your environment.
@@ -60,7 +59,7 @@ Add to your [profile](profiles.md):
   }
 }
 ```
-    
+
 See `rhasspy.command_listener.OneShotCommandListener` for details.
 
 ## MQTT/Hermes
@@ -68,7 +67,7 @@ See `rhasspy.command_listener.OneShotCommandListener` for details.
 Subscribes to the `hermes/asr/startListening` and `hermes/asr/stopListening` topics ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)).
 This allows Rhasspy to be controlled by [Snips.AI](https://snips.ai/).
 
-Wakes up Rhasspy when `startListening` is received and starts recording. Stops recording when `stopListening` is received and processes the voice command. 
+Wakes up Rhasspy when `startListening` is received and starts recording. Stops recording when `stopListening` is received and processes the voice command.
 
 Add to your [profile](profiles.md):
 
@@ -96,12 +95,16 @@ Set `mqtt.site_id` to match your Snips.AI siteId.
 
 Using [mosquitto_pub](https://mosquitto.org/man/mosquitto_pub-1.html), wake up Rhasspy with:
 
-    mosquitto_pub -t 'hermes/asr/startListening' -m '{ "siteId": "default" }'
-    
+```bash
+mosquitto_pub -t 'hermes/asr/startListening' -m '{ "siteId": "default" }'
+```
+
 Say your voice command, then stop recording with:
 
-    mosquitto_pub -t 'hermes/asr/stopListening' -m '{ "siteId": "default" }'
-    
+```bash
+mosquitto_pub -t 'hermes/asr/stopListening' -m '{ "siteId": "default" }'
+```
+
 Rhasspy should process your voice command.
 
 See `rhasspy.command.HermesCommandListener` for details.

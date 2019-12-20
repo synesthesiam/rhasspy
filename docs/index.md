@@ -27,11 +27,11 @@ and Rhasspy will produce [JSON](https://json.org) events that can trigger action
 Rhasspy is <strong>optimized for</strong>:
 
 * Working with external services via [MQTT](usage.md#mqtt), [HTTP](usage.md#http-api), and [Websockets](usage.md#websocket-events)
-    * Home Assistant and Hass.IO have [built-in support](usage.md#home-assistant)
+  * Home Assistant and Hass.IO have [built-in support](usage.md#home-assistant)
 * Pre-specified voice commands that are described well [by a grammar](training.md#sentencesini)
-    * You can also do [open-ended speech recognition](speech-to-text.md#open-transcription)
+  * You can also do [open-ended speech recognition](speech-to-text.md#open-transcription)
 * Voice commands with [uncommon words or pronunciations](usage.md#words-tab)
-    * New words are added phonetically with [automated assistance](https://github.com/AdolfVonKleist/Phonetisaurus)
+  * New words are added phonetically with [automated assistance](https://github.com/AdolfVonKleist/Phonetisaurus)
 
 ## Getting Started
 
@@ -62,8 +62,7 @@ Rhasspy supports the following languages:
 * Swedish (`sv`)
 * Catalan (`ca`)
 
-Intended Audience
----------------------
+## Intended Audience
 
 Rhasspy is intended for advanced users that want to have a voice interface to Home Assistant, but value **privacy** and **freedom** above all else. There are many other voice assistants, but none (to my knowledge) that:
 

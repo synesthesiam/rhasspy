@@ -131,7 +131,6 @@ In the future, this will be auto-detected from the STT platform API.
 
 See `rhasspy.stt.HomeAssistantSTTIntegration` for details.
 
-
 ## Command
 
 Calls a custom external program to do speech recognition.

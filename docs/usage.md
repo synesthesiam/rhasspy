@@ -22,7 +22,7 @@ The top bar of the web interface lets you perform some global actions on Rhasspy
 * Click the Rhasspy logo to reload the page
 * Click the version number to test the [HTTP API](#http-api)
 * The green `Train` button will re-train your profile
-    * Use the `Clear Cache` drop down to train from scratch
+  * Use the `Clear Cache` drop down to train from scratch
 * The yellow `Wake` button will wake Rhasspy up and start listening for a voice command
 * The red `Restart` button forces Rhasspy to restart
 
@@ -45,7 +45,7 @@ Add new voice commands to Rhasspy using the [template syntax](training.md#senten
 
 * Edits `sentences.ini` by default
 * Use the `Add File` button to create additional sentence template files
-    * These should be prefixed by the `sentences_dir` in your [profile](profiles.md). For example, `intents/more-commands.ini`
+  * These should be prefixed by the `sentences_dir` in your [profile](profiles.md). For example, `intents/more-commands.ini`
 * The drop down can be used to switch editing between different template files
 
 ### Slots Tab
@@ -187,19 +187,18 @@ If you're running Rhasspy via Docker or in a virtual environment, add `--ssl <CE
 You can generate a self-signed certificate with the following command:
 
     openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 365
-    
+
 After answering the series of questions, you should have `cert.pem` and `key.pem` in your current directory. Then run Rhasspy with:
 
     <RHASSPY COMMAND> --ssl cert.pem key.pem
-    
+
 The web interface will now be available at [https://localhost:12101](https://localhost:12101) and the web socket events at `wss://localhost:12101/api/events/intent`
 
 In Hass.io, you will need to set the following options via the web interface or in your JSON configuration:
 
-  * `ssl`: `true`
-  * `certfile`: `cert.pem`
-  * `keyfile`: `key.pem`
-
+* `ssl`: `true`
+* `certfile`: `cert.pem`
+* `keyfile`: `key.pem`
 
 ## Command Line
 
@@ -207,17 +206,17 @@ You can access portions of Rhasspy's functionality without running a web server 
 The `rhasspy` Python module runs this interface in its `__main__`, so it's accessible from Rhasspy's source code directory by running:
 
     python3 -m rhasspy <COMMAND> <ARGUMENTS>
-    
+
 This will only work inside a properly set up [virtual environment](installation.md#virtual-environment), however.
 If you run Rhasspy through [Docker](installation.md#docker), the [rhasspy-cli](https://github.com/synesthesiam/rhasspy/blob/master/bin/rhasspy-cli) script should be used instead:
 
     wget https://github.com/synesthesiam/rhasspy/blob/master/bin/rhasspy-cli
     chmod +x rhasspy-cli
     ./rhasspy-cli --help
-    
+
 Put this script in your `~/bin` directory so that you can refer to it as `rhasspy-cli` from any directory.
 By default, it will look for profiles in `$XDG_CONFIG_FILE/rhasspy/profiles`, which is probably `~/.config/rhasspy/profiles` (see [XDG specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) for more information).
-    
+
 **Beware**: the `rhasspy-cli` script runs under your user account and grants Rhasspy **write access to your home directory**.
 This is needed to save files during the training process, and to avoid those files being owned by `root`.
 The [rhasspy-cli-ro](https://github.com/synesthesiam/rhasspy/blob/master/bin/rhasspy-cli-ro) script can be used for read only operations, such as speech to text or intent handling, but cannot make any changes to your file system.
@@ -227,13 +226,13 @@ The [rhasspy-cli-ro](https://github.com/synesthesiam/rhasspy/blob/master/bin/rha
 The `rhasspy-cli` script takes a command and a set of arguments:
 
     rhasspy-cli --profile <PROFILE_NAME> <COMMAND> <ARGUMENTS>
-    
+
 Adding `--debug` before the command will print additional information to the console:
 
     rhasspy-cli --debug --profile <PROFILE_NAME> <COMMAND> <ARGUMENTS>
-    
+
 You can override profile settings with `--set` like this:
 
     rhasspy-cli --profile <PROFILE_NAME> --set <SETTING_NAME> <SETTING_VALUE> ... <COMMAND> <ARGUMENTS>
-    
+
 See the [command-line reference](reference.md#command-line) for available commands.
