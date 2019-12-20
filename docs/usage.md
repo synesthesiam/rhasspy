@@ -166,7 +166,7 @@ For the `ChangLightState` intent from the [RGB Light Example](index.md#rgb-light
 
 ## MQTT and Snips
 
-Rhasspy is able to interoperate with Snips.AI services using the [Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol) over [MQTT](http://mqtt.org). The following components are Snips/Hermes compatible:
+Rhasspy is able to interoperate with Snips.AI services using the [Hermes protocol](https://docs.snips.ai/reference/hermes) over [MQTT](http://mqtt.org). The following components are Snips/Hermes compatible:
 
 * [Microphone input](audio-input.md#mqtthermes)
 * [Wake word](wake-word.md#mqtthermes)

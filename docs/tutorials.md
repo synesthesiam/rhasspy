@@ -90,8 +90,8 @@ Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
               --user-profiles /profiles \
               --profile en
 
-3. Goto server URL `http://<Server_IP>:12101` (you may be asked to download files)
-4. Goto settings and check config (and save along the way):
+3. Go to server URL `http://<Server_IP>:12101` (you may be asked to download files)
+4. Go to settings and check configuration (and save along the way):
 
         [Rhasspy]
         Listen for wake word on Startup = UNchecked
@@ -139,7 +139,7 @@ Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
 
         git clone https://github.com/respeaker/seeed-voicecard
         cd seeed-voicecard
-        sudo ./install.sh 
+        sudo ./install.sh
         sudo reboot
 
 7. Plug in Seeed speaker and check install was successful against expected result here 5:
@@ -173,39 +173,39 @@ Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
               --user-profiles /profiles \
               --profile en
 
-13. Goto Client URL `http://<Pi_IP_address>:12101` (you will be asked to download some files)
+13. Go to Client URL `http://<Pi_IP_address>:12101` (you will be asked to download some files)
     (At time of writing I put Wakeword, voice detection and recognition on the client)
 14. Under settings ensure the following is selected, Save along the way. You will need to Train once also.
 
-            [Rhasspy]
-            Listen for wake word on Startup = checked
+        [Rhasspy]
+        Listen for wake word on Startup = checked
 
-            [Home Assistant]
-            Do not use Home Assistant (note you obviously can instead of Node-Red)
+        [Home Assistant]
+        Do not use Home Assistant (note you obviously can instead of Node-Red)
 
-            [Wake Word]
-            Use snowboy (this should trigger a download of more files)
+        [Wake Word]
+        Use snowboy (this should trigger a download of more files)
 
-            [Voice Detection]
-            Use webrtcvad and listen for silence
+        [Voice Detection]
+        Use webrtcvad and listen for silence
 
-            [Speech Recognition]
-            Use Remote Rhasspy server for speech recognition:
-            URL = http://<SERVER_IP>:12101/api/speech-to-text
+        [Speech Recognition]
+        Use Remote Rhasspy server for speech recognition:
+        URL = http://<SERVER_IP>:12101/api/speech-to-text
 
-            [Intent Recognition]
-            Use Remote Rhasspy server for speech recognition:
-            URL = http://<SERVER_IP>:12101/api/text-to-intent
+        [Intent Recognition]
+        Use Remote Rhasspy server for speech recognition:
+        URL = http://<SERVER_IP>:12101/api/text-to-intent
 
-            [Text to Speech]
-            No Text to speech on this device
+        [Text to Speech]
+        No Text to speech on this device
 
-            [Audio Recording]
-            Use PyAudio (default)
-            Input Device = seeed-4mic-voicecard (you can test this if you want)
+        [Audio Recording]
+        Use PyAudio (default)
+        Input Device = seeed-4mic-voicecard (you can test this if you want)
 
-            [Audio Playing]
-            No Playback on this device
+        [Audio Playing]
+        No Playback on this device
 
 ### Node-Red Config
 

@@ -83,7 +83,7 @@ If all is well, the web interface will be available at [http://localhost:12101](
 
 At its core, Rhasspy requires:
 
-* Linux (preferrably Debian)
+* Linux (preferably Debian)
 * Python 3.6 or higher
 
 To actually use any components, however, requires a lot of [extra software](about.md#supporting-tools).

@@ -157,7 +157,7 @@ See `rhasspy.intent.HomeAssistantConversationRecognizer` for details.
 
 ## MQTT/Hermes
 
-Publishes intent recognitions/failures to `hermes/intent/<INTENT_NAME>` or `hermes/nlu/intentNotRecognized` ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)).
+Publishes intent recognitions/failures to `hermes/intent/<INTENT_NAME>` or `hermes/nlu/intentNotRecognized` ([Hermes protocol](https://docs.snips.ai/reference/hermes)).
 
 This is enabled by default and controlled by the `mqtt.publish_intents` setting in your [profile](profiles.md).
 

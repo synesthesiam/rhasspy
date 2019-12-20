@@ -160,7 +160,7 @@ class APlayAudioPlayer(RhasspyActor):
 
 # -----------------------------------------------------------------------------
 # MQTT audio player for Snips.AI Hermes Protocol
-# https://docs.snips.ai/ressources/hermes-protocol
+# https://docs.snips.ai/reference/hermes
 # -----------------------------------------------------------------------------
 
 

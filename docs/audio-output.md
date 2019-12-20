@@ -25,7 +25,7 @@ See `rhasspy.audio_player.APlayAudioPlayer` for details.
 
 ## MQTT/Hermes
 
-Publishes WAV data to the `hermes/audioServer/<SITE_ID>/playBytes/<REQUEST_ID>` topic ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)).
+Publishes WAV data to the `hermes/audioServer/<SITE_ID>/playBytes/<REQUEST_ID>` topic ([Hermes protocol](https://docs.snips.ai/reference/hermes)).
 This allows Rhasspy to send audio to [Snips.AI](https://snips.ai/).
 
 Rhasspy will by default send 16 kHz, 16-bit mono audio, unless specified otherwise.

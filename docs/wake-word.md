@@ -158,7 +158,7 @@ See `rhasspy.wake.PreciseWakeListener` for details.
 
 ## MQTT/Hermes
 
-Subscribes to the `hermes/hotword/<WAKEWORD_ID>/detected` topic, and wakes Rhasspy up when a message is received ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)). This allows Rhasspy to use the wake word functionality in [Snips.AI](https://snips.ai/).
+Subscribes to the `hermes/hotword/<WAKEWORD_ID>/detected` topic, and wakes Rhasspy up when a message is received ([Hermes protocol](https://docs.snips.ai/reference/hermes)). This allows Rhasspy to use the wake word functionality in [Snips.AI](https://snips.ai/).
 
 Add to your [profile](profiles.md):
 

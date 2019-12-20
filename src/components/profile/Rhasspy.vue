@@ -24,7 +24,7 @@
                 <div class="form-row">
                     <input type="checkbox" id="mqtt-enabled" v-model="profile.mqtt.enabled">
                     <label for="mqtt-enabled" class="col-form-label">Enable MQTT</label>
-                    <span class="col-form-label text-muted">(<a href="https://docs.snips.ai/ressources/hermes-protocol">Snips.ai compatibility</a>)</span>
+                    <span class="col-form-label text-muted">(<a href="https://docs.snips.ai/reference/hermes">Snips.ai compatibility</a>)</span>
                 </div>
             </div>
             <div class="form-group">

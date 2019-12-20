@@ -683,7 +683,7 @@ class PreciseWakeListener(RhasspyActor):
 
 # -----------------------------------------------------------------------------
 # MQTT-based wake listener (Hermes protocol)
-# https://docs.snips.ai/ressources/hermes-protocol
+# https://docs.snips.ai/reference/hermes
 # -----------------------------------------------------------------------------
 
 
