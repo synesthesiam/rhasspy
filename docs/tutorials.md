@@ -177,35 +177,35 @@ Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
     (At time of writing I put Wakeword, voice detection and recognition on the client)
 14. Under settings ensure the following is selected, Save along the way. You will need to Train once also.
 
-            [Rhasspy]
-            Listen for wake word on Startup = checked
+        [Rhasspy]
+        Listen for wake word on Startup = checked
 
-            [Home Assistant]
-            Do not use Home Assistant (note you obviously can instead of Node-Red)
+        [Home Assistant]
+        Do not use Home Assistant (note you obviously can instead of Node-Red)
 
-            [Wake Word]
-            Use snowboy (this should trigger a download of more files)
+        [Wake Word]
+        Use snowboy (this should trigger a download of more files)
 
-            [Voice Detection]
-            Use webrtcvad and listen for silence
+        [Voice Detection]
+        Use webrtcvad and listen for silence
 
-            [Speech Recognition]
-            Use Remote Rhasspy server for speech recognition:
-            URL = http://<SERVER_IP>:12101/api/speech-to-text
+        [Speech Recognition]
+        Use Remote Rhasspy server for speech recognition:
+        URL = http://<SERVER_IP>:12101/api/speech-to-text
 
-            [Intent Recognition]
-            Use Remote Rhasspy server for speech recognition:
-            URL = http://<SERVER_IP>:12101/api/text-to-intent
+        [Intent Recognition]
+        Use Remote Rhasspy server for speech recognition:
+        URL = http://<SERVER_IP>:12101/api/text-to-intent
 
-            [Text to Speech]
-            No Text to speech on this device
+        [Text to Speech]
+        No Text to speech on this device
 
-            [Audio Recording]
-            Use PyAudio (default)
-            Input Device = seeed-4mic-voicecard (you can test this if you want)
+        [Audio Recording]
+        Use PyAudio (default)
+        Input Device = seeed-4mic-voicecard (you can test this if you want)
 
-            [Audio Playing]
-            No Playback on this device
+        [Audio Playing]
+        No Playback on this device
 
 ### Node-Red Config
 
