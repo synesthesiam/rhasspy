@@ -22,7 +22,7 @@ Add to your [profile](profiles.md):
 ```
 
 Set `microphone.pyaudio.device` to a PyAudio device number or leave blank for the default device.
-Streams 30ms chunks of 16-bit, 16 Khz mono audio by default (480 frames).
+Streams 30ms chunks of 16-bit, 16 kHz mono audio by default (480 frames).
 
 See `rhasspy.audio_recorder.PyAudioRecorder` for details.
 
@@ -80,7 +80,7 @@ See `rhasspy.audio_recorder.HermesAudioRecorder` for details.
 
 ## HTTP Stream
 
-Accepts chunks of 16-bit 16Khz mono audio via an HTTP POST stream (assumes [chunked transfer encoding](https://en.wikipedia.org/wiki/Chunked_transfer_encoding)).
+Accepts chunks of 16-bit 16 kHz mono audio via an HTTP POST stream (assumes [chunked transfer encoding](https://en.wikipedia.org/wiki/Chunked_transfer_encoding)).
 
 Add to your [profile](profiles.md):
 
@@ -95,7 +95,7 @@ Add to your [profile](profiles.md):
 }
 ```
 
-Set `microphone.http.stop_after` to one of "never", "text", or "intent". When set to "never", you can continously stream (chunked) audio into Rhasspy across multiple voice commands. When set to "text" or "intent", the stream will be closed when the first voice command has been transcribed ("text") or recognized ("intent"). Once closed, you can perform an HTTP GET request to the stream URL to retrieve the result (text for transcriptions or JSON for intent).
+Set `microphone.http.stop_after` to one of "never", "text", or "intent". When set to "never", you can continuously stream (chunked) audio into Rhasspy across multiple voice commands. When set to "text" or "intent", the stream will be closed when the first voice command has been transcribed ("text") or recognized ("intent"). Once closed, you can perform an HTTP GET request to the stream URL to retrieve the result (text for transcriptions or JSON for intent).
 
 Note that `microphone.http.port` must be different than Rhasspy's webserver port (usually 12101).
 
@@ -122,7 +122,7 @@ Set `microphone.gstreamer.pipeline` to your GStreamer pipeline **without a sink*
 udpsrc port=12333 ! rawaudioparse use-sink-caps=false format=pcm pcm-format=s16le sample-rate=16000 num-channels=1 ! queue ! audioconvert ! audioresample
 ```
 
-which "simply" receives raw 16-bit 16khz audio chunks via UDP port 12333. You could stream microphone audio to Rhasspy from another machine by running the following terminal command:
+which "simply" receives raw 16-bit 16 kHz audio chunks via UDP port 12333. You could stream microphone audio to Rhasspy from another machine by running the following terminal command:
 
 ```bash
 gst-launch-1.0 \

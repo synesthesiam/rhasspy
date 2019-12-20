@@ -90,8 +90,8 @@ Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
               --user-profiles /profiles \
               --profile en
 
-3. Goto server URL `http://<Server_IP>:12101` (you may be asked to download files)
-4. Goto settings and check config (and save along the way):
+3. Go to server URL `http://<Server_IP>:12101` (you may be asked to download files)
+4. Go to settings and check configuration (and save along the way):
 
         [Rhasspy]
         Listen for wake word on Startup = UNchecked
@@ -139,7 +139,7 @@ Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
 
         git clone https://github.com/respeaker/seeed-voicecard
         cd seeed-voicecard
-        sudo ./install.sh 
+        sudo ./install.sh
         sudo reboot
 
 7. Plug in Seeed speaker and check install was successful against expected result here 5:
@@ -173,7 +173,7 @@ Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
               --user-profiles /profiles \
               --profile en
 
-13. Goto Client URL `http://<Pi_IP_address>:12101` (you will be asked to download some files)
+13. Go to Client URL `http://<Pi_IP_address>:12101` (you will be asked to download some files)
     (At time of writing I put Wakeword, voice detection and recognition on the client)
 14. Under settings ensure the following is selected, Save along the way. You will need to Train once also.
 

@@ -121,7 +121,7 @@ Application authors may want to use the [rhasspy-client](https://pypi.org/projec
 Rhasspy implements part of the [Hermes](https://docs.snips.ai/reference/hermes) protocol. Various services of Rhasspy can be configured to pass along MQTT messages or to react to MQTT messages following the Hermes protocol.
 
 * `hermes/audioServer/<SITE_ID>/playBytes/<REQUEST_ID>`
-  * Rhasspy publishes audio in WAV format to this topic. By default it is 16 kHz, 16-bit mono for compatibility reaons, but other types are possible too.
+  * Rhasspy publishes audio in WAV format to this topic. By default it is 16 kHz, 16-bit mono for compatibility reasons, but other types are possible too.
   * `SITE_ID` is set in Rhasspy's `mqtt` configuration.
   * `REQUEST_ID` is generated using `uuid.uuid4` each time a sound is played.
 * `hermes/audioServer/<SITE_ID>/audioFrame`
@@ -392,7 +392,7 @@ All available profile sections and settings are listed below:
   * `system` - name of speech to text system (`pocketsphinx`, `remote`, `command`, or `dummy`)
   * `pocketsphinx` - configuration for [Pocketsphinx](speech-to-text.md#pocketsphinx)
     * `compatible` - true if profile can use pocketsphinx for speech recognition
-    * `acoustic_model` - directory with CMU 16Khz acoustic model
+    * `acoustic_model` - directory with CMU 16 kHz acoustic model
     * `base_dictionary` - large text file with word pronunciations (read only)
     * `custom_words` - small text file with words/pronunciations added by user
     * `dictionary` - text file with all words/pronunciations needed for example sentences
