@@ -23,7 +23,7 @@ Now you just need the trigger! Rhasspy will send events that can be caught with 
     colors = (red | green | blue) {color}
     set [the] (bedroom){name} [to] <colors>
 
-This is a [simplified JSGF grammar](doc/sentences/md) that will generate the following sentences:
+This is a [simplified JSGF grammar](training.md#sentencesini) that will generate the following sentences:
 
 * set the bedroom to red
 * set the bedroom to green
