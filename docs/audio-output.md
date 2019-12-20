@@ -9,18 +9,19 @@ Plays WAV files on the local device by calling the `aplay` command. Should work 
 
 Add to your [profile](profiles.md):
 
-    "sounds": {
-       "system": "aplay",
-       "aplay": {
-         "device": ""
-       }
-    }
-    
+```json
+"sounds": {
+  "system": "aplay",
+  "aplay": {
+    "device": ""
+  }
+}
+```
+
 If provided, `sounds.aplay.device` is passed to `aplay` with the `-D` argument.
 Leave it blank to use the default device.
 
 See `rhasspy.audio_player.APlayAudioPlayer` for details.
-
 
 ## MQTT/Hermes
 
@@ -32,18 +33,20 @@ The request id is generated each time a sound is played using `uuid.uuid4`.
 
 Add to your [profile](profiles.md):
 
-    "sounds": {
-      "system": "hermes"
-    },
-    
-    "mqtt": {
-      "enabled": true,
-      "host": "localhost",
-      "username": "",
-      "port": 1883,
-      "password": "",
-      "site_id": "default"
-    }
+```json
+"sounds": {
+  "system": "hermes"
+},
+
+"mqtt": {
+  "enabled": true,
+  "host": "localhost",
+  "username": "",
+  "port": 1883,
+  "password": "",
+  "site_id": "default"
+}
+```
 
 Adjust the `mqtt` configuration to connect to your MQTT broker.
 Set `mqtt.site_id` to match your Snips.AI siteId.

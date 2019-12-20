@@ -89,7 +89,7 @@ To run the Docker image, simply execute:
 ```bash
 docker run -it -p 59125:59125 synesthesiam/marytts:5.2
 ```
-    
+
 and visit [http://localhost:59125](http://localhost:59125) after it starts. For more English voices, run the following commands in a Bash shell:
 
 ```bash

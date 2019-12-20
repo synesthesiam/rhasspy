@@ -26,7 +26,7 @@ Streams 30ms chunks of 16-bit, 16 Khz mono audio by default (480 frames).
 
 See `rhasspy.audio_recorder.PyAudioRecorder` for details.
 
-## ALSA 
+## ALSA
 
 Starts an `arecord` process locally and reads audio data from its standard out.
 Works best with [ALSA](https://www.alsa-project.org/main/index.php/Main_Page).
@@ -42,7 +42,7 @@ Add to your [profile](profiles.md):
   }
 }
 ```
-    
+
 Set `microphone.arecord.device` to the name of the ALSA device to use (`-D` flag
 to `arecord`) or leave blank for the default device.
 By default, calls `arecord -t raw -r 16000 -f S16_LE -c 1` and reads 30ms (960
@@ -52,7 +52,7 @@ See `rhasspy.audio_recorder.ARecordAudioRecorder` for details.
 
 ## MQTT/Hermes
 
-Listens to the `hermes/audioServer/<SITE_ID>/audioFrame` topic for WAV data ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)). 
+Listens to the `hermes/audioServer/<SITE_ID>/audioFrame` topic for WAV data ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)).
 This allows Rhasspy to receive audio from [Snips.AI](https://snips.ai/).
 Audio data is automatically converted to 16-bit, 16 kHz mono with [sox](http://sox.sourceforge.net).
 
@@ -72,7 +72,7 @@ Add to your [profile](profiles.md):
   "site_id": "default"
 }
 ```
-    
+
 Adjust the `mqtt` configuration to connect to your MQTT broker.
 Set `mqtt.site_id` to match your Snips.AI siteId.
 
@@ -152,4 +152,3 @@ Add to your [profile](profiles.md):
 ```
 
 See `rhasspy.audio_recorder.DummyAudioRecorder` for details.
-

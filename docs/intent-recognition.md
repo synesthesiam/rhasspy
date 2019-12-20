@@ -1,6 +1,6 @@
 # Intent Recognition
 
-After your voice command has been transcribed by the [speech to text](speech-to-text.md) system, the next step is to recognize your intent. 
+After your voice command has been transcribed by the [speech to text](speech-to-text.md) system, the next step is to recognize your intent.
 The end result is a JSON event with information about the intent.
 
 The following table summarizes the trade-offs of using each intent recognizer:
@@ -61,7 +61,7 @@ Add to your [profile](profiles.md):
 
 ```json
 "intent": {
-  "system": "adapt", 
+  "system": "adapt",
   "adapt": {
       "stop_words": "stop_words.txt"
   }
@@ -80,7 +80,7 @@ Add to your [profile](profiles.md):
 
 ```json
 "intent": {
-  "system": "flair", 
+  "system": "flair",
   "flair": {
       "data_dir": "flair_data",
       "max_epochs": 25,
@@ -157,7 +157,7 @@ See `rhasspy.intent.HomeAssistantConversationRecognizer` for details.
 
 ## MQTT/Hermes
 
-Publishes intent recognitions/failures to `hermes/intent/<INTENT_NAME>` or `hermes/nlu/intentNotRecognized` ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)). 
+Publishes intent recognitions/failures to `hermes/intent/<INTENT_NAME>` or `hermes/nlu/intentNotRecognized` ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)).
 
 This is enabled by default and controlled by the `mqtt.publish_intents` setting in your [profile](profiles.md).
 
@@ -196,7 +196,7 @@ When a voice command is successfully transcribed, your program will be called wi
   "text": "set the bedroom light to red"
 }
 ```
-    
+
 The following environment variables are available to your program:
 
 * `$RHASSPY_BASE_DIR` - path to the directory where Rhasspy is running from

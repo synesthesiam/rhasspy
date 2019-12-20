@@ -19,12 +19,12 @@ Files in the user profile directory override system files, and Rhasspy will *onl
 The default location for each of these directories is:
 
 * Virtual Environment
-    * System profile location is `$PWD/profiles` where `$PWD` is Rhasspy's root directory (where `run-venv.sh` is located)
-    * User profile location is `$HOME/.config/rhasspy/profiles`
+  * System profile location is `$PWD/profiles` where `$PWD` is Rhasspy's root directory (where `run-venv.sh` is located)
+  * User profile location is `$HOME/.config/rhasspy/profiles`
 * Docker
-    * System profile location is either `/usr/share/rhasspy/profiles` (ALSA) or `/home/rhasspy/profiles` (PulseAudio)
-    * User profile location **must** be explicitly set and mapped to a volume:
-        * `docker run ... -v /path/to/profiles:/profiles synesthesiam/rhasspy-server --user-profiles /profiles`
+  * System profile location is either `/usr/share/rhasspy/profiles` (ALSA) or `/home/rhasspy/profiles` (PulseAudio)
+  * User profile location **must** be explicitly set and mapped to a volume:
+    * `docker run ... -v /path/to/profiles:/profiles synesthesiam/rhasspy-server --user-profiles /profiles`
 
 ### Example
 
@@ -40,7 +40,7 @@ If you need to install Rhasspy onto a machine that is not connected to the inter
 2. `fr-g2p.tar.gz`
 3. `fr-small.lm.gz`
 
-If your user profile directory is `$HOME/.config/rhasspy/profiles`, then you should download/copy all three artifacts to `$HOME/.config/rhasspy/profiles/fr/download` on the offline machine. Now, when Rhasspy loads the `fr` profile and you click "Download", it will extract the files in the `download` directory without going out to the internet. 
+If your user profile directory is `$HOME/.config/rhasspy/profiles`, then you should download/copy all three artifacts to `$HOME/.config/rhasspy/profiles/fr/download` on the offline machine. Now, when Rhasspy loads the `fr` profile and you click "Download", it will extract the files in the `download` directory without going out to the internet.
 
 ## Available Settings
 
