@@ -9,6 +9,7 @@ import pydash
 import requests
 
 from rhasspy.actor import RhasspyActor
+from rhasspy.tts import SpeakSentence
 from rhasspy.utils import hass_request_kwargs
 
 # -----------------------------------------------------------------------------
@@ -53,7 +54,7 @@ class IntentForwarded:
 
 def get_intent_handler_class(system: str) -> Type[RhasspyActor]:
     """Get type for profile intent handlers."""
-    assert system in ["dummy", "hass", "command"], (
+    assert system in ["dummy", "hass", "remote", "command"], (
         "Invalid intent handler system: %s" % system
     )
 
@@ -62,8 +63,12 @@ def get_intent_handler_class(system: str) -> Type[RhasspyActor]:
         return HomeAssistantIntentHandler
 
     if system == "command":
-        # Use command-line speech trainer
+        # Use command-line intent handler
         return CommandIntentHandler
+
+    if system == "remote":
+        # Use remote HTTP intent handler
+        return RemoteIntentHandler
 
     # Use dummy handlers as a fallback
     return DummyIntentHandler
@@ -210,7 +215,70 @@ class HomeAssistantIntentHandler(RhasspyActor):
 
 
 # -----------------------------------------------------------------------------
-# Command Intent Recognizer
+# Remote Intent Handler
+# -----------------------------------------------------------------------------
+
+
+class RemoteIntentHandler(RhasspyActor):
+    """POST intent JSON to remote server"""
+
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.remote_url = ""
+        self.hass_handler: Optional[RhasspyActor] = None
+        self.receiver: Optional[RhasspyActor] = None
+        self.speech_actor: Optional[RhasspyActor] = None
+        self.forward_to_hass = False
+
+    def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
+        self.speech_actor = self.config.get("speech")
+        self.remote_url = self.profile.get("handle.remote.url")
+
+        self.forward_to_hass = self.profile.get("handle.forward_to_hass", False)
+        self.hass_handler = self.config.get("hass_handler")
+
+        self.transition("ready")
+
+    def in_ready(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in ready state."""
+        if isinstance(message, HandleIntent):
+            self.receiver = message.receiver or sender
+            intent = message.intent
+            try:
+                # JSON -> Remote -> JSON
+                response = requests.post(self.remote_url, json=message.intent)
+                response.raise_for_status()
+
+                intent = response.json()
+                self._logger.debug(intent)
+
+                # Check for speech
+                speech = intent.get("speech", {})
+                speech_text = speech.get("text", "")
+                if speech_text and self.speech_actor:
+                    self.send(self.speech_actor, SpeakSentence(speech_text))
+            except Exception as e:
+                self._logger.exception("in_started")
+                intent["error"] = str(e)
+
+            if self.forward_to_hass and self.hass_handler:
+                self.transition("forwarding")
+                self.send(self.hass_handler, ForwardIntent(intent))
+            else:
+                # No forwarding
+                self.send(self.receiver, IntentHandled(intent))
+
+    def in_forwarding(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in forwarding state."""
+        if isinstance(message, IntentForwarded):
+            # Return back to sender
+            self.transition("ready")
+            self.send(self.receiver, IntentHandled(message.intent))
+
+
+# -----------------------------------------------------------------------------
+# Command Intent Handler
 # -----------------------------------------------------------------------------
 
 
@@ -220,12 +288,14 @@ class CommandIntentHandler(RhasspyActor):
     def __init__(self):
         RhasspyActor.__init__(self)
         self.command: List[str] = []
+        self.speech_actor: Optional[RhasspyActor] = None
         self.hass_handler: Optional[RhasspyActor] = None
         self.receiver: Optional[RhasspyActor] = None
         self.forward_to_hass = False
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
+        self.speech_actor = self.config.get("speech")
         program = os.path.expandvars(self.profile.get("handle.command.program"))
         arguments = [
             os.path.expandvars(str(a))
@@ -254,6 +324,13 @@ class CommandIntentHandler(RhasspyActor):
                 ).stdout.decode()
 
                 intent = json.loads(output)
+                self._logger.debug(intent)
+
+                # Check for speech
+                speech = intent.get("speech", {})
+                speech_text = speech.get("text", "")
+                if speech_text and self.speech_actor:
+                    self.send(self.speech_actor, SpeakSentence(speech_text))
             except Exception as e:
                 self._logger.exception("in_started")
                 intent["error"] = str(e)

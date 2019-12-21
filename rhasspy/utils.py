@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
 import pywrapfst as fst
+import rhasspynlu
 from num2words import num2words
 
 WHITESPACE_PATTERN = re.compile(r"\s+")
@@ -144,12 +145,12 @@ def buffer_to_wav(buffer: bytes) -> bytes:
             wav_file.setframerate(16000)
             wav_file.setsampwidth(2)
             wav_file.setnchannels(1)
-            wav_file.writeframesraw(buffer)
+            wav_file.writeframes(buffer)
 
         return wav_buffer.getvalue()
 
 
-def convert_wav(wav_data: bytes) -> bytes:
+def convert_wav(wav_data: bytes, rate=16000, width=16, channels=1) -> bytes:
     """Converts WAV data to 16-bit, 16Khz mono with sox."""
     return subprocess.run(
         [
@@ -158,13 +159,13 @@ def convert_wav(wav_data: bytes) -> bytes:
             "wav",
             "-",
             "-r",
-            "16000",
+            str(rate),
             "-e",
             "signed-integer",
             "-b",
-            "16",
+            str(width),
             "-c",
-            "1",
+            str(channels),
             "-t",
             "wav",
             "-",
@@ -175,17 +176,16 @@ def convert_wav(wav_data: bytes) -> bytes:
     ).stdout
 
 
-def maybe_convert_wav(wav_data: bytes) -> bytes:
+def maybe_convert_wav(wav_data: bytes, rate=16000, width=16, channels=1) -> bytes:
     """Converts WAV data to 16-bit, 16Khz mono if necessary."""
     with io.BytesIO(wav_data) as wav_io:
         with wave.open(wav_io, "rb") as wav_file:
-            rate, width, channels = (
-                wav_file.getframerate(),
-                wav_file.getsampwidth(),
-                wav_file.getnchannels(),
-            )
-            if (rate != 16000) or (width != 2) or (channels != 1):
-                return convert_wav(wav_data)
+            if (
+                (wav_file.getframerate() != rate)
+                or (wav_file.getsampwidth() != width)
+                or (wav_file.getnchannels() != channels)
+            ):
+                return convert_wav(wav_data, rate=rate, width=width, channels=channels)
 
             return wav_file.readframes(wav_file.getnframes())
 
@@ -477,3 +477,37 @@ def hass_request_kwargs(
         kwargs["verify"] = pem_file
 
     return kwargs
+
+
+# -----------------------------------------------------------------------------
+
+
+def get_ini_paths(
+    sentences_ini: Path, sentences_dir: Optional[Path] = None
+) -> List[Path]:
+    """Get paths to all .ini files in profile."""
+    ini_paths: List[Path] = []
+    if sentences_ini.is_file():
+        ini_paths = [sentences_ini]
+
+    # Add .ini files from intents directory
+    if sentences_dir and sentences_dir.is_dir():
+        for ini_path in sentences_dir.rglob("*.ini"):
+            ini_paths.append(ini_path)
+
+    return ini_paths
+
+
+def get_all_intents(ini_paths: List[Path]) -> Dict[str, Any]:
+    """Get intents from all .ini files in profile."""
+    try:
+        with io.StringIO() as combined_ini_file:
+            for ini_path in ini_paths:
+                combined_ini_file.write(ini_path.read_text())
+                print("", file=combined_ini_file)
+
+            return rhasspynlu.parse_ini(combined_ini_file.getvalue())
+    except Exception:
+        _LOGGER.exception("Failed to parse %s", ini_paths)
+
+    return {}

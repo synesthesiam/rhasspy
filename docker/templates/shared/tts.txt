@@ -1,1 +1,1 @@
-RUN apt-get install --no-install-recommends --yes flite libttspico-utils
+RUN apt-get install --no-install-recommends --yes flite libttspico-utils lame

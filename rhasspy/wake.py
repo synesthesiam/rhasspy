@@ -7,8 +7,8 @@ import struct
 import subprocess
 import threading
 import time
-from typing import Any, Dict, Iterable, List, Optional, Type
 from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
 from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
@@ -404,6 +404,7 @@ class SnowboyWakeListener(RhasspyActor):
             for model_name in self.model_names:
                 model_settings = self.models[model_name]
                 model_path = Path(self.profile.read_path(model_name))
+                assert model_path.is_file(), f"Missing {model_path}"
                 self._logger.debug("Loading snowboy model from %s", model_path)
 
                 detector = snowboydetect.SnowboyDetect(
@@ -682,7 +683,7 @@ class PreciseWakeListener(RhasspyActor):
 
 # -----------------------------------------------------------------------------
 # MQTT-based wake listener (Hermes protocol)
-# https://docs.snips.ai/ressources/hermes-protocol
+# https://docs.snips.ai/reference/hermes
 # -----------------------------------------------------------------------------
 
 
@@ -754,7 +755,7 @@ class PorcupineWakeListener(RhasspyActor):
         self.chunk_format = ""
         self.chunk_size = 1024
         self.handle = None
-        self.keyword_paths = []
+        self.keyword_paths: List[Path] = []
         self.library_path = ""
         self.model_path = ""
         self.preload: bool = False
@@ -777,7 +778,7 @@ class PorcupineWakeListener(RhasspyActor):
             )
         )
         self.keyword_paths = [
-            self.profile.read_path(p)
+            Path(self.profile.read_path(p))
             for p in self.profile.get(
                 "wake.porcupine.keyword_path", "porcupine/porcupine.ppn"
             ).split(",")
@@ -855,12 +856,15 @@ class PorcupineWakeListener(RhasspyActor):
     def load_handle(self):
         """Load porcupine library."""
         if self.handle is None:
+            for kw_path in self.keyword_paths:
+                assert kw_path.is_file(), f"Missing {kw_path}"
+
             from porcupine import Porcupine
 
             self.handle = Porcupine(
                 self.library_path,
                 self.model_path,
-                keyword_file_paths=self.keyword_paths,
+                keyword_file_paths=[str(p) for p in self.keyword_paths],
                 sensitivities=self.sensitivities,
             )
 
@@ -869,7 +873,7 @@ class PorcupineWakeListener(RhasspyActor):
             self.chunk_format = "h" * self.handle.frame_length
             self._logger.debug(
                 "Loaded porcupine (keyword=%s). Expecting sample rate=%s, frame length=%s",
-                self.keyword_paths[0],
+                self.keyword_paths,
                 self.handle.sample_rate,
                 self.handle.frame_length,
             )

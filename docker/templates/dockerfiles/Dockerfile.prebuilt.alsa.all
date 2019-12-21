@@ -48,7 +48,7 @@ RUN python3 -m pip install --no-cache-dir /pocketsphinx-python.tar.gz && \
 COPY download/snowboy-1.3.0.tar.gz /
 RUN if [ "$BUILD_ARCH" != "aarch64" ]; then pip3 install --no-cache-dir /snowboy-1.3.0.tar.gz; fi
 
-RUN apt-get install --no-install-recommends --yes flite libttspico-utils
+RUN apt-get install --no-install-recommends --yes flite libttspico-utils lame
 
 COPY download/kaldi_${BUILD_ARCH}.tar.gz /kaldi.tar.gz
 RUN mkdir -p /opt && \

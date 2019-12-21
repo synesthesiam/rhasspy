@@ -34,7 +34,7 @@ Add to your [profile](profiles.md):
   "listen_on_start": true
 }
 ```
-    
+
 There are a lot of [keyword files](https://github.com/Picovoice/Porcupine/tree/master/resources/keyword_files) available for download. Use the `linux` platform if you're on desktop/laptop (`amd64`) and the `raspberrypi` platform if you're using a Raspberry Pi (`armhf`/`aarch64`). The `.ppn` files should go in the `porcupine` directory inside your profile (referenced by `keyword_path`).
 
 If you want to create a custom wake word, you will need to run the [Porcupine Optimizer](https://github.com/Picovoice/Porcupine/tree/master/tools/optimizer). **NOTE**: the generated keyword file is only valid for 30 days, though you can always just re-run the optimizer.
@@ -67,7 +67,7 @@ Add to your [profile](profiles.md):
 ```
 
 If your hotword model has multiple embedded hotwords (such as `jarvis.umdl`), the "sensitivity" parameter should contain sensitivities for each embedded hotword separated by commas (e.g., "0.5,0.5").
-    
+
 Visit [the snowboy website](https://snowboy.kitt.ai) to train your own wake word model (requires linking to a GitHub/Google/Facebook account). This *personal* model with end with `.pmdl`, and should go in your profile directory. Then, set `wake.snowboy.model` to the name of that file.
 
 You also have the option of using a pre-train *universal* model (`.umdl`) from [Kitt.AI](https://github.com/Kitt-AI/snowboy/tree/master/resources/models).
@@ -123,7 +123,7 @@ Add to your [profile](profiles.md):
   "listen_on_start": true
 }
 ```
-    
+
 Set `wake.pocketsphinx.keyphrase` to whatever you like, though 3-4 syllables is recommended. Make sure to [train](training.md) and restart Rhasspy whenever you change the keyphrase.
 
 The `wake.pocketsphinx.threshold` should be in the range 1e-50 to 1e-5. The smaller the number, the less like the keyphrase is to be observed. At least one person has written a script to [automatically tune the threshold](https://medium.com/@PankajB96/automatic-tuning-of-keyword-spotting-thresholds-a27256869d31).
@@ -151,14 +151,14 @@ Add to your [profile](profiles.md):
   "listen_on_start": true
 }
 ```
-    
+
 Follow [the instructions from Mycroft AI](https://github.com/MycroftAI/mycroft-precise/wiki/Training-your-own-wake-word#how-to-train-your-own-wake-word) to train your own wake word model. When you're finished, place **both** the `.pb` and `.pb.params` files in your profile directory, and set `wake.precise.model` to the name of the `.pb` file.
-    
+
 See `rhasspy.wake.PreciseWakeListener` for details.
 
 ## MQTT/Hermes
 
-Subscribes to the `hermes/hotword/<WAKEWORD_ID>/detected` topic, and wakes Rhasspy up when a message is received ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)). This allows Rhasspy to use the wake word functionality in [Snips.AI](https://snips.ai/).
+Subscribes to the `hermes/hotword/<WAKEWORD_ID>/detected` topic, and wakes Rhasspy up when a message is received ([Hermes protocol](https://docs.snips.ai/reference/hermes)). This allows Rhasspy to use the wake word functionality in [Snips.AI](https://snips.ai/).
 
 Add to your [profile](profiles.md):
 
@@ -184,7 +184,7 @@ Add to your [profile](profiles.md):
   "site_id": "default"
 }
 ```
-    
+
 Adjust the `mqtt` configuration to connect to your MQTT broker.
 Set `mqtt.site_id` to match your Snips.AI siteId and `wake.hermes.wakeword_id` to match your Snips.AI wakewordId.
 
@@ -209,7 +209,7 @@ Add to your [profile](profiles.md):
   "listen_on_start": true
 }
 ```
-    
+
 When Rhasspy starts, your program will be called with the given arguments. Once your program detects the wake word, it should print it to standard out and exit. Rhasspy will call your program again when it goes back to sleep. If the empty string is printed, Rhasspy will **not** wake up and your program will be called again.
 
 The following environment variables are available to your program:

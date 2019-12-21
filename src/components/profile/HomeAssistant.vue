@@ -1,13 +1,13 @@
 <template>
     <div class="card mt-3">
-        <div class="card-header"><i class="fas fa-home"></i>Home Assistant</div>
+        <div class="card-header"><i class="fas fa-home"></i>Intent Handling</div>
         <div class="card-body">
             <div class="form-group">
                 <div class="form-row">
                     <div class="form-check">
                         <input class="form-check-input" type="radio" id="handle-system-dummy" value="dummy" v-model="profile.handle.system">
                         <label class="form-check-label" v-bind:class="{ 'text-danger': profile.handle.system == 'dummy' }" for="handle-system-dummy">
-                            Do not use Home Assistant
+                            Do not handle intents on this device
                         </label>
                     </div>
                 </div>
@@ -88,6 +88,25 @@
                 </div>
                 <div class="form-row">
                     <p class="muted">Use <tt>$RHASSPY_PROFILE_DIR</tt> environment variable for the directory of this profile.</p>
+                </div>
+            </div>
+            <hr>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="handle-system-remote" value="remote" v-model="profile.handle.system">
+                        <label class="form-check-label" for="handle-system-remote">
+                            Use a remote HTTP server to handle intents
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="remote-handle-url" class="col-form-label">Remote URL</label>
+                    <div class="col">
+                        <input id="remote-handle-url" type="text" class="form-control" v-model="profile.handle.remote.url" :disabled="profile.intent.system != 'remote'">
+                    </div>
                 </div>
             </div>
         </div>

@@ -6,16 +6,16 @@ Rhasspy should run in a variety of software environments, including:
 * As a [Hass.io add-on](https://www.home-assistant.io/addons/)
 * Inside a [Python virtual environment](https://docs.python-guide.org/dev/virtualenvs/)
 
-### Docker
+## Docker
 
 The easiest way to try Rhasspy is with Docker. To get started, make sure you have [Docker installed](https://docs.docker.com/install/):
 
     curl -sSL https://get.docker.com | sh
-    
+
 and that your user is part of the `docker` group:
 
     sudo usermod -a -G docker $USER
-    
+
 **Be sure to reboot** after adding yourself to the `docker` group!
 
 Next, start the [Rhasspy Docker image](https://hub.docker.com/r/synesthesiam/rhasspy-server) in the background:
@@ -27,9 +27,9 @@ Next, start the [Rhasspy Docker image](https://hub.docker.com/r/synesthesiam/rha
           synesthesiam/rhasspy-server:latest \
           --user-profiles /profiles \
           --profile en
-          
+
 This will start Rhasspy with the English profile (`en`) in the background (`-d`) on port 12101 (`-p`) and give Rhasspy access to your microphone (`--device`). Any changes you make to [your profile](profiles.md) will be saved to `~/.config/rhasspy`.
-          
+
 Once it starts, Rhasspy's web interface should be accessible at [http://localhost:12101](http://localhost:12101). If something went wrong, trying running docker with `-it` instead of `-d` to see the output.
 
 If you're using [docker compose](https://docs.docker.com/compose/), add the following to your `docker-compose.yml` file:
@@ -45,7 +45,7 @@ If you're using [docker compose](https://docs.docker.com/compose/), add the foll
             - "/dev/snd:/dev/snd"
         command: --user-profiles /profiles --profile en
 
-### Hass.io
+## Hass.io
 
 The second easiest was to install Rhasspy is as a [Hass.io add-on](https://www.home-assistant.io/addons/). Following the [installation instructions for Hass.io](https://www.home-assistant.io/hassio/installation/) before proceeding.
 
@@ -61,35 +61,29 @@ Before starting the add-on, make sure to give it access to your microphone and s
 
 ![Audio settings for Hass.io](img/hass-io-audio.png)
 
-
-### Virtual Environment
+## Virtual Environment
 
 Rhasspy can be installed into a Python virtual environment, though there are a number of requirements. This may be desirable, however, if you have trouble getting Rhasspy to access your microphone from within a Docker container. To start, clone the repo somewhere:
 
     git clone https://github.com/synesthesiam/rhasspy.git
-    
+
 Then run the `download-dependencies.sh` and `create-venv.sh` scripts (assumes a Debian distribution):
 
     cd rhasspy/
     ./download-dependencies.sh
     ./create-venv.sh
-    
+
 Once the installation finishes (5-10 minutes on a Raspberry Pi 3), you can use the `run-venv.sh` script to start Rhasspy:
 
     ./run-venv.sh --profile en
-    
+
 If all is well, the web interface will be available at [http://localhost:12101](http://localhost:12101)
 
-### Software Requirements
+## Software Requirements
 
 At its core, Rhasspy requires:
 
-* Linux
-* Python 3.6
-* [Flask](https://pypi.org/project/Flask/) web server, including
-    * [flask-swagger-ui](https://pypi.org/project/flask-swagger-ui/) for HTTP API documentation
-    * [Flask-Cors](https://pypi.org/project/Flask-Cors/) for [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) stuff
-    * [Flask-Sockets](https://pypi.org/project/Flask-Sockets/) for websocket support
-* [pydash](https://pypi.org/project/pydash/) utility library
+* Linux (preferably Debian)
+* Python 3.6 or higher
 
 To actually use any components, however, requires a lot of [extra software](about.md#supporting-tools).

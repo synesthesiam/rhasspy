@@ -89,7 +89,7 @@ To run the Docker image, simply execute:
 ```bash
 docker run -it -p 59125:59125 synesthesiam/marytts:5.2
 ```
-    
+
 and visit [http://localhost:59125](http://localhost:59125) after it starts. 
 
 If you're using [docker compose](https://docs.docker.com/compose/), add the following to your docker-compose.yml file:
@@ -100,9 +100,9 @@ If you're using [docker compose](https://docs.docker.com/compose/), add the foll
       ports:
         - "59125:59125"
 
-
 When using docker-compose, set `marytts.url` in your profile to be `http://marytts:59125`.  This will allow rhasspy, from within 
 its docker container, to resolve and connect to marytts (its sibling container).
+
 
 ### Adding Voices
 
@@ -189,6 +189,25 @@ If there are problems using the Google API (e.g., your internet connection fails
 Contributed by [Romkabouter](https://github.com/Romkabouter).
 
 See `rhasspy.tts.GoogleWaveNetSentenceSpeaker` for details.
+
+## Home Assistant TTS Platform
+
+Use a [TTS platform](https://www.home-assistant.io/integrations/tts) on your Home Assistant server.
+
+Add to your [profile](profiles.md):
+
+```json
+"text_to_speech": {
+  "system": "hass_tts",
+  "hass_tts": {
+      "platform": "..."
+  }
+}
+```
+
+The settings from your profile's `home_assistant` section are automatically used (URL, access token, etc.).
+
+See `rhasspy.tts.HomeAssistantSentenceSpeaker` for details.
 
 ## Command
 

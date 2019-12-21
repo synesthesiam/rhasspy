@@ -8,32 +8,23 @@ from typing import Any, Dict, List, Optional, Type
 
 import pywrapfst as fst
 
-from rhasspy.actor import (
-    ActorExitRequest,
-    ChildActorExited,
-    Configured,
-    ConfigureEvent,
-    RhasspyActor,
-    StateTransition,
-    WakeupMessage,
-)
-from rhasspy.audio_player import PlayWavData, PlayWavFile, WavPlayed, get_sound_class
-from rhasspy.audio_recorder import (
-    AudioData,
-    HTTPAudioRecorder,
-    StartRecordingToBuffer,
-    StopRecordingToBuffer,
-    get_microphone_class,
-)
-from rhasspy.command_listener import ListenForCommand, VoiceCommand, get_command_class
-from rhasspy.intent import IntentRecognized, RecognizeIntent, get_recognizer_class
-from rhasspy.intent_handler import HandleIntent, IntentHandled, get_intent_handler_class
-from rhasspy.intent_train import (
-    IntentTrainingComplete,
-    IntentTrainingFailed,
-    TrainIntent,
-    get_intent_trainer_class,
-)
+from rhasspy.actor import (ActorExitRequest, ChildActorExited, Configured,
+                           ConfigureEvent, RhasspyActor, StateTransition,
+                           WakeupMessage)
+from rhasspy.audio_player import (PlayWavData, PlayWavFile, WavPlayed,
+                                  get_sound_class)
+from rhasspy.audio_recorder import (AudioData, HTTPAudioRecorder,
+                                    StartRecordingToBuffer,
+                                    StopRecordingToBuffer,
+                                    get_microphone_class)
+from rhasspy.command_listener import (ListenForCommand, VoiceCommand,
+                                      get_command_class)
+from rhasspy.intent import (IntentRecognized, RecognizeIntent,
+                            get_recognizer_class)
+from rhasspy.intent_handler import (HandleIntent, IntentHandled,
+                                    get_intent_handler_class)
+from rhasspy.intent_train import (IntentTrainingComplete, IntentTrainingFailed,
+                                  TrainIntent, get_intent_trainer_class)
 from rhasspy.mqtt import MqttPublish
 from rhasspy.pronounce import GetWordPhonemes, GetWordPronunciations, SpeakWord
 from rhasspy.stt import TranscribeWav, WavTranscription, get_decoder_class
@@ -41,13 +32,9 @@ from rhasspy.stt_train import get_speech_trainer_class
 from rhasspy.train import train_profile
 from rhasspy.tts import SpeakSentence, get_speech_class
 from rhasspy.utils import buffer_to_wav
-from rhasspy.wake import (
-    ListenForWakeWord,
-    StopListeningForWakeWord,
-    WakeWordDetected,
-    WakeWordNotDetected,
-    get_wake_class,
-)
+from rhasspy.wake import (ListenForWakeWord, StopListeningForWakeWord,
+                          WakeWordDetected, WakeWordNotDetected,
+                          get_wake_class)
 
 # -----------------------------------------------------------------------------
 
@@ -231,6 +218,9 @@ class DialogueManager(RhasspyActor):
         self._wake: Optional[RhasspyActor] = None
         self.wake_receiver: Optional[RhasspyActor] = None
 
+        # Name of most recently detected wake word
+        self.wake_detected_name: Optional[str] = None
+
         # Word pronunciations
         self.word_pronouncer_class: Optional[Type] = None
         self._word_pronouncer: Optional[RhasspyActor] = None
@@ -371,7 +361,7 @@ class DialogueManager(RhasspyActor):
                 self._logger.debug("%s started", sender_name)
 
             if len(self.wait_actors) == 0:
-                self._logger.info("Actors loaded")
+                self._logger.debug("Actors loaded")
                 self.transition("ready")
 
                 # Inform all actors that we're ready
@@ -429,6 +419,7 @@ class DialogueManager(RhasspyActor):
         """Handle messages in asleep state."""
         if isinstance(message, WakeWordDetected):
             self._logger.debug("Awake!")
+            self.wake_detected_name = message.name
             self.transition("awake")
             if self.wake_receiver is not None:
                 self.send(self.wake_receiver, message)
@@ -493,6 +484,7 @@ class DialogueManager(RhasspyActor):
                     "text": message.text,
                     "likelihood": 1,
                     "seconds": 0,
+                    "wakeId": self.wake_detected_name or ""
                 }
             ).encode()
 
@@ -522,6 +514,9 @@ class DialogueManager(RhasspyActor):
             if self.recorder_class == HTTPAudioRecorder:
                 # Forward to audio recorder
                 self.send(self.recorder, message)
+
+            message.intent["wakeId"] = self.wake_detected_name or ""
+            message.intent["siteId"] = self.site_id
 
             # Augment with extra entities
             entities = message.intent.get("entities", [])

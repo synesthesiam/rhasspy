@@ -4,7 +4,6 @@ import asyncio
 import io
 import json
 import logging
-
 # Configure logging
 import logging.config
 import os
@@ -219,7 +218,9 @@ async def main() -> None:
     args = parser.parse_args()
 
     if args.debug:
-        logging.root.setLevel(logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
 
     profiles_dirs = [args.system_profiles, args.user_profiles]
     logger.debug(profiles_dirs)
@@ -534,7 +535,7 @@ def _send_frame(
             mqtt_file.setframerate(rate)
             mqtt_file.setsampwidth(width)
             mqtt_file.setnchannels(channels)
-            mqtt_file.writeframesraw(audio_data)
+            mqtt_file.writeframes(audio_data)
 
         # Send audio frame WAV
         mqtt_payload = mqtt_buffer.getvalue()

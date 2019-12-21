@@ -7,7 +7,7 @@ The following table summarizes language support for the various speech to text s
 | System                                         | en       | de       | es       | fr       | it       | nl       | ru       | el       | hi       | zh       | vi       | pt       | ca       |
 | ------                                         | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  |
 | [pocketsphinx](speech-to-text.md#pocketsphinx) | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |          | &#x2713; | &#x2713; |
-| [kaldi](speech-to-text.md#kaldi)               | &#x2713; | &#x2713; |          |          |          | &#x2713; |          |          |          |          | &#x2713; |          |          |
+| [kaldi](speech-to-text.md#kaldi)               | &#x2713; | &#x2713; |          | &#x2713; |          | &#x2713; |          |          |          |          | &#x2713; |          |          |
 
 ## Pocketsphinx
 
@@ -100,9 +100,36 @@ See `rhasspy.stt.RemoteDecoder` for details.
 
 ## MQTT/Hermes
 
-Publishes transcriptions to `hermes/asr/textCaptured` ([Hermes protocol](https://docs.snips.ai/ressources/hermes-protocol)) each time a voice command is spoken.
+Publishes transcriptions to `hermes/asr/textCaptured` ([Hermes protocol](https://docs.snips.ai/reference/hermes)) each time a voice command is spoken.
 
 This is enabled by default.
+
+## Home Assistant STT Platform
+
+Use an [STT platform](https://www.home-assistant.io/integrations/stt) on your Home Assistant server.
+This is the same way [Ada](https://github.com/home-assistant/ada) sends speech to Home Assistant.
+
+Add to your [profile](profiles.md):
+
+```json
+"speech_to_text": {
+  "system": "hass_stt",
+  "hass_stt": {
+    "platform": "...",
+    "sample_rate": 16000,
+    "bit_size": 16,
+    "channels": 1,
+    "language": "en-US"
+  }
+}
+```
+
+The settings from your profile's `home_assistant` section are automatically used (URL, access token, etc.).
+
+Rhasspy will convert audio to the configured format before streaming it to Home Assistant.
+In the future, this will be auto-detected from the STT platform API.
+
+See `rhasspy.stt.HomeAssistantSTTIntegration` for details.
 
 ## Command
 

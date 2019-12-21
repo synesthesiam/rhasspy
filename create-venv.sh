@@ -104,7 +104,8 @@ if [[ -z "${no_system}" ]]; then
          gfortran \
          sphinxbase-utils sphinxtrain pocketsphinx \
          jq checkinstall unzip xz-utils \
-         curl
+         curl \
+         lame
 fi
 
 # -----------------------------------------------------------------------------

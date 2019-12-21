@@ -64,7 +64,7 @@
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="profile.microphone.system" id="audio-system-mqtt" value="hermes" v-model="profile.microphone.system">
                         <label class="form-check-label" for="audio-system-mqtt">
-                            Get microphone input remotely with MQTT (<a href="https://docs.snips.ai/ressources/hermes-protocol">Hermes protocol</a>)
+                            Get microphone input remotely with MQTT (<a href="https://docs.snips.ai/reference/hermes">Hermes protocol</a>)
                         </label>
                     </div>
                 </div>

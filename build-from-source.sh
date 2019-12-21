@@ -18,6 +18,8 @@ DEFINE_boolean 'adapt' false 'Install Mycroft Adapt'
 DEFINE_boolean 'google' false 'Install Google Text to Speech'
 DEFINE_boolean 'kaldi' false 'Install Kaldi'
 DEFINE_boolean 'offline' false "Don't download anything"
+DEFINE_boolean 'web' true "Build Vue web interface with yarn"
+DEFINE_boolean 'sudo' true "Use sudo for apt"
 DEFINE_integer 'make-threads' 4 'Number of threads to use with make' 'j'
 DEFINE_string 'python' 'python3' 'Path to Python executable'
 
@@ -69,6 +71,20 @@ if [[ "${FLAGS_offline}" -eq "${FLAGS_TRUE}" ]]; then
     offline='true'
 fi
 
+if [[ "${FLAGS_web}" -eq "${FLAGS_FALSE}" ]]; then
+    no_web='true'
+fi
+
+if [[ "${FLAGS_sudo}" -eq "${FLAGS_TRUE}" ]]; then
+    function run_sudo {
+        sudo "$@"
+    }
+else
+    function run_sudo {
+        "$@"
+    }
+fi
+
 make_threads="${FLAGS_make_threads}"
 
 # -----------------------------------------------------------------------------
@@ -99,9 +115,11 @@ function maybe_download {
 
 echo "Checking required programs"
 
-if [[ ! -n "$(command -v yarn)" ]]; then
-    echo "Please install yarn to continue (https://yarnpkg.com)"
-    exit 1
+if [[ -z "${no_web}" ]]; then
+    if [[ ! -n "$(command -v yarn)" ]]; then
+        echo "Please install yarn to continue (https://yarnpkg.com)"
+        exit 1
+    fi
 fi
 
 # -----------------------------------------------------------------------------
@@ -109,17 +127,18 @@ fi
 if [[ -z "${no_system}" ]]; then
     echo "Installing system dependencies"
 
-    sudo apt-get update
-    sudo apt-get install --no-install-recommends --yes \
-         python3 python3-pip python3-venv python3-dev \
-         python \
-         build-essential autoconf autoconf-archive libtool automake bison \
-         sox espeak flite swig portaudio19-dev \
-         libatlas-base-dev \
-         gfortran \
-         sphinxbase-utils sphinxtrain pocketsphinx \
-         jq checkinstall unzip xz-utils \
-         curl
+    run_sudo apt-get update
+    run_sudo apt-get install --no-install-recommends --yes \
+             python3 python3-pip python3-venv python3-dev \
+             python \
+             build-essential autoconf autoconf-archive libtool automake bison \
+             sox espeak flite swig portaudio19-dev \
+             libatlas-base-dev \
+             gfortran \
+             sphinxbase-utils sphinxtrain pocketsphinx \
+             jq checkinstall unzip xz-utils \
+             curl \
+             lame
 fi
 
 # -----------------------------------------------------------------------------
@@ -174,7 +193,7 @@ fi
 kaldi_dir="${this_dir}/opt/kaldi"
 if [[ ! -d "${kaldi_dir}" ]]; then
     install libatlas-base-dev libatlas3-base gfortran
-    sudo ldconfig
+    run_sudo ldconfig
     kaldi_file="${download_dir}/kaldi-2019.tar.gz"
 
     if [[ ! -s "${kaldi_file}" ]]; then
@@ -207,7 +226,6 @@ if [[ ! -d "${openfst_dir}/build" ]]; then
         ./configure "--prefix=${openfst_dir}/build" \
                     --enable-far \
                     --disable-static \
-                    --disable-bin \
                     --enable-shared \
                     --enable-ngram-fsts && \
         make -j "${make_threads}" && \
@@ -217,6 +235,7 @@ fi
 # Copy build artifacts into virtual environment
 cp -R "${openfst_dir}"/build/include/* "${venv}/include/"
 cp -R "${openfst_dir}"/build/lib/*.so* "${venv}/lib/"
+cp -R "${openfst_dir}"/build/bin/* "${venv}/bin/"
 
 # -----------------------------------------------------------------------------
 # opengrm
@@ -228,9 +247,11 @@ cp -R "${openfst_dir}"/build/lib/*.so* "${venv}/lib/"
 # opengrm
 if [[ ! -d "${opengrm_dir}/build" ]]; then
     echo "Building opengrm (${opengrm_file})"
+    export CXXFLAGS="-I${venv}/include"
+    export LDFLAGS="-L${venv}/lib"
     tar -C "${build_dir}" -xf "${opengrm_file}" && \
         cd "${opengrm_dir}" && \
-        CXXFLAGS="-I${venv}/include" LDFLAGS="-L${venv}/lib" ./configure "--prefix=${opengrm_dir}/build" && \
+        ./configure "--prefix=${opengrm_dir}/build" && \
         make -j "${make_threads}" && \
         make install
 fi
@@ -375,5 +396,7 @@ esac
 
 # -----------------------------------------------------------------------------
 
-echo "Building web interface"
-cd "${this_dir}" && yarn build
+if [[ -z "${no_web}" ]]; then
+    echo "Building web interface"
+    cd "${this_dir}" && yarn build
+fi

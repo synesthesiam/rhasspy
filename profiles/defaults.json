@@ -170,6 +170,13 @@
     "remote": {
       "url": "http://my-server:12101/api/speech-to-text"
     },
+    "hass_stt": {
+      "platform": "",
+      "sample_rate": 16000,
+      "bit_size": 16,
+      "channels": 1,
+      "language": "en-US"
+    },
     "sentences_ini": "sentences.ini",
     "sentences_dir": "intents",
     "slots_dir": "slots",
@@ -198,6 +205,9 @@
       "url": "https://texttospeech.googleapis.com/v1/text:synthesize",
       "voice": "Wavenet-C",
       "fallback_tts": "espeak"
+    },
+    "hass_tts": {
+      "platform": ""
     }
   },
   "training": {

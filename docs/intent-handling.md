@@ -1,6 +1,10 @@
 # Intent Handling
 
-After a voice command has been transcribed and your intent has been successfully recognized, Rhasspy is ready to send a JSON event to Home Assistant or Node-RED.
+After a voice command has been transcribed and your intent has been successfully recognized, Rhasspy is ready to send a JSON event to another system like Home Assistant or Node-RED.
+
+* [Home Assistant](#home-assistant)
+* [Remote Server](#remote-server)
+* [Command](#command)
 
 Regardless of which intent handling system you choose, Rhasspy emits JSON events [over a websocket connection](usage.md#websocket-events).
 
@@ -112,10 +116,60 @@ Set `home_assistant.pem_file` to the full path to your <a href="http://docs.pyth
 
 Use the environment variable `RHASSPY_PROFILE_DIR` to reference your current profile's directory. For example, `$RHASSPY_PROFILE_DIR/my.pem` will tell Rhasspy to use a file named `my.pem` in your profile directory when verifying your self-signed certificate.
 
+## Remote Server
+
+Rhasspy can POST the intent JSON to a remote URL.
+
+Add to your [profile](profiles.md):
+
+```json
+"handle": {
+  "system": "remote",
+  "remote": {
+      "url": "http://<address>:<port>/path/to/endpoint"
+  }
+}
+```
+
+When an intent is recognized, Rhasspy will POST to `handle.remote.url` with the intent JSON. You should **return JSON** back, optionally with additional information. If `handle.forward_to_hass` is `true`, Rhasspy will look for a `hass_event` property of the returned JSON with the following structure:
+
+```json
+{
+  // rest of input JSON
+  // ...
+  "hass_event": {
+    "event_type": "...",
+    "event_data": {
+      "key": "value",
+      // ...
+    }
+  }
+}
+```
+
+Rhasspy will create the Home Assistant event based on this information. If it is **not** present, the remaining intent information will be used to construct the event as normal (i.e., `intent` and `entities`). If `handle.forward_to_hass` is `false`, the output of your program is not used.
+
+### Speech
+
+If the returned JSON contains a "speech" key like this:
+
+```json
+{
+  ...
+  "speech": {
+    "text": "Some text to speak."
+  }
+}
+```
+
+then Rhasspy will forward `speech.text` to the configured [text to speech](text-to-speech.md) system.
+
+See `rhasspy.intent_handler.RemoteIntentHandler` for details.
+
 ## Command
 
 Once an intent is successfully recognized, Rhasspy will send an event to Home Assistant with the details. You can call a custom program instead *or in addition* to this behavior.
-    
+
 Add to your [profile](profiles.md):
 
 ```json
@@ -144,7 +198,7 @@ When an intent is recognized, Rhasspy will call your custom program with the int
   }
 }
 ```
-    
+
 Rhasspy will create the Home Assistant event based on this information. If it is **not** present, the remaining intent information will be used to construct the event as normal (i.e., `intent` and `entities`). If `handle.forward_to_hass` is `false`, the output of your program is not used.
 
 The following environment variables are available to your program:
@@ -154,6 +208,21 @@ The following environment variables are available to your program:
 * `$RHASSPY_PROFILE_DIR` - directory of the current profile (where `profile.json` is)
 
 See [handle.sh](https://github.com/synesthesiam/rhasspy/blob/master/bin/mock-commands/handle.sh) for an example program.
+
+### Speech
+
+If the returned JSON contains a "speech" key like this:
+
+```json
+{
+  ...
+  "speech": {
+    "text": "Some text to speak."
+  }
+}
+```
+
+then Rhasspy will forward `speech.text` to the configured [text to speech](text-to-speech.md) system.
 
 See `rhasspy.intent_handler.CommandIntentHandler` for details.
 

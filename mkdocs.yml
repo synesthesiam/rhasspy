@@ -4,6 +4,7 @@ nav:
   - Home: index.md
   - Hardware: hardware.md
   - Installation: installation.md
+  - Tutorials: tutorials.md
   - Usage: usage.md
   - Profiles: profiles.md
   - Training: training.md
@@ -15,5 +16,6 @@ nav:
   - Intent Recognition: intent-recognition.md
   - Intent Handling: intent-handling.md
   - Text to Speech: text-to-speech.md
+  - Reference: reference.md
   - License: license.md
   - About: about.md

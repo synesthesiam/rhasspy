@@ -7,8 +7,9 @@ import logging
 import os
 import re
 import time
+from collections import defaultdict
 from pathlib import Path
-from typing import Any, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 from uuid import uuid4
 
 from quart import (
@@ -23,6 +24,8 @@ from quart import (
 )
 from quart_cors import cors
 from swagger_ui import quart_api_doc
+import rhasspynlu
+import attr
 
 from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
@@ -31,18 +34,19 @@ from rhasspy.intent import IntentRecognized
 from rhasspy.utils import (
     FunctionLoggingHandler,
     buffer_to_wav,
-    load_phoneme_examples,
-    recursive_remove,
     get_wav_duration,
+    load_phoneme_examples,
     read_dict,
+    recursive_remove,
+    get_ini_paths,
+    get_all_intents,
 )
 
 # -----------------------------------------------------------------------------
-# Flask Web App Setup
+# Quart Web App Setup
 # -----------------------------------------------------------------------------
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
 
 loop = asyncio.get_event_loop()
 
@@ -83,8 +87,15 @@ parser.add_argument(
 parser.add_argument(
     "--ssl", nargs=2, help="Use SSL with <CERT_FILE <KEY_FILE>", default=None
 )
+parser.add_argument("--log-level", default="DEBUG", help="Set logging level")
 
 args = parser.parse_args()
+
+# Set log level
+log_level = getattr(logging, args.log_level.upper())
+logging.basicConfig(level=log_level)
+
+
 logger.debug(args)
 
 system_profiles_dir = os.path.abspath(args.system_profiles)
@@ -454,18 +465,16 @@ async def api_sentences():
             return "Wrote {} char(s) to {}".format(
                 num_chars, [str(p) for p in paths_written]
             )
-        else:
-            # Update sentences.ini only
-            sentences_path = Path(
-                core.profile.write_path(
-                    core.profile.get("speech_to_text.sentences_ini")
-                )
-            )
 
-            data = await request.data
-            with open(sentences_path, "wb") as sentences_file:
-                sentences_file.write(data)
-                return "Wrote {} byte(s) to {}".format(len(data), sentences_path)
+        # Update sentences.ini only
+        sentences_path = Path(
+            core.profile.write_path(core.profile.get("speech_to_text.sentences_ini"))
+        )
+
+        data = await request.data
+        with open(sentences_path, "wb") as sentences_file:
+            sentences_file.write(data)
+            return "Wrote {} byte(s) to {}".format(len(data), sentences_path)
 
     # GET
     sentences_path_rel = core.profile.read_path(
@@ -478,7 +487,15 @@ async def api_sentences():
         # directory.
         sentences_dict = {}
         if sentences_path.is_file():
-            key = str(sentences_path.relative_to(core.profile.read_path()))
+            try:
+                # Try user profile dir first
+                profile_dir = Path(core.profile.user_profiles_dir) / core.profile.name
+                key = str(sentences_path.relative_to(profile_dir))
+            except Exception:
+                # Fall back to system profile dir
+                profile_dir = Path(core.profile.system_profiles_dir) / core.profile.name
+                key = str(sentences_path.relative_to(profile_dir))
+
             sentences_dict[key] = sentences_path.read_text()
 
         ini_dir = Path(
@@ -513,7 +530,9 @@ async def api_custom_words():
     if request.method == "POST":
         custom_words_path = Path(
             core.profile.write_path(
-                core.profile.get(f"speech_to_text.{speech_system}.custom_words")
+                core.profile.get(
+                    f"speech_to_text.{speech_system}.custom_words", "custom_words.txt"
+                )
             )
         )
 
@@ -534,7 +553,9 @@ async def api_custom_words():
 
     custom_words_path = Path(
         core.profile.read_path(
-            core.profile.get(f"speech_to_text.{speech_system}.custom_words")
+            core.profile.get(
+                f"speech_to_text.{speech_system}.custom_words", "custom_words.txt"
+            )
         )
     )
 
@@ -746,7 +767,9 @@ async def api_unknown_words() -> Response:
     unknown_words = {}
     unknown_path = Path(
         core.profile.read_path(
-            core.profile.get(f"speech_to_text.{speech_system}.unknown_words")
+            core.profile.get(
+                f"speech_to_text.{speech_system}.unknown_words", "unknown_words.txt"
+            )
         )
     )
 
@@ -770,15 +793,22 @@ async def api_text_to_speech() -> str:
     """Speak a sentence with text to speech system."""
     global last_sentence
     repeat = request.args.get("repeat", "false").strip().lower() == "true"
+    play = request.args.get("play", "true").strip().lower() == "true"
     language = request.args.get("language")
     voice = request.args.get("voice")
     data = await request.data
     sentence = last_sentence if repeat else data.decode().strip()
 
     assert core is not None
-    await core.speak_sentence(sentence, language=language, voice=voice)
+    result = await core.speak_sentence(
+        sentence, play=play, language=language, voice=voice
+    )
 
     last_sentence = sentence
+
+    if not play:
+        # Return WAV data instead of speaking
+        return result.wav_data
 
     return sentence
 
@@ -791,13 +821,15 @@ async def api_slots() -> Union[str, Response]:
     """Get the values of all slots."""
     assert core is not None
 
-    slots_dir = Path(
-        core.profile.read_path(core.profile.get("speech_to_text.slots_dir"))
-    )
-
     if request.method == "POST":
         overwrite_all = request.args.get("overwrite_all", "false").lower() == "true"
         new_slot_values = await request.json
+
+        slots_dir = Path(
+            core.profile.write_path(
+                core.profile.get("speech_to_text.slots_dir", "slots")
+            )
+        )
 
         if overwrite_all:
             # Remote existing values first
@@ -813,32 +845,40 @@ async def api_slots() -> Union[str, Response]:
             if isinstance(values, str):
                 values = [values]
 
-            slots_path = Path(
-                core.profile.write_path(
-                    core.profile.get("speech_to_text.slots_dir", "slots"), f"{name}"
-                )
-            )
+            slots_path = slots_dir / name
 
             # Create directories
             slots_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Write data
-            with open(slots_path, "w") as slots_file:
-                for value in values:
-                    value = value.strip()
-                    if value:
-                        print(value, file=slots_file)
+            # Merge with existing values
+            values = set(values)
+            if slots_path.is_file():
+                values.update(line for line in slots_path.read_text().splitlines())
+
+            # Write merged values
+            if values:
+                with open(slots_path, "w") as slots_file:
+                    for value in values:
+                        value = value.strip()
+                        if value:
+                            print(value, file=slots_file)
 
         return "OK"
 
     # Read slots into dictionary
+    slots_dir = Path(
+        core.profile.read_path(core.profile.get("speech_to_text.slots_dir", "slots"))
+    )
+
     slots_dict = {}
-    for slot_file_path in slots_dir.glob("*"):
-        if slot_file_path.is_file():
-            slot_name = slot_file_path.name
-            slots_dict[slot_name] = [
-                line.strip() for line in slot_file_path.read_text().splitlines()
-            ]
+
+    if slots_dir.is_dir():
+        for slot_file_path in slots_dir.glob("*"):
+            if slot_file_path.is_file():
+                slot_name = slot_file_path.name
+                slots_dict[slot_name] = [
+                    line.strip() for line in slot_file_path.read_text().splitlines()
+                ]
 
     return jsonify(slots_dict)
 
@@ -885,6 +925,55 @@ def api_slots_by_name(name: str) -> Union[str, Response]:
         slot_values = [line.strip() for line in slot_file_path.read_text().splitlines()]
 
     return jsonify(slot_values)
+
+
+# -----------------------------------------------------------------------------
+
+
+@app.route("/api/intents")
+def api_intents():
+    """Return JSON with information about intents."""
+    assert core is not None
+
+    sentences_ini = Path(
+        core.profile.read_path(core.profile.get("speech_to_text.sentences_ini"))
+    )
+
+    sentences_dir = Path(
+        core.profile.read_path(core.profile.get("speech_to_text.sentences_dir"))
+    )
+
+    # Load all .ini files and parse
+    ini_paths: List[Path] = get_ini_paths(sentences_ini, sentences_dir)
+    intents: Dict[str, Any] = get_all_intents(ini_paths)
+
+    def add_type(item, item_dict: Dict[str, Any]):
+        """Add item_type to expression dictionary."""
+        item_dict["item_type"] = type(item).__name__
+        if hasattr(item, "items"):
+            # Group, alternative, etc.
+            for sub_item, sub_item_dict in zip(item.items, item_dict["items"]):
+                add_type(sub_item, sub_item_dict)
+        elif hasattr(item, "rule_body"):
+            # Rule
+            add_type(item.rule_body, item_dict["rule_body"])
+
+    # Convert to dictionary
+    replacements = defaultdict(list)
+    intents_dict = {}
+    for intent_name, intent_sentences in intents.items():
+        sentence_dicts = []
+        for sentence in intent_sentences:
+            sentence_dict = attr.asdict(sentence)
+
+            # Add item_type field
+            add_type(sentence, sentence_dict)
+            sentence_dicts.append(sentence_dict)
+
+        intents_dict[intent_name] = sentence_dicts
+
+    # Convert to JSON
+    return jsonify(intents_dict)
 
 
 # -----------------------------------------------------------------------------
@@ -1071,12 +1160,14 @@ quart_api_doc(
 
 
 def prefers_json() -> bool:
+    """True if client prefers JSON over plain text."""
     return quality(request.accept_mimetypes, "application/json") > quality(
         request.accept_mimetypes, "text/plain"
     )
 
 
 def quality(accept, key: str) -> float:
+    """Return Accept quality for media type."""
     for option in accept.options:
         if accept._values_match(key, option.value):
             return option.quality

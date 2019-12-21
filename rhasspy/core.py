@@ -209,7 +209,7 @@ class RhasspyCore:
             assert isinstance(result, WavTranscription), result
             return result
 
-    async def recognize_intent(self, text: str) -> IntentRecognized:
+    async def recognize_intent(self, text: str, wakeId: str = "") -> IntentRecognized:
         """Recognize an intent from text."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
@@ -240,6 +240,10 @@ class RhasspyCore:
                 intent_slots[ev["entity"]] = ev["value"]
 
             result.intent["slots"] = intent_slots
+
+            # Add wake/site ID
+            result.intent["wakeId"] = wakeId
+            result.intent["siteId"] = self.profile.get("mqtt.site_id", "default")
 
             return result
 

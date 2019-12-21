@@ -6,10 +6,13 @@ import tempfile
 import time
 import wave
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
+from urllib.parse import urljoin
+
+import requests
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.utils import convert_wav
+from rhasspy.utils import convert_wav, hass_request_kwargs, maybe_convert_wav
 
 # -----------------------------------------------------------------------------
 
@@ -42,9 +45,14 @@ class WavTranscription:
 
 def get_decoder_class(system: str) -> Type[RhasspyActor]:
     """Get type for profile speech to text decoder."""
-    assert system in ["dummy", "pocketsphinx", "kaldi", "remote", "command"], (
-        "Invalid speech to text system: %s" % system
-    )
+    assert system in [
+        "dummy",
+        "pocketsphinx",
+        "kaldi",
+        "remote",
+        "hass_stt",
+        "command",
+    ], ("Invalid speech to text system: %s" % system)
 
     if system == "pocketsphinx":
         # Use pocketsphinx locally
@@ -55,6 +63,9 @@ def get_decoder_class(system: str) -> Type[RhasspyActor]:
     if system == "remote":
         # Use remote Rhasspy server
         return RemoteDecoder
+    if system == "hass_stt":
+        # Use Home Assistant STT platform
+        return HomeAssistantSTTIntegration
     if system == "command":
         # Use external program
         return CommandDecoder
@@ -465,6 +476,141 @@ class KaldiDecoder(RhasspyActor):
             problems[
                 "Missing online.conf"
             ] = f"Configuration file not found at {conf_path}. Did you train your profile?"
+
+        return problems
+
+
+# -----------------------------------------------------------------------------
+# Home Assistant STT Integration
+# https://www.home-assistant.io/integrations/stt
+# -----------------------------------------------------------------------------
+
+
+class HomeAssistantSTTIntegration(RhasspyActor):
+    """Use STT integration to Home Assistant"""
+
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.hass_config: Dict[str, Any] = {}
+        self.pem_file: Optional[str] = ""
+        self.platform: Optional[str] = None
+        self.chunk_size: int = 2048
+
+    def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
+        self.hass_config = self.profile.get("home_assistant", {})
+
+        # PEM file for self-signed HA certificates
+        self.pem_file = self.hass_config.get("pem_file", "")
+        if self.pem_file:
+            self.pem_file = os.path.expandvars(self.pem_file)
+            self._logger.debug("Using PEM file at %s", self.pem_file)
+        else:
+            self.pem_file = None  # disabled
+
+        self.platform = self.profile.get("speech_to_text.hass_stt.platform")
+        self.chunk_size = int(
+            self.profile.get("speech_to_text.hass_stt.chunk_size", 2048)
+        )
+
+        self.sample_rate = int(
+            self.profile.get("speech_to_text.hass_stt.sample_rate", 16000)
+        )
+        self.bit_rate = int(self.profile.get("speech_to_text.hass_stt.bit_rate", 16))
+        self.channels = int(self.profile.get("speech_to_text.hass_stt.channels", 1))
+        self.language = str(
+            self.profile.get("speech_to_text.hass_stt.language", "en-US")
+        )
+
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
+        if isinstance(message, TranscribeWav):
+            text = self.transcribe_wav(message.wav_data)
+            self.send(message.receiver or sender, WavTranscription(text))
+
+    def transcribe_wav(self, wav_data: bytes) -> str:
+        """Get text Home Assistant STT platform."""
+        try:
+            assert self.platform, "Missing platform name"
+
+            # Convert WAV to desired format
+            wav_data = maybe_convert_wav(
+                wav_data,
+                rate=self.sample_rate,
+                width=self.bit_rate,
+                channels=self.channels,
+            )
+
+            stt_url = urljoin(self.hass_config["url"], f"api/stt/{self.platform}")
+
+            # Send to Home Assistant
+            kwargs = hass_request_kwargs(self.hass_config, self.pem_file)
+
+            if self.pem_file is not None:
+                kwargs["verify"] = self.pem_file
+
+            headers = kwargs.get("headers", {})
+            headers["X-Speech-Content"] = "; ".join(
+                [
+                    "format=wav",
+                    "codec=pcm",
+                    f"sample_rate={self.sample_rate}",
+                    f"bit_rate={self.bit_rate}",
+                    f"channel={self.channels}",
+                    f"language={self.language}",
+                ]
+            )
+
+            def generate_chunks() -> Iterable[bytes]:
+                with io.BytesIO(wav_data) as wav_buffer:
+                    with wave.open(wav_buffer, "rb") as wav_file:
+                        # Send empty WAV as initial chunk (header only)
+                        with io.BytesIO() as empty_wav_buffer:
+                            with wave.open(empty_wav_buffer, "wb") as empty_wav_file:
+                                empty_wav_file.setframerate(wav_file.getframerate())
+                                empty_wav_file.setsampwidth(wav_file.getsampwidth())
+                                empty_wav_file.setnchannels(wav_file.getnchannels())
+
+                            yield empty_wav_buffer.getvalue()
+
+                        # Stream chunks
+                        audio_data = wav_file.readframes(wav_file.getnframes())
+                        while audio_data:
+                            chunk = audio_data[: self.chunk_size]
+                            yield chunk
+                            audio_data = audio_data[self.chunk_size :]
+
+            # POST WAV data to STT
+            response = requests.post(stt_url, data=generate_chunks(), **kwargs)
+            response.raise_for_status()
+
+            response_json = response.json()
+            self._logger.debug(response_json)
+
+            assert response_json["result"] == "success"
+            return response_json["text"]
+
+        except Exception:
+            self._logger.exception("transcribe_wav")
+            return ""
+
+    def get_problems(self) -> Dict[str, Any]:
+        """Get problems at startup."""
+        problems: Dict[str, Any] = {}
+
+        if not self.platform:
+            problems[
+                "Missing platform name"
+            ] = "Expected Home Assistant STT platform name in speech_to_text.hass_stt.platform"
+
+        stt_url = urljoin(self.hass_config["url"], f"api/stt/{self.platform}")
+        try:
+            kwargs = hass_request_kwargs(self.hass_config, self.pem_file)
+            requests.get(stt_url, **kwargs)
+        except Exception:
+            problems[
+                "Can't contact server"
+            ] = f"Unable to reach your Home Assistant STT platform at {stt_url}. Is the platform configured?"
 
         return problems
 
