@@ -351,6 +351,9 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
 
         self.voice = self.profile.get("text_to_speech.marytts.voice", None)
         self.locale = self.profile.get("text_to_speech.marytts.locale", "en-US")
+        self.effects = self.profile.get(
+            "text_to_speech.marytts.effects", {}
+        )
 
         self.player = self.config["player"]
         self.transition("ready")
@@ -388,6 +391,7 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
                 "OUTPUT_TYPE": "AUDIO",
                 "LOCALE": locale,
             }
+            params.update(self.effects)
 
             if voice is not None:
                 params["VOICE"] = voice
