@@ -90,7 +90,23 @@ To run the Docker image, simply execute:
 docker run -it -p 59125:59125 synesthesiam/marytts:5.2
 ```
 
-and visit [http://localhost:59125](http://localhost:59125) after it starts. For more English voices, run the following commands in a Bash shell:
+and visit [http://localhost:59125](http://localhost:59125) after it starts. 
+
+If you're using [docker compose](https://docs.docker.com/compose/), add the following to your docker-compose.yml file:
+
+    marytts:
+      image: synesthesiam/marytts:5.2
+      restart: unless-stopped
+      ports:
+        - "59125:59125"
+
+When using docker-compose, set `marytts.url` in your profile to be `http://marytts:59125`.  This will allow rhasspy, from within 
+its docker container, to resolve and connect to marytts (its sibling container).
+
+
+### Adding Voices
+
+For more English voices, run the following commands in a Bash shell:
 
 ```bash
 mkdir -p marytts-5.2/download
@@ -110,6 +126,37 @@ docker run -it -p 59125:59125 -v "$(pwd)/marytts-5.2/lib/voice-${voice}-hsmm-5.2
 Change the first line to select the voice you'd like to add. It's not recommended to link in all of the voices at once, since MaryTTS seems to load them all into memory and overwhelm the RAM of a Raspberry Pi.
 
 See `rhasspy.tts.MaryTTSSentenceSpeaker` for details.
+
+### Audio Effects
+
+MaryTTS is capable of applying several audio effects when producing speech.  See the web interface at [http://localhost:59125](http://localhost:59125)
+to experiment with this.
+
+
+To use these effects within Rhasspy, set `text_to_speech.marytts.effects` within your profile, for example:
+
+```json
+"text_to_speech": {
+   "system": "marytts",
+   "marytts": {
+        "url": "http://localhost:59125",
+        "effects": {
+            "effect_Volume_selected": "on",
+            "effect_Volume_parameters": "amount=0.9;",
+            "effect_TractScaler_selected": "on",
+            "effect_TractScaler_parameters": "amount:1.2;",
+            "effect_F0Add_selected": "on",
+            "effect_F0Add_parameters": "f0Add:-50.0;",
+            "effect_Robot_selected": "on",
+            "effect_Robot_parameters": "amount=50.0;"
+        }
+    }
+}
+```
+
+You can determine the names of the parameters by examining the web interface [http://localhost:59125](http://localhost:59125)
+using your browser's Developer Tools.
+
 
 ## Google WaveNet
 
