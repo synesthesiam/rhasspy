@@ -470,12 +470,12 @@ class KaldiDecoder(RhasspyActor):
                 "Missing HCLG.fst"
             ] = f"Graph not found at {hclg_path}. Did you train your profile?"
 
-        assert self.model_dir is not None
-        conf_path = self.model_dir / "online" / "conf" / "online.conf"
-        if not conf_path.is_file():
-            problems[
-                "Missing online.conf"
-            ] = f"Configuration file not found at {conf_path}. Did you train your profile?"
+        # assert self.model_dir is not None
+        # conf_path = self.model_dir / "online" / "conf" / "online.conf"
+        # if not conf_path.is_file():
+        #     problems[
+        #         "Missing online.conf"
+        #     ] = f"Configuration file not found at {conf_path}. Did you train your profile?"
 
         return problems
 
