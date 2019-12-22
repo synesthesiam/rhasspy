@@ -19,12 +19,12 @@ Files in the user profile directory override system files, and Rhasspy will *onl
 The default location for each of these directories is:
 
 * Virtual Environment
-  * System profile location is `$PWD/profiles` where `$PWD` is Rhasspy's root directory (where `run-venv.sh` is located)
-  * User profile location is `$HOME/.config/rhasspy/profiles`
+    * System profile location is `$PWD/profiles` where `$PWD` is Rhasspy's root directory (where `run-venv.sh` is located)
+    * User profile location is `$HOME/.config/rhasspy/profiles`
 * Docker
-  * System profile location is either `/usr/share/rhasspy/profiles` (ALSA) or `/home/rhasspy/profiles` (PulseAudio)
-  * User profile location **must** be explicitly set and mapped to a volume:
-    * `docker run ... -v /path/to/profiles:/profiles synesthesiam/rhasspy-server --user-profiles /profiles`
+    * System profile location is either `/usr/share/rhasspy/profiles` (ALSA) or `/home/rhasspy/profiles` (PulseAudio)
+    * User profile location **must** be explicitly set and mapped to a volume:
+        * `docker run ... -v /path/to/profiles:/profiles synesthesiam/rhasspy-server --user-profiles /profiles`
 
 ### Example
 
