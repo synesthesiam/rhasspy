@@ -13,7 +13,7 @@ DEFINE_boolean 'precise' true 'Install Mycroft Precise'
 DEFINE_boolean 'kaldi' true 'Install Kaldi'
 DEFINE_boolean 'offline' false "Don't download anything"
 DEFINE_boolean 'all-cpu' false 'Download dependencies for all CPU architectures'
-DEFINE_string 'cpu-arch' "${cpu_arch}" 'CPU architecture (x86_64, armv7l, arm64v8)'
+DEFINE_string 'cpu-arch' "${cpu_arch}" 'CPU architecture (x86_64, armv7l, arm64v8, armv6l)'
 
 FLAGS "$@" || exit $?
 eval set -- "${FLAGS_ARGV}"
@@ -65,6 +65,7 @@ declare -A CPU_TO_FRIENDLY
 CPU_TO_FRIENDLY["x86_64"]="amd64"
 CPU_TO_FRIENDLY["armv7l"]="armhf"
 CPU_TO_FRIENDLY["arm64v8"]="aarch64"
+CPU_TO_FRIENDLY["armv6l"]="armv6l"
 
 # CPU architecture
 if [[ -n "${all_cpu}" ]]; then

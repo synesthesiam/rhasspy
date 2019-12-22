@@ -163,6 +163,10 @@ case "${CPU_ARCH}" in
     arm64v8)
         FRIENDLY_ARCH=aarch64
         ;;
+
+    *)
+        FRIENDLY_ARCH="${CPU_ARCH}"
+        ;;
 esac
 
 echo "Downloading dependencies"
