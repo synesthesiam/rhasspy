@@ -3,12 +3,12 @@
 Rhasspy is designed to recognize voice commands [in a template language](#sentencesini). These commands are categorized by **intent**, and may contain [slots](#slots-lists) or [named entities](#tags), such as the color and name of a light.
 
 * Intent Recognition
-  * [Basic Syntax](#basic-syntax)
-  * [Named Entities](#tags)
-  * [Slots](#slots-lists)
+    * [Basic Syntax](#basic-syntax)
+    * [Named Entities](#tags)
+    * [Slots](#slots-lists)
 * Speech Recognition
-  * [Custom Words](#custom-words)
-  * [Language Model Mixing](#language-model-mixing)
+    * [Custom Words](#custom-words)
+    * [Language Model Mixing](#language-model-mixing)
 
 ## sentences.ini
 

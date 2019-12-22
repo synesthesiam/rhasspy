@@ -24,21 +24,21 @@ A typical voice assistant (Alexa, Google Home, etc.) solves a number of importan
 Rhasspy provides **offline, private solutions** to problems 1-4 using off-the-shelf tools. These tools are:
 
 * **Wake word**
-  * [Pocketsphinx keyphrase](https://cmusphinx.github.io/wiki/tutoriallm/#using-keyword-lists-with-pocketsphinx)
-  * [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise)
-  * [snowboy](https://snowboy.kitt.ai)
-  * [porcupine](https://github.com/Picovoice/Porcupine)
+    * [Pocketsphinx keyphrase](https://cmusphinx.github.io/wiki/tutoriallm/#using-keyword-lists-with-pocketsphinx)
+    * [Mycroft Precise](https://github.com/MycroftAI/mycroft-precise)
+    * [snowboy](https://snowboy.kitt.ai)
+    * [porcupine](https://github.com/Picovoice/Porcupine)
 * **Command listener**
-  * [webrtcvad](https://github.com/wiseman/py-webrtcvad)
+    * [webrtcvad](https://github.com/wiseman/py-webrtcvad)
 * **Speech to text**
-  * [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx)
-  * [Kaldi](https://kaldi-asr.org)
+    * [Pocketsphinx](https://github.com/cmusphinx/pocketsphinx)
+    * [Kaldi](https://kaldi-asr.org)
 * **Intent recognition**
-  * [OpenFST](https://www.openfst.org)
-  * [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy)
-  * [Mycroft Adapt](https://github.com/MycroftAI/adapt)
-  * [flair](http://github.com/zalandoresearch/flair)
-  * [Rasa NLU](https://rasa.com/)
+    * [OpenFST](https://www.openfst.org)
+    * [fuzzywuzzy](https://github.com/seatgeek/fuzzywuzzy)
+    * [Mycroft Adapt](https://github.com/MycroftAI/adapt)
+    * [flair](http://github.com/zalandoresearch/flair)
+    * [Rasa NLU](https://rasa.com/)
 
 For problem 5 (fulfilling the speaker's intent), Rhasspy works with external home automation software, such as Home Assistant's built-in [automation capability](https://www.home-assistant.io/docs/automation/) or a [Node-RED flow](https://nodered.org).
 
