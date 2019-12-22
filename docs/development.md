@@ -17,7 +17,9 @@ Add the original repository as an [upstream remote](https://help.github.com/en/g
 git remote add upstream https://github.com/synesthesiam/rhasspy.git
 ```
 
-Then follow the installation steps for a [virtual environment](installation.md#virtual-environment).
+Then follow the installation steps for a [virtual environment](installation.md#virtual-environment). If the `create-venv.sh` script fails, please [report an issue](https://github.com/synesthesiam/rhasspy/issues) before proceeding.
+
+If you pull changes, make sure to re-download and extract `rhasspy-web-dist.tar.gz` from [the releases page](https://github.com/synesthesiam/rhasspy/releases/tag/v2.0). This contains the pre-compiled web artifacts. Alternatively, you can install [yarn](https://yarnpkg.com) and run `yarn build` in the `rhasspy` directory after a `git pull`.
 
 ## Run the unit tests
 
@@ -25,6 +27,12 @@ A good start to check whether your development environment is set up correctly (
 
 ```bash
 ./run-tests.sh
+```
+
+This will run tests against pre-recorded WAV files in `rhasspy/etc/test` for specific languages. You can run tests only for a specific language (profile) like this:
+
+```bash
+./run-tests.sh -p en
 ```
 
 It’s good practice to run the unit tests before and after you work on something, to be sure your changes don't accidentally break something.
