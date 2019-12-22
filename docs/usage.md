@@ -22,7 +22,7 @@ The top bar of the web interface lets you perform some global actions on Rhasspy
 * Click the Rhasspy logo to reload the page
 * Click the version number to test the [HTTP API](#http-api)
 * The green `Train` button will re-train your profile
-  * Use the `Clear Cache` drop down to train from scratch
+    * Use the `Clear Cache` drop down to train from scratch
 * The yellow `Wake` button will wake Rhasspy up and start listening for a voice command
 * The red `Restart` button forces Rhasspy to restart
 
@@ -45,7 +45,7 @@ Add new voice commands to Rhasspy using the [template syntax](training.md#senten
 
 * Edits `sentences.ini` by default
 * Use the `Add File` button to create additional sentence template files
-  * These should be prefixed by the `sentences_dir` in your [profile](profiles.md). For example, `intents/more-commands.ini`
+    * These should be prefixed by the `sentences_dir` in your [profile](profiles.md). For example, `intents/more-commands.ini`
 * The drop down can be used to switch editing between different template files
 
 ### Slots Tab

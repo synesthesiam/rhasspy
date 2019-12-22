@@ -70,12 +70,12 @@ This will handle the specific case of setting the bedroom light to red, but not 
 Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
 
 * Hardware used:
-  * Raspberry Pi 3B w/ 8GB SD card
-  * [Seeed 4 Mic Array](https://www.amazon.com/seeed-Studio-ReSpeaker-4-Mic-Raspberry/dp/B076SSR1W1)
+    * Raspberry Pi 3B w/ 8GB SD card
+    * [Seeed 4 Mic Array](https://www.amazon.com/seeed-Studio-ReSpeaker-4-Mic-Raspberry/dp/B076SSR1W1)
 * Software used:
-  * [Raspbian Buster Lite](https://downloads.raspberrypi.org/raspbian_lite_latest)
-  * [Etcher](https://www.balena.io/etcher/)
-  * Docker ([install Docker](installation.md#docker))
+    * [Raspbian Buster Lite](https://downloads.raspberrypi.org/raspbian_lite_latest)
+    * [Etcher](https://www.balena.io/etcher/)
+    * Docker ([install Docker](installation.md#docker))
 
 ### Server Steps
 
