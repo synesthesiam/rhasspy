@@ -1,9 +1,9 @@
 """Settings for Rhasspy."""
-import json
 import logging
 import os
 from typing import Any, Dict, List
 
+import json5
 import pydash
 
 from rhasspy.utils import recursive_update
@@ -39,7 +39,7 @@ class Profile:
         defaults_path = os.path.join(system_profiles_dir, "defaults.json")
         with open(defaults_path, "r") as defaults_file:
             logging.debug("Loading default profile settings from %s", defaults_path)
-            return json.load(defaults_file)
+            return json5.load(defaults_file)
 
     # -------------------------------------------------------------------------
 
@@ -62,9 +62,9 @@ class Profile:
         if self.layers in ["all", "defaults"]:
             defaults_path = os.path.join(self.system_profiles_dir, "defaults.json")
             with open(defaults_path, "r") as defaults_file:
-                self.json = json.load(defaults_file)
+                self.json = json5.load(defaults_file)
                 defaults_file.seek(0)
-                self.system_json = json.load(defaults_file)
+                self.system_json = json5.load(defaults_file)
 
         # Load just the system profile.json (on top of defaults)
         system_profile_path = os.path.join(
@@ -72,7 +72,7 @@ class Profile:
         )
 
         with open(system_profile_path, "r") as system_profile_file:
-            recursive_update(self.system_json, json.load(system_profile_file))
+            recursive_update(self.system_json, json5.load(system_profile_file))
 
         # Overlay with profile
         self.json_path = self.read_path("profile.json")
@@ -82,7 +82,7 @@ class Profile:
                 json_path = os.path.join(profiles_dir, self.name, "profile.json")
                 if os.path.exists(json_path):
                     with open(json_path, "r") as profile_file:
-                        recursive_update(self.json, json.load(profile_file))
+                        recursive_update(self.json, json5.load(profile_file))
 
     def read_path(self, *path_parts: str) -> str:
         """Get first readable path in user then system directories."""

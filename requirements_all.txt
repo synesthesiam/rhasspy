@@ -4,6 +4,7 @@ doit==0.31.1
 fuzzywuzzy[speedup]==0.17.0
 google-cloud-texttospeech==0.5.0
 html5lib==1.0.1
+json5==0.8.5
 multidict==4.6.1
 networkx>=2.0
 num2words==0.5.10
