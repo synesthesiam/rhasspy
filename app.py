@@ -7,11 +7,11 @@ import logging
 import os
 import re
 import time
-from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 from uuid import uuid4
 
+import attr
 from quart import (
     Quart,
     Response,
@@ -24,8 +24,6 @@ from quart import (
 )
 from quart_cors import cors
 from swagger_ui import quart_api_doc
-import rhasspynlu
-import attr
 
 from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
@@ -34,12 +32,12 @@ from rhasspy.intent import IntentRecognized
 from rhasspy.utils import (
     FunctionLoggingHandler,
     buffer_to_wav,
+    get_all_intents,
+    get_ini_paths,
     get_wav_duration,
     load_phoneme_examples,
     read_dict,
     recursive_remove,
-    get_ini_paths,
-    get_all_intents,
 )
 
 # -----------------------------------------------------------------------------
@@ -959,7 +957,6 @@ def api_intents():
             add_type(item.rule_body, item_dict["rule_body"])
 
     # Convert to dictionary
-    replacements = defaultdict(list)
     intents_dict = {}
     for intent_name, intent_sentences in intents.items():
         sentence_dicts = []

@@ -81,11 +81,13 @@
   "microphone": {
     "arecord": {
       "chunk_size": 960,
-      "device": ""
+      "device": "",
+      "keep_device_open": true
     },
     "pyaudio": {
       "device": "",
-      "frames_per_buffer": 480
+      "frames_per_buffer": 480,
+      "keep_device_open": true
     },
     "stdin": {
       "auto_start": true,
