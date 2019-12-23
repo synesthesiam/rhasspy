@@ -116,7 +116,7 @@ class APlayAudioPlayer(RhasspyActor):
         aplay_cmd.append(path)
 
         self._logger.debug(aplay_cmd)
-        subprocess.run(aplay_cmd)
+        subprocess.run(aplay_cmd, check=True)
 
     def play_data(self, wav_data: bytes) -> None:
         """Play a WAV buffer using aplay."""
@@ -128,7 +128,7 @@ class APlayAudioPlayer(RhasspyActor):
         self._logger.debug(aplay_cmd)
 
         # Play data
-        subprocess.run(aplay_cmd, input=wav_data)
+        subprocess.run(aplay_cmd, input=wav_data, check=True)
 
     # -------------------------------------------------------------------------
 

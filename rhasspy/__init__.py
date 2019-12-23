@@ -1,9 +1,10 @@
-#!/usr/bin/env python3
+"""Rhasspy command-line interface"""
 import argparse
 import asyncio
 import io
 import json
 import logging
+
 # Configure logging
 import logging.config
 import os
@@ -31,6 +32,7 @@ mic_stdin_running = False
 
 
 async def main() -> None:
+    """Main method"""
     global mic_stdin_running, mic_stdin_thread
 
     # Parse command-line arguments
@@ -226,8 +228,6 @@ async def main() -> None:
     logger.debug(profiles_dirs)
 
     # Create rhasspy core
-    from rhasspy.core import RhasspyCore
-
     core = RhasspyCore(args.profile, args.system_profiles, args.user_profiles)
 
     # Add profile settings from the command line
@@ -238,7 +238,7 @@ async def main() -> None:
         except Exception:
             pass
 
-        logger.debug("Profile: {0}={1}".format(key, value))
+        logger.debug("Profile: %s=%s", key, value)
         extra_settings[key] = value
         core.profile.set(key, value)
 
@@ -304,7 +304,9 @@ async def main() -> None:
             missing_files = core.check_profile()
             if len(missing_files) > 0:
                 logger.fatal(
-                    f"Missing required files for {profile.name}: {missing_files.keys()}. Please run download command and try again."
+                    "Missing required files for %s: %s. Please run download command and try again.",
+                    profile.name,
+                    missing_files.keys(),
                 )
                 sys.exit(1)
 
@@ -332,6 +334,7 @@ async def main() -> None:
 
 
 async def wav2text(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Transcribe WAV file(s)"""
     if len(args.wav_files) > 0:
         # Read WAV paths from argument list
         transcriptions = {}
@@ -356,7 +359,7 @@ async def wav2text(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def text2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
-    # Parse sentences from command line or stdin
+    """Parse sentences from command line or stdin"""
     intents = {}
     sentences = args.sentences if len(args.sentences) > 0 else sys.stdin
     for sentence in sentences:
@@ -378,6 +381,7 @@ async def text2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def wav2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Recognize intent from WAV file(s)"""
     if len(args.wav_files) > 0:
         # Read WAV paths from argument list
         transcriptions = {}
@@ -416,6 +420,7 @@ async def wav2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def train_profile(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Train Rhasspy profile"""
     result = await core.train(reload_actors=False, no_cache=args.no_cache)
     print(result)
 
@@ -426,6 +431,7 @@ async def train_profile(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def mic2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Record voice command from microphone"""
     # Listen until silence
     wav_data = buffer_to_wav((await core.record_command(args.timeout)).data)
 
@@ -439,6 +445,7 @@ async def mic2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def mic2text(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Record voice command and transcribe"""
     # Listen until silence
     wav_data = buffer_to_wav((await core.record_command(args.timeout)).data)
 
@@ -455,6 +462,7 @@ async def mic2text(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 def read_audio_stdin(core: RhasspyCore, chunk_size: int = 960):
+    """Record audio chunks from stdin"""
     global mic_stdin_running
     while mic_stdin_running:
         audio_data = sys.stdin.buffer.read(chunk_size)
@@ -462,6 +470,7 @@ def read_audio_stdin(core: RhasspyCore, chunk_size: int = 960):
 
 
 async def mic2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Record voice command, transcribe, and recognize intent"""
     # Listen until silence
     wav_data = buffer_to_wav((await core.record_command(args.timeout)).data)
 
@@ -484,6 +493,7 @@ async def mic2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def word2phonemes(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Get pronunciation(s) for word(s)"""
     words = args.words if len(args.words) > 0 else sys.stdin
 
     # Get pronunciations for all words
@@ -501,6 +511,7 @@ async def word2phonemes(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def word2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Speak a word's pronunciation"""
     # Get pronunciation for word
     all_pronunciations = (
         await core.get_word_pronunciations([args.word], n=1)
@@ -530,8 +541,10 @@ def _send_frame(
     width: int,
     channels: int,
 ) -> None:
+    """Send a single audio frame via MQTT"""
     with io.BytesIO() as mqtt_buffer:
-        with wave.open(mqtt_buffer, mode="wb") as mqtt_file:
+        mqtt_file: wave.Wave_write = wave.open(mqtt_buffer, mode="wb")
+        with mqtt_file:
             mqtt_file.setframerate(rate)
             mqtt_file.setsampwidth(width)
             mqtt_file.setnchannels(channels)
@@ -543,6 +556,7 @@ def _send_frame(
 
 
 async def wav2mqtt(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Publish WAV to MQTT as audio frames"""
     # hermes/audioServer/<SITE_ID>/audioFrame
     topic = "hermes/audioServer/%s/audioFrame" % args.site_id
 
@@ -562,7 +576,7 @@ async def wav2mqtt(core: RhasspyCore, profile: Profile, args: Any) -> None:
                         num_chunks = int(
                             (args.silence_before * rate * width * channels) / chunk_size
                         )
-                        for i in range(num_chunks):
+                        for _ in range(num_chunks):
                             _send_frame(
                                 core, topic, bytes(chunk_size), rate, width, channels
                             )
@@ -583,7 +597,7 @@ async def wav2mqtt(core: RhasspyCore, profile: Profile, args: Any) -> None:
                         num_chunks = int(
                             (args.silence_after * rate * width * channels) / chunk_size
                         )
-                        for i in range(num_chunks):
+                        for _ in range(num_chunks):
                             _send_frame(
                                 core, topic, bytes(chunk_size), rate, width, channels
                             )
@@ -602,6 +616,7 @@ async def wav2mqtt(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def text2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Speak a sentence and output WAV data"""
     result = await core.speak_sentence(args)
     sys.stdout.buffer.write(result.wav_data)
 
@@ -612,6 +627,7 @@ async def text2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def text2speech(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Speak sentences"""
     sentences = args.sentences
     if len(sentences) == 0:
         sentences = sys.stdin
@@ -627,6 +643,7 @@ async def text2speech(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def sleep(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Wait for wake word to be spoken"""
     result = await core.wakeup_and_wait()
     if isinstance(result, WakeWordDetected):
         print(result.name)
@@ -640,6 +657,7 @@ async def sleep(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def download(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Download necessary profile files"""
     await core.download_profile(delete=args.delete)
     print("OK")
 
@@ -650,6 +668,7 @@ async def download(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 
 async def check(core: RhasspyCore, profile: Profile, args: Any) -> None:
+    """Verify that profile files are downloaded"""
     missing_files = core.check_profile()
     json.dump(missing_files, sys.stdout, indent=4)
 

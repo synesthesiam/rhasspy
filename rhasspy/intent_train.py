@@ -451,14 +451,19 @@ class FlairIntentTrainer(RhasspyActor):
 
     def train(self, intent_fst) -> None:
         """Train intent classifier and named entity recognizers."""
+        # pylint: disable=E0401
         from flair.data import Sentence, Token
+        # pylint: disable=E0401
         from flair.models import SequenceTagger, TextClassifier
+        # pylint: disable=E0401
         from flair.embeddings import (
             FlairEmbeddings,
             StackedEmbeddings,
             DocumentRNNEmbeddings,
         )
+        # pylint: disable=E0401
         from flair.data import TaggedCorpus
+        # pylint: disable=E0401
         from flair.trainers import ModelTrainer
 
         # Directory to look for downloaded embeddings

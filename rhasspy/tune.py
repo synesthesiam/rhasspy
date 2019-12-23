@@ -4,7 +4,8 @@ import os
 import shutil
 import subprocess
 import tempfile
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 from rhasspy.profiles import Profile
 
@@ -23,7 +24,9 @@ class SpeechTuner:
         """Cache import stuff upfront."""
         pass
 
-    def tune(self, wav_intents: Dict[str, Dict[str, Any]]) -> None:
+    def tune(
+        self, wav_intents: Dict[str, Dict[str, Any]], mllr_path: Optional[Path] = None
+    ) -> None:
         """Tunes a speech system with WAV file paths mapped to intents."""
         pass
 
@@ -38,6 +41,7 @@ class SphinxTrainSpeechTuner(SpeechTuner):
     """Uses sphinxtrain tools to generate an MLLR matrix for an acoustic model."""
 
     def tune(self, wav_intents: Dict[str, Dict[str, Any]], mllr_path=None) -> None:
+        """Generate MLLR matrix for Pocketsphinx model"""
         ps_config = self.profile.get("speech_to_text.pocketsphinx")
 
         # Load decoder settings
@@ -54,15 +58,15 @@ class SphinxTrainSpeechTuner(SpeechTuner):
                 mdef_path,
             ]
 
-            logger.debug("Creating mdef.txt: %s" % mdef_command)
+            logger.debug("Creating mdef.txt: %s", mdef_command)
             subprocess.check_call(mdef_command)
 
             # Copy WAV files into temporary directory with unique names
             fileid_intents = {}
-            logger.debug("Copying %s WAV file(s) to %s" % (len(wav_intents), temp_dir))
+            logger.debug("Copying %s WAV file(s) to %s", len(wav_intents), temp_dir)
             for wav_path in list(wav_intents.keys()):
                 if not os.path.exists(wav_path):
-                    logger.warn("Skipping %s (does not exist)" % wav_path)
+                    logger.warning("Skipping %s (does not exist)", wav_path)
                     continue
 
                 # Copy WAV file
@@ -78,10 +82,10 @@ class SphinxTrainSpeechTuner(SpeechTuner):
             # Write fileids (just the file name, no extension)
             fileids_path = os.path.join(temp_dir, "fileids")
             with open(fileids_path, "w") as fileids_file:
-                for file_id in fileid_intents.keys():
+                for file_id in fileid_intents:
                     print(file_id, file=fileids_file)
 
-            logger.debug("Wrote %s fileids" % len(fileid_intents))
+            logger.debug("Wrote %s fileids", len(fileid_intents))
 
             # Write transcription.txt
             transcription_path = os.path.join(temp_dir, "transcription.txt")
@@ -90,7 +94,7 @@ class SphinxTrainSpeechTuner(SpeechTuner):
                     text = fileid_intents[file_id]["text"].strip()
                     print("%s (%s.wav)" % (text, file_id), file=transcription_file)
 
-            logger.debug("Wrote %s" % transcription_path)
+            logger.debug("Wrote %s", transcription_path)
 
             # Extract features
             feat_params_path = os.path.join(hmm_path, "feat.params")
@@ -181,7 +185,7 @@ class SphinxTrainSpeechTuner(SpeechTuner):
             logger.debug(solve_command)
             subprocess.check_call(solve_command)
 
-            logger.debug("Generated MLLR matrix: %s" % mllr_path)
+            logger.debug("Generated MLLR matrix: %s", mllr_path)
 
     # -----------------------------------------------------------------------------
 

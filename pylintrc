@@ -24,7 +24,10 @@ disable=
   unnecessary-pass,
   unused-argument,
   invalid-name,
-  broad-except
+  broad-except,
+  no-self-use,
+  c-extension-no-member,
+  too-many-nested-blocks
 
 [FORMAT]
 expected-line-ending-format=LF

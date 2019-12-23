@@ -238,14 +238,14 @@ class FsticuffsRecognizer(RhasspyActor):
 
             # Add words from FST
             self.words = set()
-            for node, data in self.graph.nodes(data=True):
+            for _, data in self.graph.nodes(data=True):
                 if "word" in data:
                     self.words.add(data["word"])
 
             # Load stop words
             stop_words_path = self.profile.read_path("stop_words.txt")
             if os.path.exists(stop_words_path):
-                self._logger.debug(f"Using stop words at {stop_words_path}")
+                self._logger.debug("Using stop words at %s", stop_words_path)
                 with open(stop_words_path, "r") as stop_words_file:
                     self.stop_words = {
                         line.strip()
@@ -586,6 +586,7 @@ class FlairRecognizer(RhasspyActor):
         RhasspyActor.__init__(self)
 
         try:
+            # pylint: disable=E0401
             from flair.models import TextClassifier, SequenceTagger
         except Exception:
             pass
@@ -624,6 +625,7 @@ class FlairRecognizer(RhasspyActor):
 
     def recognize(self, text: str) -> Dict[str, Any]:
         """Run intent classifier and then named-entity recognizer."""
+        # pylint: disable=E0401
         from flair.data import Sentence
 
         intent = empty_intent()
@@ -666,6 +668,7 @@ class FlairRecognizer(RhasspyActor):
 
     def load_models(self) -> None:
         """Load intent classifier and named entity recognizers."""
+        # pylint: disable=E0401
         from flair.models import TextClassifier, SequenceTagger
 
         # Load mapping from intent id to user intent name

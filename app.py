@@ -1166,6 +1166,7 @@ def prefers_json() -> bool:
 def quality(accept, key: str) -> float:
     """Return Accept quality for media type."""
     for option in accept.options:
+        # pylint: disable=W0212
         if accept._values_match(key, option.value):
             return option.quality
     return 0.0

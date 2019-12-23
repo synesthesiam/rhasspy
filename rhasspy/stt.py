@@ -101,6 +101,7 @@ class PocketsphinxDecoder(RhasspyActor):
         self.min_confidence: float = 0
         self.preload: bool = False
         self.decoder = None
+        self.open_transcription = False
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
@@ -254,6 +255,7 @@ class PocketsphinxDecoder(RhasspyActor):
         problems: Dict[str, Any] = {}
 
         try:
+            # pylint: disable=W0201,W1201,W0611
             import pocketsphinx  # noqa: F401
         except Exception:
             problems[
@@ -324,8 +326,6 @@ class RemoteDecoder(RhasspyActor):
 
     def transcribe_wav(self, wav_data: bytes) -> str:
         """POST to remote server and return response."""
-        import requests
-
         headers = {"Content-Type": "audio/wav"}
         self._logger.debug(
             "POSTing %d byte(s) of WAV data to %s", len(wav_data), self.remote_url
@@ -361,6 +361,7 @@ class KaldiDecoder(RhasspyActor):
         self.graph_dir: Optional[Path] = None
         self.decode_path: Optional[Path] = None
         self.decode_command: List[str] = []
+        self.open_transcription = False
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
@@ -495,6 +496,10 @@ class HomeAssistantSTTIntegration(RhasspyActor):
         self.pem_file: Optional[str] = ""
         self.platform: Optional[str] = None
         self.chunk_size: int = 2048
+        self.sample_rate: int = 16000
+        self.bit_rate: int = 16
+        self.channels: int = 1
+        self.language: str = "en-US"
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
@@ -566,7 +571,10 @@ class HomeAssistantSTTIntegration(RhasspyActor):
                     with wave.open(wav_buffer, "rb") as wav_file:
                         # Send empty WAV as initial chunk (header only)
                         with io.BytesIO() as empty_wav_buffer:
-                            with wave.open(empty_wav_buffer, "wb") as empty_wav_file:
+                            empty_wav_file: wave.Wave_write = wave.open(
+                                empty_wav_buffer, "wb"
+                            )
+                            with empty_wav_file:
                                 empty_wav_file.setframerate(wav_file.getframerate())
                                 empty_wav_file.setsampwidth(wav_file.getsampwidth())
                                 empty_wav_file.setnchannels(wav_file.getnchannels())

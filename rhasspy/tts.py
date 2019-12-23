@@ -344,6 +344,7 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
         self.player: Optional[RhasspyActor] = None
         self.receiver: Optional[RhasspyActor] = None
         self.wav_data = bytes()
+        self.effects: Dict[str, Any] = {}
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
@@ -356,9 +357,7 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
 
         self.voice = self.profile.get("text_to_speech.marytts.voice", None)
         self.locale = self.profile.get("text_to_speech.marytts.locale", "en-US")
-        self.effects = self.profile.get(
-            "text_to_speech.marytts.effects", {}
-        )
+        self.effects = self.profile.get("text_to_speech.marytts.effects", {})
 
         self.player = self.config["player"]
         self.transition("ready")
@@ -655,12 +654,18 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
         from google.cloud import texttospeech
 
         client = texttospeech.TextToSpeechClient()
+
+        # pylint: disable=E1101
         synthesis_input = texttospeech.types.SynthesisInput(text=sentence)
+
+        # pylint: disable=E1101
         voice_params = texttospeech.types.VoiceSelectionParams(
             language_code=language_code,
             name=language_code + "-" + voice,
             ssml_gender=self.gender,
         )
+
+        # pylint: disable=E1101
         audio_config = texttospeech.types.AudioConfig(
             audio_encoding="LINEAR16", sample_rate_hertz=self.sample_rate
         )
@@ -789,7 +794,9 @@ class HomeAssistantSentenceSpeaker(RhasspyActor):
                 lame_command = ["lame", "--decode", "-", "-"]
                 self._logger.debug(lame_command)
 
-                return subprocess.check_output(lame_command, input=audio_bytes)
+                return subprocess.run(
+                    lame_command, input=audio_bytes, check=True, stdout=subprocess.PIPE
+                ).stdout
 
             # Assume WAV
             return audio_bytes

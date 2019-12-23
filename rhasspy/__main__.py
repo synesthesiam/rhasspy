@@ -1,3 +1,4 @@
+"""Run Rhasspy command-line"""
 import asyncio
 
 from rhasspy import main

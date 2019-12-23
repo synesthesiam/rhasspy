@@ -240,7 +240,7 @@ cp -R "${openfst_dir}"/build/bin/* "${venv}/bin/"
 # -----------------------------------------------------------------------------
 # opengrm
 # http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary
-# 
+#
 # Required to build language models.
 # -----------------------------------------------------------------------------
 

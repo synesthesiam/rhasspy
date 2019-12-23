@@ -58,7 +58,7 @@ class RhasspyTestCase(unittest.TestCase):
 
     # -------------------------------------------------------------------------
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *_args, **kwargs):
         self.profiles = RhasspyTestCase.PROFILES
         self.test_wav_path = {
             p: os.path.join("etc", "test", p, "test.wav") for p in self.profiles
@@ -68,11 +68,12 @@ class RhasspyTestCase(unittest.TestCase):
             for p in self.profiles
         }
 
-        unittest.TestCase.__init__(self, *args, **kwargs)
+        unittest.TestCase.__init__(self, *_args, **kwargs)
 
     # -------------------------------------------------------------------------
 
     def test_transcribe(self):
+        """Call async_test_transcribe"""
         loop.run_until_complete(self.async_test_transcribe())
 
     async def async_test_transcribe(self):
@@ -89,6 +90,7 @@ class RhasspyTestCase(unittest.TestCase):
     # -------------------------------------------------------------------------
 
     def test_recognize(self):
+        """Call async_test_recognize"""
         loop.run_until_complete(self.async_test_recognize())
 
     async def async_test_recognize(self):
@@ -113,6 +115,7 @@ class RhasspyTestCase(unittest.TestCase):
     # -------------------------------------------------------------------------
 
     def test_training(self):
+        """Call async_test_training"""
         loop.run_until_complete(self.async_test_training())
 
     async def async_test_training(self):
@@ -169,9 +172,11 @@ class RhasspyTestCase(unittest.TestCase):
     # -------------------------------------------------------------------------
 
     def test_pronounce(self):
+        """Call async_test_pronounce"""
         loop.run_until_complete(self.async_test_pronounce())
 
     async def async_test_pronounce(self):
+        """Test g2p model for guess pronunciation"""
         for profile_name in self.profiles:
             async with RhasspyTestCore(profile_name) as core:
                 test_info = self.test_json[profile_name]

@@ -141,7 +141,8 @@ def recursive_remove(base_dict: Dict[Any, Any], new_dict: Dict[Any, Any]) -> Non
 def buffer_to_wav(buffer: bytes) -> bytes:
     """Wraps a buffer of raw audio data (16-bit, 16Khz mono) in a WAV"""
     with io.BytesIO() as wav_buffer:
-        with wave.open(wav_buffer, mode="wb") as wav_file:
+        wav_file: wave.Wave_write = wave.open(wav_buffer, mode="wb")
+        with wav_file:
             wav_file.setframerate(16000)
             wav_file.setsampwidth(2)
             wav_file.setnchannels(1)
@@ -179,7 +180,8 @@ def convert_wav(wav_data: bytes, rate=16000, width=16, channels=1) -> bytes:
 def maybe_convert_wav(wav_data: bytes, rate=16000, width=16, channels=1) -> bytes:
     """Converts WAV data to 16-bit, 16Khz mono if necessary."""
     with io.BytesIO(wav_data) as wav_io:
-        with wave.open(wav_io, "rb") as wav_file:
+        wav_file: wave.Wave_read = wave.open(wav_io, "rb")
+        with wav_file:
             if (
                 (wav_file.getframerate() != rate)
                 or (wav_file.getsampwidth() != width)
@@ -347,6 +349,7 @@ def make_sentences_by_intent(intent_fst: fst.Fst) -> Dict[str, Any]:
 def sample_sentences_by_intent(
     intent_fst_paths: Dict[str, str], num_samples: int
 ) -> Dict[str, Any]:
+    """Generate random intents"""
     from rhasspy.train.jsgf2fst import fstprintall, symbols2intent
 
     def sample_sentences(intent_name: str, intent_fst_path: str):
@@ -444,8 +447,10 @@ def split_whitespace(s: str, **kwargs):
 
 
 def get_wav_duration(wav_bytes: bytes) -> float:
+    """Return the real-time duration of a WAV file"""
     with io.BytesIO(wav_bytes) as wav_buffer:
-        with wave.open(wav_buffer) as wav_file:
+        wav_file: wave.Wave_read = wave.open(wav_buffer, "rb")
+        with wav_file:
             frames = wav_file.getnframes()
             rate = wav_file.getframerate()
             return frames / float(rate)

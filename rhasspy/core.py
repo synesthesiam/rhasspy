@@ -667,8 +667,9 @@ class RhasspyCore:
                     # Copy specific file/directory
                     self._logger.debug("Copying %s to %s", extract_path, dest_path)
                     if os.path.isdir(extract_path):
-                        if len(src_exclude) > 0:
+                        if src_exclude:
                             # Ignore some files
+                            # pylint: disable=W0640
                             shutil.copytree(
                                 extract_path,
                                 dest_path,

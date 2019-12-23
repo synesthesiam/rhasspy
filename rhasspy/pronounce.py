@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+"""Support for guessing word pronunciations"""
 import os
 import re
 import subprocess
@@ -15,12 +15,16 @@ from rhasspy.utils import load_phoneme_map, read_dict
 
 
 class SpeakWord:
+    """Speak a word's pronunciation"""
+
     def __init__(self, word: str, receiver: Optional[RhasspyActor] = None) -> None:
         self.word = word
         self.receiver = receiver
 
 
 class WordSpoken:
+    """Response to SpeakWord"""
+
     def __init__(self, word: str, wav_data: bytes, phonemes: str) -> None:
         self.word = word
         self.wav_data = wav_data
@@ -28,18 +32,24 @@ class WordSpoken:
 
 
 class GetWordPhonemes:
+    """Get eSpeak phonemes for a word"""
+
     def __init__(self, word: str, receiver: Optional[RhasspyActor] = None) -> None:
         self.word = word
         self.receiver = receiver
 
 
 class WordPhonemes:
+    """Response to GetWordPhonemes"""
+
     def __init__(self, word: str, phonemes: str) -> None:
         self.word = word
         self.phonemes = phonemes
 
 
 class GetWordPronunciations:
+    """Look up or guess word pronunciation(s)"""
+
     def __init__(
         self, words: List[str], n: int = 5, receiver: Optional[RhasspyActor] = None
     ) -> None:
@@ -49,11 +59,15 @@ class GetWordPronunciations:
 
 
 class WordPronunciations:
+    """Response to GetWordPronunciations"""
+
     def __init__(self, pronunciations: Dict[str, Dict[str, Any]]) -> None:
         self.pronunciations = pronunciations
 
 
 class PronunciationFailed:
+    """Response when g2p fails"""
+
     def __init__(self, reason: str) -> None:
         self.reason = reason
 
@@ -80,11 +94,14 @@ class PhonetisaurusPronounce(RhasspyActor):
         RhasspyActor.__init__(self)
         self.speed = 80  # wpm for speaking
         self.base_dict: Optional[Dict[str, List[str]]] = None
+        self.speech_system: str = ""
 
     def to_started(self, from_state: str) -> None:
+        """Transition to started state"""
         self.speech_system = self.profile.get("speech_to_text.system", "pocketsphinx")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state"""
         if isinstance(message, SpeakWord):
             espeak_phonemes, wav_data = self.speak(message.word)
             self.send(
@@ -107,6 +124,7 @@ class PhonetisaurusPronounce(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def speak(self, espeak_str: str, voice: Optional[str] = None) -> Tuple[str, bytes]:
+        """Speak word pronunciation"""
 
         # Use eSpeak to pronounce word
         espeak_command = ["espeak", "-s", str(self.speed), "-x"]
@@ -133,6 +151,7 @@ class PhonetisaurusPronounce(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def translate_phonemes(self, phonemes: str) -> str:
+        """Get eSpeak phonemes for a pronunciation"""
         # Load map from Sphinx to eSpeak phonemes
         map_path = self.profile.read_path(
             self.profile.get(f"speech_to_text.{self.speech_system}.phoneme_map")
@@ -150,10 +169,11 @@ class PhonetisaurusPronounce(RhasspyActor):
     # -------------------------------------------------------------------------
 
     def pronounce(self, words: List[str], n: int = 5) -> Dict[str, Dict[str, Any]]:
+        """Look up or guess word pronunciation(s)"""
         assert n > 0, "No pronunciations requested"
         assert len(words) > 0, "No words to look up"
 
-        self._logger.debug("Getting pronunciations for %s" % words)
+        self._logger.debug("Getting pronunciations for %s", words)
 
         # Load base and custom dictionaries
         base_dictionary_path = self.profile.read_path(

@@ -118,6 +118,7 @@ class WebrtcvadCommandListener(RhasspyActor):
         self.timeout_sec: float = 30
         self.vad_mode: int = 0
         self.vad: Optional[webrtcvad.Vad] = None
+        self.timeout_id: str = ""
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""

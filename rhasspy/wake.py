@@ -464,6 +464,7 @@ class SnowboyWakeListener(RhasspyActor):
         """Get problems at startup."""
         problems: Dict[str, Any] = {}
         try:
+            # pylint: disable=W0611
             from snowboy import snowboydetect, snowboydecoder  # noqa: F401
         except Exception:
             problems[
@@ -495,6 +496,7 @@ class PreciseWakeListener(RhasspyActor):
     """Listens for a wake word using Mycroft Precise."""
 
     def __init__(self) -> None:
+        # pylint: disable=E0401
         from precise_runner import ReadWriteStream
 
         RhasspyActor.__init__(self)
@@ -562,7 +564,7 @@ class PreciseWakeListener(RhasspyActor):
 
                     if self.send_not_detected:
                         # Wait for all chunks to finish processing
-                        for i in range(num_chunks):
+                        for _ in range(num_chunks):
                             self.prediction_sem.acquire(timeout=0.1)
 
                         # Wait a little bit for the precise engine to finish processing
@@ -603,6 +605,7 @@ class PreciseWakeListener(RhasspyActor):
     def load_runner(self) -> None:
         """Load precise runner."""
         if self.engine is None:
+            # pylint: disable=E0401
             from precise_runner import PreciseEngine
 
             self.model_name = self.profile.get("wake.precise.model", "hey-mycroft-2.pb")
@@ -617,6 +620,7 @@ class PreciseWakeListener(RhasspyActor):
             )
 
         if self.runner is None:
+            # pylint: disable=E0401
             from precise_runner import PreciseRunner, ReadWriteStream
 
             self.stream = ReadWriteStream()
@@ -656,6 +660,7 @@ class PreciseWakeListener(RhasspyActor):
         """Get problems at startup."""
         problems: Dict[str, Any] = {}
         try:
+            # pylint: disable=E0401,W0611
             from precise_runner import PreciseRunner, ReadWriteStream  # noqa: F401
         except Exception:
             problems[
