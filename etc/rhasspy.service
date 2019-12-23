@@ -1,0 +1,19 @@
+[Unit]
+Description=Rhasspy
+After=syslog.target network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/<USER>/path/to/rhasspy
+ExecStart=/bin/bash -lc './run-venv.sh --profile <LANGUAGE>'
+
+RestartSec=1
+Restart=on-failure
+
+StandardOutput=syslog
+StandardError=syslog
+
+SyslogIdentifier=rhasspy
+
+[Install]
+WantedBy=multi-user.target
