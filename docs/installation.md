@@ -2,9 +2,11 @@
 
 Rhasspy should run in a variety of software environments, including:
 
-* Within a [Docker](https://www.docker.com/) container
-* As a [Hass.io add-on](https://www.home-assistant.io/addons/)
-* Inside a [Python virtual environment](https://docs.python-guide.org/dev/virtualenvs/)
+* Within a [Docker](#docker) container
+* As a [Hass.io add-on](#hassio)
+* Inside a [Python virtual environment](#virtual-environment)
+    * Running as a [service](#running-as-a-service)
+* Build [from source](#build-from-source)
 
 ## Docker
 
@@ -79,11 +81,74 @@ Once the installation finishes (5-10 minutes on a Raspberry Pi 3), you can use t
 
 If all is well, the web interface will be available at [http://localhost:12101](http://localhost:12101)
 
-## Software Requirements
+### Running as a Service
 
-At its core, Rhasspy requires:
+Once installed, Rhasspy can be run as a [systemd service](https://systemd.io/). An [example unit file](https://github.com/synesthesiam/rhasspy/blob/master/etc/rhasspy.service) is available (thanks [UnderpantsGnome](https://github.com/UnderpantsGnome)):
 
-* Linux (preferably Debian)
-* Python 3.6 or higher
+```
+[Unit]
+Description=Rhasspy
+After=syslog.target network.target
 
-To actually use any components, however, requires a lot of [extra software](about.md#supporting-tools).
+[Service]
+Type=simple
+WorkingDirectory=/home/<USER>/path/to/rhasspy
+ExecStart=/bin/bash -lc './run-venv.sh --profile <LANGUAGE>'
+
+RestartSec=1
+Restart=on-failure
+
+StandardOutput=syslog
+StandardError=syslog
+
+SyslogIdentifier=rhasspy
+
+[Install]
+WantedBy=multi-user.target
+```
+
+* Replace `/home/<USER>/path/to/rhasspy` with the full path to your Rhasspy installation (where `run-venv.sh` is).
+* Replace `<LANGUAGE>` with your profile language (e.g., `en`)
+
+Create a file named `rhasspy.service` in the `/home/<USER>/.config/systemd/user` directory (you may need to create the directory itself). Once the file has been saved, run:
+
+```bash
+systemctl --user daemon-reload
+```
+
+Then, you can start Rhasspy with:
+
+```bash
+systemctl --user start rhasspy
+```
+
+If you'd like Rhasspy to start on boot, run:
+
+```bash
+systemctl --user enable --now rhasspy
+```
+
+## Build From Source
+
+The `create-venv.sh` script uses [pre-compiled binaries](https://github.com/synesthesiam/rhasspy/releases/tag/v2.0) for Rhasspy's required tools:
+
+* [OpenFST](https://www.openfst.org)
+* [Opengrm](http://www.opengrm.org/twiki/bin/view/GRM/NGramLibrary)
+* [Phonetisaurus](https://github.com/AdolfVonKleist/Phonetisaurus)
+* [Kaldi](https://kaldi-asr.org)
+
+The [build-from-source.sh](https://github.com/synesthesiam/rhasspy/blob/master/build-from-source.sh) attempts to build all of these tools from source. The binary artifacts (command-line tools, shared libraries) are installed into the `bin` and `lib` directories of a Python virtual environment. The `run-venv.sh` script automatically adds these directories to `PATH` and `LD_LIBRARY_PATH` before starting Rhasspy.
+
+### Swap Size
+
+On low memory devices like the Raspberry Pi, building the tools above can quickly consume the entire RAM. Before building, it's highly recommended that you increase the available swap space by several gigabytes:
+
+1. Edit `/etc/dphys-swapfile`
+2. Change `CONF_SWAPSIZE` to something large, like 2048 (2GB)
+3. Reboot
+
+### Kaldi
+
+You can skip building Kaldi if you plan to just [use Pocketsphinx](speech-to-text.md#pocketsphinx) for speech recognition.
+
+
