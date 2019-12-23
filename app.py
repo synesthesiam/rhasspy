@@ -787,7 +787,7 @@ last_sentence = ""
 
 
 @app.route("/api/text-to-speech", methods=["POST"])
-async def api_text_to_speech() -> str:
+async def api_text_to_speech() -> Union[bytes, str]:
     """Speak a sentence with text to speech system."""
     global last_sentence
     repeat = request.args.get("repeat", "false").strip().lower() == "true"
