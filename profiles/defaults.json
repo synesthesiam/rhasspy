@@ -35,7 +35,8 @@
     "api_password": "",
     "event_type_format": "rhasspy_{0}",
     "pem_file": "",
-    "url": "http://hassio/homeassistant/"
+    "url": "http://hassio/homeassistant/",
+    "handle_type": "event"
   },
   "intent": {
     "adapt": {

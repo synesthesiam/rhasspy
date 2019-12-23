@@ -2,6 +2,7 @@
 import json
 import os
 import subprocess
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Type
 from urllib.parse import urljoin
 
@@ -93,6 +94,11 @@ class DummyIntentHandler(RhasspyActor):
 # -----------------------------------------------------------------------------
 
 
+class HomeAssistantHandleType(str, Enum):
+    EVENT = "event"
+    INTENT = "intent"
+
+
 class HomeAssistantIntentHandler(RhasspyActor):
     """Forward intents to Home Assistant as events."""
 
@@ -101,6 +107,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
         self.hass_config: Dict[str, Any] = {}
         self.event_type_format = ""
         self.pem_file = ""
+        self.handle_type: HomeAssistantHandleType = HomeAssistantHandleType.EVENT
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
@@ -109,6 +116,13 @@ class HomeAssistantIntentHandler(RhasspyActor):
         # Python format string for generating event type name
         self.event_type_format = self.hass_config.get(
             "event_type_format", "rhasspy_{0}"
+        )
+
+        # Method for handling intent:
+        # - send rhasspy_* events (event)
+        # - use intent integration (intent)
+        self.handle_type = self.hass_config.get(
+            "handle_type", HomeAssistantHandleType.EVENT
         )
 
         # PEM file for self-signed HA certificates
@@ -133,6 +147,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
         elif isinstance(message, ForwardIntent):
             intent = message.intent
             try:
+                intent_name = pydash.get(intent, "intent.name", "")
                 event_type: str = ""
                 event_data: Dict[str, Any] = {}
 
@@ -146,7 +161,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
                     event_type = intent["hass_event"]["event_type"]
                     event_data = intent["hass_event"]["event_data"]
 
-                self.forward_intent(event_type, event_data)
+                self.forward_intent(intent_name, event_type, event_data)
             except Exception as e:
                 self._logger.exception("forward_intent")
                 intent["error"] = str(e)
@@ -157,7 +172,9 @@ class HomeAssistantIntentHandler(RhasspyActor):
 
     def handle_intent(self, intent: Dict[str, Any]) -> Dict[str, Any]:
         """Create event for Home Assistant and send it."""
-        if len(pydash.get(intent, "intent.name", "")) == 0:
+        intent_name = pydash.get(intent, "intent.name", "")
+
+        if not intent_name:
             self._logger.warning("Empty intent. Not sending to Home Assistant")
             return intent
 
@@ -166,23 +183,38 @@ class HomeAssistantIntentHandler(RhasspyActor):
         # Add a copy of the event to the intent for easier debugging
         intent["hass_event"] = {"event_type": event_type, "event_data": slots}
 
-        self.forward_intent(event_type, slots)
+        self.forward_intent(intent_name, event_type, slots)
         return intent
 
-    def forward_intent(self, event_type: str, slots: Dict[str, Any]):
+    def forward_intent(self, intent_name: str, event_type: str, slots: Dict[str, Any]):
         """Forward existing event to Home Assistant."""
-        # Base URL of Home Assistant server
-        post_url = urljoin(self.hass_config["url"], "api/events/" + event_type)
 
-        # Send to Home Assistant
-        kwargs = hass_request_kwargs(self.hass_config, self.pem_file)
-        kwargs["json"] = slots
+        if self.handle_type == HomeAssistantHandleType.INTENT:
+            # Call /api/intent/handle
+            post_url = urljoin(self.hass_config["url"], "api/intent/handle")
 
-        if self.pem_file is not None:
-            kwargs["verify"] = self.pem_file
+            # Send to Home Assistant
+            kwargs = hass_request_kwargs(self.hass_config, self.pem_file)
+            kwargs["json"] = {"name": intent_name, "data": slots}
 
-        response = requests.post(post_url, **kwargs)
-        self._logger.debug("POSTed intent to %s", post_url)
+            if self.pem_file is not None:
+                kwargs["verify"] = self.pem_file
+
+            response = requests.post(post_url, **kwargs)
+        else:
+            # Send event
+            post_url = urljoin(self.hass_config["url"], "api/events/" + event_type)
+
+            # Send to Home Assistant
+            kwargs = hass_request_kwargs(self.hass_config, self.pem_file)
+            kwargs["json"] = slots
+
+            if self.pem_file is not None:
+                kwargs["verify"] = self.pem_file
+
+            response = requests.post(post_url, **kwargs)
+            self._logger.debug("POSTed intent to %s", post_url)
+
         response.raise_for_status()
 
     # -------------------------------------------------------------------------

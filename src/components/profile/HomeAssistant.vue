@@ -59,6 +59,38 @@
                     </div>
                 </div>
             </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="hass-handle-type-event" value="event" v-model="profile.home_assistant.handle_type" :disabled="profile.handle.system != 'hass'">
+                        <label class="form-check-label" for="hass-handle-type-event">
+                            Send <strong>events</strong> to Home Assistant (<tt>/api/events</tt>)
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col">
+                        <p class="text-muted">
+                            Events will be named <tt>{{ profile.home_assistant.event_type_format.replace('{0}', 'INTENT_NAME') }}</tt>
+                        </p>
+                    </div>
+                </div>
+                <div class="form-row mt-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" id="hass-handle-type-intent" value="intent" v-model="profile.home_assistant.handle_type" :disabled="profile.handle.system != 'hass'">
+                        <label class="form-check-label" for="hass-handle-type-intent">
+                            Send <strong>intents</strong> to Home Assistant (<tt>/api/intents</tt>)
+                        </label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col">
+                    <p class="text-muted">
+                        Requires the <a href="https://www.home-assistant.io/integrations/intent/">intent component</a> in your <tt>configuration.yaml</tt>
+                    </p>
+                    </div>
+                </div>
+            </div>
             <hr>
             <div class="form-group">
                 <div class="form-row">

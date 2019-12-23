@@ -27,7 +27,8 @@ const profileDefaults = {
         "api_password": "",
         "event_type_format": "rhasspy_{0}",
         "url": "http://hassio/homeassistant/",
-        "pem_file": ""
+        "pem_file": "",
+        "handle_type": "event"
     },
     "handle": {
         "system": "hass",
@@ -259,12 +260,6 @@ const profileDefaults = {
         "command": {
             "program": "$RHASSPY_BASE_DIR/bin/mock-commands/sleep.sh",
             "arguments": []
-        },
-        "porcupine": {
-            "library_path": "porcupine/libpv_porcupine.so",
-            "model_path": "porcupine/porcupine_params.pv",
-            "keyword_path": "porcupine/porcupine.ppn",
-            "sensitivity": 0.5
         },
         "system": "pocketsphinx"
     }
