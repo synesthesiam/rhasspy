@@ -37,7 +37,7 @@ Add to your [profile](profiles.md):
 
 There are a lot of [keyword files](https://github.com/Picovoice/Porcupine/tree/master/resources/keyword_files) available for download. Use the `linux` platform if you're on desktop/laptop (`amd64`) and the `raspberrypi` platform if you're using a Raspberry Pi (`armhf`/`aarch64`). The `.ppn` files should go in the `porcupine` directory inside your profile (referenced by `keyword_path`).
 
-If you want to create a custom wake word, you will need to run the [Porcupine Optimizer](https://github.com/Picovoice/Porcupine/tree/master/tools/optimizer). **NOTE**: the generated keyword file is only valid for 30 days, though you can always just re-run the optimizer.
+If you want to create a custom wake word, you will need use the [Picovoice Console](https://github.com/Picovoice/porcupine#picovoice-console). **NOTE**: the generated keyword file is only valid for 30 days, though you can always just re-run the optimizer.
 
 See `rhasspy.wake.PorcupineWakeListener` for details.
 
