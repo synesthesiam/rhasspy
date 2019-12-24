@@ -292,7 +292,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
             "name": "intent_model",
             "file_dep": [intent_counts],
             "targets": [intent_model],
-            "actions": ["ngrammake %(dependencies)s %(targets)s"],
+            "actions": ["ngrammake --method=witten_bell %(dependencies)s %(targets)s"],
         }
 
         if base_language_model_weight > 0:
