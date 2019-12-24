@@ -23,7 +23,7 @@
                      v-on:restart="$emit('restart')"
             />
 
-            <HomeAssistant id="profile-handle" :profile="profile" />
+            <IntentHandling id="profile-handle" :profile="profile" />
             <button class="btn btn-primary mt-3">Save Settings</button>
 
             <WakeWord id="profile-wake" :profile="profile" />
@@ -61,7 +61,7 @@
 
  import Overview from '@/components/profile/Overview'
  import Rhasspy from '@/components/profile/Rhasspy'
- import HomeAssistant from '@/components/profile/HomeAssistant'
+ import IntentHandling from '@/components/profile/IntentHandling'
  import WakeWord from '@/components/profile/WakeWord'
  import VoiceDetection from '@/components/profile/VoiceDetection'
  import SpeechRecognition from '@/components/profile/SpeechRecognition'
@@ -74,7 +74,7 @@
      name: 'ProfileSettings',
      components: {
          Overview,
-         HomeAssistant,
+         IntentHandling,
          Rhasspy,
          WakeWord,
          VoiceDetection,

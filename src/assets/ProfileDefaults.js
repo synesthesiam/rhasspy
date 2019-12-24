@@ -36,6 +36,9 @@ const profileDefaults = {
             "program": "$RHASSPY_BASE_DIR/bin/mock-commands/handle.sh",
             "arguments": []
         },
+        "remote": {
+            "url": "http://my-server:port/endpoint"
+        },
         "forward_to_hass": true
     },
     "intent": {
@@ -157,6 +160,13 @@ const profileDefaults = {
         "command": {
             "program": "$RHASSPY_BASE_DIR/bin/mock-commands/speech2text.sh",
             "arguments": []
+        },
+        "hass_stt": {
+            "platform": "",
+            "sample_rate": 16000,
+            "bit_size": 16,
+            "channels": 1,
+            "language": "en-US"
         },
         "sentences_ini": "sentences.ini",
         "sentences_text": "sentences.txt",

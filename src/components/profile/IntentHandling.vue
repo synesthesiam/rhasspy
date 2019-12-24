@@ -147,7 +147,7 @@
 
 <script>
  export default {
-     name: 'HomeAssistant',
+     name: 'IntentHandling',
      props: {
          profile : Object
      }

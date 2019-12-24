@@ -28,7 +28,10 @@
       "program": ""
     },
     "forward_to_hass": false,
-    "system": "dummy"
+      "system": "dummy",
+    "remote": {
+      "url": "http://my-server:port/endpoint"
+    },
   },
   "home_assistant": {
     "access_token": "",
