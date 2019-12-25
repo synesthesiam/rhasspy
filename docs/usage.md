@@ -123,6 +123,13 @@ automation:
 
 You've now added offline, private voice commands to your Home Assistant. Happy automating!
 
+### Getting the Spoken Text
+
+The Home Assistant event will contain two extra slots besides the ones you specify:
+
+* `_text` - spoken voice command text with [substitutions](training.md#substitutions)
+* `_raw_text` - literal transcription of voice command
+
 ## Node-RED
 
 Rhasspy can interact directly with [Node-RED](https://nodered.org) directly through [websockets](usage.md#websocket-events).

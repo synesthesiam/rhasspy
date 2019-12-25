@@ -226,6 +226,10 @@ class HomeAssistantIntentHandler(RhasspyActor):
         for entity in intent["entities"]:
             slots[entity["entity"]] = entity["value"]
 
+        # Add meta slots
+        slots["_text"] = intent.get("text", "")
+        slots["_raw_text"] = intent.get("raw_text", "")
+
         return event_type, slots
 
     # -------------------------------------------------------------------------
