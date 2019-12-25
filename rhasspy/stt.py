@@ -127,6 +127,7 @@ class PocketsphinxDecoder(RhasspyActor):
             try:
                 self.load_decoder()
                 text, confidence = self.transcribe_wav(message.wav_data)
+                self._logger.debug(text)
                 self.send(
                     message.receiver or sender,
                     WavTranscription(
@@ -236,7 +237,6 @@ class PocketsphinxDecoder(RhasspyActor):
             self._logger.debug("Transcription confidence: %s", confidence)
             if confidence >= self.min_confidence:
                 # Return best transcription
-                self._logger.debug(hyp.hypstr)
                 return hyp.hypstr, confidence
 
             self._logger.warning(
@@ -405,6 +405,7 @@ class KaldiDecoder(RhasspyActor):
         """Handle messages in started state."""
         if isinstance(message, TranscribeWav):
             text = self.transcribe_wav(message.wav_data)
+            self._logger.debug(text)
             self.send(message.receiver or sender, WavTranscription(text))
 
     def transcribe_wav(self, wav_data: bytes) -> str:
