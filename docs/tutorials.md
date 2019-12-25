@@ -96,9 +96,10 @@ Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
         [Rhasspy]
         Listen for wake word on Startup = UNchecked
 
-        [Home Assistant]
-        Do not use Home Assistant (note you obviously can instead of Node-Red)
-
+        [Intent Handling]
+        Do not handle intent on this device
+        #There is no harm in having the Server handle Intents, but the Client must handle Intents
+        
         [Wake Word]
         No Wake word on this device
 
@@ -181,7 +182,8 @@ Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
         Listen for wake word on Startup = checked
 
         [Home Assistant]
-        Do not use Home Assistant (note you obviously can instead of Node-Red)
+        Enable Intent Handling on this device
+        #Do not use Home Assistant if using Node-Red
 
         [Wake Word]
         Use snowboy (this should trigger a download of more files)
