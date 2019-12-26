@@ -3,11 +3,11 @@
 Rhasspy (pronounced RAH-SPEE) is an offline, [multilingual](#supported-languages) voice assistant toolkit inspired by [Jasper](https://jasperproject.github.io/) that works well with [Home Assistant](https://www.home-assistant.io/), [Hass.io](https://www.home-assistant.io/hassio/), and [Node-RED](https://nodered.org).
 
 * [Documentation](https://rhasspy.readthedocs.io/)
+* [Discussion](https://community.rhasspy.org)
 * [Video Introduction](https://www.youtube.com/watch?v=ijKTR_GqWwA)
 * [Hass.IO Add-On Repository](https://github.com/synesthesiam/hassio-addons)
-* [Discussion](https://community.home-assistant.io/t/rhasspy-offline-voice-assistant-toolkit/60862)
 
-Rhasspy transca voice commands into [JSON](https://json.org) events that can trigger actions in home automation software, like [Home Assistant automations](https://www.home-assistant.io/docs/automation/trigger/#event-trigger) or [Node-RED flows](https://rhasspy.readthedocs.io/en/latest/usage/#node-red). You define custom voice commands in a [profile](https://rhasspy.readthedocs.io/en/latest/profiles/) using a [specialized template syntax](https://rhasspy.readthedocs.io/en/latest/training/#sentencesini), and Rhasspy takes care of the rest.
+Rhasspy transcribes voice commands into [JSON](https://json.org) events that can trigger actions in home automation software, like [Home Assistant automations](https://www.home-assistant.io/docs/automation/trigger/#event-trigger) or [Node-RED flows](https://rhasspy.readthedocs.io/en/latest/usage/#node-red). You define custom voice commands in a [profile](https://rhasspy.readthedocs.io/en/latest/profiles/) using a [specialized template syntax](https://rhasspy.readthedocs.io/en/latest/training/#sentencesini), and Rhasspy takes care of the rest.
 
 To run Rhasspy with the English (en) profile using Docker:
 

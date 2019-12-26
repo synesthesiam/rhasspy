@@ -43,6 +43,10 @@ Ready to try Rhasspy? Follow the steps below and check out the [tutorials](tutor
 4. Author your [custom voice commands](training.md) and train Rhasspy
 5. Connect Rhasspy to [Home Assistant](usage.md#home-assistant) or a [Node-RED](usage.md#node-red) flow
 
+## Getting Help
+
+If you have problems, please stop by the [Rhasspy community site](https://community.rhasspy.org) or [open a GitHub issue](https://github.com/synesthesiam/rhasspy/issues).
+
 ## Supported Languages
 
 Rhasspy supports the following languages:

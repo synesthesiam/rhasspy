@@ -9,6 +9,7 @@ Special thanks to:
 * [Romkabouter](https://github.com/Romkabouter)
 * [koenvervloesem](https://github.com/koenvervloesem)
 * [FunkyBoT](https://community.home-assistant.io/u/FunkyBoT)
+* [fastjack](https://community.rhasspy.org/u/fastjack)
 * [S_n_Nguy_n](https://community.home-assistant.io/u/S_n_Nguy_n)
 
 ## Motivation
