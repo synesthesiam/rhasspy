@@ -2,7 +2,7 @@
 
 Rhasspy was created and is currently maintained by [Michael Hansen](https://synesthesiam.com/).
 
-<img src="img/mike-head.png" style="max-height: 100px;" title="Mike head">
+<img src="../img/mike-head.png" style="max-height: 100px;" title="Mike head">
 
 Special thanks to:
 
