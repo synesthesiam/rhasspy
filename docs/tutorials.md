@@ -63,8 +63,89 @@ You can now fill in the rest of the Home Assistant automation:
           rgb_color: [255, 0, 0]
           entity_id: light.bedroom
 
-This will handle the specific case of setting the bedroom light to red, but not any other color. You can either add additional automations to handle these, or make use of [automation templating](https://www.home-assistant.io/docs/automation/templating/) to do it all at once.
+This will handle the specific case of setting the bedroom light to red, but not any other color. You can either add additional automations to handle these, or make use of [automation templating](https://www.home-assistant.io/docs/automation/templating/) to do it all at once. [Home Assistant Template Example](Home-Assistant-Template-Example)
 
+### Home Assistant Template Example
+Using the four files below, you can get Home Assistant to respond to turning on / off *ANY* light in your setup.
+#### Rhasspy Files
++ /$PROFILE$/en/slots/lights
+
+A Slots file to easily group word substitutions
+```
+{
+    "lights": [
+        "(living room wall):light.bulb_3",
+        "(living room desk):switch.m4",
+        "(living room floor):switch.sonoff",
+        "(bar lights):switch.maxcio1",
+        "(entry wall):light.bulb_4",
+        "(guest wall):light.bulb_6",
+        "(guest floor):switch.m5",
+        "(bedroom wall):light.bulb_5",
+        "(bedroom desk):light.bulb_1",
+        "(bedroom floor):light.bulb_2",
+        ""
+    ]
+}
+```
++ Sentences.ini
+
+A simple sentence to turn any of the lights in the slots file on or off.
+Note the use of the group \<state\> and the slot $lights
+    
+```
+[ChangeLightState]
+state = (on | off) {light_state}
+turn [the] ($lights) {light_name} <state>
+```
+
+#### Home Assistant Files
++ automations.yaml
+
+Use a data_template to get the Rhasspy Event Data with trigger.event.data.<your property name> and then pass those along to a script
+    
+```
+- id: '1577164768008'
+  alias: Rhasspy Light States
+  description: Voice Control on/off states for all lights
+  trigger:
+  - event_data: {}
+    event_type: rhasspy_ChangeLightState
+    platform: event
+  condition: []
+  action:
+  - alias: ''
+    data_template:
+      light_name: "{{ trigger.event.data.light_name }}"
+      light_state: "{{ trigger.event.data.light_state }}"
+    service: script.rhasspy_light_state
+
+```
++ scripts.yaml
+
+The service_template casts the light_state into a string and checks to see if you said 'on' or 'off'. The homeassistant-service can toggle both lights and switches, which is super helpful if you have a combination of "light" types.
+```
+'rhasspy_light_state':
+  alias: change_light_state
+  fields:
+    light_name:
+      description: "Light Entity"
+      example: light.bulb_1
+    light_state:
+      description: "State to change the light to"
+      example: on
+  sequence:
+    - service_template: >
+        {% set this_state = light_state | string %}
+        {% if this_state == 'on' %}
+          homeassistant.turn_on
+        {%else %}
+          homeassistant.turn_off
+        {% endif %}
+
+      data_template:
+        entity_id: "{{ light_name }}"
+```
 ## Client/Server Setup
 
 Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
