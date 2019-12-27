@@ -215,6 +215,8 @@ class FsticuffsRecognizer(RhasspyActor):
             except Exception:
                 self._logger.exception("in_loaded")
                 intent = empty_intent()
+                intent["text"] = message.text
+                intent["raw_text"] = message.text
 
             intent["speech_confidence"] = message.confidence
             self.send(
@@ -312,6 +314,8 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
             except Exception:
                 self._logger.exception("in_loaded")
                 intent = empty_intent()
+                intent["text"] = message.text
+                intent["raw_text"] = message.text
 
             intent["speech_confidence"] = message.confidence
             self.send(
@@ -433,6 +437,7 @@ class RasaIntentRecognizer(RhasspyActor):
                 self._logger.exception("in_started")
                 intent = empty_intent()
                 intent["text"] = message.text
+                intent["raw_text"] = message.text
 
             self.send(
                 message.receiver or sender,
@@ -493,6 +498,8 @@ class AdaptIntentRecognizer(RhasspyActor):
             except Exception:
                 self._logger.exception("in_loaded")
                 intent = empty_intent()
+                intent["text"] = message.text
+                intent["raw_text"] = message.text
 
             intent["speech_confidence"] = message.confidence
             self.send(
@@ -616,6 +623,7 @@ class FlairRecognizer(RhasspyActor):
                 self._logger.exception("in_started")
                 intent = empty_intent()
                 intent["text"] = message.text
+                intent["raw_text"] = message.text
 
             intent["speech_confidence"] = message.confidence
             self.send(
@@ -774,6 +782,7 @@ class HomeAssistantConversationRecognizer(RhasspyActor):
             # Return empty intent since conversation doesn't give it to us
             intent = empty_intent()
             intent["text"] = message.text
+            intent["raw_text"] = message.text
             intent["speech_confidence"] = message.confidence
             self.send(message.receiver or sender, IntentRecognized(intent))
 
@@ -820,6 +829,7 @@ class CommandRecognizer(RhasspyActor):
                 self._logger.exception("in_started")
                 intent = empty_intent()
                 intent["text"] = message.text
+                intent["raw_text"] = message.text
 
             intent["speech_confidence"] = message.confidence
             self.send(
