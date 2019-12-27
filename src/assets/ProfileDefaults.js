@@ -45,6 +45,7 @@ const profileDefaults = {
         "conversation": {
             "handle_speech": true
         },
+        "error_sound": true,
         "fsticuffs": {
             "intent_fst": "intent.fst",
             "ignore_unknown_words": true,
@@ -117,9 +118,10 @@ const profileDefaults = {
         "preload_profile": true
     },
     "sounds": {
-        "recorded": "etc/wav/beep_lo.wav",
+        "recorded": "${RHASSPY_BASE_DIR}/etc/wav/beep_lo.wav",
         "system": "aplay",
-        "wake": "etc/wav/beep_hi.wav"
+        "wake": "${RHASSPY_BASE_DIR}/etc/wav/beep_hi.wav",
+        "error": "${RHASSPY_BASE_DIR}/etc/wav/beep_error.wav"
     },
     "speech_to_text": {
         "g2p_model": "g2p.fst",

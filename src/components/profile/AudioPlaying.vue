@@ -59,7 +59,7 @@
             <hr>
             <div class="form-group">
                 <div class="form-row bg-info text-white pt-2 pl-2">
-                    <h4>Sounds</h4>
+                    <h4 id="profile-sounds">Sounds</h4>
                 </div>
             </div>
             <div class="form-group">
@@ -83,6 +83,14 @@
                     <label for="sounds-recorded" class="col-form-label">Recorded WAV</label>
                     <div class="col">
                         <input id="sounds-recorded" type="text" class="form-control" v-model="profile.sounds.recorded">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="sounds-error" class="col-form-label">Error WAV</label>
+                    <div class="col">
+                        <input id="sounds-error" type="text" class="form-control" v-model="profile.sounds.error">
                     </div>
                 </div>
             </div>

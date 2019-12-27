@@ -95,7 +95,12 @@ class DummyIntentHandler(RhasspyActor):
 
 
 class HomeAssistantHandleType(str, Enum):
+    """Method used to communicate intents to Home Assistnat"""
+
+    # Send events to /api/events
     EVENT = "event"
+
+    # Send intents to /api/intent
     INTENT = "intent"
 
 

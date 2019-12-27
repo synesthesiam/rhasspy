@@ -15,6 +15,19 @@
             <hr>
             <div class="form-group">
                 <div class="form-row">
+                    <input type="checkbox" id="intent-error-sound" v-model="profile.intent.error_sound" :disabled="profile.intent.system == 'dummy'">
+
+                    <label for="intent-error-sound" class="col-form-label">Play <tt>error</tt> sound when intent not recognized</label>
+                </div>
+                <div class="form-row">
+                    <p class="text-muted">
+                        See <a href="#profile-sounds">Sounds section</a> below.
+                    </p>
+                </div>
+            </div>
+            <hr>
+            <div class="form-group">
+                <div class="form-row">
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="intent-system" id="intent-system-fsticuffs" value="fsticuffs" v-model="profile.intent.system">
                         <label class="form-check-label" for="intent-system-fsticuffs">

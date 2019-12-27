@@ -28,10 +28,10 @@
       "program": ""
     },
     "forward_to_hass": false,
-      "system": "dummy",
+    "system": "dummy",
     "remote": {
       "url": "http://my-server:port/endpoint"
-    },
+    }
   },
   "home_assistant": {
     "access_token": "",
@@ -52,6 +52,7 @@
     "conversation": {
       "handle_speech": true
     },
+    "error_sound": true,
     "fuzzywuzzy": {
       "examples_json": "intent_examples.json",
       "min_confidence": 0
@@ -125,7 +126,8 @@
   "sounds": {
     "recorded": "${RHASSPY_BASE_DIR}/etc/wav/beep_lo.wav",
     "system": "aplay",
-    "wake": "${RHASSPY_BASE_DIR}/etc/wav/beep_hi.wav"
+    "wake": "${RHASSPY_BASE_DIR}/etc/wav/beep_hi.wav",
+    "error": "${RHASSPY_BASE_DIR}/etc/wav/beep_error.wav"
   },
   "speech_to_text": {
     "command": {

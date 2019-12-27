@@ -6,25 +6,35 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type
 
+import pydash
 import pywrapfst as fst
 
-from rhasspy.actor import (ActorExitRequest, ChildActorExited, Configured,
-                           ConfigureEvent, RhasspyActor, StateTransition,
-                           WakeupMessage)
-from rhasspy.audio_player import (PlayWavData, PlayWavFile, WavPlayed,
-                                  get_sound_class)
-from rhasspy.audio_recorder import (AudioData, HTTPAudioRecorder,
-                                    StartRecordingToBuffer,
-                                    StopRecordingToBuffer,
-                                    get_microphone_class)
-from rhasspy.command_listener import (ListenForCommand, VoiceCommand,
-                                      get_command_class)
-from rhasspy.intent import (IntentRecognized, RecognizeIntent,
-                            get_recognizer_class)
-from rhasspy.intent_handler import (HandleIntent, IntentHandled,
-                                    get_intent_handler_class)
-from rhasspy.intent_train import (IntentTrainingComplete, IntentTrainingFailed,
-                                  TrainIntent, get_intent_trainer_class)
+from rhasspy.actor import (
+    ActorExitRequest,
+    ChildActorExited,
+    Configured,
+    ConfigureEvent,
+    RhasspyActor,
+    StateTransition,
+    WakeupMessage,
+)
+from rhasspy.audio_player import PlayWavData, PlayWavFile, WavPlayed, get_sound_class
+from rhasspy.audio_recorder import (
+    AudioData,
+    HTTPAudioRecorder,
+    StartRecordingToBuffer,
+    StopRecordingToBuffer,
+    get_microphone_class,
+)
+from rhasspy.command_listener import ListenForCommand, VoiceCommand, get_command_class
+from rhasspy.intent import IntentRecognized, RecognizeIntent, get_recognizer_class
+from rhasspy.intent_handler import HandleIntent, IntentHandled, get_intent_handler_class
+from rhasspy.intent_train import (
+    IntentTrainingComplete,
+    IntentTrainingFailed,
+    TrainIntent,
+    get_intent_trainer_class,
+)
 from rhasspy.mqtt import MqttPublish
 from rhasspy.pronounce import GetWordPhonemes, GetWordPronunciations, SpeakWord
 from rhasspy.stt import TranscribeWav, WavTranscription, get_decoder_class
@@ -32,9 +42,13 @@ from rhasspy.stt_train import get_speech_trainer_class
 from rhasspy.train import train_profile
 from rhasspy.tts import SpeakSentence, get_speech_class
 from rhasspy.utils import buffer_to_wav
-from rhasspy.wake import (ListenForWakeWord, StopListeningForWakeWord,
-                          WakeWordDetected, WakeWordNotDetected,
-                          get_wake_class)
+from rhasspy.wake import (
+    ListenForWakeWord,
+    StopListeningForWakeWord,
+    WakeWordDetected,
+    WakeWordNotDetected,
+    get_wake_class,
+)
 
 # -----------------------------------------------------------------------------
 
@@ -484,7 +498,7 @@ class DialogueManager(RhasspyActor):
                     "text": message.text,
                     "likelihood": 1,
                     "seconds": 0,
-                    "wakeId": self.wake_detected_name or ""
+                    "wakeId": self.wake_detected_name or "",
                 }
             ).encode()
 
@@ -511,6 +525,16 @@ class DialogueManager(RhasspyActor):
     def in_recognizing(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in recognizing state."""
         if isinstance(message, IntentRecognized):
+
+            if not pydash.get(message.intent, "intent.name", ""):
+                if self.profile.get("intent.error_sound", True):
+                    # Play error sound when not recognized
+                    wav_path = os.path.expandvars(
+                        self.profile.get("sounds.error", None)
+                    )
+                    if wav_path is not None:
+                        self.send(self.player, PlayWavFile(wav_path))
+
             if self.recorder_class == HTTPAudioRecorder:
                 # Forward to audio recorder
                 self.send(self.recorder, message)

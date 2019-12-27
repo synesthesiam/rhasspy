@@ -285,12 +285,6 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
             self.transition("ready")
             self.send(self.receiver, SentenceSpoken(self.wav_data))
 
-    def to_stopped(self, from_state: str) -> None:
-        """Transition to stopped state."""
-        if self.temp_dir is not None:
-            self.temp_dir.cleanup()
-            self.temp_dir = None
-
     # -------------------------------------------------------------------------
 
     def speak(self, sentence: str, language: Optional[str] = None) -> bytes:
