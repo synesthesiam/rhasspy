@@ -84,6 +84,10 @@ Application authors may want to use the [rhasspy-client](https://pypi.org/projec
     * POST a WAV file and have Rhasspy process it as a voice command
     * Returns intent JSON when command is finished
     * `?nohass=true` - stop Rhasspy from handling the intent
+* `/api/speech-to-text`
+    * POST a WAV file and have Rhasspy return the text transcription
+    * Set `Accept: application/json` to receive JSON with more details
+    * `?noheader=true` - send raw 16-bit 16Khz mono audio without a WAV header
 * `/api/start-recording`
     * POST to have Rhasspy start recording a voice command
 * `/api/stop-recording`
