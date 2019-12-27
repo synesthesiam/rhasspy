@@ -256,18 +256,12 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
         self.player: Optional[RhasspyActor] = None
         self.receiver: Optional[RhasspyActor] = None
         self.language: str = ""
-        self.temp_dir: Optional[tempfile.TemporaryDirectory] = None
-        self.wav_path: str = ""
         self.wav_data: bytes = bytes()
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
         self.player = self.config["player"]
         self.language = self.profile.get("text_to_speech.picotts.language", "")
-        self.temp_dir = tempfile.TemporaryDirectory()
-        assert self.temp_dir is not None
-        self.wav_path = os.path.join(self.temp_dir.name, "output.wav")
-        os.symlink("/dev/stdout", self.wav_path)
 
         self.transition("ready")
 
@@ -302,14 +296,16 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
     def speak(self, sentence: str, language: Optional[str] = None) -> bytes:
         """Get WAV buffer for sentence."""
         try:
-            pico_cmd = ["pico2wave", "-w", self.wav_path]
-            if language:
-                pico_cmd.extend(["-l", str(language)])
+            with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb") as wav_file:
+                pico_cmd = ["pico2wave", "-w", wav_file.name]
+                if language:
+                    pico_cmd.extend(["-l", str(language)])
 
-            pico_cmd.append(sentence)
-            self._logger.debug(pico_cmd)
+                pico_cmd.append(sentence)
+                self._logger.debug(pico_cmd)
 
-            return subprocess.check_output(pico_cmd)
+                subprocess.check_call(pico_cmd)
+                return open(wav_file.name, "rb").read()
         except Exception:
             self._logger.exception("speak")
             return bytes()
