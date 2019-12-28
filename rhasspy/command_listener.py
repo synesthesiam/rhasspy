@@ -11,37 +11,16 @@ from typing import Any, Dict, List, Optional, Type
 import webrtcvad
 
 from rhasspy.actor import RhasspyActor, WakeupMessage
-from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
-from rhasspy.mqtt import MqttMessage, MqttSubscribe
+from rhasspy.events import (
+    AudioData,
+    StartStreaming,
+    StopStreaming,
+    MqttMessage,
+    MqttSubscribe,
+    ListenForCommand,
+    VoiceCommand,
+)
 from rhasspy.utils import convert_wav
-
-# -----------------------------------------------------------------------------
-
-
-class ListenForCommand:
-    """Tell Rhasspy to listen for a voice command."""
-
-    def __init__(
-        self,
-        receiver: Optional[RhasspyActor] = None,
-        handle: bool = True,
-        timeout: Optional[float] = None,
-        entities: List[Dict[str, Any]] = None,
-    ) -> None:
-        self.receiver = receiver
-        self.handle = handle
-        self.timeout = timeout
-        self.entities = entities or []
-
-
-class VoiceCommand:
-    """Response to ListenForCommand."""
-
-    def __init__(self, data: bytes, timeout: bool = False, handle: bool = True) -> None:
-        self.data = data
-        self.timeout = timeout
-        self.handle = handle
-
 
 # -----------------------------------------------------------------------------
 

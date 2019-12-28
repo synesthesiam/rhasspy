@@ -15,6 +15,14 @@
             <hr>
             <div class="form-group">
                 <div class="form-row">
+                    <input type="checkbox" id="tts-disable-wake" v-model="profile.text_to_speech.disable_wake" :disabled="profile.text_to_speech.system == 'dummy'">
+
+                    <label for="tts-disable-wake" class="col-form-label">Disable wake word while speaking</label>
+                </div>
+            </div>
+            <hr>
+            <div class="form-group">
+                <div class="form-row">
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="tts-system" id="tts-system-espeak" value="espeak" v-model="profile.text_to_speech.system">
                         <label class="form-check-label" for="tts-system-espeak">

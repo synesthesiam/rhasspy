@@ -183,6 +183,7 @@ const profileDefaults = {
             "program": "",
             "arguments": []
         },
+        "disable_wake": true,
         "marytts": {
             "url": "http://localhost:59125"
         },

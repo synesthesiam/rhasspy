@@ -15,37 +15,8 @@ import requests
 from rhasspynlu import json_to_graph, recognize
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.tts import SpeakSentence
+from rhasspy.events import RecognizeIntent, IntentRecognized, SpeakSentence
 from rhasspy.utils import empty_intent, hass_request_kwargs
-
-# -----------------------------------------------------------------------------
-# Events
-# -----------------------------------------------------------------------------
-
-
-class RecognizeIntent:
-    """Request to recognize an intent."""
-
-    def __init__(
-        self,
-        text: str,
-        receiver: Optional[RhasspyActor] = None,
-        handle: bool = True,
-        confidence: float = 1,
-    ) -> None:
-        self.text = text
-        self.confidence = confidence
-        self.receiver = receiver
-        self.handle = handle
-
-
-class IntentRecognized:
-    """Response to RecognizeIntent."""
-
-    def __init__(self, intent: Dict[str, Any], handle: bool = True) -> None:
-        self.intent = intent
-        self.handle = handle
-
 
 # -----------------------------------------------------------------------------
 

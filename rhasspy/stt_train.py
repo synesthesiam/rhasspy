@@ -8,35 +8,8 @@ from typing import Any, Dict, List, Optional, Type
 import pywrapfst as fst
 
 from rhasspy.actor import RhasspyActor
+from rhasspy.events import TrainSpeech, SpeechTrainingComplete, SpeechTrainingFailed
 from rhasspy.train.jsgf2fst import fstprintall, symbols2intent
-
-# -----------------------------------------------------------------------------
-# Events
-# -----------------------------------------------------------------------------
-
-
-class TrainSpeech:
-    """Request to train speech to text system."""
-
-    def __init__(
-        self, intent_fst: fst.Fst, receiver: Optional[RhasspyActor] = None
-    ) -> None:
-        self.intent_fst = intent_fst
-        self.receiver = receiver
-
-
-class SpeechTrainingComplete:
-    """Response when training is successful."""
-
-    def __init__(self, intent_fst: fst.Fst) -> None:
-        self.intent_fst = intent_fst
-
-
-class SpeechTrainingFailed:
-    """Response when training fails."""
-
-    def __init__(self, reason: str) -> None:
-        self.reason = reason
 
 
 # -----------------------------------------------------------------------------

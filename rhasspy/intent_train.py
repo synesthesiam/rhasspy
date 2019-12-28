@@ -9,38 +9,12 @@ import tempfile
 import time
 from collections import Counter, defaultdict
 from io import StringIO
-from typing import Any, Dict, List, Optional, Set, Type
+from typing import Any, Dict, List, Set, Type
 from urllib.parse import urljoin
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.utils import (lcm, make_sentences_by_intent,
-                           sample_sentences_by_intent)
-
-# -----------------------------------------------------------------------------
-# Events
-# -----------------------------------------------------------------------------
-
-
-class TrainIntent:
-    """Request to train intent recognizer."""
-
-    def __init__(self, intent_fst, receiver: Optional[RhasspyActor] = None) -> None:
-        self.intent_fst = intent_fst
-        self.receiver = receiver
-
-
-class IntentTrainingComplete:
-    """Response when training is successful."""
-
-    pass
-
-
-class IntentTrainingFailed:
-    """Response when training fails."""
-
-    def __init__(self, reason: str) -> None:
-        self.reason = reason
-
+from rhasspy.events import TrainIntent, IntentTrainingComplete, IntentTrainingFailed
+from rhasspy.utils import lcm, make_sentences_by_intent, sample_sentences_by_intent
 
 # -----------------------------------------------------------------------------
 
@@ -453,16 +427,20 @@ class FlairIntentTrainer(RhasspyActor):
         """Train intent classifier and named entity recognizers."""
         # pylint: disable=E0401
         from flair.data import Sentence, Token
+
         # pylint: disable=E0401
         from flair.models import SequenceTagger, TextClassifier
+
         # pylint: disable=E0401
         from flair.embeddings import (
             FlairEmbeddings,
             StackedEmbeddings,
             DocumentRNNEmbeddings,
         )
+
         # pylint: disable=E0401
         from flair.data import TaggedCorpus
+
         # pylint: disable=E0401
         from flair.trainers import ModelTrainer
 

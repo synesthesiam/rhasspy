@@ -5,49 +5,22 @@ import threading
 import time
 from collections import defaultdict
 from queue import Queue
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import pydash
 
 from rhasspy.actor import RhasspyActor
+from rhasspy.events import (
+    MqttPublish,
+    MqttSubscribe,
+    MqttMessage,
+    MqttConnected,
+    MqttDisconnected,
+)
 
 # -----------------------------------------------------------------------------
-
-
-class MqttPublish:
-    """Request to publish payload to topic."""
-
-    def __init__(self, topic: str, payload: bytes) -> None:
-        self.topic = topic
-        self.payload = payload
-
-
-class MqttSubscribe:
-    """Request to subscribe to a topic."""
-
-    def __init__(self, topic: str, receiver: Optional[RhasspyActor] = None) -> None:
-        self.topic = topic
-        self.receiver = receiver
-
-
-class MqttConnected:
-    """Response when connected to broker."""
-
-    pass
-
-
-class MqttDisconnected:
-    """Response when disconnected from broker."""
-
-    pass
-
-
-class MqttMessage:
-    """Response when MQTT message is received."""
-
-    def __init__(self, topic: str, payload: bytes) -> None:
-        self.topic = topic
-        self.payload = payload
+# Events
+# -----------------------------------------------------------------------------
 
 
 class MessageReady:

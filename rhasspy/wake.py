@@ -11,44 +11,18 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.audio_recorder import AudioData, StartStreaming, StopStreaming
-from rhasspy.mqtt import MqttMessage, MqttSubscribe
+from rhasspy.events import (
+    AudioData,
+    StartStreaming,
+    StopStreaming,
+    MqttMessage,
+    MqttSubscribe,
+    ListenForWakeWord,
+    StopListeningForWakeWord,
+    WakeWordDetected,
+    WakeWordNotDetected,
+)
 from rhasspy.utils import read_dict
-
-# -----------------------------------------------------------------------------
-
-
-class ListenForWakeWord:
-    """Request to start listening for a wake word."""
-
-    def __init__(self, receiver: Optional[RhasspyActor] = None, record=True) -> None:
-        self.receiver = receiver
-        self.record = record
-
-
-class StopListeningForWakeWord:
-    """Request to stop listening for a wake word."""
-
-    def __init__(self, receiver: Optional[RhasspyActor] = None, record=True) -> None:
-        self.receiver = receiver
-        self.record = record
-
-
-class WakeWordDetected:
-    """Response when wake word is detected."""
-
-    def __init__(self, name: str, audio_data_info: Dict[Any, Any] = None) -> None:
-        self.name = name
-        self.audio_data_info = audio_data_info or {}
-
-
-class WakeWordNotDetected:
-    """Response when wake word is not detected."""
-
-    def __init__(self, name: str, audio_data_info: Dict[Any, Any] = None) -> None:
-        self.name = name
-        self.audio_data_info = audio_data_info or {}
-
 
 # -----------------------------------------------------------------------------
 
@@ -184,7 +158,14 @@ class PocketsphinxWakeListener(RhasspyActor):
                 for receiver in self.receivers:
                     self.send(receiver, not_detected_msg)
         elif isinstance(message, StopListeningForWakeWord):
-            self.receivers.remove(message.receiver or sender)
+            if message.clear_all:
+                self.receivers.clear()
+            else:
+                try:
+                    self.receivers.remove(message.receiver or sender)
+                except ValueError:
+                    pass
+
             if len(self.receivers) == 0:
                 # End utterance
                 if self.decoder_started:
@@ -365,7 +346,14 @@ class SnowboyWakeListener(RhasspyActor):
                     for receiver in self.receivers:
                         self.send(receiver, not_detected_event)
         elif isinstance(message, StopListeningForWakeWord):
-            self.receivers.remove(message.receiver or sender)
+            if message.clear_all:
+                self.receivers.clear()
+            else:
+                try:
+                    self.receivers.remove(message.receiver or sender)
+                except ValueError:
+                    pass
+
             if len(self.receivers) == 0:
                 if message.record:
                     self.send(self.recorder, StopStreaming(self.myAddress))
@@ -577,7 +565,14 @@ class PreciseWakeListener(RhasspyActor):
                             for receiver in self.receivers:
                                 self.send(receiver, not_detected_event)
             elif isinstance(message, StopListeningForWakeWord):
-                self.receivers.remove(message.receiver or sender)
+                if message.clear_all:
+                    self.receivers.clear()
+                else:
+                    try:
+                        self.receivers.remove(message.receiver or sender)
+                    except ValueError:
+                        pass
+
                 if len(self.receivers) == 0:
                     if message.record:
                         self.send(self.recorder, StopStreaming(self.myAddress))
@@ -740,7 +735,14 @@ class HermesWakeListener(RhasspyActor):
                 for receiver in self.receivers:
                     self.send(receiver, result)
         elif isinstance(message, StopListeningForWakeWord):
-            self.receivers.remove(message.receiver or sender)
+            if message.clear_all:
+                self.receivers.clear()
+            else:
+                try:
+                    self.receivers.remove(message.receiver or sender)
+                except ValueError:
+                    pass
+
             if len(self.receivers) == 0:
                 self.transition("loaded")
 
@@ -847,7 +849,14 @@ class PorcupineWakeListener(RhasspyActor):
             for receiver in self.receivers:
                 self.send(receiver, message)
         elif isinstance(message, StopListeningForWakeWord):
-            self.receivers.remove(message.receiver or sender)
+            if message.clear_all:
+                self.receivers.clear()
+            else:
+                try:
+                    self.receivers.remove(message.receiver or sender)
+                except ValueError:
+                    pass
+
             if len(self.receivers) == 0:
                 if message.record:
                     self.send(self.recorder, StopStreaming(self.myAddress))
@@ -946,7 +955,14 @@ class CommandWakeListener(RhasspyActor):
             for receiver in self.receivers:
                 self.send(receiver, message)
         elif isinstance(message, StopListeningForWakeWord):
-            self.receivers.remove(message.receiver or sender)
+            if message.clear_all:
+                self.receivers.clear()
+            else:
+                try:
+                    self.receivers.remove(message.receiver or sender)
+                except ValueError:
+                    pass
+
             if len(self.receivers) == 0:
                 if self.wake_proc is not None:
                     self.wake_proc.terminate()

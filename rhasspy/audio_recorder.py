@@ -14,54 +14,18 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any, Dict, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.intent import IntentRecognized
-from rhasspy.mqtt import MqttMessage, MqttSubscribe
-from rhasspy.stt import WavTranscription
+from rhasspy.events import (
+    AudioData,
+    IntentRecognized,
+    MqttMessage,
+    MqttSubscribe,
+    WavTranscription,
+    StartRecordingToBuffer,
+    StopRecordingToBuffer,
+    StartStreaming,
+    StopStreaming,
+)
 from rhasspy.utils import convert_wav
-
-# -----------------------------------------------------------------------------
-# Events
-# -----------------------------------------------------------------------------
-
-
-class AudioData:
-    """Raw 16-bit 16Khz audio data."""
-
-    def __init__(self, data: bytes, **kwargs: Any) -> None:
-        self.data = data
-        self.info = kwargs
-
-
-class StartStreaming:
-    """Tells microphone to begin recording. Emits AudioData chunks."""
-
-    def __init__(self, receiver: Optional[RhasspyActor] = None) -> None:
-        self.receiver = receiver
-
-
-class StopStreaming:
-    """Tells microphone to stop recording."""
-
-    def __init__(self, receiver: Optional[RhasspyActor] = None) -> None:
-        self.receiver = receiver
-
-
-class StartRecordingToBuffer:
-    """Tells microphone to record audio data to named buffer."""
-
-    def __init__(self, buffer_name: str) -> None:
-        self.buffer_name = buffer_name
-
-
-class StopRecordingToBuffer:
-    """Tells microphone to stop recording to buffer and emit AudioData."""
-
-    def __init__(
-        self, buffer_name: str, receiver: Optional[RhasspyActor] = None
-    ) -> None:
-        self.buffer_name = buffer_name
-        self.receiver = receiver
-
 
 # -----------------------------------------------------------------------------
 

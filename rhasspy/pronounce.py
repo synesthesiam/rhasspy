@@ -7,70 +7,16 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
 from rhasspy.actor import RhasspyActor
+from rhasspy.events import (
+    SpeakWord,
+    WordSpoken,
+    GetWordPhonemes,
+    WordPhonemes,
+    GetWordPronunciations,
+    WordPronunciations,
+    PronunciationFailed,
+)
 from rhasspy.utils import load_phoneme_map, read_dict
-
-# -----------------------------------------------------------------------------
-# Events
-# -----------------------------------------------------------------------------
-
-
-class SpeakWord:
-    """Speak a word's pronunciation"""
-
-    def __init__(self, word: str, receiver: Optional[RhasspyActor] = None) -> None:
-        self.word = word
-        self.receiver = receiver
-
-
-class WordSpoken:
-    """Response to SpeakWord"""
-
-    def __init__(self, word: str, wav_data: bytes, phonemes: str) -> None:
-        self.word = word
-        self.wav_data = wav_data
-        self.phonemes = phonemes
-
-
-class GetWordPhonemes:
-    """Get eSpeak phonemes for a word"""
-
-    def __init__(self, word: str, receiver: Optional[RhasspyActor] = None) -> None:
-        self.word = word
-        self.receiver = receiver
-
-
-class WordPhonemes:
-    """Response to GetWordPhonemes"""
-
-    def __init__(self, word: str, phonemes: str) -> None:
-        self.word = word
-        self.phonemes = phonemes
-
-
-class GetWordPronunciations:
-    """Look up or guess word pronunciation(s)"""
-
-    def __init__(
-        self, words: List[str], n: int = 5, receiver: Optional[RhasspyActor] = None
-    ) -> None:
-        self.words = words
-        self.n = n
-        self.receiver = receiver
-
-
-class WordPronunciations:
-    """Response to GetWordPronunciations"""
-
-    def __init__(self, pronunciations: Dict[str, Dict[str, Any]]) -> None:
-        self.pronunciations = pronunciations
-
-
-class PronunciationFailed:
-    """Response when g2p fails"""
-
-    def __init__(self, reason: str) -> None:
-        self.reason = reason
-
 
 # -----------------------------------------------------------------------------
 # Dummy word pronouncer

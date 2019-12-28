@@ -27,8 +27,7 @@ from swagger_ui import quart_api_doc
 
 from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
-from rhasspy.dialogue import ProfileTrainingFailed
-from rhasspy.intent import IntentRecognized
+from rhasspy.events import ProfileTrainingFailed, IntentRecognized
 from rhasspy.utils import (
     FunctionLoggingHandler,
     buffer_to_wav,

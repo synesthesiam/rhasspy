@@ -12,32 +12,8 @@ from urllib.parse import urljoin
 import requests
 
 from rhasspy.actor import RhasspyActor
+from rhasspy.events import TranscribeWav, WavTranscription
 from rhasspy.utils import convert_wav, hass_request_kwargs, maybe_convert_wav
-
-# -----------------------------------------------------------------------------
-
-
-class TranscribeWav:
-    """Request to transcribe text from WAV buffer."""
-
-    def __init__(
-        self,
-        wav_data: bytes,
-        receiver: Optional[RhasspyActor] = None,
-        handle: bool = True,
-    ) -> None:
-        self.wav_data = wav_data
-        self.receiver = receiver
-        self.handle = handle
-
-
-class WavTranscription:
-    """Response to TranscribeWav."""
-
-    def __init__(self, text: str, handle: bool = True, confidence: float = 1) -> None:
-        self.text = text
-        self.confidence = confidence
-        self.handle = handle
 
 
 # -----------------------------------------------------------------------------

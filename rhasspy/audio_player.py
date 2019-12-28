@@ -6,36 +6,7 @@ import uuid
 from typing import Any, Dict, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.mqtt import MqttPublish
-
-# -----------------------------------------------------------------------------
-# Events
-# -----------------------------------------------------------------------------
-
-
-class PlayWavFile:
-    """Play a WAV file."""
-
-    def __init__(self, wav_path: str, receiver: Optional[RhasspyActor] = None) -> None:
-        self.wav_path = wav_path
-        self.receiver = receiver
-
-
-class PlayWavData:
-    """Play a WAV buffer."""
-
-    def __init__(
-        self, wav_data: bytes, receiver: Optional[RhasspyActor] = None
-    ) -> None:
-        self.wav_data = wav_data
-        self.receiver = receiver
-
-
-class WavPlayed:
-    """Response to PlayWavFile or PlayWavData."""
-
-    pass
-
+from rhasspy.events import PlayWavFile, PlayWavData, WavPlayed, MqttPublish
 
 # -----------------------------------------------------------------------------
 

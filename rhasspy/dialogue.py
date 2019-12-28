@@ -18,126 +18,60 @@ from rhasspy.actor import (
     StateTransition,
     WakeupMessage,
 )
-from rhasspy.audio_player import PlayWavData, PlayWavFile, WavPlayed, get_sound_class
-from rhasspy.audio_recorder import (
+from rhasspy.audio_player import get_sound_class
+from rhasspy.events import (
+    PlayWavData,
+    PlayWavFile,
+    WavPlayed,
     AudioData,
-    HTTPAudioRecorder,
     StartRecordingToBuffer,
     StopRecordingToBuffer,
-    get_microphone_class,
-)
-from rhasspy.command_listener import ListenForCommand, VoiceCommand, get_command_class
-from rhasspy.intent import IntentRecognized, RecognizeIntent, get_recognizer_class
-from rhasspy.intent_handler import HandleIntent, IntentHandled, get_intent_handler_class
-from rhasspy.intent_train import (
+    ListenForCommand,
+    VoiceCommand,
+    IntentRecognized,
+    RecognizeIntent,
+    HandleIntent,
+    IntentHandled,
     IntentTrainingComplete,
     IntentTrainingFailed,
     TrainIntent,
-    get_intent_trainer_class,
-)
-from rhasspy.mqtt import MqttPublish
-from rhasspy.pronounce import GetWordPhonemes, GetWordPronunciations, SpeakWord
-from rhasspy.stt import TranscribeWav, WavTranscription, get_decoder_class
-from rhasspy.stt_train import get_speech_trainer_class
-from rhasspy.train import train_profile
-from rhasspy.tts import SpeakSentence, get_speech_class
-from rhasspy.utils import buffer_to_wav
-from rhasspy.wake import (
+    MqttPublish,
+    GetWordPhonemes,
+    GetWordPronunciations,
+    SpeakWord,
+    TranscribeWav,
+    WavTranscription,
+    SpeakSentence,
     ListenForWakeWord,
     StopListeningForWakeWord,
     WakeWordDetected,
     WakeWordNotDetected,
-    get_wake_class,
+    Ready,
+    GetMicrophones,
+    TestMicrophones,
+    GetSpeakers,
+    TrainProfile,
+    ProfileTrainingFailed,
+    ProfileTrainingComplete,
+    GetVoiceCommand,
+    GetActorStates,
+    GetProblems,
+    Problems,
 )
 
+from rhasspy.audio_recorder import get_microphone_class, HTTPAudioRecorder
+from rhasspy.command_listener import get_command_class
+from rhasspy.intent import get_recognizer_class
+from rhasspy.intent_handler import get_intent_handler_class
+from rhasspy.intent_train import get_intent_trainer_class
+from rhasspy.stt import get_decoder_class
+from rhasspy.stt_train import get_speech_trainer_class
+from rhasspy.train import train_profile
+from rhasspy.tts import get_speech_class
+from rhasspy.utils import buffer_to_wav
+from rhasspy.wake import get_wake_class
+
 # -----------------------------------------------------------------------------
-
-
-class GetMicrophones:
-    """Request list of micrphones."""
-
-    def __init__(self, system: Optional[str] = None) -> None:
-        self.system = system
-
-
-class TestMicrophones:
-    """Request live microphones."""
-
-    def __init__(self, system: Optional[str] = None) -> None:
-        self.system = system
-
-
-class GetSpeakers:
-    """Request list of audio players."""
-
-    def __init__(self, system: Optional[str] = None) -> None:
-        self.system = system
-
-
-class TrainProfile:
-    """Request training for profile."""
-
-    def __init__(
-        self, receiver: Optional[RhasspyActor] = None, reload_actors: bool = True
-    ) -> None:
-        self.receiver = receiver
-        self.reload_actors = reload_actors
-
-
-class ProfileTrainingFailed:
-    """Response when training fails."""
-
-    def __init__(self, reason: str):
-        self.reason = reason
-
-    def __repr__(self):
-        return f"FAILED: {self.reason}"
-
-
-class ProfileTrainingComplete:
-    """Response when training succeeds."""
-
-    def __repr__(self):
-        return "OK"
-
-
-class Ready:
-    """Emitted when all actors have been loaded."""
-
-    def __init__(
-        self, timeout: bool = False, problems: Optional[Dict[str, Any]] = None
-    ) -> None:
-        self.timeout = timeout
-        self.problems = problems or {}
-
-
-class GetVoiceCommand:
-    """Request to record a voice command."""
-
-    def __init__(
-        self, receiver: Optional[RhasspyActor] = None, timeout: Optional[float] = None
-    ) -> None:
-        self.receiver = receiver
-        self.timeout = timeout
-
-
-class GetActorStates:
-    """Request for actors' current states."""
-
-    pass
-
-
-class GetProblems:
-    """Request any problems during startup."""
-
-    pass
-
-
-class Problems:
-    """Response to GetProblems."""
-
-    def __init__(self, problems: Optional[Dict[str, Any]] = None):
-        self.problems = problems or {}
 
 
 # -----------------------------------------------------------------------------

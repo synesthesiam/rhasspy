@@ -195,6 +195,7 @@
       "arguments": [],
       "program": ""
     },
+    "disable_wake": true,
     "espeak": {},
     "flite": {
       "voice": "kal16"
