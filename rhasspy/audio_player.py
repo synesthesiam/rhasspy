@@ -6,7 +6,7 @@ import uuid
 from typing import Any, Dict, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import PlayWavFile, PlayWavData, WavPlayed, MqttPublish
+from rhasspy.events import MqttPublish, PlayWavData, PlayWavFile, WavPlayed
 
 # -----------------------------------------------------------------------------
 

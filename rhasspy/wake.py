@@ -11,17 +11,10 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import (
-    AudioData,
-    StartStreaming,
-    StopStreaming,
-    MqttMessage,
-    MqttSubscribe,
-    ListenForWakeWord,
-    StopListeningForWakeWord,
-    WakeWordDetected,
-    WakeWordNotDetected,
-)
+from rhasspy.events import (AudioData, ListenForWakeWord, MqttMessage,
+                            MqttSubscribe, StartStreaming,
+                            StopListeningForWakeWord, StopStreaming,
+                            WakeWordDetected, WakeWordNotDetected)
 from rhasspy.utils import read_dict
 
 # -----------------------------------------------------------------------------

@@ -11,15 +11,9 @@ from typing import Any, Dict, List, Optional, Type
 import webrtcvad
 
 from rhasspy.actor import RhasspyActor, WakeupMessage
-from rhasspy.events import (
-    AudioData,
-    StartStreaming,
-    StopStreaming,
-    MqttMessage,
-    MqttSubscribe,
-    ListenForCommand,
-    VoiceCommand,
-)
+from rhasspy.events import (AudioData, ListenForCommand, MqttMessage,
+                            MqttSubscribe, StartStreaming, StopStreaming,
+                            VoiceCommand)
 from rhasspy.utils import convert_wav
 
 # -----------------------------------------------------------------------------

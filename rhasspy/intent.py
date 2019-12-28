@@ -15,7 +15,7 @@ import requests
 from rhasspynlu import json_to_graph, recognize
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import RecognizeIntent, IntentRecognized, SpeakSentence
+from rhasspy.events import IntentRecognized, RecognizeIntent, SpeakSentence
 from rhasspy.utils import empty_intent, hass_request_kwargs
 
 # -----------------------------------------------------------------------------

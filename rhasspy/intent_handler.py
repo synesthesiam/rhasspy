@@ -10,13 +10,8 @@ import pydash
 import requests
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import (
-    HandleIntent,
-    IntentHandled,
-    SpeakSentence,
-    ForwardIntent,
-    IntentForwarded,
-)
+from rhasspy.events import (ForwardIntent, HandleIntent, IntentForwarded,
+                            IntentHandled, SpeakSentence)
 from rhasspy.utils import hass_request_kwargs
 
 # -----------------------------------------------------------------------------

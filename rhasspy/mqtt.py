@@ -10,13 +10,8 @@ from typing import Any, Dict, List
 import pydash
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import (
-    MqttPublish,
-    MqttSubscribe,
-    MqttMessage,
-    MqttConnected,
-    MqttDisconnected,
-)
+from rhasspy.events import (MqttConnected, MqttDisconnected, MqttMessage,
+                            MqttPublish, MqttSubscribe)
 
 # -----------------------------------------------------------------------------
 # Events

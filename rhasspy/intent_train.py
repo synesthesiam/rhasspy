@@ -13,8 +13,10 @@ from typing import Any, Dict, List, Set, Type
 from urllib.parse import urljoin
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import TrainIntent, IntentTrainingComplete, IntentTrainingFailed
-from rhasspy.utils import lcm, make_sentences_by_intent, sample_sentences_by_intent
+from rhasspy.events import (IntentTrainingComplete, IntentTrainingFailed,
+                            TrainIntent)
+from rhasspy.utils import (lcm, make_sentences_by_intent,
+                           sample_sentences_by_intent)
 
 # -----------------------------------------------------------------------------
 

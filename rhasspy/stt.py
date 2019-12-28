@@ -15,7 +15,6 @@ from rhasspy.actor import RhasspyActor
 from rhasspy.events import TranscribeWav, WavTranscription
 from rhasspy.utils import convert_wav, hass_request_kwargs, maybe_convert_wav
 
-
 # -----------------------------------------------------------------------------
 
 

@@ -1,12 +1,12 @@
 """Tests for Rhasspy."""
+import argparse
 import asyncio
+import json
+import logging
 import os
 import sys
-import json
 import tempfile
 import unittest
-import logging
-import argparse
 
 from rhasspy.core import RhasspyCore
 

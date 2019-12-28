@@ -8,9 +8,9 @@ from typing import Any, Dict, List, Optional, Type
 import pywrapfst as fst
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import TrainSpeech, SpeechTrainingComplete, SpeechTrainingFailed
+from rhasspy.events import (SpeechTrainingComplete, SpeechTrainingFailed,
+                            TrainSpeech)
 from rhasspy.train.jsgf2fst import fstprintall, symbols2intent
-
 
 # -----------------------------------------------------------------------------
 

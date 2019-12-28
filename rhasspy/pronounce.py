@@ -7,15 +7,9 @@ from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import (
-    SpeakWord,
-    WordSpoken,
-    GetWordPhonemes,
-    WordPhonemes,
-    GetWordPronunciations,
-    WordPronunciations,
-    PronunciationFailed,
-)
+from rhasspy.events import (GetWordPhonemes, GetWordPronunciations,
+                            PronunciationFailed, SpeakWord, WordPhonemes,
+                            WordPronunciations, WordSpoken)
 from rhasspy.utils import load_phoneme_map, read_dict
 
 # -----------------------------------------------------------------------------

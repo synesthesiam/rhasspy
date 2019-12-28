@@ -13,7 +13,8 @@ import threading
 import wave
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
+from typing import (Any, Callable, Dict, Iterable, List, Mapping, Optional,
+                    Set, Tuple)
 
 import pywrapfst as fst
 import rhasspynlu

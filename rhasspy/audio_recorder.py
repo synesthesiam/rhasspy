@@ -14,17 +14,10 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any, Dict, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import (
-    AudioData,
-    IntentRecognized,
-    MqttMessage,
-    MqttSubscribe,
-    WavTranscription,
-    StartRecordingToBuffer,
-    StopRecordingToBuffer,
-    StartStreaming,
-    StopStreaming,
-)
+from rhasspy.events import (AudioData, IntentRecognized, MqttMessage,
+                            MqttSubscribe, StartRecordingToBuffer,
+                            StartStreaming, StopRecordingToBuffer,
+                            StopStreaming, WavTranscription)
 from rhasspy.utils import convert_wav
 
 # -----------------------------------------------------------------------------
