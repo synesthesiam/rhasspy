@@ -185,6 +185,7 @@ class PyAudioRecorder(RhasspyActor):
             )
         except Exception:
             self._logger.exception("to_recording")
+            self._stop_microphone()
             self.transition("started")
 
     # -------------------------------------------------------------------------
@@ -238,6 +239,11 @@ class PyAudioRecorder(RhasspyActor):
 
     def to_stopped(self, from_state: str) -> None:
         """Transition to stopped state."""
+        self._stop_microphone()
+
+    # -------------------------------------------------------------------------
+
+    def _stop_microphone(self) -> None:
         try:
             if self.mic is not None:
                 self.mic.stop_stream()
@@ -248,7 +254,7 @@ class PyAudioRecorder(RhasspyActor):
                 self.audio.terminate()
                 self.audio = None
         except Exception:
-            self._logger.exception("to_stopped")
+            self._logger.exception("_stop_microphone")
 
     # -------------------------------------------------------------------------
 
