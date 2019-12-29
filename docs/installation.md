@@ -46,6 +46,15 @@ If you're using [docker compose](https://docs.docker.com/compose/), add the foll
         devices:
             - "/dev/snd:/dev/snd"
         command: --user-profiles /profiles --profile en
+        
+### Updating Docker Image
+
+To update your Rhasspy Docker image, just run:
+
+```bash
+docker pull synesthesiam/rhasspy-server:latest
+```
+on your Rhasspy server and restart the Docker container.
 
 ## Hass.io
 
@@ -63,23 +72,47 @@ Before starting the add-on, make sure to give it access to your microphone and s
 
 ![Audio settings for Hass.io](img/hass-io-audio.png)
 
+### Updating Hass.IO Add-On
+
+You should receive notifications when a new version of Rhasspy is available for Hass.IO. Follow instructions from Hass.IO on how to update the add-on.
+
 ## Virtual Environment
 
 Rhasspy can be installed into a Python virtual environment, though there are a number of requirements. This may be desirable, however, if you have trouble getting Rhasspy to access your microphone from within a Docker container. To start, clone the repo somewhere:
 
-    git clone https://github.com/synesthesiam/rhasspy.git
+```bash
+git clone https://github.com/synesthesiam/rhasspy.git
+```
 
 Then run the `download-dependencies.sh` and `create-venv.sh` scripts (assumes a Debian distribution):
 
-    cd rhasspy/
-    ./download-dependencies.sh
-    ./create-venv.sh
+```bash
+cd rhasspy/
+./download-dependencies.sh
+./create-venv.sh
+```
 
 Once the installation finishes (5-10 minutes on a Raspberry Pi 3), you can use the `run-venv.sh` script to start Rhasspy:
 
-    ./run-venv.sh --profile en
+```bash
+./run-venv.sh --profile en
+```
 
 If all is well, the web interface will be available at [http://localhost:12101](http://localhost:12101)
+
+### Updating Virtual Environment
+
+To update your Rhasspy virtual environment to the latest version, run:
+
+```bash
+git pull origin master
+```
+
+in your `rhasspy` directory. You should also re-build the web interface:
+
+1. Install [yarn](https://yarnpkg.com) on your system
+2. Run `yarn build` in the `rhasspy` directory
+3. Restart any running instances of Rhasspy
 
 ### Running as a Service
 
@@ -150,5 +183,9 @@ On low memory devices like the Raspberry Pi, building the tools above can quickl
 ### Kaldi
 
 You can skip building Kaldi if you plan to just [use Pocketsphinx](speech-to-text.md#pocketsphinx) for speech recognition.
+
+### Updating Source Install
+
+Follow the same instructions as [updating a virtual environment](#updating-virtual-environment).
 
 
