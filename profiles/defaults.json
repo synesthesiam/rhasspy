@@ -59,6 +59,7 @@
     },
     "fsticuffs": {
       "intent_fst": "intent.fst",
+      "intent_graph": "intent.json",
       "ignore_unknown_words": true,
       "fuzzy": true
     },
@@ -195,7 +196,7 @@
       "arguments": [],
       "program": ""
     },
-    "disable_wake": true,
+    "disable_wake": false,
     "espeak": {},
     "flite": {
       "voice": "kal16"
