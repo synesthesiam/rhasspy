@@ -717,6 +717,7 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
             self.sample_rate,
         )
 
+        # pylint: disable=E0401
         from google.cloud import texttospeech
 
         client = texttospeech.TextToSpeechClient()

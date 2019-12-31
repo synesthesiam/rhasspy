@@ -768,7 +768,7 @@ class DialogueManager(RhasspyActor):
             chunk_size = int(self.profile.get(test_path, 1024))
 
             assert recorder_class is not None
-            test_mics = recorder_class.test_microphones(chunk_size)
+            test_mics = recorder_class.test_microphones(chunk_size)  # type: ignore
             self.send(sender, test_mics)
         elif isinstance(message, GetSpeakers):
             # Get all speakers

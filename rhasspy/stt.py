@@ -565,7 +565,7 @@ class HomeAssistantSTTIntegration(RhasspyActor):
                             audio_data = audio_data[self.chunk_size :]
 
             # POST WAV data to STT
-            response = requests.post(stt_url, data=generate_chunks(), **kwargs)
+            response = requests.post(stt_url, data=generate_chunks(), **kwargs)  # type: ignore
             response.raise_for_status()
 
             response_json = response.json()

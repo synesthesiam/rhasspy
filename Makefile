@@ -81,9 +81,7 @@ g2p: $(G2P_MODELS)
 # Testing
 # -----------------------------------------------------------------------------
 
-mypy:
-	mypy app.py rhasspy
-
 check:
 	flake8 --exclude=lexconvert.py app.py test.py rhasspy/*.py
 	pylint --ignore=lexconvert.py app.py test.py rhasspy/*.py
+	mypy app.py test.py rhasspy/*.py

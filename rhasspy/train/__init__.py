@@ -459,7 +459,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
     # This better thing to do would be to create a custom TaskLoader.
     import inspect
 
-    inspect.getsourcelines = lambda obj: [0, 0]
+    inspect.getsourcelines = lambda obj: [0, 0]  # type: ignore
 
     # Run doit main
     result = DoitMain(ModuleTaskLoader(locals())).run(sys.argv[1:])

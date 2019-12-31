@@ -517,6 +517,7 @@ class AdaptIntentRecognizer(RhasspyActor):
     def load_engine(self) -> None:
         """Configure Adapt engine if not already cached."""
         if self.engine is None:
+            # pylint: disable=E0401
             from adapt.intent import IntentBuilder
             from adapt.engine import IntentDeterminationEngine
 

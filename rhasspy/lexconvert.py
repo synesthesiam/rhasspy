@@ -22,6 +22,7 @@
 # and on Bitbucket https://bitbucket.org/ssb22/lexconvert
 # although some early ones are missing.
 
+# type: ignore
 
 def Phonemes():
     """Create phonemes by calling vowel(), consonant(),
@@ -305,9 +306,9 @@ def LexFormats():
             lex_header=";; -*- mode: lisp -*-\n(eval (list voice_default))\n",
             lex_read_function=lambda *args: eval(
                 "["
-                + commands.getoutput(
-                    "grep -vi parameter.set < ~/.festivalrc | grep -v '(eval' | sed -e 's/;.*//' -e 's/.lex.add.entry//' -e s/\"'\"'[(] *\"/[\"/' -e 's/\" [^ ]* /\",(\"/' -e 's/\".*$/&\"],/' -e 's/[()]/ /g' -e 's/  */ /g'"
-                )
+                # + commands.getoutput(
+                #     "grep -vi parameter.set < ~/.festivalrc | grep -v '(eval' | sed -e 's/;.*//' -e 's/.lex.add.entry//' -e s/\"'\"'[(] *\"/[\"/' -e 's/\" [^ ]* /\",(\"/' -e 's/\".*$/&\"],/' -e 's/[()]/ /g' -e 's/  */ /g'"
+                # )
                 + "]"
             ),
             safe_to_drop_characters=True,  # TODO: really? (could instead give a string of known-safe characters)
@@ -3317,7 +3318,7 @@ def make_dictionary(sourceName, destName):
     return d
 
 
-warnedAlready = set()
+warnedAlready = set()  # type: ignore
 
 
 def convert(pronunc, source, dest):
@@ -4569,7 +4570,7 @@ class MacBritish_System_Lexicon(object):
     so you can substitute these into your texts.
     Restores the lexicon on close()."""
 
-    instances = {}
+    instances = {}  # type: ignore
 
     def __init__(self, text="", voice="Daniel"):
         """text is the text you want to speak (so that any
