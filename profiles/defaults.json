@@ -288,6 +288,7 @@
     },
     "system": "dummy"
   },
+  "webhooks": {},
   "download": {
     "cache_dir": "download",
     "conditions": {

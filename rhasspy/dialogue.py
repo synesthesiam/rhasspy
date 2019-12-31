@@ -8,27 +8,59 @@ from typing import Any, Dict, List, Optional, Type
 
 import pydash
 import pywrapfst as fst
+import requests
 
-from rhasspy.actor import (ActorExitRequest, ChildActorExited, Configured,
-                           ConfigureEvent, RhasspyActor, StateTransition,
-                           WakeupMessage)
+from rhasspy.actor import (
+    ActorExitRequest,
+    ChildActorExited,
+    Configured,
+    ConfigureEvent,
+    RhasspyActor,
+    StateTransition,
+    WakeupMessage,
+)
 from rhasspy.audio_player import get_sound_class
 from rhasspy.audio_recorder import HTTPAudioRecorder, get_microphone_class
 from rhasspy.command_listener import get_command_class
-from rhasspy.events import (AudioData, GetActorStates, GetMicrophones,
-                            GetProblems, GetSpeakers, GetVoiceCommand,
-                            GetWordPhonemes, GetWordPronunciations,
-                            HandleIntent, IntentHandled, IntentRecognized,
-                            IntentTrainingComplete, IntentTrainingFailed,
-                            ListenForCommand, ListenForWakeWord, MqttPublish,
-                            PlayWavData, PlayWavFile, Problems,
-                            ProfileTrainingComplete, ProfileTrainingFailed,
-                            Ready, RecognizeIntent, SpeakSentence, SpeakWord,
-                            StartRecordingToBuffer, StopListeningForWakeWord,
-                            StopRecordingToBuffer, TestMicrophones,
-                            TrainIntent, TrainProfile, TranscribeWav,
-                            VoiceCommand, WakeWordDetected,
-                            WakeWordNotDetected, WavPlayed, WavTranscription)
+from rhasspy.events import (
+    AudioData,
+    GetActorStates,
+    GetMicrophones,
+    GetProblems,
+    GetSpeakers,
+    GetVoiceCommand,
+    GetWordPhonemes,
+    GetWordPronunciations,
+    HandleIntent,
+    IntentHandled,
+    IntentRecognized,
+    IntentTrainingComplete,
+    IntentTrainingFailed,
+    ListenForCommand,
+    ListenForWakeWord,
+    MqttPublish,
+    PlayWavData,
+    PlayWavFile,
+    Problems,
+    ProfileTrainingComplete,
+    ProfileTrainingFailed,
+    Ready,
+    RecognizeIntent,
+    SpeakSentence,
+    SpeakWord,
+    StartRecordingToBuffer,
+    StopListeningForWakeWord,
+    StopRecordingToBuffer,
+    TestMicrophones,
+    TrainIntent,
+    TrainProfile,
+    TranscribeWav,
+    VoiceCommand,
+    WakeWordDetected,
+    WakeWordNotDetected,
+    WavPlayed,
+    WavTranscription,
+)
 from rhasspy.intent import get_recognizer_class
 from rhasspy.intent_handler import get_intent_handler_class
 from rhasspy.intent_train import get_intent_trainer_class
@@ -38,9 +70,6 @@ from rhasspy.train import train_profile
 from rhasspy.tts import get_speech_class
 from rhasspy.utils import buffer_to_wav
 from rhasspy.wake import get_wake_class
-
-# -----------------------------------------------------------------------------
-
 
 # -----------------------------------------------------------------------------
 
@@ -141,6 +170,9 @@ class DialogueManager(RhasspyActor):
         self.word_pronouncer_class: Optional[Type] = None
         self._word_pronouncer: Optional[RhasspyActor] = None
 
+        # Webhooks
+        self.webhooks: Dict[str, List[str]] = {}
+
     # -------------------------------------------------------------------------
 
     @property
@@ -218,6 +250,14 @@ class DialogueManager(RhasspyActor):
         self.timeout_sec = self.config.get("load_timeout_sec", None)
         self.send_ready = self.config.get("ready", False)
         self.observer = self.config.get("observer", None)
+
+        # Load web hooks
+        self.webhooks = self.profile.get("webhooks", {})
+        for hook_event in self.webhooks:
+            # Convert all URLs to lists
+            hook_url = self.webhooks[hook_event]
+            if isinstance(hook_url, str):
+                self.webhooks[hook_event] = [hook_url]
 
         if self.profile.get("mqtt.enabled", False):
             self.transition("loading_mqtt")
@@ -339,6 +379,13 @@ class DialogueManager(RhasspyActor):
             self.transition("awake")
             if self.wake_receiver is not None:
                 self.send(self.wake_receiver, message)
+
+            awake_hooks = self.webhooks.get("awake", [])
+            if awake_hooks:
+                hook_json = {"wakewordId": message.name, "siteId": self.site_id}
+                for hook_url in awake_hooks:
+                    self._logger.debug("POST-ing to %s", hook_url)
+                    requests.post(hook_url, json=hook_json)
         elif isinstance(message, WakeWordNotDetected):
             self._logger.debug("Wake word NOT detected. Staying asleep.")
             self.transition("ready")

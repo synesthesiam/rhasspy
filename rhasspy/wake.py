@@ -11,10 +11,17 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import (AudioData, ListenForWakeWord, MqttMessage,
-                            MqttSubscribe, StartStreaming,
-                            StopListeningForWakeWord, StopStreaming,
-                            WakeWordDetected, WakeWordNotDetected)
+from rhasspy.events import (
+    AudioData,
+    ListenForWakeWord,
+    MqttMessage,
+    MqttSubscribe,
+    StartStreaming,
+    StopListeningForWakeWord,
+    StopStreaming,
+    WakeWordDetected,
+    WakeWordNotDetected,
+)
 from rhasspy.utils import read_dict
 
 # -----------------------------------------------------------------------------
@@ -826,9 +833,16 @@ class PorcupineWakeListener(RhasspyActor):
                     # Process chunk
                     keyword_index = self.handle.process(unpacked_chunk)
                     if keyword_index:
+                        if len(self.keyword_paths) == 1:
+                            keyword_index = 0
+
+                        wakeword_name = str(keyword_index)
+                        if keyword_index < len(self.keyword_paths):
+                            wakeword_name = self.keyword_paths[keyword_index].stem
+
                         # Pass downstream to receivers
                         self._logger.debug("Hotword detected (%s)", keyword_index)
-                        result = WakeWordDetected(str(keyword_index))
+                        result = WakeWordDetected(wakeword_name)
                         for receiver in self.receivers:
                             self.send(receiver, result)
 
