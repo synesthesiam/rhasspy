@@ -11,10 +11,19 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import (AudioData, ListenForWakeWord, MqttMessage,
-                            MqttSubscribe, StartStreaming,
-                            StopListeningForWakeWord, StopStreaming,
-                            WakeWordDetected, WakeWordNotDetected)
+from rhasspy.events import (
+    AudioData,
+    ListenForWakeWord,
+    MqttMessage,
+    MqttSubscribe,
+    StartStreaming,
+    StopListeningForWakeWord,
+    StopStreaming,
+    WakeWordDetected,
+    WakeWordNotDetected,
+    PauseListeningForWakeWord,
+    ResumeListeningForWakeWord,
+)
 from rhasspy.utils import read_dict
 
 # -----------------------------------------------------------------------------
@@ -170,6 +179,13 @@ class PocketsphinxWakeListener(RhasspyActor):
                     self.send(self.recorder, StopStreaming(self.myAddress))
 
                 self.transition("loaded")
+        elif isinstance(message, PauseListeningForWakeWord):
+            self.transition("paused")
+
+    def in_paused(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in paused state."""
+        if isinstance(message, ResumeListeningForWakeWord):
+            self.transition("listening")
 
     # -------------------------------------------------------------------------
 
@@ -351,6 +367,13 @@ class SnowboyWakeListener(RhasspyActor):
                 if message.record:
                     self.send(self.recorder, StopStreaming(self.myAddress))
                 self.transition("loaded")
+        elif isinstance(message, PauseListeningForWakeWord):
+            self.transition("paused")
+
+    def in_paused(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in paused state."""
+        if isinstance(message, ResumeListeningForWakeWord):
+            self.transition("listening")
 
     # -------------------------------------------------------------------------
 
@@ -578,8 +601,15 @@ class PreciseWakeListener(RhasspyActor):
                 )
                 for receiver in self.receivers:
                     self.send(receiver, detected_event)
+            elif isinstance(message, PauseListeningForWakeWord):
+                self.transition("paused")
         except Exception:
             self._logger.exception("in_listening")
+
+    def in_paused(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in paused state."""
+        if isinstance(message, ResumeListeningForWakeWord):
+            self.transition("listening")
 
     def to_stopped(self, from_state: str) -> None:
         """Transition to stopped state."""
@@ -738,6 +768,13 @@ class HermesWakeListener(RhasspyActor):
 
             if len(self.receivers) == 0:
                 self.transition("loaded")
+        elif isinstance(message, PauseListeningForWakeWord):
+            self.transition("paused")
+
+    def in_paused(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in paused state."""
+        if isinstance(message, ResumeListeningForWakeWord):
+            self.transition("listening")
 
 
 # -----------------------------------------------------------------------------
@@ -859,6 +896,13 @@ class PorcupineWakeListener(RhasspyActor):
                     self.handle = None
 
                 self.transition("started")
+        elif isinstance(message, PauseListeningForWakeWord):
+            self.transition("paused")
+
+    def in_paused(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in paused state."""
+        if isinstance(message, ResumeListeningForWakeWord):
+            self.transition("listening")
 
     def load_handle(self):
         """Load porcupine library."""
@@ -961,3 +1005,10 @@ class CommandWakeListener(RhasspyActor):
                     self.wake_proc.terminate()
 
                 self.transition("started")
+        elif isinstance(message, PauseListeningForWakeWord):
+            self.transition("paused")
+
+    def in_paused(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in paused state."""
+        if isinstance(message, ResumeListeningForWakeWord):
+            self.transition("listening")

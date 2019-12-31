@@ -45,8 +45,20 @@ class WakeWordNotDetected:
         self.audio_data_info = audio_data_info or {}
 
 
+class PauseListeningForWakeWord:
+    """Pause wake word detection."""
+
+    pass
+
+
+class ResumeListeningForWakeWord:
+    """Resume wake word detection."""
+
+    pass
+
+
 # -----------------------------------------------------------------------------
-# Audio Player
+# audio Player
 # -----------------------------------------------------------------------------
 
 
