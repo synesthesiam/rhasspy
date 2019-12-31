@@ -11,8 +11,14 @@ from urllib.parse import urljoin
 import requests
 
 from rhasspy.actor import Configured, ConfigureEvent, RhasspyActor
-from rhasspy.events import (ListenForWakeWord, PlayWavData, SentenceSpoken,
-                            SpeakSentence, StopListeningForWakeWord, WavPlayed)
+from rhasspy.events import (
+    ResumeListeningForWakeWord,
+    PlayWavData,
+    SentenceSpoken,
+    SpeakSentence,
+    PauseListeningForWakeWord,
+    WavPlayed,
+)
 from rhasspy.utils import hass_request_kwargs
 
 # -----------------------------------------------------------------------------
@@ -111,7 +117,7 @@ class EspeakSentenceSpeaker(RhasspyActor):
                 self.enable_wake = False
                 if self.wake and self.disable_wake:
                     # Disable wake word
-                    self.send(self.wake, StopListeningForWakeWord(clear_all=True))
+                    self.send(self.wake, PauseListeningForWakeWord())
                     self.enable_wake = self.wake_on_start
 
                 self.transition("speaking")
@@ -128,7 +134,7 @@ class EspeakSentenceSpeaker(RhasspyActor):
 
             if self.wake and self.enable_wake:
                 # Re-enable wake word
-                self.send(self.wake, ListenForWakeWord(self.receiver))
+                self.send(self.wake, ResumeListeningForWakeWord())
 
     # -------------------------------------------------------------------------
 
@@ -201,7 +207,7 @@ class FliteSentenceSpeaker(RhasspyActor):
                 self.enable_wake = False
                 if self.wake and self.disable_wake:
                     # Disable wake word
-                    self.send(self.wake, StopListeningForWakeWord(clear_all=True))
+                    self.send(self.wake, PauseListeningForWakeWord())
                     self.enable_wake = self.wake_on_start
 
                 self.transition("speaking")
@@ -218,7 +224,7 @@ class FliteSentenceSpeaker(RhasspyActor):
 
             if self.wake and self.enable_wake:
                 # Re-enable wake word
-                self.send(self.wake, ListenForWakeWord(self.receiver))
+                self.send(self.wake, ResumeListeningForWakeWord())
 
     # -------------------------------------------------------------------------
 
@@ -290,7 +296,7 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
                 self.enable_wake = False
                 if self.wake and self.disable_wake:
                     # Disable wake word
-                    self.send(self.wake, StopListeningForWakeWord(clear_all=True))
+                    self.send(self.wake, PauseListeningForWakeWord())
                     self.enable_wake = self.wake_on_start
 
                 self.transition("speaking")
@@ -307,7 +313,7 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
 
             if self.wake and self.enable_wake:
                 # Re-enable wake word
-                self.send(self.wake, ListenForWakeWord(self.receiver))
+                self.send(self.wake, ResumeListeningForWakeWord())
 
     # -------------------------------------------------------------------------
 
@@ -395,7 +401,7 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
                 self.enable_wake = False
                 if self.wake and self.disable_wake:
                     # Disable wake word
-                    self.send(self.wake, StopListeningForWakeWord(clear_all=True))
+                    self.send(self.wake, PauseListeningForWakeWord())
                     self.enable_wake = self.wake_on_start
 
                 self.transition("speaking")
@@ -412,7 +418,7 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
 
             if self.wake and self.enable_wake:
                 # Re-enable wake word
-                self.send(self.wake, ListenForWakeWord(self.receiver))
+                self.send(self.wake, ResumeListeningForWakeWord())
 
     # -------------------------------------------------------------------------
 
@@ -503,7 +509,7 @@ class CommandSentenceSpeaker(RhasspyActor):
                 self.enable_wake = False
                 if self.wake and self.disable_wake:
                     # Disable wake word
-                    self.send(self.wake, StopListeningForWakeWord(clear_all=True))
+                    self.send(self.wake, PauseListeningForWakeWord())
                     self.enable_wake = self.wake_on_start
 
                 self.transition("speaking")
@@ -520,7 +526,7 @@ class CommandSentenceSpeaker(RhasspyActor):
 
             if self.wake and self.enable_wake:
                 # Re-enable wake word
-                self.send(self.wake, ListenForWakeWord(self.receiver))
+                self.send(self.wake, ResumeListeningForWakeWord())
 
     # -------------------------------------------------------------------------
 
@@ -628,7 +634,7 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
                     self.enable_wake = False
                     if self.wake and self.disable_wake:
                         # Disable wake word
-                        self.send(self.wake, StopListeningForWakeWord(clear_all=True))
+                        self.send(self.wake, PauseListeningForWakeWord())
                         self.enable_wake = self.wake_on_start
 
                     self.transition("speaking")
@@ -672,7 +678,7 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
 
             if self.wake and self.enable_wake:
                 # Re-enable wake word
-                self.send(self.wake, ListenForWakeWord(self.receiver))
+                self.send(self.wake, ResumeListeningForWakeWord())
         elif isinstance(message, SentenceSpoken):
             # From fallback actor
             self.transition("ready")
@@ -819,7 +825,7 @@ class HomeAssistantSentenceSpeaker(RhasspyActor):
                 self.enable_wake = False
                 if self.wake and self.disable_wake:
                     # Disable wake word
-                    self.send(self.wake, StopListeningForWakeWord(clear_all=True))
+                    self.send(self.wake, PauseListeningForWakeWord())
                     self.enable_wake = self.wake_on_start
 
                 self.transition("speaking")
@@ -836,7 +842,7 @@ class HomeAssistantSentenceSpeaker(RhasspyActor):
 
             if self.wake and self.enable_wake:
                 # Re-enable wake word
-                self.send(self.wake, ListenForWakeWord(self.receiver))
+                self.send(self.wake, ResumeListeningForWakeWord())
 
     # -------------------------------------------------------------------------
 
