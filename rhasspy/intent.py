@@ -1,12 +1,14 @@
 """Support for intent recognition."""
 import concurrent.futures
+import io
 import json
 import logging
 import os
 import re
 import shutil
 import subprocess
-from typing import Any, Dict, List, Optional, Set, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type
+from pathlib import Path
 from urllib.parse import urljoin
 
 import networkx as nx
@@ -144,6 +146,7 @@ class FsticuffsRecognizer(RhasspyActor):
         self.words: Set[str] = set()
         self.stop_words: Set[str] = set()
         self.fuzzy: bool = True
+        self.converters: Dict[str, Callable[..., Any]] = {}
         self.preload: bool = False
 
     def to_started(self, from_state: str) -> None:
@@ -157,6 +160,42 @@ class FsticuffsRecognizer(RhasspyActor):
 
         # True if fuzzy search should be used (default)
         self.fuzzy = self.profile.get("intent.fsticuffs.fuzzy", True)
+
+        # Load user-defined converters
+        converters_dir = Path(
+            self.profile.read_path(
+                self.profile.get("intent.fsticuffs.converters_dir", "converters")
+            )
+        )
+        if converters_dir.is_dir():
+            self._logger.debug("Loading converters from %s", converters_dir)
+            for converter_path in converters_dir.glob("*"):
+                if not converter_path.is_file():
+                    continue
+
+                converter_name = converter_path.stem
+
+                # Run converter as external program.
+                # Input arguments are encoded as JSON on individual lines.
+                # Output values should be encoded as JSON on individual lines.
+                def run_converter(*args):
+                    proc = subprocess.Popen(
+                        [str(converter_path)],
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE,
+                        universal_newlines=True,
+                    )
+
+                    with io.StringIO() as input_file:
+                        for arg in args:
+                            json.dump(arg, input_file)
+
+                        stdout, stderr = proc.communicate(input=input_file.getvalue())
+
+                        return [json.loads(line) for line in stdout.splitlines() if line.strip()]
+
+                self.converters[converter_name] = run_converter
+
         self.transition("loaded")
 
     def in_loaded(self, message: Any, sender: RhasspyActor) -> None:
@@ -174,7 +213,11 @@ class FsticuffsRecognizer(RhasspyActor):
                     tokens = [w for w in tokens if w in self.words]
 
                 recognitions = recognize(
-                    tokens, self.graph, fuzzy=self.fuzzy, stop_words=self.stop_words
+                    tokens,
+                    self.graph,
+                    fuzzy=self.fuzzy,
+                    stop_words=self.stop_words,
+                    extra_converters=self.converters,
                 )
                 assert recognitions, "No intent recognized"
 

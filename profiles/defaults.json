@@ -61,7 +61,8 @@
       "intent_fst": "intent.fst",
       "intent_graph": "intent.json",
       "ignore_unknown_words": true,
-      "fuzzy": true
+      "fuzzy": true,
+      "converters_dir": "converters"
     },
     "flair": {
       "cache_dir": "flair/cache",
