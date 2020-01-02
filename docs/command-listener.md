@@ -36,7 +36,7 @@ Add to your [profile](profiles.md):
 This system listens for up to `timeout_sec` for a voice command. The first few frames of audio data are discarded (`throwaway_buffers`) to avoid clicks from the microphone being engaged. When speech is detected for some number of successive frames (`speech_buffers`), the voice command is considered to have *started*. After `min_sec`, Rhasspy will start listening for silence. If at least `silence_sec` goes by without any speech detected, the command is considered *finished*, and the recorded WAV data is sent to the [speech recognition system](speech-to-text.md).
 
 You may want to adjust `min_sec`, `silence_sec`, and `vad_mode` for your environment.
-These control how short a voice command can be (`min_sec`), how much silence is required before Rhasspy stops listening (`silence_sec`), and how sensitive the voice activity detector is (`vad_mode`, higher is more sensitive).
+These control how short a voice command can be (`min_sec`), how much silence is required before Rhasspy stops listening (`silence_sec`), and how aggressive the voice activity filter `vad_mode` is: this is an integer between 0 and 3. 0 is the least aggressive about filtering out non-speech, 3 is the most aggressive.
 
 **NOTE**: you must set `chunk_size` such that (relative to sample rate) it produces 10, 20, or 30 millisecond buffers. This is required by `webrtcvad`.
 
