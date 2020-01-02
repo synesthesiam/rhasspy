@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Tuple, Union
 from uuid import uuid4
 
 import attr
+import json5
 from quart import (Quart, Response, jsonify, request, safe_join, send_file,
                    send_from_directory, websocket)
 from quart_cors import cors
@@ -279,7 +280,7 @@ async def api_profile() -> Union[str, Response]:
 
     if request.method == "POST":
         # Ensure that JSON is valid
-        profile_json = await request.json
+        profile_json = json5.loads(await request.data)
         recursive_remove(core.profile.system_json, profile_json)
 
         profile_path = Path(core.profile.write_path("profile.json"))
@@ -425,7 +426,7 @@ async def api_sentences():
             num_chars = 0
             paths_written = []
 
-            sentences_dict = await request.json
+            sentences_dict = json5.loads(await request.data)
             for sentences_path, sentences_text in sentences_dict.items():
                 # Path is relative to profile directory
                 sentences_path = Path(core.profile.write_path(sentences_path))
@@ -805,7 +806,7 @@ async def api_slots() -> Union[str, Response]:
 
     if request.method == "POST":
         overwrite_all = request.args.get("overwrite_all", "false").lower() == "true"
-        new_slot_values = await request.json
+        new_slot_values = json5.loads(await request.data)
 
         slots_dir = Path(
             core.profile.write_path(
