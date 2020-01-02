@@ -128,7 +128,7 @@ if [[ -z "${no_system}" ]]; then
     echo "Installing system dependencies"
 
     run_sudo apt-get update
-    run_sudo apt-get install --no-install-recommends --yes \
+    run_sudo apt-get install --no-install-recommends \
              python3 python3-pip python3-venv python3-dev \
              python \
              build-essential autoconf autoconf-archive libtool automake bison \

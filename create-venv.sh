@@ -95,7 +95,7 @@ function maybe_download {
 if [[ -z "${no_system}" ]]; then
     echo "Installing system dependencies"
     sudo apt-get update
-    sudo apt-get install --no-install-recommends --yes \
+    sudo apt-get install --no-install-recommends \
          python3 python3-pip python3-venv python3-dev \
          python \
          build-essential autoconf autoconf-archive libtool automake bison \
@@ -122,7 +122,7 @@ if [[ -z "${FLAGS_python}" ]]; then
         PYTHON='python3.6'
     else
         echo "Installing Python 3.6 from source. This is going to take a LONG time."
-        sudo apt-get install --no-install-recommends --yes \
+        sudo apt-get install --no-install-recommends \
              tk-dev libncurses5-dev libncursesw5-dev \
              libreadline6-dev libdb5.3-dev libgdbm-dev \
              libsqlite3-dev libssl-dev libbz2-dev \
