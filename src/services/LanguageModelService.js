@@ -13,8 +13,8 @@ export default {
 
     update_slots(slots) {
         return Api().post('/api/slots', slots,
-                          { headers: { 'Content-Type': 'application/json' },
-                            params: { 'overwrite_all': 'true' } })
+                          { params: { 'overwrite_all': 'true' },
+                            headers: { 'Content-Type': 'application/json' } })
     },
 
     getSlots() {
