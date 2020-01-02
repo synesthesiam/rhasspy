@@ -140,34 +140,60 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
             for slot_name in get_slot_names(item.rule_body):
                 yield slot_name
 
+    # 0..100, -100..100
+    NUMBER_RANGE_PATTERN = re.compile(r"^(-?[0-9]+)\.\.(-?[0-9]+)$")
+    NUMBER_PATTERN = re.compile(r"^(-?[0-9]+)$")
+
     def number_transform(word):
         """Automatically transform numbers"""
         if not isinstance(word, jsgf.Word):
             # Skip anything besides words
             return
 
+        match = NUMBER_PATTERN.match(word.text) or NUMBER_RANGE_PATTERN.match(word.text)
+        if not match:
+            return
+
         try:
-            n = int(word.text)
+            lower_bound = int(match.group(1))
+            upper_bound = lower_bound
+            if len(match.groups()) > 1:
+                upper_bound = int(match.group(2))
+                if upper_bound < lower_bound:
+                    # Swap bounds
+                    temp_bound = lower_bound
+                    lower_bound = upper_bound
+                    upper_bound = lower_bound
 
-            # 75 -> (seventy five):75!int
-            number_text = num2words(n, lang=language).replace("-", " ").strip()
-            assert number_text, f"Empty num2words result for {n}"
-            number_words = number_text.split()
+            # Create alternative with all numbers in range
+            num_alt = jsgf.Sequence(
+                text="", type=jsgf.SequenceType.ALTERNATIVE, converters=["int"]
+            )
 
-            if len(number_words) == 1:
-                # Easy case, single word
-                word.text = number_text
-                word.substitution = str(n)
-                word.converters = ["int"]
-            else:
-                # Hard case, split into mutliple Words
-                return jsgf.Sequence(
-                    text=number_text,
-                    type=jsgf.SequenceType.GROUP,
-                    substitution=str(n),
-                    converters=["int"],
-                    items=[jsgf.Word(w) for w in number_words],
-                )
+            for n in range(lower_bound, upper_bound + 1):
+                # 75 -> (seventy five):75!int
+                number_text = num2words(n, lang=language).replace("-", " ").strip()
+                assert number_text, f"Empty num2words result for {n}"
+                number_words = number_text.split()
+
+                if len(number_words) == 1:
+                    # Easy case, single word
+                    num_alt.items.append(
+                        jsgf.Word(text=number_text, substitution=str(n))
+                    )
+                else:
+                    # Hard case, split into mutliple Words
+                    num_alt.items.append(
+                        jsgf.Sequence(
+                            text=number_text,
+                            type=jsgf.SequenceType.GROUP,
+                            substitution=str(n),
+                            converters=["int"],
+                            items=[jsgf.Word(w) for w in number_words],
+                        )
+                    )
+
+            return num_alt
         except ValueError:
             # Not a number
             pass
