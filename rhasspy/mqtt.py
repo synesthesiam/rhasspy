@@ -263,6 +263,8 @@ class HermesMqtt(RhasspyActor):
                         }
                         for ev in intent.get("entities", [])
                     ],
+                    "asrTokens": [],
+                    "asrConfidence": 1
                 }
             ).encode()
 
