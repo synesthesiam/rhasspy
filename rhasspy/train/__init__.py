@@ -149,7 +149,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
         try:
             n = int(word.text)
 
-            # 75 -> (seventy five):75
+            # 75 -> (seventy five):75!int
             number_text = num2words(n, lang=language).replace("-", " ").strip()
             assert number_text, f"Empty num2words result for {n}"
             number_words = number_text.split()
@@ -158,12 +158,14 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
                 # Easy case, single word
                 word.text = number_text
                 word.substitution = str(n)
+                word.converters = ["int"]
             else:
                 # Hard case, split into mutliple Words
                 return jsgf.Sequence(
                     text=number_text,
                     type=jsgf.SequenceType.GROUP,
                     substitution=str(n),
+                    converters=["int"],
                     items=[jsgf.Word(w) for w in number_words],
                 )
         except ValueError:

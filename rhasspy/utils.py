@@ -13,8 +13,7 @@ import threading
 import wave
 from collections import defaultdict
 from pathlib import Path
-from typing import (Any, Callable, Dict, Iterable, List, Mapping, Optional,
-                    Set, Tuple)
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
 import pywrapfst as fst
 import rhasspynlu
@@ -403,9 +402,7 @@ def ppath(
 # -----------------------------------------------------------------------------
 
 
-def numbers_to_words(
-    sentence: str, language: Optional[str] = None, add_substitution: bool = False
-) -> str:
+def numbers_to_words(sentence: str, language: Optional[str] = None) -> str:
     """Replaces numbers with words in a sentence. Optionally substitues number back in."""
     if not language:
         # Default language
@@ -419,14 +416,6 @@ def numbers_to_words(
 
             # 75 -> seventy-five -> seventy five
             words[i] = num2words(number, lang=language).replace("-", " ")
-
-            if add_substitution:
-                # Empty substitution for everything but last word.
-                # seventy five -> seventy: five:75
-                number_words = [w + ":" for w in split_whitespace(words[i])]
-                number_words[-1] += word
-                words[i] = " ".join(number_words)
-
             changed = True
         except ValueError:
             pass  # not a number
