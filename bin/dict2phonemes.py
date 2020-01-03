@@ -36,7 +36,7 @@ def main():
 
     # Load dictionary
     word_dict = {}
-    logging.info("Loading dictionary from %s" % args.dictionary)
+    logging.info("Loading dictionary from %s", args.dictionary)
     with open(args.dictionary, "r") as dict_file:
         read_dict(dict_file, word_dict)
 
@@ -53,7 +53,7 @@ def main():
                     all_words.append(word)
 
     assert len(phonemes) == len(phoneme_words), "Not enough words to cover phonemes"
-    logging.debug("Phonemes: %s" % ", ".join(phoneme_words.keys()))
+    logging.debug("Phonemes: %s", ", ".join(phoneme_words))
 
     phoneme_hyps = defaultdict(lambda: defaultdict(float))
 
@@ -66,7 +66,7 @@ def main():
                     phoneme_hyps[phoneme][hyp] = count
 
     # Sample words from the dictionary
-    logging.info("Starting %s sample(s)" % args.samples)
+    logging.info("Starting %s sample(s)", args.samples)
     phoneme_futures = {}
     with ProcessPoolExecutor() as executor:
         # Schedule eSpeak word samples
@@ -80,7 +80,7 @@ def main():
         for i, future in enumerate(as_completed(phoneme_futures)):
             if i % len(phonemes) == 0:
                 logging.info(
-                    "Sample %s of %s" % ((i // len(phonemes) + 1), args.samples)
+                    "Sample %s of %s", (i // len(phonemes) + 1), args.samples
                 )
 
             phoneme = phoneme_futures[future]
@@ -113,14 +113,14 @@ def main():
     best = {}
     todo = set(phonemes)
     used = set()
-    while len(todo) > 0:
+    while todo:
         for phoneme in list(todo):
             best_to_worst = sorted(
                 phoneme_hyps[phoneme].items(), key=lambda kv: kv[1], reverse=True
             )
 
             for hyp, count in best_to_worst:
-                if not hyp in used:
+                if hyp not in used:
                     best[phoneme] = hyp
                     used.add(hyp)
                     todo.remove(phoneme)
@@ -165,7 +165,7 @@ def read_dict(dict_file, word_dict):
     """
     for line in dict_file:
         line = line.strip()
-        if len(line) == 0:
+        if not line:
             continue
 
         word, pronounce = re.split("[ ]+", line, maxsplit=1)

@@ -13,7 +13,7 @@ from rhasspy.events import MqttPublish, PlayWavData, PlayWavFile, WavPlayed
 
 def get_sound_class(system: str) -> Type[RhasspyActor]:
     """Get class type for profile audio player."""
-    assert system in ["aplay", "hermes", "dummy"], "Unknown sound system: %s" % system
+    assert system in ["aplay", "hermes", "dummy"], f"Unknown sound system: {system}"
 
     if system == "aplay":
         return APlayAudioPlayer

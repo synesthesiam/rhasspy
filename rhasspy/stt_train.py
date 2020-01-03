@@ -20,7 +20,7 @@ def get_speech_trainer_class(
 ) -> Type[RhasspyActor]:
     """Get type for profile speech to text trainer."""
     assert trainer_system in ["dummy", "pocketsphinx", "kaldi", "auto", "command"], (
-        "Invalid speech training system: %s" % trainer_system
+        f"Invalid speech training system: {trainer_system}"
     )
 
     if trainer_system == "auto":

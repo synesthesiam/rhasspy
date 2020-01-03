@@ -20,7 +20,7 @@ from rhasspy.utils import hass_request_kwargs
 def get_intent_handler_class(system: str) -> Type[RhasspyActor]:
     """Get type for profile intent handlers."""
     assert system in ["dummy", "hass", "remote", "command"], (
-        "Invalid intent handler system: %s" % system
+        f"Invalid intent handler system: {system}"
     )
 
     if system == "hass":
@@ -96,7 +96,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
 
         # PEM file for self-signed HA certificates
         self.pem_file = self.hass_config.get("pem_file", "")
-        if (self.pem_file is not None) and (len(self.pem_file) > 0):
+        if (self.pem_file is not None) and self.pem_file:
             self.pem_file = os.path.expandvars(self.pem_file)
             self._logger.debug("Using PEM file at %s", self.pem_file)
         else:

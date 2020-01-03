@@ -301,11 +301,11 @@ async def main() -> None:
         if not args.no_check and (args.command not in ["check", "download"]):
             # Verify that profile has necessary files
             missing_files = core.check_profile()
-            if len(missing_files) > 0:
+            if missing_files:
                 logger.fatal(
                     "Missing required files for %s: %s. Please run download command and try again.",
                     profile.name,
-                    missing_files.keys(),
+                    list(missing_files),
                 )
                 sys.exit(1)
 
@@ -334,7 +334,7 @@ async def main() -> None:
 
 async def wav2text(core: RhasspyCore, profile: Profile, args: Any) -> None:
     """Transcribe WAV file(s)"""
-    if len(args.wav_files) > 0:
+    if args.wav_files:
         # Read WAV paths from argument list
         transcriptions = {}
         for wav_path in args.wav_files:
@@ -360,7 +360,7 @@ async def wav2text(core: RhasspyCore, profile: Profile, args: Any) -> None:
 async def text2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
     """Parse sentences from command line or stdin"""
     intents = {}
-    sentences = args.sentences if len(args.sentences) > 0 else sys.stdin
+    sentences = args.sentences or sys.stdin
     for sentence in sentences:
         sentence = sentence.strip()
         intent = (await core.recognize_intent(sentence)).intent
@@ -381,7 +381,7 @@ async def text2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 async def wav2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
     """Recognize intent from WAV file(s)"""
-    if len(args.wav_files) > 0:
+    if args.wav_files:
         # Read WAV paths from argument list
         transcriptions = {}
         for wav_path in args.wav_files:
@@ -493,7 +493,7 @@ async def mic2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 async def word2phonemes(core: RhasspyCore, profile: Profile, args: Any) -> None:
     """Get pronunciation(s) for word(s)"""
-    words = args.words if len(args.words) > 0 else sys.stdin
+    words = args.words or sys.stdin
 
     # Get pronunciations for all words
     pronunciations = (
@@ -557,9 +557,9 @@ def _send_frame(
 async def wav2mqtt(core: RhasspyCore, profile: Profile, args: Any) -> None:
     """Publish WAV to MQTT as audio frames"""
     # hermes/audioServer/<SITE_ID>/audioFrame
-    topic = "hermes/audioServer/%s/audioFrame" % args.site_id
+    topic = f"hermes/audioServer/{args.site_id}/audioFrame"
 
-    if len(args.wav_files) > 0:
+    if args.wav_files:
         # Read WAV paths from argument list
         for wav_path in args.wav_files:
             with wave.open(wav_path, "rb") as wav_file:
@@ -584,7 +584,7 @@ async def wav2mqtt(core: RhasspyCore, profile: Profile, args: Any) -> None:
                     # Read actual audio data
                     audio_data = wav_file.readframes(args.frames)
 
-                    while len(audio_data) > 0:
+                    while audio_data:
                         _send_frame(core, topic, audio_data, rate, width, channels)
                         time.sleep(args.pause)
 
@@ -628,7 +628,7 @@ async def text2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
 async def text2speech(core: RhasspyCore, profile: Profile, args: Any) -> None:
     """Speak sentences"""
     sentences = args.sentences
-    if len(sentences) == 0:
+    if not sentences:
         sentences = sys.stdin
 
     for sentence in sentences:

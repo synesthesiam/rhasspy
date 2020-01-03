@@ -35,7 +35,7 @@ def get_speech_class(system: str) -> Type[RhasspyActor]:
         "command",
         "wavenet",
         "hass_tts",
-    ], ("Invalid text to speech system: %s" % system)
+    ], f"Invalid text to speech system: {system}"
 
     if system == "espeak":
         # Use eSpeak directly
@@ -691,7 +691,7 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
         # Try to pull WAV from cache first
         sentence_hash = self._get_sentence_hash(sentence, voice, language_code)
         cached_wav_path = os.path.join(
-            self.cache_dir, "{}.wav".format(sentence_hash.hexdigest())
+            self.cache_dir, f"{sentence_hash.hexdigest()}.wav"
         )
 
         if os.path.isfile(cached_wav_path):

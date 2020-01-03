@@ -35,7 +35,7 @@ def get_intent_trainer_class(
         "flair",
         "auto",
         "command",
-    ], ("Invalid intent training system: %s" % trainer_system)
+    ], f"Invalid intent training system: {trainer_system}"
 
     if trainer_system == "auto":
         # Use intent recognizer system
@@ -214,7 +214,7 @@ class RasaIntentTrainer(RhasspyActor):
         ) as training_file:
 
             training_config = StringIO()
-            training_config.write('language: "%s"\n' % language)
+            training_config.write(f'language: "{language}"\n')
             training_config.write('pipeline: "pretrained_embeddings_spacy"\n')
 
             # Write markdown directly into YAML.
@@ -223,12 +223,12 @@ class RasaIntentTrainer(RhasspyActor):
                 blank_line = False
                 for line in examples_md_file:
                     line = line.strip()
-                    if len(line) > 0:
+                    if line:
                         if blank_line:
                             print("", file=training_file)
                             blank_line = False
 
-                        print("  %s" % line, file=training_file)
+                        print(f"  {line}", file=training_file)
                     else:
                         blank_line = True
 
@@ -256,11 +256,7 @@ class RasaIntentTrainer(RhasspyActor):
                 response.raise_for_status()
             except Exception:
                 # Rasa gives quite helpful error messages, so extract them from the response.
-                raise Exception(
-                    "{0}: {1}".format(
-                        response.reason, json.loads(response.content)["message"]
-                    )
-                )
+                raise Exception(f'{response.reason}: {json.loads(response.content)["message"]}')
 
 
 # -----------------------------------------------------------------------------
@@ -292,7 +288,7 @@ class AdaptIntentTrainer(RhasspyActor):
         if os.path.exists(stop_words_path):
             with open(stop_words_path, "r") as stop_words_file:
                 stop_words = {
-                    line.strip() for line in stop_words_file if len(line.strip()) > 0
+                    line.strip() for line in stop_words_file if line.strip()
                 }
 
         # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
@@ -330,7 +326,7 @@ class AdaptIntentTrainer(RhasspyActor):
                 # Add entities
                 for entity_name, entity_values in slot_entities.items():
                     # Prefix entity name with intent name
-                    entity_name = "{0}.{1}".format(intent_name, entity_name)
+                    entity_name = f"{intent_name}.{entity_name}"
                     if entity_name not in entities:
                         entities[entity_name] = set()
 
@@ -362,15 +358,15 @@ class AdaptIntentTrainer(RhasspyActor):
                     # Word only exists in some sentences
                     optional_words.add(word)
 
-            if len(required_words) > 0:
+            if required_words:
                 # Create entity for required keywords
-                entity_name = "{0}RequiredKeyword".format(intent_name)
+                entity_name = f"{intent_name}RequiredKeyword"
                 entities[entity_name] = required_words
                 intent["require"].append(entity_name)
 
-            if len(optional_words) > 0:
+            if optional_words:
                 # Create entity for required keywords
-                entity_name = "{0}OptionalKeyword".format(intent_name)
+                entity_name = f"{intent_name}OptionalKeyword"
                 entities[entity_name] = optional_words
                 intent["optionally"].append(entity_name)
 
@@ -462,7 +458,7 @@ class FlairIntentTrainer(RhasspyActor):
             shutil.rmtree(data_dir)
 
         self.embeddings = self.profile.get("intent.flair.embeddings", [])
-        assert len(self.embeddings) > 0, "No word embeddings"
+        assert self.embeddings, "No word embeddings"
 
         # Create directories to write training data to
         class_data_dir = os.path.join(data_dir, "classification")
@@ -497,7 +493,7 @@ class FlairIntentTrainer(RhasspyActor):
 
             intent_fst_paths = {
                 intent_id: os.path.join(fsts_dir, f"{intent_id}.fst")
-                for intent_id in intent_map.keys()
+                for intent_id in intent_map
             }
 
             # Generate samples
@@ -539,7 +535,7 @@ class FlairIntentTrainer(RhasspyActor):
 
                         class_sentences.append(class_sent)
 
-                if len(intent_sent["entities"]) == 0:
+                if not intent_sent["entities"]:
                     continue  # no entities, no sequence tagger
 
                 # Named entity recognition (NER) example
@@ -584,7 +580,7 @@ class FlairIntentTrainer(RhasspyActor):
             for e in self.embeddings
         ]
 
-        if len(class_sentences) > 0:
+        if class_sentences:
             self._logger.debug("Training intent classifier")
 
             # Random 80/10/10 split
@@ -613,7 +609,7 @@ class FlairIntentTrainer(RhasspyActor):
         else:
             self._logger.info("Skipping intent classifier training")
 
-        if len(ner_sentences) > 0:
+        if ner_sentences:
             self._logger.debug("Training %s NER sequence tagger(s)", len(ner_sentences))
 
             # Named entity recognition

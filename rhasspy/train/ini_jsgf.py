@@ -43,17 +43,15 @@ def make_grammars(
         for k, v in config[sec_name].items():
             if v is None:
                 # Collect non-valued keys as sentences
-                sentences.append("({0})".format(k.strip()))
+                sentences.append(f"({k.strip()})"
             else:
                 # Collect key/value pairs as JSGF rules
-                rule = "<{0}> = ({1});".format(k, v)
+                rule = f"<{k}> = ({v});"
                 rules.append(rule)
 
-        if len(sentences) > 0:
+        if sentences:
             # Combine all sentences into one big rule (same name as section)
-            sentences_rule = "public <{0}> = ({1});".format(
-                sec_name, " | ".join(sentences)
-            )
+            sentences_rule = f'public <{sec_name}> = ({" | ".join(sentences)});'
             rules.insert(0, sentences_rule)
 
         grammar_rules[sec_name] = rules
@@ -69,11 +67,11 @@ def make_grammars(
             continue
 
         # Only overwrite grammar file if it contains rules or doesn't yet exist
-        if len(rules) > 0:
+        if rules:
             with open(grammar_path, "w") as grammar_file:
                 # JSGF header
                 print(f"#JSGF V1.0;", file=grammar_file)
-                print("grammar {0};".format(name), file=grammar_file)
+                print(f"grammar {name};", file=grammar_file)
                 print("", file=grammar_file)
 
                 # Grammar rules

@@ -54,7 +54,7 @@ def make_dict(
     with open(vocab_path, "r") as vocab_file:
         for word in vocab_file:
             word = word.strip()
-            if len(word) == 0:
+            if not word:
                 continue
 
             word = transform(word)
@@ -91,13 +91,13 @@ def make_dict(
                 if (i < 1) or no_number:
                     print(word, pronounce, file=dictionary_file)
                 else:
-                    print("%s(%s)" % (word, i + 1), pronounce, file=dictionary_file)
+                    print(f"{word, i + 1}({pronounce})", file=dictionary_file)
 
             words_in_dict.add(word)
 
     # -------------------------------------------------------------------------
 
-    if len(unknown_words) > 0:
+    if unknown_words:
         logger.warning(f"{len(unknown_words)} word(s) are unknown")
         logger.warning(",".join(unknown_words))
 

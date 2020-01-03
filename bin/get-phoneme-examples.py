@@ -26,7 +26,7 @@ def main():
     with open(args.dictionary, "r") as dict_file:
         for line in dict_file:
             line = line.strip()
-            if len(line) == 0:
+            if not line:
                 continue
 
             parts = re.split(r"[\t ]+", line)
@@ -44,11 +44,11 @@ def main():
 
     # Pick unique example words for every phoneme
     used_words = set()
-    for phoneme in sorted(examples.keys()):
+    for phoneme in sorted(examples):
         # Choose the shortest, unused example word for this phoneme.
         # Exclude words with 3 or fewer letters.
         for word, pron in sorted(examples[phoneme], key=lambda kv: len(kv[0])):
-            if len(word) > 3 and (not word in used_words):
+            if len(word) > 3 and (word not in used_words):
                 # Output format is:
                 # phoneme word pronunciation
                 print(phoneme, word, " ".join(pron))

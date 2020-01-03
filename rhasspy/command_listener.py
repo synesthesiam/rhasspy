@@ -22,7 +22,7 @@ from rhasspy.utils import convert_wav
 def get_command_class(system: str) -> Type[RhasspyActor]:
     """Return class type for profile command listener."""
     assert system in ["dummy", "webrtcvad", "command", "oneshot", "hermes"], (
-        "Unknown voice command system: %s" % system
+        f"Unknown voice command system: {system}"
     )
 
     if system == "webrtcvad":

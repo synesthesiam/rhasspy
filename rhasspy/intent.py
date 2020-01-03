@@ -35,7 +35,7 @@ def get_recognizer_class(system: str) -> Type[RhasspyActor]:
         "flair",
         "conversation",
         "command",
-    ], ("Invalid intent system: %s" % system)
+    ], f"Invalid intent system: {system}"
 
     if system == "fsticuffs":
         # Use OpenFST locally
@@ -266,7 +266,7 @@ class FsticuffsRecognizer(RhasspyActor):
                     self.stop_words = {
                         line.strip()
                         for line in stop_words_file
-                        if len(line.strip()) > 0
+                        if line.strip()
                     }
 
     # -------------------------------------------------------------------------
@@ -342,7 +342,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
     def recognize(self, text: str) -> Dict[str, Any]:
         """Find sentence with lowest string-edit distance."""
         confidence = 0
-        if len(text) > 0:
+        if text:
             assert self.examples is not None, "No examples JSON"
 
             choices: Dict[str, Tuple[str, Dict[str, Any]]] = {}
@@ -382,7 +382,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                 self._logger.warning(
                     "Intent did not meet confidence threshold: %s < %s",
                     confidence,
-                    self.min_confidence,
+                    self.min_confidence
                 )
 
         # Empty intent
@@ -437,7 +437,7 @@ class RasaIntentRecognizer(RhasspyActor):
         rasa_config = self.profile.get("intent.rasa", {})
         url = rasa_config.get("url", "http://localhost:5005")
         self.project_name = rasa_config.get(
-            "project_name", "rhasspy_%s" % self.profile.name
+            "project_name", f"rhasspy_{self.profile.name}"
         )
         self.parse_url = urljoin(url, "model/parse")
 
@@ -529,11 +529,11 @@ class AdaptIntentRecognizer(RhasspyActor):
         assert self.engine is not None, "Adapt engine not loaded"
         intents = [intent for intent in self.engine.determine_intent(text) if intent]
 
-        if len(intents) > 0:
+        if intents:
             # Return the best intent only
             intent = max(intents, key=lambda x: x.get("confidence", 0))
             intent_type = intent["intent_type"]
-            entity_prefix = "{0}.".format(intent_type)
+            entity_prefix = f"{intent_type}."
 
             slots = {}
             for key, value in intent.items():
@@ -657,14 +657,14 @@ class FlairRecognizer(RhasspyActor):
         assert self.intent_map is not None
         if self.class_model is not None:
             self.class_model.predict(sentence)
-            assert len(sentence.labels) > 0, "No intent predicted"
+            assert sentence.labels, "No intent predicted"
 
             label = sentence.labels[0]
             intent_id = label.value
             intent["intent"]["confidence"] = label.score
         else:
             # Assume first intent
-            intent_id = next(iter(self.intent_map.keys()))
+            intent_id = next(iter(self.intent_map))
             intent["intent"]["confidence"] = 1
 
         intent["intent"]["name"] = self.intent_map[intent_id]

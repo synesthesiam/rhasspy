@@ -12,7 +12,7 @@ def main():
     with open(sys.argv[1], "r") as dict_file:
         for line in dict_file:
             line = line.strip()
-            if len(line) == 0:
+            if not line:
                 continue
 
             parts = re.split(r"[ ]+", line)

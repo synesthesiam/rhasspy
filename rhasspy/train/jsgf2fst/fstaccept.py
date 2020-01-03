@@ -98,7 +98,7 @@ def symbols2intent(
             # Begin tag
             tag_stack.append(TagInfo(sym[9:], out_index, raw_out_index))
         elif sym.startswith("__end__"):
-            assert len(tag_stack) > 0, f"Unbalanced tags. Got {sym}."
+            assert tag_stack, f"Unbalanced tags. Got {sym}."
 
             # End tag
             tag_info = tag_stack.pop()
@@ -140,17 +140,17 @@ def symbols2intent(
             # Intent label
             if intent_name is None:
                 intent_name = sym[9:]
-        elif len(tag_stack) > 0:
+        elif tag_stack:
             # Inside tag
             for tag_info in tag_stack:
                 if ":" in sym:
                     # Use replacement text
                     in_sym, out_sym = sym.split(":", maxsplit=1)
 
-                    if len(in_sym.strip()) > 0:
+                    if in_sym.strip():
                         tag_info.raw_symbols.append(in_sym)
 
-                    if len(out_sym.strip()) > 0:
+                    if out_sym.strip():
                         # Ignore empty output symbols
                         tag_info.symbols.append(out_sym)
                 else:
@@ -163,10 +163,10 @@ def symbols2intent(
                 # Use replacement symbol
                 in_sym, out_sym = sym.split(":", maxsplit=1)
 
-                if len(in_sym.strip()) > 0:
+                if in_sym.strip():
                     raw_symbols.append(in_sym)
 
-                if len(out_sym.strip()) > 0:
+                if out_sym.strip():
                     # Ignore empty output symbols
                     out_symbols.append(out_sym)
                     out_index += len(out_sym) + 1  # space
@@ -183,7 +183,7 @@ def symbols2intent(
     intent["tokens"] = out_symbols
     intent["raw_tokens"] = raw_symbols
 
-    if len(out_symbols) > 0:
+    if out_symbols:
         intent["intent"]["name"] = intent_name or ""
         intent["intent"]["confidence"] = 1
 
@@ -210,7 +210,7 @@ def fstprintall(
     state_queue: Deque[Tuple[int, List[str]]] = deque()
     state_queue.append((in_fst.start(), []))
 
-    while len(state_queue) > 0:
+    while state_queue:
         state, sentence = state_queue.popleft()
 
         if in_fst.final(state) != zero_weight:
@@ -258,7 +258,7 @@ def longest_path(the_fst: fst.Fst, eps: str = "<eps>") -> fst.Fst:
     state_queue.append((the_fst.start(), []))
 
     # Determine longest path
-    while len(state_queue) > 0:
+    while state_queue:
         state, path = state_queue.popleft()
         if state in visited_states:
             continue
@@ -352,7 +352,7 @@ def make_slot_acceptor(intent_fst: fst.Fst, eps: str = "<eps>") -> fst.Fst:
     state_queue.append((intent_fst.start(), slot_fst.start(), 0))
 
     # BFS
-    while len(state_queue) > 0:
+    while state_queue:
         intent_state, slot_state, do_copy = state_queue.popleft()
         final_states.add(slot_state)
         for intent_arc in intent_fst.arcs(intent_state):
@@ -376,7 +376,7 @@ def make_slot_acceptor(intent_fst: fst.Fst, eps: str = "<eps>") -> fst.Fst:
                     do_copy += 1
 
                     # Add loop transitions to soak up non-tag words
-                    if not slot_state in loop_states:
+                    if slot_state not in loop_states:
                         add_loop_state(slot_state)
                         loop_states.add(slot_state)
 
@@ -430,7 +430,7 @@ def linear_fst(
     **kwargs: Mapping[Any, Any],
 ) -> fst.Fst:
     """Produce a linear automata."""
-    assert len(elements) > 0, "No elements"
+    assert elements, "No elements"
     compiler = fst.Compiler(
         isymbols=automata_op.input_symbols().copy(),
         acceptor=keep_isymbols,
@@ -440,7 +440,7 @@ def linear_fst(
 
     num_elements = 0
     for i, el in enumerate(elements):
-        print("{} {} {}".format(i, i + 1, el), file=compiler)
+        print(f"{i} {i + 1} {el}", file=compiler)
         num_elements += 1
 
     print(str(num_elements), file=compiler)

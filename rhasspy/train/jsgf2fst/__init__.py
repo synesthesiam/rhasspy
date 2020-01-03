@@ -104,7 +104,7 @@ def grammar_to_fsts(
                     replace_names[replace_name] = arc.olabel
 
         # Do FST replacements
-        if len(replace_names) > 0:
+        if replace_names:
             replacements: Dict[int, fst.Fst] = {}
             for replace_name, replace_index in replace_names.items():
                 # Look in replacement and local FST lists
@@ -119,7 +119,7 @@ def grammar_to_fsts(
 
                 replacements[replace_index] = replace_fst
 
-            logger.debug(f"Replacing {list(replace_names.keys())} in {rule_name}")
+            logger.debug(f"Replacing {list(replace_names)} in {rule_name}")
             listener.fsts[rule_name] = _replace_fsts(rule_fst, replacements, eps=eps)
 
     # Overwrite grammar_fst
@@ -180,7 +180,7 @@ def slots_to_fsts(
             # Process each line independently to avoid recursion limit
             for line in slot_file:
                 line = line.strip()
-                if len(line) == 0:
+                if not line:
                     continue
 
                 # Handle casing

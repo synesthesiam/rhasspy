@@ -33,7 +33,7 @@ def get_microphone_class(system: str) -> Type[RhasspyActor]:
         "stdin",
         "http",
         "gstreamer",
-    ], ("Unknown microphone system: %s" % system)
+    ], f"Unknown microphone system: {system}"
 
     if system == "arecord":
         # Use arecord locally
@@ -148,7 +148,7 @@ class PyAudioRecorder(RhasspyActor):
 
             # Start audio system
             def stream_callback(data, frame_count, time_info, status):
-                if len(data) > 0:
+                if data:
                     # Send to this actor to avoid threading issues
                     self.send(self.myAddress, AudioData(data))
 
@@ -215,8 +215,8 @@ class PyAudioRecorder(RhasspyActor):
         # Check to see if anyone is still listening
         if (
             (not self.keep_device_open)
-            and (len(self.receivers) == 0)
-            and (len(self.buffers) == 0)
+            and not self.receivers
+            and not self.buffers
         ):
             # Terminate audio recording
             if self.mic is not None:
@@ -305,7 +305,7 @@ class PyAudioRecorder(RhasspyActor):
                     finally:
                         pyaudio_stream.close()
                 except Exception:
-                    result[device_index] = "%s (error)" % device_name
+                    result[device_index] = f"{device_name} (error)"
                     continue
 
                 # compute RMS of debiased audio
@@ -316,9 +316,9 @@ class PyAudioRecorder(RhasspyActor):
                 )
 
                 if debiased_energy > 30:  # probably actually audio
-                    result[device_index] = "%s (working!)" % device_name
+                    result[device_index] = f"{device_name} (working!)"
                 else:
-                    result[device_index] = "%s (no sound)" % device_name
+                    result[device_index] = f"{device_name} (no sound)"
         finally:
             audio.terminate()
 
@@ -353,7 +353,7 @@ class ARecordAudioRecorder(RhasspyActor):
 
         if self.device_name is not None:
             self.device_name = str(self.device_name)
-            if len(self.device_name) == 0:
+            if not self.device_name:
                 self.device_name = None
 
         self.chunk_size = int(
@@ -401,7 +401,7 @@ class ARecordAudioRecorder(RhasspyActor):
             while self.is_recording:
                 # Pull from process STDOUT
                 data = self.record_proc.stdout.read(self.chunk_size)
-                if len(data) > 0:
+                if data:
                     # Send to this actor to avoid threading issues
                     self.send(self.myAddress, AudioData(data))
                 else:
@@ -458,8 +458,8 @@ class ARecordAudioRecorder(RhasspyActor):
         # Check to see if anyone is still listening
         if (
             (not self.keep_device_open)
-            and (len(self.receivers) == 0)
-            and (len(self.buffers) == 0)
+            and not self.receivers
+            and not self.buffers
         ):
             # Terminate audio recording
             self.is_recording = False
@@ -536,7 +536,7 @@ class ARecordAudioRecorder(RhasspyActor):
                 buffer = proc.stdout.read(chunk_size * 2)
                 proc.terminate()
             except Exception:
-                result[device_id] = "%s (error)" % device_name
+                result[device_id] = f"{device_name} (error)"
                 continue
 
             # compute RMS of debiased audio
@@ -547,9 +547,9 @@ class ARecordAudioRecorder(RhasspyActor):
             )
 
             if debiased_energy > 30:  # probably actually audio
-                result[device_id] = "%s (working!)" % device_name
+                result[device_id] = f"{device_name} (working!)"
             else:
-                result[device_id] = "%s (no sound)" % device_name
+                result[device_id] = f"{device_name} (no sound)"
 
         return result
 
@@ -576,11 +576,11 @@ class HermesAudioRecorder(RhasspyActor):
         """Transition to started state."""
         self.mqtt = self.config["mqtt"]
         self.site_ids = self.profile.get("mqtt.site_id", "default").split(",")
-        if len(self.site_ids) > 0:
+        if self.site_ids:
             self.site_id = self.site_ids[0]
         else:
             self.site_id = "default"
-        self.topic_audio_frame = "hermes/audioServer/%s/audioFrame" % self.site_id
+        self.topic_audio_frame = f"hermes/audioServer/{self.site_id}/audioFrame"
         self.send(self.mqtt, MqttSubscribe(self.topic_audio_frame))
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
@@ -723,7 +723,7 @@ class StdinAudioRecorder(RhasspyActor):
                 self.send(message.receiver or sender, AudioData(buffer))
 
         # Check to see if anyone is still listening
-        if (len(self.receivers) == 0) and (len(self.buffers) == 0):
+        if not self.receivers and not self.buffers:
             # Terminate audio recording
             self.is_recording = False
             self.transition("started")
@@ -741,7 +741,7 @@ class StdinAudioRecorder(RhasspyActor):
         """Forward single audio chunk."""
         while True:
             data = sys.stdin.buffer.read(self.chunk_size)
-            if self.is_recording and (len(data) > 0):
+            if self.is_recording and data:
                 # Actor will forward
                 self.send(self.myAddress, AudioData(data))
 
@@ -790,7 +790,7 @@ class HTTPStreamServer(BaseHTTPRequestHandler):
             while True:
                 # Assume chunked transfer encoding
                 chunk_size_str = self.rfile.readline().decode().strip()
-                if len(chunk_size_str) == 0:
+                if not chunk_size_str:
                     break
 
                 chunk_size = int(chunk_size_str, 16)
@@ -915,7 +915,7 @@ class HTTPAudioRecorder(RhasspyActor):
                 self.send(message.receiver or sender, AudioData(buffer))
 
         # Check to see if anyone is still listening
-        if (len(self.receivers) == 0) and (len(self.buffers) == 0):
+        if not self.receivers and not self.buffers:
             self.transition("started")
 
     def to_stopped(self, from_state: str) -> None:
@@ -1012,7 +1012,7 @@ class GStreamerAudioRecorder(RhasspyActor):
 
                     while True:
                         chunk = self.gstreamer_proc.stdout.read(self.chunk_size)
-                        if len(chunk) > 0:
+                        if chunk:
                             if first_audio:
                                 self._logger.debug("Receiving audio")
                                 first_audio = False
@@ -1074,7 +1074,7 @@ class GStreamerAudioRecorder(RhasspyActor):
                 self.send(message.receiver or sender, AudioData(buffer))
 
         # Check to see if anyone is still listening
-        if (len(self.receivers) == 0) and (len(self.buffers) == 0):
+        if not self.receivers and not self.buffers:
             self.transition("started")
 
     def to_stopped(self, from_state: str) -> None:

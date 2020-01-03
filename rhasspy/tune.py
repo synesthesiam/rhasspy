@@ -64,7 +64,7 @@ class SphinxTrainSpeechTuner(SpeechTuner):
             # Copy WAV files into temporary directory with unique names
             fileid_intents = {}
             logger.debug("Copying %s WAV file(s) to %s", len(wav_intents), temp_dir)
-            for wav_path in list(wav_intents.keys()):
+            for wav_path in wav_intents:
                 if not os.path.exists(wav_path):
                     logger.warning("Skipping %s (does not exist)", wav_path)
                     continue
@@ -92,7 +92,7 @@ class SphinxTrainSpeechTuner(SpeechTuner):
             with open(transcription_path, "w") as transcription_file:
                 for file_id in sorted(fileid_intents):
                     text = fileid_intents[file_id]["text"].strip()
-                    print("%s (%s.wav)" % (text, file_id), file=transcription_file)
+                    print(f"{text} ({file_id}.wav)", file=transcription_file)
 
             logger.debug("Wrote %s", transcription_path)
 
@@ -151,7 +151,7 @@ class SphinxTrainSpeechTuner(SpeechTuner):
             with open(feat_params_path, "r") as feat_params_file:
                 for line in feat_params_file:
                     line = line.strip()
-                    if len(line) > 0:
+                    if line:
                         param_parts = line.split(maxsplit=1)
                         param_name = param_parts[0]
                         # Only add compatible bw args
