@@ -148,7 +148,7 @@ class CliConverter:
         """Runs external program to convert JSON values"""
         converter_args = converter_args or []
         proc = subprocess.Popen(
-            [self.command_path] + converter_args,
+            [str(self.command_path)] + converter_args,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             universal_newlines=True,

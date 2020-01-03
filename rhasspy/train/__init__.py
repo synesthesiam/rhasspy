@@ -7,7 +7,7 @@ import json
 import logging
 import subprocess
 from pathlib import Path
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 from num2words import num2words
 import pywrapfst as fst
@@ -71,13 +71,14 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
     kaldi_dir = Path(
         os.path.expandvars(profile.get(f"{stt_prefix}.kaldi_dir", "/opt/kaldi"))
     )
-    kaldi_graph_dir = acoustic_model / profile.get(f"{stt_prefix}.graph", "graph")
 
     if acoustic_model_type == "kaldi":
         # Kaldi acoustic models are inside model directory
         acoustic_model = ppath(f"{stt_prefix}.model_dir", "model")
-    else:
+    elif acoustic_model_type != "pocketsphinx":
         _LOGGER.warning("Unsupported acoustic model type: %s", acoustic_model_type)
+
+    kaldi_graph_dir = acoustic_model / profile.get(f"{stt_prefix}.graph", "graph")
 
     # ignore/upper/lower
     word_casing = profile.get("speech_to_text.dictionary_casing", "ignore").lower()
@@ -106,6 +107,9 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
     grammar_dir = ppath("speech_to_text.grammars_dir", "grammars", write=True)
     fsts_dir = ppath("speech_to_text.fsts_dir", "fsts", write=True)
     slots_dir = ppath("speech_to_text.slots_dir", "slots", write=True)
+    slot_programs_dir = ppath(
+        "speech_to_text.slot_programs_dir", "slot_programs", write=True
+    )
 
     # -----------------------------------------------------------------------------
 
@@ -198,22 +202,82 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
             # Not a number
             pass
 
+    class SlotProgram:
+        """Runs a program to generate slot values"""
+
+        def __init__(
+            self, command_path: Path, command_args: Optional[List[str]] = None
+        ):
+            self.command_path = command_path
+            self.command_args = command_args
+            self.values: Optional[List[str]] = None
+
+        def maybe_generate(self):
+            if self.values is None:
+                command_args = self.command_args or []
+                command = [str(self.command_path)] + command_args
+
+                # Parse each non-empty line as a JSGF sentence
+                self.values = []
+                for line in subprocess.check_output(
+                    command, universal_newlines=True
+                ).splitlines():
+                    line = line.strip()
+                    if line:
+                        sentence = jsgf.Sentence.parse(line)
+                        self.values.append(sentence)
+
+        def __iter__(self):
+            self.maybe_generate()
+            return iter(self.values)
+
+        def __len__(self):
+            self.maybe_generate()
+            return len(self.values)
+
+        def __getitem__(self, key):
+            return self.values[key]
+
+        def __setitem__(self, key, value):
+            self.values[key] = value
+
+    # -------------------------------------------------------------------------
+
     def do_intents_to_graph(intents, slot_names, targets):
         sentences, replacements = ini_jsgf.split_rules(intents)
 
         # Load slot values
         for slot_name in slot_names:
+            # Check static slots first
             slot_path = slots_dir / slot_name
-            assert slot_path.is_file(), f"Missing slot file at {slot_path}"
 
-            # Parse each non-empty line as a JSGF sentence
-            slot_values = []
-            with open(slot_path, "r") as slot_file:
-                for line in slot_file:
-                    line = line.strip()
-                    if line:
-                        sentence = jsgf.Sentence.parse(line)
-                        slot_values.append(sentence)
+            if slot_path.is_file():
+                # Parse each non-empty line as a JSGF sentence
+                slot_values = []
+                with open(slot_path, "r") as slot_file:
+                    for line in slot_file:
+                        line = line.strip()
+                        if line:
+                            sentence = jsgf.Sentence.parse(line)
+                            slot_values.append(sentence)
+            else:
+                # Check slot programs
+                slot_args: Optional[List[str]] = None
+
+                # Check for arguments.
+                # Slot name retains argument(s).
+                if "," in slot_name:
+                    parts = slot_name.split(",")
+                    slot_path = slot_programs_dir / parts[0]
+                    slot_args = parts[1:]
+                else:
+                    slot_path = slot_programs_dir / slot_name
+
+                assert (
+                    slot_path.is_file()
+                ), f"Missing file/program for slot {slot_name} (tried {slots_dir} and {slot_programs})"
+
+                slot_values = SlotProgram(slot_path, command_args=slot_args)
 
             # Replace $slot with sentences
             replacements[f"${slot_name}"] = slot_values
@@ -241,7 +305,17 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
                     slot_names.add(slot_name)
 
         # Add slot files as dependencies
-        deps = [(slots_dir / slot_name) for slot_name in slot_names]
+        deps = []
+        for slot_name in slot_names:
+            slot_path = slots_dir / slot_name
+            if not slot_path.is_file():
+                if "," in slot_name:
+                    # Strip arguments
+                    slot_name = slot_name[: slot_name.find(",")]
+
+                slot_path = slot_programs_dir / slot_name
+
+            deps.append(slot_path)
 
         # Add profile itself as a dependency
         profile_json_path = profile_dir / "profile.json"

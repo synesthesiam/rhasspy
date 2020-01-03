@@ -190,6 +190,7 @@
     "sentences_ini": "sentences.ini",
     "sentences_dir": "intents",
     "slots_dir": "slots",
+    "slot_programs_dir": "slot_programs",
     "system": "dummy"
   },
   "text_to_speech": {
