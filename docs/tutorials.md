@@ -124,6 +124,7 @@ Use a data_template to get the Rhasspy Event Data with trigger.event.data.<your 
 + scripts.yaml
 
 The service_template casts the light_state into a string and checks to see if you said 'on' or 'off'. The homeassistant-service can toggle both lights and switches, which is super helpful if you have a combination of "light" types.
+
 ```
 'rhasspy_light_state':
   alias: change_light_state
@@ -146,6 +147,7 @@ The service_template casts the light_state into a string and checks to see if yo
       data_template:
         entity_id: "{{ light_name }}"
 ```
+
 ## Client/Server Setup
 
 Contributed by [jaburges](https://community.home-assistant.io/u/jaburges)
