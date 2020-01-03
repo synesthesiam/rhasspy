@@ -370,7 +370,6 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                     sentences = []
                     for example in intent_examples:
                         example_text = example.get("raw_text", example["text"])
-                        logging.debug(example_text)
                         choices[example_text] = (example_text, example)
                         sentences.append(example_text)
 
