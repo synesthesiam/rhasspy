@@ -7,8 +7,8 @@ import os
 import re
 import shutil
 import subprocess
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type
 from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type
 from urllib.parse import urljoin
 
 import networkx as nx

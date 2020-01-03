@@ -11,14 +11,9 @@ from urllib.parse import urljoin
 import requests
 
 from rhasspy.actor import Configured, ConfigureEvent, RhasspyActor
-from rhasspy.events import (
-    ResumeListeningForWakeWord,
-    PlayWavData,
-    SentenceSpoken,
-    SpeakSentence,
-    PauseListeningForWakeWord,
-    WavPlayed,
-)
+from rhasspy.events import (PauseListeningForWakeWord, PlayWavData,
+                            ResumeListeningForWakeWord, SentenceSpoken,
+                            SpeakSentence, WavPlayed)
 from rhasspy.utils import hass_request_kwargs
 
 # -----------------------------------------------------------------------------
