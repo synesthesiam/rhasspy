@@ -15,20 +15,43 @@ import aiohttp
 # Internal imports
 from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.dialogue import DialogueManager
-from rhasspy.events import (AudioData, GetActorStates, GetMicrophones,
-                            GetProblems, GetSpeakers, GetVoiceCommand,
-                            GetWordPhonemes, GetWordPronunciations,
-                            HandleIntent, IntentHandled, IntentRecognized,
-                            ListenForCommand, ListenForWakeWord, MqttPublish,
-                            PlayWavData, PlayWavFile, Problems,
-                            ProfileTrainingComplete, ProfileTrainingFailed,
-                            RecognizeIntent, SentenceSpoken, SpeakSentence,
-                            SpeakWord, StartRecordingToBuffer,
-                            StopRecordingToBuffer, TestMicrophones,
-                            TrainProfile, TranscribeWav, VoiceCommand,
-                            WakeWordDetected, WakeWordNotDetected,
-                            WavTranscription, WordPhonemes, WordPronunciations,
-                            WordSpoken)
+from rhasspy.events import (
+    AudioData,
+    GetActorStates,
+    GetMicrophones,
+    GetProblems,
+    GetSpeakers,
+    GetVoiceCommand,
+    GetWordPhonemes,
+    GetWordPronunciations,
+    HandleIntent,
+    IntentHandled,
+    IntentRecognized,
+    ListenForCommand,
+    ListenForWakeWord,
+    MqttPublish,
+    PlayWavData,
+    PlayWavFile,
+    Problems,
+    ProfileTrainingComplete,
+    ProfileTrainingFailed,
+    RecognizeIntent,
+    SentenceSpoken,
+    SpeakSentence,
+    SpeakWord,
+    StartRecordingToBuffer,
+    StopRecordingToBuffer,
+    TestMicrophones,
+    TrainProfile,
+    TranscribeWav,
+    VoiceCommand,
+    WakeWordDetected,
+    WakeWordNotDetected,
+    WavTranscription,
+    WordPhonemes,
+    WordPronunciations,
+    WordSpoken,
+)
 from rhasspy.profiles import Profile
 from rhasspy.utils import numbers_to_words
 
@@ -299,13 +322,16 @@ class RhasspyCore:
         play: bool = True,
         language: Optional[str] = None,
         voice: Optional[str] = None,
+        siteId: Optional[str] = None,
     ) -> SentenceSpoken:
         """Speak an entire sentence using text to speech system."""
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
             result = await sys.async_ask(
                 self.dialogue_manager,
-                SpeakSentence(sentence, play=play, language=language, voice=voice),
+                SpeakSentence(
+                    sentence, play=play, language=language, voice=voice, siteId=siteId
+                ),
             )
             assert isinstance(result, SentenceSpoken), result
             return result

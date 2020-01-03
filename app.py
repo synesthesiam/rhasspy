@@ -13,17 +13,32 @@ from uuid import uuid4
 
 import attr
 import json5
-from quart import (Quart, Response, jsonify, request, safe_join, send_file,
-                   send_from_directory, websocket)
+from quart import (
+    Quart,
+    Response,
+    jsonify,
+    request,
+    safe_join,
+    send_file,
+    send_from_directory,
+    websocket,
+)
 from quart_cors import cors
 from swagger_ui import quart_api_doc
 
 from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
 from rhasspy.events import IntentRecognized, ProfileTrainingFailed
-from rhasspy.utils import (FunctionLoggingHandler, buffer_to_wav,
-                           get_all_intents, get_ini_paths, get_wav_duration,
-                           load_phoneme_examples, read_dict, recursive_remove)
+from rhasspy.utils import (
+    FunctionLoggingHandler,
+    buffer_to_wav,
+    get_all_intents,
+    get_ini_paths,
+    get_wav_duration,
+    load_phoneme_examples,
+    read_dict,
+    recursive_remove,
+)
 
 # -----------------------------------------------------------------------------
 # Quart Web App Setup
@@ -777,12 +792,13 @@ async def api_text_to_speech() -> Union[bytes, str]:
     play = request.args.get("play", "true").strip().lower() == "true"
     language = request.args.get("language")
     voice = request.args.get("voice")
+    siteId = request.args.get("siteId")
     data = await request.data
     sentence = last_sentence if repeat else data.decode().strip()
 
     assert core is not None
     result = await core.speak_sentence(
-        sentence, play=play, language=language, voice=voice
+        sentence, play=play, language=language, voice=voice, siteId=siteId
     )
 
     last_sentence = sentence

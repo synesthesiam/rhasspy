@@ -11,9 +11,14 @@ from urllib.parse import urljoin
 import requests
 
 from rhasspy.actor import Configured, ConfigureEvent, RhasspyActor
-from rhasspy.events import (PauseListeningForWakeWord, PlayWavData,
-                            ResumeListeningForWakeWord, SentenceSpoken,
-                            SpeakSentence, WavPlayed)
+from rhasspy.events import (
+    PauseListeningForWakeWord,
+    PlayWavData,
+    ResumeListeningForWakeWord,
+    SentenceSpoken,
+    SpeakSentence,
+    WavPlayed,
+)
 from rhasspy.utils import hass_request_kwargs
 
 # -----------------------------------------------------------------------------
@@ -116,7 +121,9 @@ class EspeakSentenceSpeaker(RhasspyActor):
                     self.enable_wake = self.wake_on_start
 
                 self.transition("speaking")
-                self.send(self.player, PlayWavData(self.wav_data))
+                self.send(
+                    self.player, PlayWavData(self.wav_data, siteId=message.siteId)
+                )
             else:
                 self.transition("ready")
                 self.send(self.receiver, SentenceSpoken(self.wav_data))
@@ -206,7 +213,9 @@ class FliteSentenceSpeaker(RhasspyActor):
                     self.enable_wake = self.wake_on_start
 
                 self.transition("speaking")
-                self.send(self.player, PlayWavData(self.wav_data))
+                self.send(
+                    self.player, PlayWavData(self.wav_data, siteId=message.siteId)
+                )
             else:
                 self.transition("ready")
                 self.send(self.receiver, SentenceSpoken(self.wav_data))
@@ -295,7 +304,9 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
                     self.enable_wake = self.wake_on_start
 
                 self.transition("speaking")
-                self.send(self.player, PlayWavData(self.wav_data))
+                self.send(
+                    self.player, PlayWavData(self.wav_data, siteId=message.siteId)
+                )
             else:
                 self.transition("ready")
                 self.send(self.receiver, SentenceSpoken(self.wav_data))
@@ -400,7 +411,9 @@ class MaryTTSSentenceSpeaker(RhasspyActor):
                     self.enable_wake = self.wake_on_start
 
                 self.transition("speaking")
-                self.send(self.player, PlayWavData(self.wav_data))
+                self.send(
+                    self.player, PlayWavData(self.wav_data, siteId=message.siteId)
+                )
             else:
                 self.transition("ready")
                 self.send(self.receiver, SentenceSpoken(self.wav_data))
@@ -508,7 +521,9 @@ class CommandSentenceSpeaker(RhasspyActor):
                     self.enable_wake = self.wake_on_start
 
                 self.transition("speaking")
-                self.send(self.player, PlayWavData(self.wav_data))
+                self.send(
+                    self.player, PlayWavData(self.wav_data, siteId=message.siteId)
+                )
             else:
                 self.transition("ready")
                 self.send(self.receiver, SentenceSpoken(self.wav_data))
@@ -633,7 +648,9 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
                         self.enable_wake = self.wake_on_start
 
                     self.transition("speaking")
-                    self.send(self.player, PlayWavData(self.wav_data))
+                    self.send(
+                        self.player, PlayWavData(self.wav_data, siteId=message.siteId)
+                    )
                 else:
                     self.transition("ready")
                     self.send(self.receiver, SentenceSpoken(self.wav_data))
@@ -655,6 +672,7 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
                             play=message.play,
                             voice=message.voice,
                             language=message.language,
+                            siteId=message.siteId,
                         ),
                     )
                 except Exception:
@@ -824,7 +842,9 @@ class HomeAssistantSentenceSpeaker(RhasspyActor):
                     self.enable_wake = self.wake_on_start
 
                 self.transition("speaking")
-                self.send(self.player, PlayWavData(self.wav_data))
+                self.send(
+                    self.player, PlayWavData(self.wav_data, siteId=message.siteId)
+                )
             else:
                 self.transition("ready")
                 self.send(self.receiver, SentenceSpoken(self.wav_data))

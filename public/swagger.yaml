@@ -383,6 +383,11 @@ paths:
           schema:
             type: boolean
             default: true
+        - in: query
+          name: siteId
+          description: 'Hermes siteId to use in playBytes'
+          schema:
+            type: string
       responses:
         '200':
           description: OK

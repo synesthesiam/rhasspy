@@ -65,19 +65,29 @@ class ResumeListeningForWakeWord:
 class PlayWavFile:
     """Play a WAV file."""
 
-    def __init__(self, wav_path: str, receiver: Optional[RhasspyActor] = None) -> None:
+    def __init__(
+        self,
+        wav_path: str,
+        receiver: Optional[RhasspyActor] = None,
+        siteId: Optional[str] = None,
+    ) -> None:
         self.wav_path = wav_path
         self.receiver = receiver
+        self.siteId = siteId
 
 
 class PlayWavData:
     """Play a WAV buffer."""
 
     def __init__(
-        self, wav_data: bytes, receiver: Optional[RhasspyActor] = None
+        self,
+        wav_data: bytes,
+        receiver: Optional[RhasspyActor] = None,
+        siteId: Optional[str] = None,
     ) -> None:
         self.wav_data = wav_data
         self.receiver = receiver
+        self.siteId = siteId
 
 
 class WavPlayed:
@@ -430,12 +440,14 @@ class SpeakSentence:
         play: bool = True,
         voice: Optional[str] = None,
         language: Optional[str] = None,
+        siteId: Optional[str] = None,
     ) -> None:
         self.sentence = sentence
         self.receiver = receiver
         self.play = play
         self.voice = voice
         self.language = language
+        self.siteId = siteId
 
 
 class SentenceSpoken:

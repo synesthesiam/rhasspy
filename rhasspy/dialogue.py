@@ -10,26 +10,57 @@ import pydash
 import pywrapfst as fst
 import requests
 
-from rhasspy.actor import (ActorExitRequest, ChildActorExited, Configured,
-                           ConfigureEvent, RhasspyActor, StateTransition,
-                           WakeupMessage)
+from rhasspy.actor import (
+    ActorExitRequest,
+    ChildActorExited,
+    Configured,
+    ConfigureEvent,
+    RhasspyActor,
+    StateTransition,
+    WakeupMessage,
+)
 from rhasspy.audio_player import get_sound_class
 from rhasspy.audio_recorder import HTTPAudioRecorder, get_microphone_class
 from rhasspy.command_listener import get_command_class
-from rhasspy.events import (AudioData, GetActorStates, GetMicrophones,
-                            GetProblems, GetSpeakers, GetVoiceCommand,
-                            GetWordPhonemes, GetWordPronunciations,
-                            HandleIntent, IntentHandled, IntentRecognized,
-                            IntentTrainingComplete, IntentTrainingFailed,
-                            ListenForCommand, ListenForWakeWord, MqttPublish,
-                            PlayWavData, PlayWavFile, Problems,
-                            ProfileTrainingComplete, ProfileTrainingFailed,
-                            Ready, RecognizeIntent, SpeakSentence, SpeakWord,
-                            StartRecordingToBuffer, StopListeningForWakeWord,
-                            StopRecordingToBuffer, TestMicrophones,
-                            TrainIntent, TrainProfile, TranscribeWav,
-                            VoiceCommand, WakeWordDetected,
-                            WakeWordNotDetected, WavPlayed, WavTranscription)
+from rhasspy.events import (
+    AudioData,
+    GetActorStates,
+    GetMicrophones,
+    GetProblems,
+    GetSpeakers,
+    GetVoiceCommand,
+    GetWordPhonemes,
+    GetWordPronunciations,
+    HandleIntent,
+    IntentHandled,
+    IntentRecognized,
+    IntentTrainingComplete,
+    IntentTrainingFailed,
+    ListenForCommand,
+    ListenForWakeWord,
+    MqttPublish,
+    PlayWavData,
+    PlayWavFile,
+    Problems,
+    ProfileTrainingComplete,
+    ProfileTrainingFailed,
+    Ready,
+    RecognizeIntent,
+    SpeakSentence,
+    SpeakWord,
+    StartRecordingToBuffer,
+    StopListeningForWakeWord,
+    StopRecordingToBuffer,
+    TestMicrophones,
+    TrainIntent,
+    TrainProfile,
+    TranscribeWav,
+    VoiceCommand,
+    WakeWordDetected,
+    WakeWordNotDetected,
+    WavPlayed,
+    WavTranscription,
+)
 from rhasspy.intent import get_recognizer_class
 from rhasspy.intent_handler import get_intent_handler_class
 from rhasspy.intent_train import get_intent_trainer_class
@@ -668,6 +699,7 @@ class DialogueManager(RhasspyActor):
                     play=message.play,
                     voice=message.voice,
                     language=message.language,
+                    siteId=message.siteId,
                 ),
             )
         elif isinstance(message, TrainProfile):

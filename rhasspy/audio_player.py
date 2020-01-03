@@ -151,29 +151,36 @@ class HermesAudioPlayer(RhasspyActor):
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in started state."""
         if isinstance(message, PlayWavFile):
-            self.play_file(message.wav_path)
+            self.play_file(message.wav_path, siteId=message.siteId)
             self.send(message.receiver or sender, WavPlayed())
         elif isinstance(message, PlayWavData):
-            self.play_data(message.wav_data)
+            self.play_data(message.wav_data, siteId=message.siteId)
             self.send(message.receiver or sender, WavPlayed())
 
     # -------------------------------------------------------------------------
 
-    def play_file(self, path: str) -> None:
+    def play_file(self, path: str, siteId: Optional[str] = None) -> None:
         """Send WAV file over MQTT."""
         if not os.path.exists(path):
             self._logger.warning("Path does not exist: %s", path)
             return
 
         with open(path, "rb") as wav_file:
-            self.play_data(wav_file.read())
+            self.play_data(wav_file.read(), siteId=siteId)
 
-    def play_data(self, wav_data: bytes) -> None:
+    def play_data(self, wav_data: bytes, siteId: Optional[str] = None) -> None:
         """Send WAV buffer over MQTT."""
         request_id = str(uuid.uuid4())
 
+        if siteId:
+            # Send to a specific site id
+            publish_sites = [siteId]
+        else:
+            # Send to all site ids
+            publish_sites = self.site_ids
+
         # Send to all site ids
-        for site_id in self.site_ids:
+        for site_id in publish_sites:
             topic = f"hermes/audioServer/{site_id}/playBytes/{request_id}"
             self.send(self.mqtt, MqttPublish(topic, wav_data))
 
