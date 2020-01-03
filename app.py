@@ -857,7 +857,7 @@ async def api_slots() -> Union[str, Response]:
             slots_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Merge with existing values
-            values = set([word_transform(v.strip()) for v in values])
+            values = {word_transform(v.strip()) for v in values}
             if slots_path.is_file():
                 values.update(
                     word_transform(line.strip())

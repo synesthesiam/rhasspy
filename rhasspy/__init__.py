@@ -4,6 +4,7 @@ import asyncio
 import io
 import json
 import logging
+
 # Configure logging
 import logging.config
 import os
@@ -493,7 +494,9 @@ async def mic2intent(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 async def word2phonemes(core: RhasspyCore, profile: Profile, args: Any) -> None:
     """Get pronunciation(s) for word(s)"""
-    words = args.words or sys.stdin
+    words = args.words
+    if not words:
+        words = [w.strip() for w in sys.stdin if w.strip()]
 
     # Get pronunciations for all words
     pronunciations = (

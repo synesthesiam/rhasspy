@@ -137,6 +137,32 @@ class RemoteRecognizer(RhasspyActor):
 # -----------------------------------------------------------------------------
 
 
+class CliConverter:
+    """Command-line converter for intent recognition"""
+
+    def __init__(self, name: str, command_path: Path):
+        self.name = name
+        self.command_path = command_path
+
+    def __call__(self, *args, converter_args=None):
+        """Runs external program to convert JSON values"""
+        converter_args = converter_args or []
+        proc = subprocess.Popen(
+            [self.command_path] + converter_args,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+        )
+
+        with io.StringIO() as input_file:
+            for arg in args:
+                json.dump(arg, input_file)
+
+            stdout, _ = proc.communicate(input=input_file.getvalue())
+
+            return [json.loads(line) for line in stdout.splitlines() if line.strip()]
+
+
 class FsticuffsRecognizer(RhasspyActor):
     """Recognize intents using OpenFST."""
 
@@ -169,32 +195,26 @@ class FsticuffsRecognizer(RhasspyActor):
         )
         if converters_dir.is_dir():
             self._logger.debug("Loading converters from %s", converters_dir)
-            for converter_path in converters_dir.glob("*"):
+            for converter_path in converters_dir.glob("**/*"):
                 if not converter_path.is_file():
                     continue
 
-                converter_name = converter_path.stem
+                # Retain directory structure in name
+                converter_name = str(
+                    converter_path.relative_to(converters_dir).with_suffix("")
+                )
 
                 # Run converter as external program.
                 # Input arguments are encoded as JSON on individual lines.
                 # Output values should be encoded as JSON on individual lines.
-                def run_converter(*args):
-                    proc = subprocess.Popen(
-                        [str(converter_path)],
-                        stdin=subprocess.PIPE,
-                        stdout=subprocess.PIPE,
-                        universal_newlines=True,
-                    )
+                converter = CliConverter(converter_name, converter_path)
 
-                    with io.StringIO() as input_file:
-                        for arg in args:
-                            json.dump(arg, input_file)
+                # Key off name without file extension
+                self.converters[converter_name] = converter
 
-                        stdout, stderr = proc.communicate(input=input_file.getvalue())
-
-                        return [json.loads(line) for line in stdout.splitlines() if line.strip()]
-
-                self.converters[converter_name] = run_converter
+                self._logger.debug(
+                    "Loaded converter %s from %s", converter_name, converter_path
+                )
 
         self.transition("loaded")
 
@@ -264,9 +284,7 @@ class FsticuffsRecognizer(RhasspyActor):
                 self._logger.debug("Using stop words at %s", stop_words_path)
                 with open(stop_words_path, "r") as stop_words_file:
                     self.stop_words = {
-                        line.strip()
-                        for line in stop_words_file
-                        if line.strip()
+                        line.strip() for line in stop_words_file if line.strip()
                     }
 
     # -------------------------------------------------------------------------
@@ -382,7 +400,7 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                 self._logger.warning(
                     "Intent did not meet confidence threshold: %s < %s",
                     confidence,
-                    self.min_confidence
+                    self.min_confidence,
                 )
 
         # Empty intent
