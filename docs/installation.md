@@ -58,7 +58,7 @@ on your Rhasspy server and restart the Docker container.
 
 ## Hass.io
 
-The second easiest was to install Rhasspy is as a [Hass.io add-on](https://www.home-assistant.io/addons/). Following the [installation instructions for Hass.io](https://www.home-assistant.io/hassio/installation/) before proceeding.
+The second easiest way to install Rhasspy is as a [Hass.io add-on](https://www.home-assistant.io/addons/). Follow the [installation instructions for Hass.io](https://www.home-assistant.io/hassio/installation/) before proceeding.
 
 To install the add-on, add my [Hass.IO Add-On Repository](https://github.com/synesthesiam/hassio-addons) in the Add-On Store, refresh, then install the "Rhasspy Assistant" under “Synesthesiam Hass.IO Add-Ons” (all the way at the bottom of the Add-On Store screen).
 
@@ -74,7 +74,7 @@ Before starting the add-on, make sure to give it access to your microphone and s
 
 ### Updating Hass.IO Add-On
 
-You should receive notifications when a new version of Rhasspy is available for Hass.IO. Follow instructions from Hass.IO on how to update the add-on.
+You should receive notifications when a new version of Rhasspy is available for Hass.IO. Follow the instructions from Hass.IO on how to update the add-on.
 
 ## Virtual Environment
 
