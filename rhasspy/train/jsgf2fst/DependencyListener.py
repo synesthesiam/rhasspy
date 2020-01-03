@@ -143,7 +143,7 @@ class DependencyListener(JsgfListener):
                 in_word = word.split(":", maxsplit=1)[0]
 
                 # Empty input word becomes <eps>
-                if len(in_word) == 0:
+                if not in_word:
                     in_word = self.eps
 
                 # NOTE: Entire word (with ":") is used as output

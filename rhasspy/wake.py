@@ -39,7 +39,7 @@ def get_wake_class(system: str) -> Type[RhasspyActor]:
         "precise",
         "porcupine",
         "command",
-    ], ("Invalid wake system: %s" % system)
+    ], f"Invalid wake system: {system}"
 
     if system == "pocketsphinx":
         # Use pocketsphinx locally
@@ -130,7 +130,7 @@ class PocketsphinxWakeListener(RhasspyActor):
             audio_data = message.data
             chunk = audio_data[: self.chunk_size]
             detected = False
-            while len(chunk) > 0:
+            while chunk:
                 result = self.process_data(chunk)
                 if result is not None:
                     detected = True
@@ -168,7 +168,7 @@ class PocketsphinxWakeListener(RhasspyActor):
                 except ValueError:
                     pass
 
-            if len(self.receivers) == 0:
+            if not self.receivers:
                 # End utterance
                 if self.decoder_started:
                     assert self.decoder is not None
@@ -225,7 +225,7 @@ class PocketsphinxWakeListener(RhasspyActor):
                 self.profile.get("wake.pocketsphinx.threshold", 1e-40)
             )
             self.keyphrase = self.profile.get("wake.pocketsphinx.keyphrase", "")
-            assert len(self.keyphrase) > 0, "No wake keyphrase"
+            assert self.keyphrase, "No wake keyphrase"
 
             # Verify that keyphrase words are in dictionary
             keyphrase_words = re.split(r"\s+", self.keyphrase)
@@ -320,7 +320,7 @@ class SnowboyWakeListener(RhasspyActor):
             audio_data = message.data
             chunk = audio_data[: self.chunk_size]
             detected = []
-            while len(chunk) > 0:
+            while chunk:
                 for detector_index, result_index in enumerate(self.process_data(chunk)):
                     if result_index > 0:
                         detected.append(detector_index)
@@ -363,7 +363,7 @@ class SnowboyWakeListener(RhasspyActor):
                 except ValueError:
                     pass
 
-            if len(self.receivers) == 0:
+            if not self.receivers:
                 if message.record:
                     self.send(self.recorder, StopStreaming(self.myAddress))
                 self.transition("loaded")
@@ -402,7 +402,7 @@ class SnowboyWakeListener(RhasspyActor):
 
             # Load model names and settings
             self.models = self._parse_models()
-            self.model_names = sorted(list(self.models.keys()))
+            self.model_names = sorted(self.models)
 
             # Create snowboy detectors
             for model_name in self.model_names:
@@ -589,7 +589,7 @@ class PreciseWakeListener(RhasspyActor):
                     except ValueError:
                         pass
 
-                if len(self.receivers) == 0:
+                if not self.receivers:
                     if message.record:
                         self.send(self.recorder, StopStreaming(self.myAddress))
                     self.transition("loaded")
@@ -766,7 +766,7 @@ class HermesWakeListener(RhasspyActor):
                 except ValueError:
                     pass
 
-            if len(self.receivers) == 0:
+            if not self.receivers:
                 self.transition("loaded")
         elif isinstance(message, PauseListeningForWakeWord):
             self.transition("paused")
@@ -894,7 +894,7 @@ class PorcupineWakeListener(RhasspyActor):
                 except ValueError:
                     pass
 
-            if len(self.receivers) == 0:
+            if not self.receivers:
                 if message.record:
                     self.send(self.recorder, StopStreaming(self.myAddress))
 
@@ -977,7 +977,7 @@ class CommandWakeListener(RhasspyActor):
                     self._logger.exception("post_result")
 
                 # Actor will forward
-                if len(wakeword_id) > 0:
+                if wakeword_id:
                     self.send(self.myAddress, WakeWordDetected(wakeword_id))
                 else:
                     self.send(self.myAddress, WakeWordNotDetected(wakeword_id))
@@ -1007,7 +1007,7 @@ class CommandWakeListener(RhasspyActor):
                 except ValueError:
                     pass
 
-            if len(self.receivers) == 0:
+            if not self.receivers:
                 if self.wake_proc is not None:
                     self.wake_proc.terminate()
 

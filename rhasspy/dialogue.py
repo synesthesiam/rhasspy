@@ -316,7 +316,7 @@ class DialogueManager(RhasspyActor):
                 del self.wait_actors[sender_name]
                 self._logger.debug("%s started", sender_name)
 
-            if len(self.wait_actors) == 0:
+            if not self.wait_actors:
                 self._logger.debug("Actors loaded")
                 self.transition("ready")
 
@@ -328,7 +328,7 @@ class DialogueManager(RhasspyActor):
                 if self.send_ready:
                     self.send(self._parent, Ready())
         elif isinstance(message, WakeupMessage):
-            wait_names = list(self.wait_actors.keys())
+            wait_names = list(self.wait_actors)
             self._logger.warning(
                 "Actor timeout! Still waiting on %s Loading anyway...", wait_names
             )
@@ -627,7 +627,7 @@ class DialogueManager(RhasspyActor):
                 if actor != sender
             }
 
-            if len(self.wait_actors) == 0:
+            if not self.wait_actors:
                 self._logger.info("Actors reloaded")
                 self.transition("ready")
                 self.send(self.training_receiver, ProfileTrainingComplete())
@@ -735,7 +735,7 @@ class DialogueManager(RhasspyActor):
     def handle_transition(self, message: StateTransition, sender: RhasspyActor) -> None:
         """Report state transition of actor."""
         self.actor_states[message.name] = message.to_state
-        topic = "rhasspy/%s/transition/%s" % (self.profile.name, message.name)
+        topic = f"rhasspy/{self.profile.name}/transition/{message.name}"
         payload = message.to_state.encode()
 
         if self.mqtt is not None:
@@ -764,7 +764,7 @@ class DialogueManager(RhasspyActor):
                 recorder_system = message.system
 
             recorder_class = get_microphone_class(recorder_system)
-            test_path = "microphone.%s.test_chunk_size" % recorder_system
+            test_path = f"microphone.{recorder_system}.test_chunk_size"
             chunk_size = int(self.profile.get(test_path, 1024))
 
             assert recorder_class is not None
@@ -895,5 +895,5 @@ class DialogueManager(RhasspyActor):
             )
             self.wait_actors[name] = actor
 
-        actor_names = list(self.wait_actors.keys())
+        actor_names = list(self.wait_actors)
         self._logger.debug("Actors created. Waiting for %s to start.", actor_names)

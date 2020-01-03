@@ -20,7 +20,7 @@ def main():
     with open(dict_path, "r") as dict_file:
         for line in dict_file:
             line = line.strip()
-            if len(line) == 0:
+            if not line:
                 continue
 
             parts = re.split(r"[ ]+", line)

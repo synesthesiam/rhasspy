@@ -33,7 +33,7 @@ class JsgfListener:
         with io.StringIO(self._grammar) as grammar_file:
             for line in grammar_file:
                 line = line.strip()
-                if line.startswith("#") or (len(line) == 0):
+                if line.startswith("#") or not line:
                     continue
 
                 grammar_match = JsgfListener.GRAMMAR_DECLARATION.match(line)
@@ -106,7 +106,7 @@ class JsgfListener:
 
                 # Break literal here
                 literal = literal.strip()
-                if len(literal) > 0:
+                if literal:
                     ctx = JsgfListenerContext(literal)
                     self.enterLiteral(ctx)
                     self.exitLiteral(ctx)
@@ -170,7 +170,7 @@ class JsgfListener:
 
         # End of expression; Break literal.
         literal = literal.strip()
-        if is_literal and (len(literal) > 0):
+        if is_literal and literal:
             ctx = JsgfListenerContext(literal)
             self.enterLiteral(ctx)
             self.exitLiteral(ctx)

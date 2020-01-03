@@ -38,9 +38,7 @@ def main():
 
         if not os.path.exists(html_path):
             # Download
-            url = "https://www.ezglot.com/most-frequently-used-words.php?l={0}&submit=Select".format(
-                language
-            )
+            url = f"https://www.ezglot.com/most-frequently-used-words.php?l={language}&submit=Select"
             print(f"Downloading from {url}")
 
             with open(html_path, "w") as html_file:

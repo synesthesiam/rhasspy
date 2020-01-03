@@ -169,7 +169,7 @@ async def api_profiles() -> Response:
     return jsonify(
         {
             "default_profile": core.profile.name,
-            "profiles": sorted(list(profile_names)),
+            "profiles": sorted(profile_names),
             "downloaded": downloaded,
             "missing_files": missing_files,
         }
@@ -286,7 +286,7 @@ async def api_profile() -> Union[str, Response]:
         with open(profile_path, "w") as profile_file:
             json.dump(profile_json, profile_file, indent=4)
 
-        msg = "Wrote profile to %s" % profile_path
+        msg = f"Wrote profile to {profile_path}"
         logger.debug(msg)
         return msg
 
@@ -444,9 +444,7 @@ async def api_sentences():
                     logger.debug("Removing %s", sentences_path)
                     sentences_path.unlink()
 
-            return "Wrote {} char(s) to {}".format(
-                num_chars, [str(p) for p in paths_written]
-            )
+            return f"Wrote {num_chars} char(s) to {[str(p) for p in paths_written]}"
 
         # Update sentences.ini only
         sentences_path = Path(
@@ -456,7 +454,7 @@ async def api_sentences():
         data = await request.data
         with open(sentences_path, "wb") as sentences_file:
             sentences_file.write(data)
-            return "Wrote {} byte(s) to {}".format(len(data), sentences_path)
+            return f"Wrote {len(data)} byte(s) to {sentences_path}"
 
     # GET
     sentences_path_rel = core.profile.read_path(
@@ -531,7 +529,7 @@ async def api_custom_words():
                 print(line, file=custom_words_file)
                 lines_written += 1
 
-            return "Wrote %s line(s) to %s" % (lines_written, custom_words_path)
+            return f"Wrote {lines_written} line(s) to {custom_words_path}"
 
     custom_words_path = Path(
         core.profile.read_path(
@@ -815,7 +813,7 @@ async def api_slots() -> Union[str, Response]:
 
         if overwrite_all:
             # Remote existing values first
-            for name in new_slot_values.keys():
+            for name in new_slot_values:
                 slots_path = safe_join(slots_dir, f"{name}")
                 if slots_path.is_file():
                     try:

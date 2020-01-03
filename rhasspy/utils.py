@@ -57,7 +57,7 @@ def read_dict(
 
     for i, line in enumerate(dict_file):
         line = line.strip()
-        if len(line) == 0:
+        if not line:
             continue
 
         try:
@@ -102,7 +102,7 @@ def read_dict(
 
 def lcm(*nums: int) -> int:
     """Returns the least common multiple of the given integers"""
-    if len(nums) == 0:
+    if not nums:
         return 1
 
     nums_lcm = nums[0]
@@ -130,7 +130,7 @@ def recursive_remove(base_dict: Dict[Any, Any], new_dict: Dict[Any, Any]) -> Non
         if k in base_dict:
             if isinstance(v, dict):
                 recursive_remove(base_dict[k], v)
-                if len(v) == 0:
+                if not v:
                     del new_dict[k]
             elif v == base_dict[k]:
                 del new_dict[k]
@@ -202,7 +202,7 @@ def load_phoneme_examples(path: str) -> Dict[str, Dict[str, str]]:
     with open(path, "r") as example_file:
         for line in example_file:
             line = line.strip()
-            if (len(line) == 0) or line.startswith("#"):
+            if not line or line.startswith("#"):
                 continue  # skip blanks and comments
 
             parts = split_whitespace(line)
@@ -217,7 +217,7 @@ def load_phoneme_map(path: str) -> Dict[str, str]:
     with open(path, "r") as phoneme_file:
         for line in phoneme_file:
             line = line.strip()
-            if (len(line) == 0) or line.startswith("#"):
+            if not line or line.startswith("#"):
                 continue  # skip blanks and comments
 
             parts = split_whitespace(line, maxsplit=1)
@@ -293,7 +293,7 @@ def sanitize_sentence(
             sentence = re.sub(pattern, repl, sentence)
 
     # Tokenize
-    tokens = [t for t in re.split(split_pattern, sentence) if len(t.strip()) > 0]
+    tokens = [t for t in re.split(split_pattern, sentence) if t.strip()]
 
     return sentence, tokens
 
@@ -467,15 +467,15 @@ def hass_request_kwargs(
     headers = {}
 
     # Security stuff
-    if ("access_token" in hass_config) and len(hass_config["access_token"]) > 0:
+    if ("access_token" in hass_config) and hass_config["access_token"]:
         # Use token from config
-        headers["Authorization"] = "Bearer %s" % hass_config["access_token"]
-    elif ("api_password" in hass_config) and len(hass_config["api_password"]) > 0:
+        headers["Authorization"] = f'Bearer {hass_config["access_token"]}'
+    elif ("api_password" in hass_config) and hass_config["api_password"]:
         # Use API password (deprecated)
         headers["X-HA-Access"] = hass_config["api_password"]
     elif "HASSIO_TOKEN" in os.environ:
         # Use token from hass.io
-        headers["Authorization"] = "Bearer %s" % os.environ["HASSIO_TOKEN"]
+        headers["Authorization"] = f'Bearer {os.environ["HASSIO_TOKEN"]}'
 
     kwargs: Dict[str, Any] = {"headers": headers}
 

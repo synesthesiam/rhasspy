@@ -27,7 +27,7 @@ def get_decoder_class(system: str) -> Type[RhasspyActor]:
         "remote",
         "hass_stt",
         "command",
-    ], ("Invalid speech to text system: %s" % system)
+    ], f"Invalid speech to text system: {system}"
 
     if system == "pocketsphinx":
         # Use pocketsphinx locally

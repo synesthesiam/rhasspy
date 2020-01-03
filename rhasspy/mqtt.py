@@ -55,7 +55,7 @@ class HermesMqtt(RhasspyActor):
         """Transition to started state."""
         # Load settings
         self.site_ids = self.profile.get("mqtt.site_id", "default").split(",")
-        if len(self.site_ids) > 0:
+        if self.site_ids:
             self.site_id = self.site_ids[0]
         else:
             self.site_id = "default"
@@ -84,7 +84,7 @@ class HermesMqtt(RhasspyActor):
         self.client.on_message = self.on_message
         self.client.on_disconnect = self.on_disconnect
 
-        if len(self.username) > 0:
+        if self.username:
             self._logger.debug("Logging in as %s", self.username)
             self.client.username_pw_set(self.username, self.password)
 

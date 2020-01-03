@@ -64,16 +64,16 @@ class Porcupine(object):
         """
 
         if not os.path.exists(library_path):
-            raise IOError("Could not find Porcupine's library at '%s'" % library_path)
+            raise IOError(f"Could not find Porcupine's library at '{library_path}'")
 
         library = cdll.LoadLibrary(library_path)
 
         if not os.path.exists(model_file_path):
-            raise IOError("Could not find model file at '%s'" % model_file_path)
+            raise IOError(f"Could not find model file at '{model_file_path}'")
 
         if sensitivity is not None and keyword_file_path is not None:
             if not os.path.exists(keyword_file_path):
-                raise IOError("Could not find keyword file at '%s'" % keyword_file_path)
+                raise IOError(f"Could not find keyword file at '{keyword_file_path}'")
             keyword_file_paths = [keyword_file_path]
 
             if not (0 <= sensitivity <= 1):
@@ -85,7 +85,7 @@ class Porcupine(object):
 
             for x in keyword_file_paths:
                 if not os.path.exists(os.path.expanduser(x)):
-                    raise IOError("Could not find keyword file at '%s'" % x)
+                    raise IOError(f"Could not find keyword file at '{x}'")
 
             for x in sensitivities:
                 if not (0 <= x <= 1):

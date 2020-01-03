@@ -31,7 +31,7 @@ def main():
     with open(args.dictionary, "r") as dict_file:
         for line in dict_file:
             line = line.strip()
-            if len(line) == 0:
+            if not line:
                 continue
 
             parts = re.split(r"[\t ]+", line)
@@ -70,7 +70,7 @@ def main():
         with open(args.frequent_phones, "r") as freq_phones_file:
             for line in freq_phones_file:
                 line = line.strip()
-                if len(line) == 0:
+                if not line:
                     continue
 
                 parts = re.split(r"[ ]+", line, maxsplit=1)
@@ -82,7 +82,7 @@ def main():
     mappings = []
     bad_espeak = (":", ";", "-", "#")
     for word, espeak in freq_espeak.items():
-        if not word in freq_phonemes:
+        if word not in freq_phonemes:
             # No pronunciation
             continue
 
@@ -134,7 +134,7 @@ def main():
     m = 4
     for p in all_phonemes:
         candidate_counts = [
-            (e, phoneme_counts[(cp, e)]) for (cp, e) in phoneme_counts.keys() if cp == p
+            (e, phoneme_counts[(cp, e)]) for (cp, e) in phoneme_counts if cp == p
         ]
         candidate_counts = [ec for ec in candidate_counts if ec[1] > n]
         candidate_counts = sorted(candidate_counts, key=lambda x: x[1], reverse=True)
@@ -213,7 +213,7 @@ assign(P, E) :- maybe_assign(P, E).
         predicates = []
         for line in proc.stdout.splitlines():
             line = line.decode().strip()
-            if len(line) == 0:
+            if not line:
                 continue
             elif line.startswith("OPTIMUM FOUND"):
                 break

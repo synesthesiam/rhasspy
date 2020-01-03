@@ -248,7 +248,7 @@ class FSTListener(DependencyListener):
         # Patch all words inside the tag if there will be a substitution
         if self.tag_substitution is not None:
             state_queue = deque([next_state])
-            while len(state_queue) > 0:
+            while state_queue:
                 state = state_queue.popleft()
                 mutable_arcs = self.fst.mutable_arcs(state)
 

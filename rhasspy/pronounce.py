@@ -111,7 +111,7 @@ class PhonetisaurusPronounce(RhasspyActor):
     def pronounce(self, words: List[str], n: int = 5) -> Dict[str, Dict[str, Any]]:
         """Look up or guess word pronunciation(s)"""
         assert n > 0, "No pronunciations requested"
-        assert len(words) > 0, "No words to look up"
+        assert words, "No words to look up"
 
         self._logger.debug("Getting pronunciations for %s", words)
 
@@ -191,7 +191,7 @@ class PhonetisaurusPronounce(RhasspyActor):
                 unknown_words.add(word)
 
         # Guess pronunciations for unknown word
-        if len(unknown_words) > 0:
+        if unknown_words:
             # Path to phonetisaurus FST
             g2p_path = self.profile.read_path(
                 self.profile.get(
