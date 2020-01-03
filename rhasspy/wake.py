@@ -11,11 +11,19 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Type
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import (AudioData, ListenForWakeWord, MqttMessage,
-                            MqttSubscribe, PauseListeningForWakeWord,
-                            ResumeListeningForWakeWord, StartStreaming,
-                            StopListeningForWakeWord, StopStreaming,
-                            WakeWordDetected, WakeWordNotDetected)
+from rhasspy.events import (
+    AudioData,
+    ListenForWakeWord,
+    MqttMessage,
+    MqttSubscribe,
+    PauseListeningForWakeWord,
+    ResumeListeningForWakeWord,
+    StartStreaming,
+    StopListeningForWakeWord,
+    StopStreaming,
+    WakeWordDetected,
+    WakeWordNotDetected,
+)
 from rhasspy.utils import read_dict
 
 # -----------------------------------------------------------------------------
@@ -279,6 +287,7 @@ class SnowboyWakeListener(RhasspyActor):
         self.apply_frontend = False
         self.models: Dict[str, Any] = {}
         self.model_names: List[str] = []
+        self.single_detection: bool = True
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
@@ -286,6 +295,8 @@ class SnowboyWakeListener(RhasspyActor):
         self.preload = self.config.get("preload", False)
         self.not_detected = self.config.get("not_detected", False)
         self.chunk_size = self.profile.get("wake.snowboy.chunk_size", 960)
+        self.single_detection = self.profile.get("wake.snowboy.single_detection", True)
+
         if self.preload:
             try:
                 self.load_detectors()
@@ -338,6 +349,10 @@ class SnowboyWakeListener(RhasspyActor):
                     )
                     for receiver in self.receivers:
                         self.send(receiver, detected_event)
+
+                    if self.single_detection:
+                        # Only allow for a single hotword to be detected
+                        break
             elif self.not_detected:
                 # Not detected
                 for model_name in self.model_names:
