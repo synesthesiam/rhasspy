@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -136,7 +137,8 @@ class EspeakSentenceSpeaker(RhasspyActor):
     def speak(self, sentence: str, voice: Optional[str] = None) -> bytes:
         """Get WAV buffer for sentence."""
         try:
-            espeak_cmd = ["espeak"]
+            # espeak automatically removes all unsupported SSML tags
+            espeak_cmd = ["espeak", "-m"]
             if voice:
                 espeak_cmd.extend(["-v", str(voice)])
 
@@ -226,6 +228,10 @@ class FliteSentenceSpeaker(RhasspyActor):
     def speak(self, sentence: str, voice: Optional[str] = None) -> bytes:
         """Get WAV buffer for sentence."""
         try:
+            # flite does not support SSML apparently festvox supports SABLE
+            # http://www.festvox.org/docs/manual-1.4.3/festival_10.html
+            # but did not work with flite
+            sentence = ' '.join(re.sub(r'<[^>]*>', ' ', sentence).split())
             flite_cmd = ["flite", "-t", sentence, "-o", "/dev/stdout"]
             if voice:
                 flite_cmd.extend(["-voice", str(voice)])
@@ -315,6 +321,11 @@ class PicoTTSSentenceSpeaker(RhasspyActor):
     def speak(self, sentence: str, language: Optional[str] = None) -> bytes:
         """Get WAV buffer for sentence."""
         try:
+            # pico tts does not support the SSML speak tag around the sentence
+            # TODO: remove all unsupported tags as described here:
+            # https://github.com/naggety/picotts/blob/master/pico/compat/include/TtsEngine.h
+            # + check whether they are actually supported e.g.  break strength appears to be broken
+            sentence =  sentence.lstrip('<speak>').rstrip('</speak>')
             with tempfile.NamedTemporaryFile(suffix=".wav", mode="wb") as wav_file:
                 pico_cmd = ["pico2wave", "-w", wav_file.name]
                 if language:
@@ -683,6 +694,13 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
 
     def speak(self, sentence: str, voice: str, language_code: str) -> bytes:
         """Get WAV buffer for sentence."""
+       
+        # google requires the SSML speak tag when using ssml
+        if not sentence.startswith('<speak>'):
+            sentence = f"<speak>{sentence}"
+        if not sentence.endswith('</speak>'):
+            sentence = f"{sentence}</speak>"
+
         # Try to pull WAV from cache first
         sentence_hash = self._get_sentence_hash(sentence, voice, language_code)
         cached_wav_path = os.path.join(
@@ -724,7 +742,7 @@ class GoogleWaveNetSentenceSpeaker(RhasspyActor):
         client = texttospeech.TextToSpeechClient()
 
         # pylint: disable=E1101
-        synthesis_input = texttospeech.types.SynthesisInput(text=sentence)
+        synthesis_input = texttospeech.types.SynthesisInput(ssml=sentence)
 
         # pylint: disable=E1101
         voice_params = texttospeech.types.VoiceSelectionParams(
