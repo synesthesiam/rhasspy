@@ -209,8 +209,37 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
         )
 
     # 0..100, -100..100
-    NUMBER_RANGE_PATTERN = re.compile(r"^(-?[0-9]+)\.\.(-?[0-9]+)$")
+    NUMBER_RANGE_PATTERN = re.compile(r"^(-?[0-9]+)\.\.(-?[0-9]+)(,[0-9]+)?$")
     NUMBER_PATTERN = re.compile(r"^(-?[0-9]+)$")
+
+    def number_range_transform(word):
+        """Automatically transform number ranges"""
+        if not isinstance(word, jsgf.Word):
+            # Skip anything besides words
+            return
+
+        match = NUMBER_RANGE_PATTERN.match(word.text)
+
+        if not match:
+            return
+
+        try:
+            lower_bound = int(match.group(1))
+            upper_bound = int(match.group(2))
+            step = 1
+
+            if len(match.groups()) > 3:
+                step = int(match.group(3))
+
+            # Transform to $rhasspy/number
+            return jsgf.SlotReference(
+                text=word.text,
+                slot_name=f"rhasspy/number,{lower_bound},{upper_bound},{step}",
+                converters=["int"],
+            )
+        except ValueError:
+            # Not a number
+            pass
 
     def number_transform(word):
         """Automatically transform numbers"""
@@ -218,50 +247,34 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
             # Skip anything besides words
             return
 
-        match = NUMBER_PATTERN.match(word.text) or NUMBER_RANGE_PATTERN.match(word.text)
+        match = NUMBER_PATTERN.match(word.text)
+
         if not match:
             return
 
         try:
-            lower_bound = int(match.group(1))
-            upper_bound = lower_bound
-            if len(match.groups()) > 1:
-                upper_bound = int(match.group(2))
-                if upper_bound < lower_bound:
-                    # Swap bounds
-                    temp_bound = lower_bound
-                    lower_bound = upper_bound
-                    upper_bound = lower_bound
+            n = int(match.group(1))
 
-            # Create alternative with all numbers in range
-            num_alt = jsgf.Sequence(
-                text="", type=jsgf.SequenceType.ALTERNATIVE, converters=["int"]
+            # 75 -> (seventy five):75!int
+            number_text = num2words(n, lang=language).replace("-", " ").strip()
+            assert number_text, f"Empty num2words result for {n}"
+            number_words = number_text.split()
+
+            if len(number_words) == 1:
+                # Easy case, single word
+                word.text = number_text
+                word.substitution = str(n)
+                word.converters = ["int"]
+                return word
+
+            # Hard case, split into mutliple Words
+            return jsgf.Sequence(
+                text=number_text,
+                type=jsgf.SequenceType.GROUP,
+                substitution=str(n),
+                converters=["int"],
+                items=[jsgf.Word(w) for w in number_words],
             )
-
-            for n in range(lower_bound, upper_bound + 1):
-                # 75 -> (seventy five):75!int
-                number_text = num2words(n, lang=language).replace("-", " ").strip()
-                assert number_text, f"Empty num2words result for {n}"
-                number_words = number_text.split()
-
-                if len(number_words) == 1:
-                    # Easy case, single word
-                    num_alt.items.append(
-                        jsgf.Word(text=number_text, substitution=str(n))
-                    )
-                else:
-                    # Hard case, split into mutliple Words
-                    num_alt.items.append(
-                        jsgf.Sequence(
-                            text=number_text,
-                            type=jsgf.SequenceType.GROUP,
-                            substitution=str(n),
-                            converters=["int"],
-                            items=[jsgf.Word(w) for w in number_words],
-                        )
-                    )
-
-            return num_alt
         except ValueError:
             # Not a number
             pass
@@ -307,8 +320,38 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
 
     # -------------------------------------------------------------------------
 
-    def do_intents_to_graph(intents, slot_names, targets):
+    def do_intents_to_graph(sentences, slot_names, replacements, targets):
+        # Replace actual numbers
+        if profile.get("intent.replace_numbers", True):
+            # Replace numbers in parsed sentences
+            for intent_sentences in sentences.values():
+                for sentence in intent_sentences:
+                    jsgf.walk_expression(sentence, number_transform, replacements)
+
+        # Convert to directed graph
+        graph = intents_to_graph(sentences, replacements)
+
+        # Write graph to JSON file
+        json_graph = graph_to_json(graph)
+        with open(targets[0], "w") as graph_file:
+            json.dump(json_graph, graph_file)
+
+    def task_ini_graph():
+        """sentences.ini -> intent.json"""
         sentences, replacements = ini_jsgf.split_rules(intents)
+
+        if profile.get("intent.replace_numbers", True):
+            # Replace number ranges with rhasspy/number
+            for intent_sentences in sentences.values():
+                for sentence in intent_sentences:
+                    jsgf.walk_expression(sentence, number_range_transform, replacements)
+
+        # Gather used slot names
+        slot_names = set()
+        for intent_name in intents:
+            for item in intents[intent_name]:
+                for slot_name in get_slot_names(item):
+                    slot_names.add(slot_name)
 
         # Load slot values
         for slot_key in slot_names:
@@ -330,28 +373,6 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
             # Replace $slot with sentences
             replacements[f"${slot_key}"] = slot_values
 
-        if profile.get("intent.replace_numbers", True):
-            # Replace numbers in parsed sentences
-            for intent_sentences in sentences.values():
-                for sentence in intent_sentences:
-                    jsgf.walk_expression(sentence, number_transform, replacements)
-
-        # Convert to directed graph
-        graph = intents_to_graph(intents, replacements)
-
-        # Write graph to JSON file
-        json_graph = graph_to_json(graph)
-        with open(targets[0], "w") as graph_file:
-            json.dump(json_graph, graph_file)
-
-    def task_ini_graph():
-        """sentences.ini -> intent.json"""
-        slot_names = set()
-        for intent_name in intents:
-            for item in intents[intent_name]:
-                for slot_name in get_slot_names(item):
-                    slot_names.add(slot_name)
-
         # Add slot files as dependencies
         deps = [find_slot(slot_key).path for slot_key in slot_names]
 
@@ -363,7 +384,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
         return {
             "file_dep": ini_paths + deps,
             "targets": [intent_graph],
-            "actions": [(do_intents_to_graph, [intents, slot_names])],
+            "actions": [(do_intents_to_graph, [sentences, slot_names, replacements])],
         }
 
     # -----------------------------------------------------------------------------
