@@ -333,6 +333,26 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
                 for sentence in intent_sentences:
                     jsgf.walk_expression(sentence, number_transform, replacements)
 
+        # Determine whether word casing has to be fixed
+        transform = None
+        if word_casing == "upper":
+            transform = str.upper
+        elif word_casing == "lower":
+            transform = str.lower
+
+        if transform:
+
+            def fix_case(word):
+                if isinstance(word, jsgf.Word):
+                    word.text = transform(word.text)
+
+                return word
+
+            # Fix casing
+            for intent_sentences in sentences.values():
+                for sentence in intent_sentences:
+                    jsgf.walk_expression(sentence, fix_case, replacements)
+
         # Convert to directed graph
         graph = intents_to_graph(sentences, replacements)
 
