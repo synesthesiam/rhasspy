@@ -5,7 +5,11 @@ Rhasspy is designed to recognize voice commands [in a template language](#senten
 * Intent Recognition
     * [Basic Syntax](#basic-syntax)
     * [Named Entities](#tags)
+    * [Number Ranges](#number-ranges)
     * [Slots](#slots-lists)
+        * [Slot Synonyms](#slot-synonyms)
+        * [Slot Programs](#slot-programs)
+    * [Converters](#converters)
 * Speech Recognition
     * [Custom Words](#custom-words)
     * [Language Model Mixing](#language-model-mixing)
@@ -156,6 +160,24 @@ You can **share rules** across intents by referencing them as `<IntentName.rule_
 
 The second intent (`GetLightColor`) references the `colors` rule from `SetLightColor`. Rule references without a dot must exist in the current intent.
 
+### Number Ranges
+
+Rhasspy supports using number literals (`75`) and number ranges (`1..10`) directly in your sentence templates. During training, the [num2words](https://pypi.org/project/num2words) package is used to generate words that the speech recognizer can handle ("seventy five"). For example:
+
+```
+[SetBrightness]
+set brightness to (0..100){brightness}
+```
+
+The `brightness` property of the recognized `SetBrightness` intent will automatically be [converted](#converters) to an integer for you. You can optionally add a step to the integer range:
+
+```
+evens = 0..100,2
+odds = 1..100,2
+```
+
+Under the hood, number ranges are actually references to the `rhasspy/number` [slot program](#slot-programs). You can override this behavior by creating your `slot_programs/rhasspy/number` program or disable it entirely by setting `intent.replace_numbers` to `false` in [your profile](profiles.md).
+
 ### Slots Lists
 
 Large [alternatives](#alternatives) can become unwieldy quickly. For example, say you have a list of movie names:
@@ -185,7 +207,11 @@ play ($movies){movie_name}
 
 When matched, the `PlayMovie` intent JSON will contain `movie_name` property with either "Primer", "Moon", etc.
 
-Make sure to **re-train** Rhasspy whenever you update your slot values.
+Make sure to **re-train** Rhasspy whenever you update your slot values!
+
+#### Slot Directories
+
+Slot files can be put in **sub-directories** under `slots`. A list in `slots/foo/bar` should be referenced in `sentences.ini` as `$foo/bar`.
 
 #### Slot Synonyms
 
@@ -205,6 +231,68 @@ which is referenced by `$rooms` and will match:
 * downstairs
 
 This will always output just "den" because `[the:]` optionally matches "the" and then drops the word.
+
+#### Slot Programs
+
+Slot lists are great if your slot values always stay the same and are easily written out by hand. If you have slot values that you need to be generated *each time Rhasspy is trained*, you can use slot programs.
+
+Create a directory named `slot_programs` in your profile (e.g., `$HOME/.config/rhasspy/profiles/en/slot_programs`):
+
+```bash
+slot_programs="${HOME}/.config/rhasspy/profiles/en/slot_programs"
+mkdir -p "${slot_programs}"
+```
+
+Add a file in `slot_programs` with the name of your slot, e.g. `colors`. Write a program in this file, such as a bash script. Make sure to include the [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) and mark the file as executable:
+
+```bash
+cat <<EOF > "${slot_programs}/colors"
+#/usr/bin/env bash
+echo 'red'
+echo 'green'
+echo 'blue'
+EOF
+
+chmod +x "${slot_programs}/colors"
+```
+
+Now, when you reference `$colors` in your `sentences.ini`, Rhasspy will run the program you wrote and collect the slot values from each line. Note that you can output all the same things as regular [slots lists](#slots-lists), including optional words, alternatives, etc.
+
+You can pass **arguments** to your program using the syntax `$name,arg1,arg2,...` in `sentences.ini` (no spaces). Arguments will be pass on the command-line, so `arg1` and `arg2` will be `$1` and `$2` in a bash script. 
+
+Like regular slots lists, slot programs can also be put in sub-directories under `slot_programs`. A program in `slot_programs/foo/bar` should be referenced in `sentences.ini` as `$foo/bar`.
+
+### Converters
+
+By default, all named entity values in a recognized intent's JSON are strings. If you need a different data type, such as an integer or float, or want to do some kind of complex *conversion*, use a converter:
+
+```
+[SetBrightness]
+set brightness to (low:0 | medium:0.5 | high:1){brightness!float}
+```
+
+The `!name` syntax calls a converter by name. Rhasspy includes several built-in converters:
+
+* int - convert to integer
+* float - convert to real
+* bool - convert to boolean
+* lower - lower-case
+* upper - upper-case
+
+You can define your own converters by placing a file in the `converters` directory of your profile. Like [slot programs](#slot-programs), this file should contain a [shebang](https://en.wikipedia.org/wiki/Shebang_(Unix)) and be marked as executable (`chmod +x`). A file named `converters/foo/bar` should be referenced as `!foo/bar` in `sentences.ini`.
+
+Your custom converter will receive the value to convert on standard in (`stdin`) encoded as JSON. You should print a converted JSON value to standard out `stdout`. The example below demonstrates converting a string value into an integer:
+
+```python
+#!/usr/bin/env python3
+import sys
+import json
+
+value = json.load(sys.stdin)
+print(int(value))
+```
+
+Converters can be *chained*, so `!foo!bar` will call the `foo` converter and then pass the result to `bar`.
 
 ### Special Cases
 

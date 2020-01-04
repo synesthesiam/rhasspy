@@ -429,12 +429,14 @@ All available profile sections and settings are listed below:
     * `g2p_model` - finite-state transducer for phonetisaurus to guess word pronunciations
     * `g2p_casing` - casing to force for g2p model (`upper`, `lower`, or blank)
     * `dictionary_casing` - casing to force for dictionary words (`upper`, `lower`, or blank)
-    * `grammars_dir` - directory to write generated JSGF grammars from sentences ini file
+    * `slots_dir` - directory to look for [slots lists](training.md#slots-lists) (default: `slots`)
+    * `slot_programs` - directory to look for [slot programs](training.md#slot-programs) (default `slot_programs`)
     * `fsts_dir` - directory to write generated finite state transducers from JSGF grammars
 * `intent` - transforming text commands to intents
     * `system` - intent recognition system (`fsticuffs`, `fuzzywuzzy`, `rasa`, `remote`, `adapt`, `command`, or `dummy`)
     * `fsticuffs` - configuration for [OpenFST-based](https://www.openfst.org) intent recognizer
         * `intent_fst` - path to generated finite state transducer with all intents combined
+        * `converters_dir` - directory to look for [converter](training.md#converters) programs (default: `converters`)
         * `ignore_unknown_words` - true if words not in the FST symbol table should be ignored
         * `fuzzy` - true if text is matching in a fuzzy manner, skipping words in `stop_words.txt`
     * `fuzzywuzzy` - configuration for simplistic [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) based intent recognizer
@@ -451,6 +453,7 @@ All available profile sections and settings are listed below:
     * `command` - configuration for external speech-to-text program
         * `program` - path to executable
         * `arguments` - list of arguments to pass to program
+    * `replace_numbers` if true, automatically replace number ranges (`N..M`) or numbers (`N`) with words
 * `text_to_speech` - pronouncing words
     * `system` - text to speech system (`espeak`, `flite`, `picotts`, `marytts`, `command`, or `dummy`)
     * `espeak` - configuration for [eSpeak](http://espeak.sourceforge.net)
