@@ -1,6 +1,7 @@
 {
     "language": "ca",
     "name": "ca",
+    "locale": "ca_ES",
     "speech_to_text": {
         "system": "pocketsphinx",
         "dictionary_casing": "lower"

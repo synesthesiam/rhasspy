@@ -1,6 +1,7 @@
 {
   "language": "de",
   "name": "de",
+  "locale": "de_DE",
   "speech_to_text": {
     "system": "pocketsphinx",
     "dictionary_casing": "lower",

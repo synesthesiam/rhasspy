@@ -1,6 +1,7 @@
 {
     "language": "hi",
     "name": "hi",
+    "locale": "hi_IN",
     "speech_to_text": {
         "system": "pocketsphinx",
         "dictionary_casing": "lower"

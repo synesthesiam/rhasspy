@@ -1,6 +1,7 @@
 {
     "language": "el",
     "name": "el",
+    "locale": "el_GR",
     "speech_to_text": {
         "g2p_casing": "lower",
         "system": "pocketsphinx",

@@ -1,6 +1,7 @@
 {
   "language": "vi",
   "name": "vi",
+  "locale": "vi_VN",
   "speech_to_text": {
     "kaldi": {
       "compatible": true

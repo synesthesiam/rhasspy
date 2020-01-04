@@ -1,6 +1,7 @@
 {
     "name": "zh",
     "language": "zh",
+    "locale": "zh_CN",
     "speech_to_text": {
         "g2p_casing": "n/a",
         "dictionary_casing": "n/a"

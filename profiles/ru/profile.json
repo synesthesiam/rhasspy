@@ -1,7 +1,7 @@
 {
     "language": "ru",
     "name": "ru",
-
+    "locale": "ru_RU",
     "speech_to_text": {
         "system": "pocketsphinx",
         "dictionary_casing": "lower"

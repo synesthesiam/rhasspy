@@ -1,6 +1,7 @@
 {
   "language": "sv",
   "name": "sv",
+  "locale": "sv_SE",
   "speech_to_text": {
     "kaldi": {
       "compatible": true
