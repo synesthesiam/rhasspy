@@ -85,8 +85,7 @@ Add the following JSON to the Slots tab in your Rhasspy web interface:
         "(guest floor):switch.m5",
         "(bedroom wall):light.bulb_5",
         "(bedroom desk):light.bulb_1",
-        "(bedroom floor):light.bulb_2",
-        ""
+        "(bedroom floor):light.bulb_2"
     ]
 }
 ```
@@ -94,7 +93,7 @@ Add the following JSON to the Slots tab in your Rhasspy web interface:
 #### Sentences
 
 A simple sentence to turn any of the lights in the slots file on or off.
-Note the use of the group `\<state\>` and the slot `$lights`
+Note the use of the `<state>` rule and the slot `$lights`
     
 ```
 [ChangeLightState]
@@ -104,7 +103,7 @@ turn [the] ($lights) {light_name} <state>
 
 #### Home Assistant
 
-In your Home Assistant `automations.yaml` file, use a data_template to get the Rhasspy Event Data with `trigger.event.data.<your property name>` and then pass those along to a script:
+In your Home Assistant `automations.yaml` file, use a `data_template` to get the Rhasspy event data with `trigger.event.data.<your property name>` and then pass those along to a script:
     
 ```yaml
 - id: '1577164768008'
@@ -127,7 +126,7 @@ In your Home Assistant `automations.yaml` file, use a data_template to get the R
 In `scripts.yaml`, the `service_template` casts the `light_state` into a string and checks to see if you said 'on' or 'off'. The homeassistant-service can toggle both lights and switches, which is helpful if you have a combination of "light" types:
 
 ```yaml
-'rhasspy_light_state':
+rhasspy_light_state:
   alias: change_light_state
   fields:
     light_name:
