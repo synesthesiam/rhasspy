@@ -66,12 +66,14 @@ You can now fill in the rest of the Home Assistant automation:
 This will handle the specific case of setting the bedroom light to red, but not any other color. You can either add additional automations to handle these, or make use of [automation templating](https://www.home-assistant.io/docs/automation/templating/) to do it all at once. [Home Assistant Template Example](Home-Assistant-Template-Example)
 
 ### Home Assistant Template Example
-Using the four files below, you can get Home Assistant to respond to turning on / off *ANY* light in your setup.
-#### Rhasspy Files
-+ /$PROFILE$/en/slots/lights
 
-A Slots file to easily group word substitutions
-```
+Using the following additions, you can get Home Assistant to respond to turning on / off *ANY* light in your setup.
+
+#### Slots
+
+Add the following JSON to the Slots tab in your Rhasspy web interface:
+
+```json
 {
     "lights": [
         "(living room wall):light.bulb_3",
@@ -88,10 +90,11 @@ A Slots file to easily group word substitutions
     ]
 }
 ```
-+ Sentences.ini
+
+#### Sentences
 
 A simple sentence to turn any of the lights in the slots file on or off.
-Note the use of the group \<state\> and the slot $lights
+Note the use of the group `\<state\>` and the slot `$lights`
     
 ```
 [ChangeLightState]
@@ -99,12 +102,11 @@ state = (on | off) {light_state}
 turn [the] ($lights) {light_name} <state>
 ```
 
-#### Home Assistant Files
-+ automations.yaml
+#### Home Assistant
 
-Use a data_template to get the Rhasspy Event Data with trigger.event.data.<your property name> and then pass those along to a script
+In your Home Assistant `automations.yaml` file, use a data_template to get the Rhasspy Event Data with `trigger.event.data.<your property name>` and then pass those along to a script:
     
-```
+```yaml
 - id: '1577164768008'
   alias: Rhasspy Light States
   description: Voice Control on/off states for all lights
@@ -121,11 +123,10 @@ Use a data_template to get the Rhasspy Event Data with trigger.event.data.<your 
     service: script.rhasspy_light_state
 
 ```
-+ scripts.yaml
 
-The service_template casts the light_state into a string and checks to see if you said 'on' or 'off'. The homeassistant-service can toggle both lights and switches, which is super helpful if you have a combination of "light" types.
+In `scripts.yaml`, the `service_template` casts the `light_state` into a string and checks to see if you said 'on' or 'off'. The homeassistant-service can toggle both lights and switches, which is helpful if you have a combination of "light" types:
 
-```
+```yaml
 'rhasspy_light_state':
   alias: change_light_state
   fields:
