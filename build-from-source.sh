@@ -398,5 +398,5 @@ esac
 
 if [[ -z "${no_web}" ]]; then
     echo "Building web interface"
-    cd "${this_dir}" && yarn build
+    cd "${this_dir}" && yarn install && yarn build
 fi
