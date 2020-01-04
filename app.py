@@ -2,6 +2,7 @@
 import argparse
 import asyncio
 import atexit
+import concurrent.futures
 import json
 import logging
 import os
@@ -1149,6 +1150,8 @@ async def api_events_log() -> None:
         while True:
             text = await q.get()
             await websocket.send(text)
+    except concurrent.futures.CancelledError:
+        pass
     except Exception:
         logger.exception("api_events_log")
 

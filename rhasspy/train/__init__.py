@@ -7,8 +7,9 @@ import json
 import logging
 import subprocess
 from pathlib import Path
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, List, Optional, Tuple, Union
 
+import attr
 from num2words import num2words
 import pywrapfst as fst
 
@@ -107,8 +108,12 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
     grammar_dir = ppath("speech_to_text.grammars_dir", "grammars", write=True)
     fsts_dir = ppath("speech_to_text.fsts_dir", "fsts", write=True)
     slots_dir = ppath("speech_to_text.slots_dir", "slots", write=True)
+    system_slots_dir = Path(profile.system_profiles_dir) / profile.name / "slots"
     slot_programs_dir = ppath(
         "speech_to_text.slot_programs_dir", "slot_programs", write=True
+    )
+    system_slot_programs_dir = (
+        Path(profile.system_profiles_dir) / profile.name / "slot_programs"
     )
 
     # -----------------------------------------------------------------------------
@@ -132,6 +137,18 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
 
     # -----------------------------------------------------------------------------
 
+    @attr.s
+    class StaticSlotInfo:
+        name: str = attr.ib()
+        path: Path = attr.ib()
+
+    @attr.s
+    class SlotProgramInfo:
+        key: str = attr.ib()
+        name: str = attr.ib()
+        path: Path = attr.ib()
+        args: Optional[List[str]] = attr.ib(default=None)
+
     def get_slot_names(item):
         """Yield referenced slot names."""
         if isinstance(item, jsgf.SlotReference):
@@ -143,6 +160,53 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
         elif isinstance(item, jsgf.Rule):
             for slot_name in get_slot_names(item.rule_body):
                 yield slot_name
+
+    def split_slot_args(slot_name) -> Tuple[str, Optional[List[str]]]:
+        # Check for arguments.
+        # Slot name retains argument(s).
+        if "," in slot_name:
+            parts = slot_name.split(",")
+            slot_name = parts[0]
+            slot_args = parts[1:]
+        else:
+            slot_args = None
+
+        return slot_name, slot_args
+
+    def find_slot(slot_key: str) -> Union[StaticSlotInfo, SlotProgramInfo]:
+        # Try static user slots
+        slot_path = slots_dir / slot_key
+        if slot_path.is_file():
+            return StaticSlotInfo(name=slot_key, path=slot_path)
+
+        # Try user slot programs
+        slot_name, slot_args = split_slot_args(slot_key)
+        slot_path = slot_programs_dir / slot_name
+        if slot_path.is_file():
+            return SlotProgramInfo(
+                key=slot_key, name=slot_name, path=slot_path, args=slot_args
+            )
+
+        # Try static system slots
+        if slots_dir != system_slots_dir:
+            slot_path = system_slots_dir / slot_key
+            if slot_path.is_file():
+                return StaticSlotInfo(name=slot_key, path=slot_path)
+
+        # Try system slot programs
+        if slot_programs_dir != system_slot_programs_dir:
+            slot_path = system_slot_programs_dir / slot_name
+            if slot_path.is_file():
+                return SlotProgramInfo(
+                    key=slot_key, name=slot_name, path=slot_path, args=slot_args
+                )
+
+        # Failed to find slot
+        assert False, (
+            f"Missing file/program for slot {slot_key}"
+            + f" (tried {slots_dir}, {slot_programs_dir},"
+            + f" {system_slots_dir}, {system_slot_programs_dir})"
+        )
 
     # 0..100, -100..100
     NUMBER_RANGE_PATTERN = re.compile(r"^(-?[0-9]+)\.\.(-?[0-9]+)$")
@@ -247,40 +311,24 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
         sentences, replacements = ini_jsgf.split_rules(intents)
 
         # Load slot values
-        for slot_name in slot_names:
-            # Check static slots first
-            slot_path = slots_dir / slot_name
+        for slot_key in slot_names:
+            slot_info = find_slot(slot_key)
 
-            if slot_path.is_file():
+            if isinstance(slot_info, StaticSlotInfo):
                 # Parse each non-empty line as a JSGF sentence
                 slot_values = []
-                with open(slot_path, "r") as slot_file:
+                with open(slot_info.path, "r") as slot_file:
                     for line in slot_file:
                         line = line.strip()
                         if line:
                             sentence = jsgf.Sentence.parse(line)
                             slot_values.append(sentence)
-            else:
-                # Check slot programs
-                slot_args: Optional[List[str]] = None
-
-                # Check for arguments.
-                # Slot name retains argument(s).
-                if "," in slot_name:
-                    parts = slot_name.split(",")
-                    slot_path = slot_programs_dir / parts[0]
-                    slot_args = parts[1:]
-                else:
-                    slot_path = slot_programs_dir / slot_name
-
-                assert (
-                    slot_path.is_file()
-                ), f"Missing file/program for slot {slot_name} (tried {slots_dir} and {slot_programs})"
-
-                slot_values = SlotProgram(slot_path, command_args=slot_args)
+            elif isinstance(slot_info, SlotProgramInfo):
+                # Program that will generate values
+                slot_values = SlotProgram(slot_info.path, command_args=slot_info.args)
 
             # Replace $slot with sentences
-            replacements[f"${slot_name}"] = slot_values
+            replacements[f"${slot_key}"] = slot_values
 
         if profile.get("intent.replace_numbers", True):
             # Replace numbers in parsed sentences
@@ -305,17 +353,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
                     slot_names.add(slot_name)
 
         # Add slot files as dependencies
-        deps = []
-        for slot_name in slot_names:
-            slot_path = slots_dir / slot_name
-            if not slot_path.is_file():
-                if "," in slot_name:
-                    # Strip arguments
-                    slot_name = slot_name[: slot_name.find(",")]
-
-                slot_path = slot_programs_dir / slot_name
-
-            deps.append(slot_path)
+        deps = [find_slot(slot_key).path for slot_key in slot_names]
 
         # Add profile itself as a dependency
         profile_json_path = profile_dir / "profile.json"
