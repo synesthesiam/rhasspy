@@ -5,7 +5,9 @@ SHELL := bash
 # Docker
 # -----------------------------------------------------------------------------
 
-docker: web-dist docker-amd64 docker-armhf docker-aarch64 docker-push manifest
+docker: web-dist docker-amd64 docker-armhf docker-aarch64
+
+docker-deploy: docker-push manifest
 
 docker-amd64:
 	docker build . -f docker/templates/dockerfiles/Dockerfile.prebuilt.alsa.all \

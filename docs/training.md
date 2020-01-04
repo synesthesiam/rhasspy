@@ -262,6 +262,13 @@ You can pass **arguments** to your program using the syntax `$name,arg1,arg2,...
 
 Like regular slots lists, slot programs can also be put in sub-directories under `slot_programs`. A program in `slot_programs/foo/bar` should be referenced in `sentences.ini` as `$foo/bar`.
 
+#### Built-in Slots
+
+Rhasspy includes a few built-in slots for each language:
+
+* `$rhasspy/days` - day names of the week
+* `$rhasspy/months` - month names of the year
+
 ### Converters
 
 By default, all named entity values in a recognized intent's JSON are strings. If you need a different data type, such as an integer or float, or want to do some kind of complex *conversion*, use a converter:
