@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+import argparse
+import sys
+
+
+def main():
+    parser = argparse.ArgumentParser("number")
+    parser.add_argument("lower", type=int, help="Lower bound")
+    parser.add_argument("upper", type=int, help="Upper bound (inclusive)")
+    args, rest_args = parser.parse_known_args()
+
+    lower = args.lower
+    upper = args.upper
+    step = 1
+
+    if rest_args:
+        step = int(rest_args[0])
+
+    if upper < lower:
+        temp_lower = lower
+        lower = upper
+        upper = temp_lower
+
+    for n in range(lower, upper + 1, step):
+        print(n)
+
+
+# -----------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    main()

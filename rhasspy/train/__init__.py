@@ -228,8 +228,9 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
             upper_bound = int(match.group(2))
             step = 1
 
-            if len(match.groups()) > 3:
-                step = int(match.group(3))
+            if len(match.groups()) > 2:
+                # Exclude ,
+                step = int(match.group(3)[1:])
 
             # Transform to $rhasspy/number
             return jsgf.SlotReference(
@@ -240,6 +241,8 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
         except ValueError:
             # Not a number
             pass
+        except Exception:
+            _LOGGER.exception("number_range_transform")
 
     def number_transform(word):
         """Automatically transform numbers"""
@@ -278,6 +281,8 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
         except ValueError:
             # Not a number
             pass
+        except Exception:
+            _LOGGER.exception("number_transform")
 
     class SlotProgram:
         """Runs a program to generate slot values"""
