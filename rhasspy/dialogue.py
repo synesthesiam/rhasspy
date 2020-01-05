@@ -39,6 +39,8 @@ from rhasspy.events import (
     ListenForCommand,
     ListenForWakeWord,
     MqttPublish,
+    MqttSubscribe,
+    MqttMessage,
     PlayWavData,
     PlayWavFile,
     Problems,
@@ -60,6 +62,8 @@ from rhasspy.events import (
     WakeWordNotDetected,
     WavPlayed,
     WavTranscription,
+    ActivateWakeWordDetection,
+    DeactivateWakeWordDetection,
 )
 from rhasspy.intent import get_recognizer_class
 from rhasspy.intent_handler import get_intent_handler_class
@@ -136,8 +140,10 @@ class DialogueManager(RhasspyActor):
         # Send Ready when actors are loaded
         self.send_ready: bool = False
 
-        # MQTT site id
+        # MQTT site id and subscription topics
         self.site_id: str = "default"
+        self.hotword_toggle_on_topic = "hermes/hotword/toggleOn"
+        self.hotword_toggle_off_topic = "hermes/hotword/toggleOff"
 
         # Text to speech
         self.speech_class: Optional[Type] = None
@@ -162,6 +168,7 @@ class DialogueManager(RhasspyActor):
         self.wake_class: Optional[Type] = None
         self._wake: Optional[RhasspyActor] = None
         self.wake_receiver: Optional[RhasspyActor] = None
+        self.wake_active: bool = False
 
         # Name of most recently detected wake word
         self.wake_detected_name: Optional[str] = None
@@ -250,6 +257,7 @@ class DialogueManager(RhasspyActor):
         self.timeout_sec = self.config.get("load_timeout_sec", None)
         self.send_ready = self.config.get("ready", False)
         self.observer = self.config.get("observer", None)
+        self.wake_active = self.profile.get("rhasspy.listen_on_start", False)
 
         # Load web hooks
         self.webhooks = self.profile.get("webhooks", {})
@@ -285,6 +293,10 @@ class DialogueManager(RhasspyActor):
                 "Loading...will time out after %s second(s)", self.timeout_sec
             )
             self.wakeupAfter(timedelta(seconds=self.timeout_sec))
+
+        # Subscribe to MQTT topics
+        self.send(self.mqtt, MqttSubscribe(self.hotword_toggle_on_topic))
+        self.send(self.mqtt, MqttSubscribe(self.hotword_toggle_off_topic))
 
     def in_loading_mqtt(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in loading_mqtt state."""
@@ -352,20 +364,28 @@ class DialogueManager(RhasspyActor):
     def to_ready(self, from_state: str) -> None:
         """Transition to ready state."""
         self.handle = True
-        if self.profile.get("rhasspy.listen_on_start", False):
+        if self.wake_active:
             self._logger.info("Automatically listening for wake word")
             self.transition("asleep")
             self.send(self.wake, ListenForWakeWord())
 
     def in_ready(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in ready state."""
-        if isinstance(message, ListenForWakeWord):
+        start_listening:bool = False
+
+        if isinstance(message, ActivateWakeWordDetection):
+            self.set_wake_active(True)
+            start_listening = True
+        elif isinstance(message, ListenForWakeWord):
+            start_listening = True
+        else:
+            self.handle_any(message, sender)
+
+        if start_listening:
             self._logger.info("Listening for wake word")
             self.wake_receiver = message.receiver or sender
             self.send(self.wake, ListenForWakeWord())
             self.transition("asleep")
-        else:
-            self.handle_any(message, sender)
 
     def to_asleep(self, from_state: str) -> None:
         """Transition to asleep state."""
@@ -391,6 +411,9 @@ class DialogueManager(RhasspyActor):
             self.transition("ready")
             if self.wake_receiver is not None:
                 self.send(self.wake_receiver, message)
+        elif isinstance(message, DeactivateWakeWordDetection):
+            self.set_wake_active(False)
+            self.transition("ready")
         else:
             self.handle_any(message, sender)
 
@@ -720,6 +743,15 @@ class DialogueManager(RhasspyActor):
                 self.recorder,
                 StopRecordingToBuffer(message.buffer_name, message.receiver or sender),
             )
+        elif isinstance(message, ActivateWakeWordDetection):
+            # activate wake word detection
+            self.set_wake_active(True)
+        elif isinstance(message, DeactivateWakeWordDetection):
+            # deactivate wake word detection
+            self.set_wake_active(False)
+        elif isinstance(message, MqttMessage):
+            # handle mqtt message
+            self.handle_mqtt_message(message, sender)
         elif isinstance(message, StateTransition):
             # Track state of every actor
             self.handle_transition(message, sender)
@@ -794,6 +826,20 @@ class DialogueManager(RhasspyActor):
             self.send(self.recorder, message)
         elif not isinstance(message, (StateTransition, ChildActorExited)):
             self._logger.warning("Unhandled message: %s", message)
+
+    def handle_mqtt_message(self, message: MqttMessage, sender: RhasspyActor) -> None:
+        """Handle MQTT message."""
+        if message.topic == self.hotword_toggle_on_topic:
+            payload_json = json.loads(message.payload)
+            if payload_json.get("siteId", "default") == self.site_id:
+                # activate wake word detection
+                self.send(self, ActivateWakeWordDetection())
+        elif message.topic == self.hotword_toggle_off_topic:
+            payload_json = json.loads(message.payload)
+            if payload_json.get("siteId", "default") == self.site_id:
+                # deactivate wake word detection
+                self.send(self, DeactivateWakeWordDetection())
+
 
     # -------------------------------------------------------------------------
     # Utilities
@@ -900,3 +946,12 @@ class DialogueManager(RhasspyActor):
 
         actor_names = list(self.wait_actors)
         self._logger.debug("Actors created. Waiting for %s to start.", actor_names)
+
+    def set_wake_active(self, active:bool) -> None:
+        """Activate/Deactivate the wake word detection"""
+        if self.wake_active != active:
+            self.wake_active = active
+            if active:
+                self._logger.info("Activated wake word detection")
+            else:
+                self._logger.info("Deactivated wake word detection")

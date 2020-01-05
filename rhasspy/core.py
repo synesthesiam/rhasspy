@@ -51,6 +51,8 @@ from rhasspy.events import (
     WordPhonemes,
     WordPronunciations,
     WordSpoken,
+    ActivateWakeWordDetection,
+    DeactivateWakeWordDetection,
 )
 from rhasspy.profiles import Profile
 from rhasspy.utils import numbers_to_words
@@ -166,6 +168,16 @@ class RhasspyCore:
         """Tell Rhasspy to start listening for a wake word."""
         assert self.actor_system is not None
         self.actor_system.tell(self.dialogue_manager, ListenForWakeWord())
+
+    def activate_wake_word_detection(self) -> None:
+        """Tell Rhasspy to stop listening for a wake word."""
+        assert self.actor_system is not None
+        self.actor_system.tell(self.dialogue_manager, ActivateWakeWordDetection())
+
+    def deactivate_wake_word_detection(self) -> None:
+        """Tell Rhasspy to stop listening for a wake word."""
+        assert self.actor_system is not None
+        self.actor_system.tell(self.dialogue_manager, DeactivateWakeWordDetection())
 
     async def listen_for_command(
         self,

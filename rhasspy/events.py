@@ -9,6 +9,22 @@ from rhasspy.actor import RhasspyActor
 # Wake
 # -----------------------------------------------------------------------------
 
+class ActivateWakeWordDetection:
+    """Request to activate the wake word detection."""
+
+    def __init__(self, receiver: Optional[RhasspyActor] = None, record=True) -> None:
+        self.receiver = receiver
+        self.record = record
+
+
+class DeactivateWakeWordDetection:
+    """Request to deactivate the wake word detection."""
+
+    def __init__(
+        self, receiver: Optional[RhasspyActor] = None, record=True) -> None:
+        self.receiver = receiver
+        self.record = record
+
 
 class ListenForWakeWord:
     """Request to start listening for a wake word."""

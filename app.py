@@ -272,6 +272,23 @@ async def api_listen_for_wake() -> str:
     core.listen_for_wake()
     return "OK"
 
+# -----------------------------------------------------------------------------
+
+
+@app.route("/api/set-wake-word-detection", methods=["POST"])
+async def api_listen_for_wake_word() -> str:
+    """Activate/Deactivate the wake word detection"""
+    assert core is not None
+
+    data = await request.data
+    activeData = data.decode()
+    active = activeData.lower() == "true"
+    if active:
+        core.activate_wake_word_detection()
+    else:
+        core.deactivate_wake_word_detection()
+
+    return "OK"
 
 # -----------------------------------------------------------------------------
 

@@ -54,6 +54,8 @@ Application authors may want to use the [rhasspy-client](https://pypi.org/projec
     * `?entity=<entity>&value=<value>` - set custom entity/value in recognized intent
 * `/api/listen-for-wake-word`
     * POST to wake Rhasspy up and return immediately
+* `/api/set-wake-word-detection`
+    * POST "true" or "false" to activate/deactivate the wake word detection
 * `/api/lookup`
     * POST word as plain text to look up or guess pronunciation
     * `?n=<number>` - return at most `n` guessed pronunciations
@@ -146,6 +148,12 @@ Rhasspy implements part of the [Hermes](https://docs.snips.ai/reference/hermes) 
     * Rhasspy publishes a transcription to this topic each time a voice command is recognized.
 * `hermes/hotword/<WAKEWORD_ID>/detected`
     * Rhasspy wakes up when a message is received on this topic.
+* `hermes/hotword/toggleOn`
+    * Rhasspy activates the wake word detection
+    * The payload is a JSON object with a `siteId` key that holds Rhasspy's site ID.
+* `hermes/hotword/toggleOff`
+    * Rhasspy deactivates the wake word detection
+    * The payload is a JSON object with a `siteId` key that holds Rhasspy's site ID.
 
 ## Command Line
 
