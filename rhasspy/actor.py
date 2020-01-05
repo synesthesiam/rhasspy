@@ -116,9 +116,6 @@ class RhasspyActor:
 
     def stop(self, block=True):
         """Stop this actor and its children."""
-        for child_actor in self._actors:
-            child_actor.stop(block=block)
-
         self.send(self, ActorExitRequest())
         if block:
             self._thread.join()
@@ -127,6 +124,15 @@ class RhasspyActor:
         """Main loop for this actor."""
         while self._running:
             message_dict = self._queue.get()
+            message = message_dict.get("message")
+            if isinstance(message, ActorExitRequest):
+                for child in self._actors:
+                    self.send(child, ActorExitRequest())
+
+                self._running = False
+                self.transition("stopped")
+                self.send(self._parent, ChildActorExited(self))
+
             self.on_receive(message_dict)
 
     @property
@@ -296,7 +302,7 @@ class InboxActor(RhasspyActor):
         return self
 
     def __exit__(self, *args):
-        self.stop(block=False)
+        self.stop(block=True)
 
 
 class ActorSystem:
