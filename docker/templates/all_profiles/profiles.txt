@@ -5,7 +5,7 @@ COPY profiles/zh/profile.json \
      profiles/zh/frequent_words.txt \
      profiles/zh/sentences.ini \
      profiles/zh/slots \
-     profiles/zh/slots_programs \
+     profiles/zh/slot_programs \
      profiles/zh/stop_words.txt ${RHASSPY_APP}/profiles/zh/
 
 COPY profiles/hi/ \
@@ -16,7 +16,7 @@ COPY profiles/hi/ \
      profiles/hi/frequent_words.txt \
      profiles/hi/sentences.ini \
      profiles/hi/slots \
-     profiles/hi/slots_programs \
+     profiles/hi/slot_programs \
      profiles/hi/stop_words.txt ${RHASSPY_APP}/profiles/hi/
 
 COPY profiles/el/profile.json \
@@ -26,7 +26,7 @@ COPY profiles/el/profile.json \
      profiles/el/frequent_words.txt \
      profiles/el/sentences.ini \
      profiles/el/slots \
-     profiles/el/slots_programs \
+     profiles/el/slot_programs \
      profiles/el/stop_words.txt ${RHASSPY_APP}/profiles/el/
 
 COPY profiles/de/profile.json \
@@ -36,7 +36,7 @@ COPY profiles/de/profile.json \
      profiles/de/frequent_words.txt \
      profiles/de/sentences.ini \
      profiles/de/slots \
-     profiles/de/slots_programs \
+     profiles/de/slot_programs \
      profiles/de/stop_words.txt ${RHASSPY_APP}/profiles/de/
 
 COPY profiles/de/kaldi/custom_words.txt \
@@ -51,7 +51,7 @@ COPY profiles/it/profile.json \
      profiles/it/frequent_words.txt \
      profiles/it/sentences.ini \
      profiles/it/slots \
-     profiles/it/slots_programs \
+     profiles/it/slot_programs \
      profiles/it/stop_words.txt ${RHASSPY_APP}/profiles/it/
 
 COPY profiles/es/profile.json \
@@ -61,7 +61,7 @@ COPY profiles/es/profile.json \
      profiles/es/frequent_words.txt \
      profiles/es/sentences.ini \
      profiles/es/slots \
-     profiles/es/slots_programs \
+     profiles/es/slot_programs \
      profiles/es/stop_words.txt ${RHASSPY_APP}/profiles/es/
 
 COPY profiles/fr/profile.json \
@@ -71,7 +71,7 @@ COPY profiles/fr/profile.json \
      profiles/fr/frequent_words.txt \
      profiles/fr/sentences.ini \
      profiles/fr/slots \
-     profiles/fr/slots_programs \
+     profiles/fr/slot_programs \
      profiles/fr/stop_words.txt ${RHASSPY_APP}/profiles/fr/
      
 COPY profiles/fr/kaldi/custom_words.txt \
@@ -86,7 +86,7 @@ COPY profiles/ru/profile.json \
      profiles/ru/frequent_words.txt \
      profiles/ru/sentences.ini \
      profiles/ru/slots \
-     profiles/ru/slots_programs \
+     profiles/ru/slot_programs \
      profiles/ru/stop_words.txt ${RHASSPY_APP}/profiles/ru/
 
 COPY profiles/nl/profile.json \
@@ -96,7 +96,7 @@ COPY profiles/nl/profile.json \
      profiles/nl/frequent_words.txt \
      profiles/nl/sentences.ini \
      profiles/nl/slots \
-     profiles/nl/slots_programs \
+     profiles/nl/slot_programs \
      profiles/nl/stop_words.txt ${RHASSPY_APP}/profiles/nl/
 
 COPY profiles/nl/kaldi/custom_words.txt \
@@ -111,7 +111,7 @@ COPY profiles/vi/profile.json \
      profiles/vi/frequent_words.txt \
      profiles/vi/sentences.ini \
      profiles/vi/slots \
-     profiles/vi/slots_programs \
+     profiles/vi/slot_programs \
      profiles/vi/stop_words.txt ${RHASSPY_APP}/profiles/vi/
 
 COPY profiles/pt/profile.json \
@@ -121,7 +121,7 @@ COPY profiles/pt/profile.json \
      profiles/pt/frequent_words.txt \
      profiles/pt/sentences.ini \
      profiles/pt/slots \
-     profiles/pt/slots_programs \
+     profiles/pt/slot_programs \
      profiles/pt/stop_words.txt ${RHASSPY_APP}/profiles/pt/
 
 COPY profiles/sv/profile.json \
@@ -131,7 +131,7 @@ COPY profiles/sv/profile.json \
      profiles/sv/frequent_words.txt \
      profiles/sv/sentences.ini \
      profiles/sv/slots \
-     profiles/sv/slots_programs \
+     profiles/sv/slot_programs \
      profiles/sv/stop_words.txt ${RHASSPY_APP}/profiles/sv/
 
 COPY profiles/ca/profile.json \
@@ -141,7 +141,7 @@ COPY profiles/ca/profile.json \
      profiles/ca/frequent_words.txt \
      profiles/ca/sentences.ini \
      profiles/ca/slots \
-     profiles/ca/slots_programs \
+     profiles/ca/slot_programs \
      profiles/ca/stop_words.txt ${RHASSPY_APP}/profiles/ca/
 
 COPY profiles/en/profile.json \
@@ -151,7 +151,7 @@ COPY profiles/en/profile.json \
      profiles/en/frequent_words.txt \
      profiles/en/sentences.ini \
      profiles/en/slots \
-     profiles/en/slots_programs \
+     profiles/en/slot_programs \
      profiles/en/stop_words.txt ${RHASSPY_APP}/profiles/en/
 
 COPY profiles/en/kaldi/custom_words.txt \
