@@ -108,7 +108,14 @@ To update your Rhasspy virtual environment to the latest version, run:
 git pull origin master
 ```
 
-in your `rhasspy` directory. You should also re-build the web interface:
+in your `rhasspy` directory, and then update your Python dependencies:
+
+```bash
+source .venv/bin/activate
+pip3 install -r requirements.txt
+```
+
+You should also re-build the web interface:
 
 1. Install [yarn](https://yarnpkg.com) on your system
 2. Run `yarn build` in the `rhasspy` directory

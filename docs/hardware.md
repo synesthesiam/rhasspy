@@ -4,6 +4,9 @@ Rhasspy is designed to be run on different kinds of hardware, such as:
 
 * Raspberry Pi 2-3 B/B+ (`armhf`/`aarch64`)
 * Desktop/laptop/server (`amd64`)
+* Raspberry Pi Zero (`armv6l`)
+    * You must use a [virtual environment](installation.md#virtual-environment)
+    * The [Kaldi speech recognizer](speech-to-text.md#kaldi) is **not** supported
 
 The table below summarizes architecture compatibility with Rhasspy's components:
 
@@ -30,7 +33,7 @@ The table below summarizes architecture compatibility with Rhasspy's components:
 
 To run Rhasspy on a Raspberry Pi, you'll need at least a 4 GB SD card and a good power supply. I highly recommend the [CanaKit Starter Kit](https://www.amazon.com/CanaKit-Raspberry-Starter-Premium-Black/dp/B07BCC8PK7), which includes a 32 GB SD card, a 2.5 A power supply, and a case.
 
-Some components of Rhasspy will not work on the Raspberry Pi 3 B+ model (`aarch64`). As of the time of this writing, these are:
+Some components of Rhasspy will not work on the Raspberry Pi 3 B+ model with a 64-bit operating system (`aarch64`). As of the time of this writing, these are:
 
 * [snowboy](wake-word.md#snowboy) (wake word)
 * [Mycroft Precise](wake-word.md#mycroft-precise) (wake word)
