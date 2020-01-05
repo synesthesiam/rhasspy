@@ -329,31 +329,40 @@ case "${CPU_ARCH}" in
 esac
 
 requirements_file="${temp_dir}/requirements.txt"
+temp_requirements_file="${temp_dir}/temp_requirements.txt"
 cp "${this_dir}/requirements.txt" "${requirements_file}"
 
 # Exclude requirements
 if [[ -n "${no_flair}" ]]; then
     echo "Excluding flair from virtual environment"
-    sed -i '/^flair/d' "${requirements_file}"
+    sed '/^flair/d' "${requirements_file}" > "${temp_requirements_file}" &&
+        mv "${temp_requirements_file}" "${requirements_file}"
+
 fi
 
 if [[ -n "${no_precise}" ]]; then
     echo "Excluding Mycroft Precise from virtual environment"
-    sed -i '/^precise-runner/d' "${requirements_file}"
+    sed '/^precise-runner/d' "${requirements_file}" > "${temp_requirements_file}" &&
+        mv "${temp_requirements_file}" "${requirements_file}"
+
 fi
 
 if [[ -n "${no_adapt}" ]]; then
     echo "Excluding Mycroft Adapt from virtual environment"
-    sed -i '/^adapt-parser/d' "${requirements_file}"
+    sed '/^adapt-parser/d' "${requirements_file}" > "${temp_requirements_file}" &&
+        mv "${temp_requirements_file}" "${requirements_file}"
+
 fi
 
 if [[ -n "${no_google}" ]]; then
     echo "Excluding Google Text to Speech from virtual environment"
-    sed -i '/^google-cloud-texttospeech/d' "${requirements_file}"
+    sed '/^google-cloud-texttospeech/d' "${requirements_file}" > "${temp_requirements_file}" &&
+        mv "${temp_requirements_file}" "${requirements_file}"
 fi
 
 # Install everything except openfst first
-sed -i '/^openfst/d' "${requirements_file}"
+sed '/^openfst/d' "${requirements_file}" > "${temp_requirements_file}" &&
+        mv "${temp_requirements_file}" "${requirements_file}"
 
 "${python}" -m pip install -r "${requirements_file}"
 
