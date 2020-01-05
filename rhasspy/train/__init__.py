@@ -228,7 +228,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
             upper_bound = int(match.group(2))
             step = 1
 
-            if len(match.groups()) > 2:
+            if len(match.groups()) > 3:
                 # Exclude ,
                 step = int(match.group(3)[1:])
 
