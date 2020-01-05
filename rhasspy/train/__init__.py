@@ -165,9 +165,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
         # Check for arguments.
         # Slot name retains argument(s).
         if "," in slot_name:
-            parts = slot_name.split(",")
-            slot_name = parts[0]
-            slot_args = parts[1:]
+            slot_name, *slot_args = slot_name.split(",")
         else:
             slot_args = None
 
@@ -270,7 +268,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
                 word.converters = ["int"]
                 return word
 
-            # Hard case, split into mutliple Words
+            # Hard case, split into multiple Words
             return jsgf.Sequence(
                 text=number_text,
                 type=jsgf.SequenceType.GROUP,
