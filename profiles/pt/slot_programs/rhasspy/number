@@ -17,9 +17,7 @@ def main():
         step = int(rest_args[0])
 
     if upper < lower:
-        temp_lower = lower
-        lower = upper
-        upper = temp_lower
+        lower, upper = upper, lower
 
     for n in range(lower, upper + 1, step):
         print(n)
