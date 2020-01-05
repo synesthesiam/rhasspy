@@ -54,7 +54,13 @@ To update your Rhasspy Docker image, just run:
 ```bash
 docker pull synesthesiam/rhasspy-server:latest
 ```
-on your Rhasspy server and restart the Docker container.
+on your Rhasspy server and restart the Docker container. This may require running something like:
+
+```bash
+docker rm <container-name>
+```
+
+before doing a `docker run...`
 
 ## Hass.io
 
