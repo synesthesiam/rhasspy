@@ -9,14 +9,12 @@ import tempfile
 import time
 from collections import Counter, defaultdict
 from io import StringIO
-from typing import Any, Dict, List, Set, Type
+from typing import Any, Callable, Dict, List, Set, Type
 from urllib.parse import urljoin
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import (IntentTrainingComplete, IntentTrainingFailed,
-                            TrainIntent)
-from rhasspy.utils import (lcm, make_sentences_by_intent,
-                           sample_sentences_by_intent)
+from rhasspy.events import IntentTrainingComplete, IntentTrainingFailed, TrainIntent
+from rhasspy.utils import lcm, make_sentences_by_intent, load_converters
 
 # -----------------------------------------------------------------------------
 
@@ -112,23 +110,30 @@ class FsticuffsIntentTrainer(DummyIntentTrainer):
 class FuzzyWuzzyIntentTrainer(RhasspyActor):
     """Save examples to JSON for fuzzy string matching later."""
 
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.converters: Dict[str, Callable[..., Any]] = {}
+
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in started state."""
         if isinstance(message, TrainIntent):
             try:
-                self.train(message.intent_fst)
+                self.train(message.intent_graph)
                 self.send(message.receiver or sender, IntentTrainingComplete())
             except Exception as e:
                 self._logger.exception("train")
                 self.send(message.receiver or sender, IntentTrainingFailed(repr(e)))
 
-    def train(self, intent_fst) -> None:
+    def train(self, intent_graph) -> None:
         """Save examples to JSON file."""
         examples_path = self.profile.write_path(
             self.profile.get("intent.fuzzywuzzy.examples_json")
         )
 
-        sentences_by_intent: Dict[str, Any] = make_sentences_by_intent(intent_fst)
+        converters = load_converters(self.profile)
+        sentences_by_intent = make_sentences_by_intent(
+            intent_graph, extra_converters=converters
+        )
         with open(examples_path, "w") as examples_file:
             json.dump(sentences_by_intent, examples_file, indent=4)
 
@@ -143,6 +148,10 @@ class FuzzyWuzzyIntentTrainer(RhasspyActor):
 
 class RasaIntentTrainer(RhasspyActor):
     """Uses Rasa NLU HTTP API to train a recognizer."""
+
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.converters: Dict[str, Callable[..., Any]] = {}
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in started state."""
@@ -256,7 +265,9 @@ class RasaIntentTrainer(RhasspyActor):
                 response.raise_for_status()
             except Exception:
                 # Rasa gives quite helpful error messages, so extract them from the response.
-                raise Exception(f'{response.reason}: {json.loads(response.content)["message"]}')
+                raise Exception(
+                    f'{response.reason}: {json.loads(response.content)["message"]}'
+                )
 
 
 # -----------------------------------------------------------------------------
@@ -267,6 +278,14 @@ class RasaIntentTrainer(RhasspyActor):
 
 class AdaptIntentTrainer(RhasspyActor):
     """Configure a Mycroft Adapt engine."""
+
+    def __init__(self):
+        RhasspyActor.__init__(self)
+        self.converters: Dict[str, Callable[..., Any]] = {}
+
+    def to_started(self, from_state: str) -> None:
+        # Load user-defined converters
+        self.converters = load_converters(self.profile)
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in started state."""
@@ -287,9 +306,7 @@ class AdaptIntentTrainer(RhasspyActor):
         stop_words_path = self.profile.read_path("stop_words.txt")
         if os.path.exists(stop_words_path):
             with open(stop_words_path, "r") as stop_words_file:
-                stop_words = {
-                    line.strip() for line in stop_words_file if line.strip()
-                }
+                stop_words = {line.strip() for line in stop_words_file if line.strip()}
 
         # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
         sentences_by_intent: Dict[str, Any] = make_sentences_by_intent(intent_fst)
@@ -410,6 +427,11 @@ class FlairIntentTrainer(RhasspyActor):
     def __init__(self):
         RhasspyActor.__init__(self)
         self.embeddings = []
+        self.converters: Dict[str, Callable[..., Any]] = {}
+
+    def to_started(self, from_state: str) -> None:
+        # Load user-defined converters
+        self.converters = load_converters(self.profile)
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in started state."""
@@ -671,6 +693,7 @@ class CommandIntentTrainer(RhasspyActor):
     def __init__(self):
         RhasspyActor.__init__(self)
         self.command: List[str] = []
+        self.converters: Dict[str, Callable[..., Any]] = {}
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
@@ -681,6 +704,9 @@ class CommandIntentTrainer(RhasspyActor):
             os.path.expandvars(str(a))
             for a in self.profile.get("training.intent.command.arguments", [])
         ]
+
+        # Load user-defined converters
+        self.converters = load_converters(self.profile)
 
         self.command = [program] + arguments
 

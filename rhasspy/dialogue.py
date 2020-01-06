@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Type
 
 import pydash
-import pywrapfst as fst
 import requests
+import rhasspynlu
 
 from rhasspy.actor import (
     ActorExitRequest,
@@ -555,12 +555,14 @@ class DialogueManager(RhasspyActor):
 
             self.transition("training_intent")
 
-            intent_fst_path = self.profile.read_path(
-                self.profile.get("intent.fsticuffs.intent_fst", "intent.fst")
+            intent_graph_path = self.profile.read_path(
+                self.profile.get("intent.fsticuffs.intent_graph", "intent.json")
             )
 
-            intent_fst = fst.Fst.read(str(intent_fst_path))
-            self.send(self.intent_trainer, TrainIntent(intent_fst))
+            with open(intent_graph_path, "r") as graph_file:
+                json_graph = json.load(graph_file)
+                intent_graph = rhasspynlu.json_to_graph(json_graph)
+                self.send(self.intent_trainer, TrainIntent(intent_graph))
         except Exception as e:
             self.transition("ready")
             self.send(self.training_receiver, ProfileTrainingFailed(str(e)))

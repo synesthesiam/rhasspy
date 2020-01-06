@@ -246,8 +246,8 @@ class IntentForwarded:
 class TrainIntent:
     """Request to train intent recognizer."""
 
-    def __init__(self, intent_fst, receiver: Optional[RhasspyActor] = None) -> None:
-        self.intent_fst = intent_fst
+    def __init__(self, intent_graph, receiver: Optional[RhasspyActor] = None) -> None:
+        self.intent_graph = intent_graph
         self.receiver = receiver
 
 

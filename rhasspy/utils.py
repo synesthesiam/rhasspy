@@ -1,23 +1,24 @@
 """Rhasspy utility functions."""
 import collections
-import concurrent.futures
 import gzip
 import io
 import itertools
+import json
 import logging
 import math
 import os
+import random
 import re
 import subprocess
 import threading
 import wave
 from collections import defaultdict
 from pathlib import Path
-from typing import (Any, Callable, Dict, Iterable, List, Mapping, Optional,
-                    Set, Tuple)
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
-import pywrapfst as fst
+import networkx as nx
 import rhasspynlu
+
 from num2words import num2words
 
 WHITESPACE_PATTERN = re.compile(r"\s+")
@@ -329,55 +330,45 @@ def grouper(iterable, n, fillvalue=None):
 # -----------------------------------------------------------------------------
 
 
-def make_sentences_by_intent(intent_fst: fst.Fst) -> Dict[str, Any]:
-    """Get all sentences from an FST."""
-    from rhasspy.train.jsgf2fst import fstprintall, symbols2intent
+def make_sentences_by_intent(
+    intent_graph: nx.DiGraph, num_samples: Optional[int] = None, extra_converters=None
+) -> Dict[str, List[Dict[str, Any]]]:
+    """Get all sentences from a graph."""
 
     # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
     sentences_by_intent: Dict[str, Any] = defaultdict(list)
 
-    for symbols in fstprintall(intent_fst, exclude_meta=False):
-        intent = symbols2intent(symbols)
-        intent_name = intent["intent"]["name"]
-        sentences_by_intent[intent_name].append(intent)
+    start_node = None
+    end_node = None
+    for node, node_data in intent_graph.nodes(data=True):
+        if node_data.get("start", False):
+            start_node = node
+        elif node_data.get("final", False):
+            end_node = node
 
-    return sentences_by_intent
+        if start_node and end_node:
+            break
 
+    assert (start_node is not None) and (
+        end_node is not None
+    ), "Missing start/end node(s)"
 
-# -----------------------------------------------------------------------------
-
-
-def sample_sentences_by_intent(
-    intent_fst_paths: Dict[str, str], num_samples: int
-) -> Dict[str, Any]:
-    """Generate random intents"""
-    from rhasspy.train.jsgf2fst import fstprintall, symbols2intent
-
-    def sample_sentences(intent_name: str, intent_fst_path: str):
-        rand_fst = fst.Fst.read_from_string(
-            subprocess.check_output(
-                ["fstrandgen", f"--npath={num_samples}", intent_fst_path]
-            )
+    if num_samples is not None:
+        # Randomly sample
+        paths = random.sample(
+            list(nx.all_simple_paths(intent_graph, start_node, end_node)), num_samples
         )
+    else:
+        # Use generator
+        paths = nx.all_simple_paths(intent_graph, start_node, end_node)
 
-        sentences: List[Dict[str, Any]] = []
-        for symbols in fstprintall(rand_fst, exclude_meta=False):
-            intent = symbols2intent(symbols)
-            sentences.append(intent)
-
-        return sentences
-
-    # Generate samples in parallel
-    future_to_intent = {}
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        for intent_name, intent_fst_path in intent_fst_paths.items():
-            future = executor.submit(sample_sentences, intent_name, intent_fst_path)
-            future_to_intent[future] = intent_name
-
-    # { intent: [ { 'text': ..., 'entities': { ... } }, ... ] }
-    sentences_by_intent: Dict[str, Any] = {}
-    for future, intent_name in future_to_intent.items():
-        sentences_by_intent[intent_name] = future.result()
+    # TODO: Add converters
+    for path in paths:
+        _, recognition = rhasspynlu.fsticuffs.path_to_recognition(
+            path, intent_graph, extra_converters=extra_converters
+        )
+        assert recognition, "Path failed"
+        sentences_by_intent[recognition.intent.name].append(recognition.asdict())
 
     return sentences_by_intent
 
@@ -507,3 +498,64 @@ def get_all_intents(ini_paths: List[Path]) -> Dict[str, Any]:
         _LOGGER.exception("Failed to parse %s", ini_paths)
 
     return {}
+
+
+# -----------------------------------------------------------------------------
+
+
+class CliConverter:
+    """Command-line converter for intent recognition"""
+
+    def __init__(self, name: str, command_path: Path):
+        self.name = name
+        self.command_path = command_path
+
+    def __call__(self, *args, converter_args=None):
+        """Runs external program to convert JSON values"""
+        converter_args = converter_args or []
+        proc = subprocess.Popen(
+            [str(self.command_path)] + converter_args,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+        )
+
+        with io.StringIO() as input_file:
+            for arg in args:
+                json.dump(arg, input_file)
+
+            stdout, _ = proc.communicate(input=input_file.getvalue())
+
+            return [json.loads(line) for line in stdout.splitlines() if line.strip()]
+
+
+def load_converters(profile) -> Dict[str, Any]:
+    # Load user-defined converters
+    converters = {}
+
+    converters_dir = Path(
+        profile.read_path(profile.get("intent.fsticuffs.converters_dir", "converters"))
+    )
+
+    if converters_dir.is_dir():
+        _LOGGER.debug("Loading converters from %s", converters_dir)
+        for converter_path in converters_dir.glob("**/*"):
+            if not converter_path.is_file():
+                continue
+
+            # Retain directory structure in name
+            converter_name = str(
+                converter_path.relative_to(converters_dir).with_suffix("")
+            )
+
+            # Run converter as external program.
+            # Input arguments are encoded as JSON on individual lines.
+            # Output values should be encoded as JSON on individual lines.
+            converter = CliConverter(converter_name, converter_path)
+
+            # Key off name without file extension
+            converters[converter_name] = converter
+
+            _LOGGER.debug("Loaded converter %s from %s", converter_name, converter_path)
+
+    return converters
