@@ -10,8 +10,8 @@ The following table summarizes the trade-offs of using each intent recognizer:
 | [fsticuffs](intent-recognition.md#fsticuffs)   | 1M+                  | very fast      | very fast         | ignores unknown words |
 | [fuzzywuzzy](intent-recognition.md#fuzzywuzzy) | 12-100               | fast           | fast              | fuzzy string matching |
 | [adapt](intent-recognition.md#mycroft-adapt)   | 100-1K               | moderate       | fast              | ignores unknown words |
-| [flair](intent-recognition.md#flair)           | 1K-100K              | very slow      | moderate          | handles unseen words  |
 | [rasaNLU](intent-recognition.md#rasanlu)       | 1K-100K              | very slow      | moderate          | handles unseen words  |
+| [flair](intent-recognition.md#flair)           | 1K-100K              | very slow      | moderate          | handles unseen words  |
 
 ## Fsticuffs
 

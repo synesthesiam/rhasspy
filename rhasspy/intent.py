@@ -30,7 +30,6 @@ def get_recognizer_class(system: str) -> Type[RhasspyActor]:
         "adapt",
         "rasa",
         "remote",
-        "flair",
         "conversation",
         "command",
     ], f"Invalid intent system: {system}"
@@ -53,10 +52,6 @@ def get_recognizer_class(system: str) -> Type[RhasspyActor]:
     if system == "remote":
         # Use remote rhasspy server
         return RemoteRecognizer
-
-    if system == "flair":
-        # Use flair locally
-        return FlairRecognizer
 
     if system == "conversation":
         # Use HA conversation
@@ -409,6 +404,7 @@ class RasaIntentRecognizer(RhasspyActor):
         if isinstance(message, RecognizeIntent):
             try:
                 intent = self.recognize(message.text)
+                intent["intent"]["name"] = intent["intent"]["name"] or ""
                 logging.debug(repr(intent))
             except Exception:
                 self._logger.exception("in_started")
@@ -556,150 +552,6 @@ class AdaptIntentRecognizer(RhasspyActor):
                 self.engine.register_intent_parser(intent.build())
 
             self._logger.debug("Loaded engine from config file %s", config_path)
-
-
-# -----------------------------------------------------------------------------
-# Flair Intent Recognizer
-# https://github.com/zalandoresearch/flair
-# -----------------------------------------------------------------------------
-
-
-class FlairRecognizer(RhasspyActor):
-    """Flair based recognizer"""
-
-    def __init__(self) -> None:
-        RhasspyActor.__init__(self)
-
-        try:
-            # pylint: disable=E0401
-            from flair.models import TextClassifier, SequenceTagger
-        except Exception:
-            pass
-
-        self.class_model: Optional[TextClassifier] = None
-        self.ner_models: Optional[Dict[str, SequenceTagger]] = None
-        self.intent_map: Optional[Dict[str, str]] = None
-        self.preload = False
-
-    def to_started(self, from_state: str) -> None:
-        """Transition to started state."""
-        self.preload = self.config.get("preload", False)
-        if self.preload:
-            try:
-                # Pre-load models
-                self.load_models()
-            except Exception as e:
-                self._logger.warning("preload: %s", e)
-
-    def in_started(self, message: Any, sender: RhasspyActor) -> None:
-        """Handle messages in started state."""
-        if isinstance(message, RecognizeIntent):
-            try:
-                self.load_models()
-                intent = self.recognize(message.text)
-            except Exception:
-                self._logger.exception("in_started")
-                intent = empty_intent()
-                intent["text"] = message.text
-                intent["raw_text"] = message.text
-
-            intent["speech_confidence"] = message.confidence
-            self.send(
-                message.receiver or sender,
-                IntentRecognized(intent, handle=message.handle),
-            )
-
-    def recognize(self, text: str) -> Dict[str, Any]:
-        """Run intent classifier and then named-entity recognizer."""
-        # pylint: disable=E0401
-        from flair.data import Sentence
-
-        intent = empty_intent()
-        sentence = Sentence(text)
-
-        assert self.intent_map is not None
-        if self.class_model is not None:
-            self.class_model.predict(sentence)
-            assert sentence.labels, "No intent predicted"
-
-            label = sentence.labels[0]
-            intent_id = label.value
-            intent["intent"]["confidence"] = label.score
-        else:
-            # Assume first intent
-            intent_id = next(iter(self.intent_map))
-            intent["intent"]["confidence"] = 1
-
-        intent["intent"]["name"] = self.intent_map[intent_id]
-
-        assert self.ner_models is not None
-        if intent_id in self.ner_models:
-            # Predict entities
-            self.ner_models[intent_id].predict(sentence)
-            ner_dict = sentence.to_dict(tag_type="ner")
-            for named_entity in ner_dict["entities"]:
-                intent["entities"].append(
-                    {
-                        "entity": named_entity["type"],
-                        "value": named_entity["text"],
-                        "start": named_entity["start_pos"],
-                        "end": named_entity["end_pos"],
-                        "confidence": named_entity["confidence"],
-                    }
-                )
-
-        return intent
-
-    # -------------------------------------------------------------------------
-
-    def load_models(self) -> None:
-        """Load intent classifier and named entity recognizers."""
-        # pylint: disable=E0401
-        from flair.models import TextClassifier, SequenceTagger
-
-        # Load mapping from intent id to user intent name
-        if self.intent_map is None:
-            intent_map_path = self.profile.read_path(
-                self.profile.get("training.intent.intent_map", "intent_map.json")
-            )
-
-            with open(intent_map_path, "r") as intent_map_file:
-                self.intent_map = json.load(intent_map_file)
-
-        data_dir = self.profile.read_path(
-            self.profile.get("intent.flair.data_dir", "flair_data")
-        )
-
-        # Only load intent classifier if there is more than one intent
-        if (self.class_model is None) and (len(self.intent_map) > 1):
-            class_model_path = os.path.join(
-                data_dir, "classification", "final-model.pt"
-            )
-            self._logger.debug("Loading classification model from %s", class_model_path)
-            self.class_model = TextClassifier.load_from_file(class_model_path)
-            self._logger.debug("Loaded classification model")
-
-        if self.ner_models is None:
-            ner_models = {}
-            ner_data_dir = os.path.join(data_dir, "ner")
-            for file_name in os.listdir(ner_data_dir):
-                ner_model_dir = os.path.join(ner_data_dir, file_name)
-                if os.path.isdir(ner_model_dir):
-                    # Assume directory is intent name
-                    intent_name = file_name
-                    if intent_name not in self.intent_map:
-                        self._logger.warning(
-                            "%s was not found in intent map", intent_name
-                        )
-
-                    ner_model_path = os.path.join(ner_model_dir, "final-model.pt")
-                    self._logger.debug("Loading NER model from %s", ner_model_path)
-                    ner_models[intent_name] = SequenceTagger.load_from_file(
-                        ner_model_path
-                    )
-
-            self._logger.debug("Loaded NER model(s)")
-            self.ner_models = ner_models
 
 
 # -----------------------------------------------------------------------------
