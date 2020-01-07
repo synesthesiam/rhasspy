@@ -369,7 +369,7 @@ async def api_pronounce() -> Union[Response, str]:
 
     if download:
         # Return WAV
-        return Response(wav_data)  # , mimetype="audio/wav")
+        return Response(wav_data, mimetype="audio/wav")
 
     # Play through speakers
     core.play_wav_data(wav_data)
@@ -806,7 +806,7 @@ async def api_text_to_speech() -> Union[bytes, str]:
 
     if not play:
         # Return WAV data instead of speaking
-        return result.wav_data
+        return Response(result.wav_data, mimetype="audio/wav")
 
     return sentence
 
@@ -989,7 +989,7 @@ def api_intents():
 
 
 @app.route("/process", methods=["GET"])
-async def marytts_process():
+async def marytts_process() -> Response:
     """Emulate MaryTTS /process API"""
     global last_sentence
 
@@ -1001,7 +1001,7 @@ async def marytts_process():
         sentence, play=False, voice=voice, language=locale
     )
 
-    return spoken.wav_data
+    return Response(spoken.wav_data, mimetype="audio/wav")
 
 
 # -----------------------------------------------------------------------------
