@@ -91,7 +91,7 @@ def make_dict(
                 if (i < 1) or no_number:
                     print(word, pronounce, file=dictionary_file)
                 else:
-                    print(f"{word, i + 1}({pronounce})", file=dictionary_file)
+                    print(f"{word}({i + 1})", pronounce, file=dictionary_file)
 
             words_in_dict.add(word)
 
