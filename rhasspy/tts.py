@@ -896,7 +896,7 @@ class HomeAssistantSentenceSpeaker(RhasspyActor):
 
             # Convert to WAV
             if audio_url.endswith(".mp3"):
-                lame_command = ["lame", "--decode", "-", "-"]
+                lame_command = ["lame", "--decode", "--mp3input", "-", "-"]
                 self._logger.debug(lame_command)
 
                 return subprocess.run(
