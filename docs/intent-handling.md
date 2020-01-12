@@ -207,7 +207,7 @@ The following environment variables are available to your program:
 * `$RHASSPY_PROFILE` - name of the current profile (e.g., "en")
 * `$RHASSPY_PROFILE_DIR` - directory of the current profile (where `profile.json` is)
 
-See [handle.sh](https://github.com/synesthesiam/rhasspy/blob/master/bin/mock-commands/handle.sh) or [handle.py](https://github.com/synesthesiam/rhasspy/blob/master/bin/mock-commands/handle.py)for example programs.
+See [handle.sh](https://github.com/synesthesiam/rhasspy/blob/master/bin/mock-commands/handle.sh) or [handle.py](https://github.com/synesthesiam/rhasspy/blob/master/bin/mock-commands/handle.py) for example programs.
 
 ### Speech
 
