@@ -124,7 +124,7 @@ pip3 install -r requirements.txt
 You should also re-build the web interface:
 
 1. Install [yarn](https://yarnpkg.com) on your system
-2. Run `yarn build` in the `rhasspy` directory
+2. Run `yarn install && yarn build` in the `rhasspy` directory
 3. Restart any running instances of Rhasspy
 
 ### Running as a Service
