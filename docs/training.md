@@ -247,7 +247,7 @@ Add a file in `slot_programs` with the name of your slot, e.g. `colors`. Write a
 
 ```bash
 cat <<EOF > "${slot_programs}/colors"
-#/usr/bin/env bash
+#!/usr/bin/env bash
 echo 'red'
 echo 'green'
 echo 'blue'
