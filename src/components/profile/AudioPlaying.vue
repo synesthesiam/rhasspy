@@ -108,7 +108,6 @@
      },
      data: function () {
          return {
-             device: '',
              speakers: {}
          }
      },
@@ -124,20 +123,21 @@
      },
 
      computed: {
-         devicePath: function() {
-             return 'sounds.' + this.profile.sounds.system + '.device'
+         device: {
+            get: function() {
+                if(this.profile.sounds[this.profile.sounds.system]) {
+                    return this.profile.sounds[this.profile.sounds.system].device;
+                }
+                return "";
+            },
+            set: function(newValue) {
+                this.profile.sounds[this.profile.sounds.system].device = newValue;
+            }
          }
      },
 
      mounted: function() {
-         this.getSpeakers()
-         this.device = this._.get(this.profile, this.devicePath, '')
-     },
-
-     watch: {
-         device: function() {
-             this._.set(this.profile, this.devicePath, this.device)
-         }
+         this.getSpeakers();
      }
  }
 </script>

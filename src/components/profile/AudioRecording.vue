@@ -173,7 +173,6 @@
      },
      data: function () {
          return {
-             device: '',
              microphones: {},
              testing: false
          }
@@ -217,20 +216,21 @@
      },
 
      computed: {
-         devicePath: function() {
-             return 'microphone.' + this.profile.microphone.system + '.device'
+         device: {
+            get: function() {
+                if(this.profile.microphone[this.profile.microphone.system]) {
+                    return this.profile.microphone[this.profile.microphone.system].device;
+                }
+                return "";
+            },
+            set: function(newValue) {
+                this.profile.microphone[this.profile.microphone.system].device = newValue;
+            }
          }
      },
 
      mounted: function() {
-         this.getMicrophones()
-         this.device = this._.get(this.profile, this.devicePath, '')
-     },
-
-     watch: {
-         device: function() {
-             this._.set(this.profile, this.devicePath, this.device)
-         }
+         this.getMicrophones();
      }
  }
 </script>
