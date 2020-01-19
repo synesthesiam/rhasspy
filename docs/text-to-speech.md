@@ -52,7 +52,9 @@ See `rhasspy.tts.FliteSentenceSpeaker` for details.
 
 ## PicoTTS
 
-Uses SVOX's [picotts](https://en.wikipedia.org/wiki/SVOX) for text to speech. Sounds a bit better (to me) than `flite` or `espeak`, but only has a single English voice.
+Uses SVOX's [picotts](https://en.wikipedia.org/wiki/SVOX) for text to speech. Sounds a bit better (to me) than `flite` or `espeak`.
+
+Included languages are `en-US`, `en-GB`, `de-DE`, `es-ES`, `fr-FR` and `it-IT`.
 
 Add to your [profile](profiles.md):
 
