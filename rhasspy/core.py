@@ -512,6 +512,13 @@ class RhasspyCore:
             except Exception:
                 self._logger.exception(url)
 
+                # Try to delete partially downloaded file
+                try:
+                    self._logger.debug("Deleting %s", filename)
+                    os.unlink(filename)
+                except Exception:
+                    pass
+
         # Check conditions
         machine_type = platform.machine()
         download_tasks = []
