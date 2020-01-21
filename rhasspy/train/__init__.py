@@ -321,6 +321,19 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
         def __setitem__(self, key, value):
             self.values[key] = value
 
+    # Determine whether word casing has to be fixed
+    word_transform = None
+    if word_casing == "upper":
+        word_transform = str.upper
+    elif word_casing == "lower":
+        word_transform = str.lower
+
+    def fix_word_case(word):
+        if isinstance(word, jsgf.Word):
+            word.text = word_transform(word.text)
+
+        return word
+
     # -------------------------------------------------------------------------
 
     def do_intents_to_graph(sentences, slot_names, replacements, targets):
@@ -331,25 +344,11 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
                 for sentence in intent_sentences:
                     jsgf.walk_expression(sentence, number_transform, replacements)
 
-        # Determine whether word casing has to be fixed
-        transform = None
-        if word_casing == "upper":
-            transform = str.upper
-        elif word_casing == "lower":
-            transform = str.lower
-
-        if transform:
-
-            def fix_case(word):
-                if isinstance(word, jsgf.Word):
-                    word.text = transform(word.text)
-
-                return word
-
+        if word_transform:
             # Fix casing
             for intent_sentences in sentences.values():
                 for sentence in intent_sentences:
-                    jsgf.walk_expression(sentence, fix_case, replacements)
+                    jsgf.walk_expression(sentence, fix_word_case, replacements)
 
         # Convert to directed graph
         graph = intents_to_graph(sentences, replacements)
@@ -388,6 +387,9 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
                         line = line.strip()
                         if line:
                             sentence = jsgf.Sentence.parse(line)
+                            if word_transform:
+                                jsgf.walk_expression(sentence, fix_word_case)
+
                             slot_values.append(sentence)
             elif isinstance(slot_info, SlotProgramInfo):
                 # Program that will generate values

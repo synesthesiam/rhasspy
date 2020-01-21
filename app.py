@@ -823,16 +823,6 @@ async def api_slots() -> Union[str, Response]:
         overwrite_all = request.args.get("overwrite_all", "false").lower() == "true"
         new_slot_values = json5.loads(await request.data)
 
-        word_casing = core.profile.get(
-            "speech_to_text.dictionary_casing", "ignore"
-        ).lower()
-        word_transform = lambda s: s
-
-        if word_casing == "lower":
-            word_transform = str.lower
-        elif word_casing == "upper":
-            word_transform = str.upper
-
         slots_dir = Path(
             core.profile.write_path(
                 core.profile.get("speech_to_text.slots_dir", "slots")
@@ -859,11 +849,10 @@ async def api_slots() -> Union[str, Response]:
             slots_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Merge with existing values
-            values = {word_transform(v.strip()) for v in values}
+            values = {v.strip() for v in values}
             if slots_path.is_file():
                 values.update(
-                    word_transform(line.strip())
-                    for line in slots_path.read_text().splitlines()
+                    line.strip() for line in slots_path.read_text().splitlines()
                 )
 
             # Write merged values
