@@ -1,0 +1,52 @@
+## [Unreleased] - 2020 Jan 21
+
+### Added
+
+- Button to web UI to play last recorded voice commmand
+
+### Changed
+- Moved $profile/kaldi/custom_words.txt to $profile/kaldi_custom_words.txt
+- Slot substitution casing is kept during training/recognition
+- Fixed fuzzywuzzy and other intent recognizer training after addition of converters
+- Fix thread max count issue
+- Hide web UI alerts after 10 seconds
+- Delete partially downloaded profile files
+
+### Removed
+
+- Flair intent recognizer
+
+## [2.4.16] - 2020 Jan 5
+
+### Added
+
+- Number ranges (0..100)
+- Converters for transforming JSON values in intents (!int)
+- Slot programs for generating slot values
+- $rhasspy/days and $rhasspy/months built-in slots
+
+## [2.4.15] - 2019 Dec 27
+
+### Added
+
+- Preliminary support for Rasperry Pi Zero (no Kaldi)
+- Play error sound when intent not recognized
+- _text and _raw_text to Home Assistant events
+
+### Changed
+
+- Disable wake word when TTS is speaking
+- Use json5 library to parse profile
+- Remove picotts pop sound
+- Don't open/close microphone after wake-up
+
+## [2.4.14] - 2019 Dec 19
+
+### Added
+
+- Ability to split sentences across multiple .ini file in intents directory
+- Support (future) /api/intent for Home Assistant
+- Support for Home Assistant TTS system
+- Emulate MaryTTS /process API in web API
+- Include wakeId/siteId in JSON intent (MQTT/Websocket)
+- ?voice and ?language query parameters to /api/text-to-speech
