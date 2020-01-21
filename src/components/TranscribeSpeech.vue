@@ -20,6 +20,10 @@
                                 title="Record a voice command while held, interpret when released"
                                 :disabled="interpreting || (holdRecording && !tapRecording)">{{ tapRecording ? 'Tap to Stop' : 'Tap to Record' }}</button>
                     </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-success" @click="this.playLastVoiceCommand"
+                                title="Play last voice command"><i class="fas fa-play"></i></button>
+                    </div>
                 </div>
             </div>
             <div class="form-group">
@@ -266,6 +270,11 @@
          saySentence: function(event) {
              event.preventDefault()
              PronounceService.saySentence(this.sentence)
+                  .catch(err => this.$parent.error(err))
+         },
+
+         playLastVoiceCommand: function(event) {
+             TranscribeService.playRecording()
                   .catch(err => this.$parent.error(err))
          }
      }

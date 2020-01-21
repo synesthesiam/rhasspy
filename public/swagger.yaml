@@ -538,3 +538,15 @@ paths:
           description: intents
           schema:
             type: object
+  /api/play-recording:
+    post:
+      summary: 'Play the last recorded voice command from web API'
+      produces:
+        - text/plain
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string

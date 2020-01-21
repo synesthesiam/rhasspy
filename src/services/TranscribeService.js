@@ -37,6 +37,10 @@ export default {
                           { params: params })
     },
 
+    playRecording() {
+        return Api().post('/api/play-recording', '')
+    },
+
     wakeup() {
         return Api().post('/api/listen-for-command')
     }

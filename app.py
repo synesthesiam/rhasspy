@@ -10,7 +10,7 @@ import re
 import shutil
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 import attr
@@ -733,6 +733,8 @@ async def api_speech_to_intent() -> Response:
 
 # -----------------------------------------------------------------------------
 
+last_voice_wav: Optional[bytes] = None
+
 
 @app.route("/api/start-recording", methods=["POST"])
 async def api_start_recording() -> str:
@@ -747,6 +749,7 @@ async def api_start_recording() -> str:
 @app.route("/api/stop-recording", methods=["POST"])
 async def api_stop_recording() -> Response:
     """End recording voice command. Transcribe and handle."""
+    global last_voice_wav
     assert core is not None
     no_hass = request.args.get("nohass", "false").lower() == "true"
 
@@ -771,7 +774,24 @@ async def api_stop_recording() -> Response:
         # Send intent to Home Assistant
         intent = (await core.handle_intent(intent)).intent
 
+    # Save last voice command WAV data
+    last_voice_wav = wav_data
+
     return jsonify(intent)
+
+
+@app.route("/api/play-recording", methods=["POST"])
+async def api_play_recording() -> str:
+    """Play last recorded voice command through the configured audio output system"""
+    global last_voice_wav
+    assert core is not None
+
+    if last_voice_wav:
+        # Play through speakers
+        logger.debug("Playing %s byte(s)", len(last_voice_wav))
+        core.play_wav_data(last_voice_wav)
+
+    return "OK"
 
 
 # -----------------------------------------------------------------------------
