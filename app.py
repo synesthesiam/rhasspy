@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
@@ -523,6 +524,26 @@ async def api_custom_words():
     """Read or write custom word dictionary for a profile"""
     assert core is not None
     speech_system = core.profile.get("speech_to_text.system", "pocketsphinx")
+
+    # Temporary fix for kaldi/custom_words -> kaldi_custom_words.txt
+    old_kaldi_words_path = Path(core.profile.read_path("kaldi/custom_words.txt"))
+    if old_kaldi_words_path.is_file():
+        new_kaldi_words_path = Path(
+            core.profile.write_path(
+                core.profile.get(
+                    "speech_to_text.kaldi.custom_words", "custom_words.txt"
+                )
+            )
+        )
+
+        if (
+            new_kaldi_words_path != old_kaldi_words_path
+            and not new_kaldi_words_path.is_file()
+        ):
+            logger.warning(
+                "Moving %s to %s", str(old_kaldi_words_path), str(new_kaldi_words_path)
+            )
+            shutil.move(old_kaldi_words_path, new_kaldi_words_path)
 
     if request.method == "POST":
         custom_words_path = Path(

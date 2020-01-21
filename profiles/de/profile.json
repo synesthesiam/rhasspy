@@ -10,7 +10,7 @@
       "base_language_model": "kaldi/base_language_model.txt",
       "base_language_model_fst": "kaldi/base_language_model.fst",
       "compatible": true,
-      "custom_words": "kaldi/custom_words.txt",
+      "custom_words": "kaldi_custom_words.txt",
       "dictionary": "kaldi/dictionary.txt",
       "graph": "graph",
       "language_model": "kaldi/language_model.txt",
