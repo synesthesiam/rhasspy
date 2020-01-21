@@ -209,6 +209,9 @@
              this.hasAlert = true
              this.alertText = text
              this.alertClass = 'alert-' + level
+
+             // Hide alert after 10 seconds
+             setTimeout(this.clearAlert, 10000)
          },
 
          beginAsync: function() {
