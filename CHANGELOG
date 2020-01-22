@@ -3,6 +3,7 @@
 ### Added
 
 - Button to web UI to play last recorded voice commmand
+- RHASSPY_LOG_LEVEL environment variable
 
 ### Changed
 - Moved $profile/kaldi/custom_words.txt to $profile/kaldi_custom_words.txt

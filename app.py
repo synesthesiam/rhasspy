@@ -92,8 +92,12 @@ parser.add_argument("--log-level", default="DEBUG", help="Set logging level")
 args = parser.parse_args()
 
 # Set log level
-log_level = getattr(logging, args.log_level.upper())
-logging.basicConfig(level=log_level)
+if "RHASSPY_LOG_LEVEL" in os.environ:
+    log_level = os.environ["RHASSPY_LOG_LEVEL"]
+else:
+    log_level = args.log_level
+
+logging.basicConfig(level=getattr(logging, log_level.upper()))
 
 
 logger.debug(args)
