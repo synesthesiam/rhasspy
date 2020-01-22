@@ -12,6 +12,7 @@
 - Hide web UI alerts after 10 seconds
 - Delete partially downloaded profile files
 - Force slot programs to run each training cycle
+- Fix _raw_text in Hass event being same as _text
 
 ### Removed
 

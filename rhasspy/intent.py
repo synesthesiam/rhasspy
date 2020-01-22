@@ -288,8 +288,8 @@ class FuzzyWuzzyRecognizer(RhasspyActor):
                 self._logger.exception("in_loaded")
                 intent = empty_intent()
                 intent["text"] = message.text
-                intent["raw_text"] = message.text
 
+            intent["raw_text"] = message.text
             intent["speech_confidence"] = message.confidence
             self.send(
                 message.receiver or sender,
@@ -410,8 +410,8 @@ class RasaIntentRecognizer(RhasspyActor):
                 self._logger.exception("in_started")
                 intent = empty_intent()
                 intent["text"] = message.text
-                intent["raw_text"] = message.text
 
+            intent["raw_text"] = message.text
             self.send(
                 message.receiver or sender,
                 IntentRecognized(intent, handle=message.handle),
@@ -472,8 +472,8 @@ class AdaptIntentRecognizer(RhasspyActor):
                 self._logger.exception("in_loaded")
                 intent = empty_intent()
                 intent["text"] = message.text
-                intent["raw_text"] = message.text
 
+            intent["raw_text"] = message.text
             intent["speech_confidence"] = message.confidence
             self.send(
                 message.receiver or sender,
@@ -659,8 +659,8 @@ class CommandRecognizer(RhasspyActor):
                 self._logger.exception("in_started")
                 intent = empty_intent()
                 intent["text"] = message.text
-                intent["raw_text"] = message.text
 
+            intent["raw_text"] = message.text
             intent["speech_confidence"] = message.confidence
             self.send(
                 message.receiver or sender,

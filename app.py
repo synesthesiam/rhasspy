@@ -1182,8 +1182,6 @@ async def api_events_log() -> None:
             await websocket.send(text)
     except concurrent.futures.CancelledError:
         pass
-    except Exception:
-        logger.exception("api_events_log")
 
     # Remove queue
     async with ws_locks[WS_EVENT_LOG]:
@@ -1222,6 +1220,9 @@ def quality(accept, key: str) -> float:
 loop.run_until_complete(start_rhasspy())
 
 # -----------------------------------------------------------------------------
+
+# Disable useless logging messages
+logging.getLogger("wsproto").setLevel(logging.CRITICAL)
 
 # Start web server
 if args.ssl is not None:
