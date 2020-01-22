@@ -12,7 +12,7 @@
                     <div class="col-auto">
                         <button type="submit" class="btn btn-success"
                                 v-if="sentences"
-                                :disabled="sentences[newKey] || newKey.length == 0">Add File</button>
+                                :disabled="sentences[newKey] || newKey.length == 0">New File</button>
                     </div>
                 </div>
             </div>
