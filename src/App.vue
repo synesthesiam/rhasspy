@@ -119,6 +119,9 @@
                             Rhasspy will not work correctly until these files are downloaded.
                         </p>
                         <tree-view :data="missingFiles" :options="{ rootObjectKey: 'missing'}"></tree-view>
+                        <br>
+                        <label for="downloadStatus">Status:</label>
+                        <textarea id="downloadStatus" v-model="this.downloadStatus" style="width: 100%;" rows="3"></textarea>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -186,7 +189,9 @@
 
              missingFiles: {},
 
-             version: ''
+             version: '',
+
+             downloadStatus: ''
          }
      },
 
@@ -337,6 +342,8 @@
          downloadProfile: function() {
              this.beginAsync()
              this.downloading = true
+             this.downloadStatus = ''
+             setTimeout(this.updateDownloadStatus, 1000)
              ProfileService.downloadProfile()
                  .then(() => {
                      alert("Download is complete. Rhasspy will now restart. Make sure to train before using your profile!")
@@ -347,6 +354,17 @@
                      this.downloading = false
                      this.endAsync()
                  })
+         },
+
+         updateDownloadStatus: function() {
+             ProfileService.downloadStatus()
+                .then((request) => {
+                    this.downloadStatus = request.data
+                })
+
+             if (this.downloading) {
+                 setTimeout(this.updateDownloadStatus, 1000)
+             }
          }
      },
 

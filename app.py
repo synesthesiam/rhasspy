@@ -211,6 +211,14 @@ async def api_download_profile() -> str:
     return "OK"
 
 
+@app.route("/api/download-status", methods=["GET"])
+async def api_download_status() -> str:
+    """Get status of profile download"""
+    assert core is not None
+
+    return "\n".join(core.download_status)
+
+
 # -----------------------------------------------------------------------------
 
 

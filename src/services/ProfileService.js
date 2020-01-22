@@ -70,5 +70,9 @@ export default {
 
         return Api().post('/api/download-profile', '',
                           { 'params': params })
+    },
+
+    downloadStatus() {
+        return Api().get('/api/download-status')
     }
 }

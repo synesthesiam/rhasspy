@@ -88,6 +88,8 @@ class RhasspyCore:
         self._session: Optional[aiohttp.ClientSession] = aiohttp.ClientSession()
         self.dialogue_manager: Optional[RhasspyActor] = None
 
+        self.download_status: typing.List[str] = []
+
     # -------------------------------------------------------------------------
 
     @property
@@ -480,6 +482,8 @@ class RhasspyCore:
 
     async def download_profile(self, delete=False, chunk_size=4096) -> None:
         """Download all necessary profile files from the internet and extract them."""
+        self.download_status = []
+
         output_dir = Path(self.profile.write_path())
         download_dir = Path(
             self.profile.write_path(self.profile.get("download.cache_dir", "download"))
@@ -500,7 +504,9 @@ class RhasspyCore:
 
         async def download_file(url, filename):
             try:
-                self._logger.debug("Downloading %s to %s", url, filename)
+                status = f"Downloading {url} to {filename}"
+                self.download_status.append(status)
+                self._logger.debug(status)
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
 
                 async with self.session.get(url) as response:
@@ -508,13 +514,17 @@ class RhasspyCore:
                         async for chunk in response.content.iter_chunked(chunk_size):
                             out_file.write(chunk)
 
-                self._logger.debug("Downloaded %s", filename)
+                status = f"Downloaded {filename}"
+                self.download_status.append(status)
+                self._logger.debug(status)
             except Exception:
                 self._logger.exception(url)
 
                 # Try to delete partially downloaded file
                 try:
-                    self._logger.debug("Deleting %s", filename)
+                    status = f"Failed to download {filename}"
+                    self.download_status.append(status)
+                    self._logger.debug(status)
                     os.unlink(filename)
                 except Exception:
                     pass
@@ -602,7 +612,9 @@ class RhasspyCore:
             os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
             # Copy file/directory as is
-            self._logger.debug("Copying %s to %s", src_path, dest_path)
+            status = f"Copying {src_path} to {dest_path}"
+            self.download_status.append(status)
+            self._logger.debug(status)
             if os.path.isdir(src_path):
                 shutil.copytree(src_path, dest_path)
             else:
@@ -675,7 +687,9 @@ class RhasspyCore:
                         extract_path = os.path.join(temp_dir, src_extract)
 
                     # Copy specific file/directory
-                    self._logger.debug("Copying %s to %s", extract_path, dest_path)
+                    status = f"Copying {extract_path} to {dest_path}"
+                    self.download_status.append(status)
+                    self._logger.debug(status)
                     if os.path.isdir(extract_path):
                         if src_exclude:
                             # Ignore some files
