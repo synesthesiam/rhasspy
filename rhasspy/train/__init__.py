@@ -376,6 +376,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
                     slot_names.add(slot_name)
 
         # Load slot values
+        has_slot_program = False
         for slot_key in slot_names:
             slot_info = find_slot(slot_key)
 
@@ -393,6 +394,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
                             slot_values.append(sentence)
             elif isinstance(slot_info, SlotProgramInfo):
                 # Program that will generate values
+                has_slot_program = True
                 slot_values = SlotProgram(slot_info.path, command_args=slot_info.args)
 
             # Replace $slot with sentences
@@ -410,6 +412,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
             "file_dep": ini_paths + deps,
             "targets": [intent_graph],
             "actions": [(do_intents_to_graph, [sentences, slot_names, replacements])],
+            "uptodate": [False if has_slot_program else None],
         }
 
     # -----------------------------------------------------------------------------

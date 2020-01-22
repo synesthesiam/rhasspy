@@ -11,6 +11,7 @@
 - Fix thread max count issue
 - Hide web UI alerts after 10 seconds
 - Delete partially downloaded profile files
+- Force slot programs to run each training cycle
 
 ### Removed
 
