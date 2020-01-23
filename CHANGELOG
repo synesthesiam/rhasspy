@@ -2,9 +2,10 @@
 
 ### Added
 
-- Button to web UI to play last recorded voice commmand
+- Button to web UI to play last recorded voice command
 - RHASSPY_LOG_LEVEL environment variable
 - Web UI feedback during download
+- Add "asoundrc" config option to Hass.IO add-on
 
 ### Changed
 - Moved $profile/kaldi/custom_words.txt to $profile/kaldi_custom_words.txt
