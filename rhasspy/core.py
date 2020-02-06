@@ -39,6 +39,7 @@ from rhasspy.events import (
     SentenceSpoken,
     SpeakSentence,
     SpeakWord,
+    StopListeningForWakeWord,
     StartRecordingToBuffer,
     StopRecordingToBuffer,
     TestMicrophones,
@@ -162,10 +163,14 @@ class RhasspyCore:
 
     # -------------------------------------------------------------------------
 
-    def listen_for_wake(self) -> None:
+    def listen_for_wake(self, enabled: bool = True) -> None:
         """Tell Rhasspy to start listening for a wake word."""
         assert self.actor_system is not None
-        self.actor_system.tell(self.dialogue_manager, ListenForWakeWord())
+
+        if enabled:
+            self.actor_system.tell(self.dialogue_manager, ListenForWakeWord())
+        else:
+            self.actor_system.tell(self.dialogue_manager, StopListeningForWakeWord())
 
     async def listen_for_command(
         self,
