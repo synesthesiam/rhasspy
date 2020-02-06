@@ -232,6 +232,7 @@ class PocketsphinxWakeListener(RhasspyActor):
             with open(dict_path, "r") as dict_file:
                 word_dict = read_dict(dict_file)
 
+            # TODO: Use dictionary_casing instead
             dict_upper = self.profile.get("speech_to_text.dictionary_upper", False)
             for word in keyphrase_words:
                 if dict_upper:
@@ -570,7 +571,9 @@ class PreciseWakeListener(RhasspyActor):
                     self.prediction_sem = threading.Semaphore()
                     for _ in range(num_chunks):
                         chunk = self.audio_buffer[: self.chunk_size]
-                        self.stream.write(chunk)
+                        if chunk:
+                            self.stream.write(chunk)
+
                         self.audio_buffer = self.audio_buffer[self.chunk_size :]
 
                     if self.send_not_detected:

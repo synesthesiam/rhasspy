@@ -53,7 +53,8 @@ Application authors may want to use the [rhasspy-client](https://pypi.org/projec
     * `?timeout=<seconds>` - override default command timeout
     * `?entity=<entity>&value=<value>` - set custom entity/value in recognized intent
 * `/api/listen-for-wake-word`
-    * POST to wake Rhasspy up and return immediately
+    * POST "on" to have Rhasspy listen for a wake word
+    * POST "off" to disable wake word
 * `/api/lookup`
     * POST word as plain text to look up or guess pronunciation
     * `?n=<number>` - return at most `n` guessed pronunciations

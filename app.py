@@ -269,8 +269,11 @@ async def api_speakers() -> Response:
 async def api_listen_for_wake() -> str:
     """Make Rhasspy listen for a wake word"""
     assert core is not None
-    core.listen_for_wake()
-    return "OK"
+    enabled_str = (await request.data).decode().strip().lower()
+    enabled = enabled_str not in ["false", "off"]
+    core.listen_for_wake(enabled)
+
+    return str(enabled)
 
 
 # -----------------------------------------------------------------------------

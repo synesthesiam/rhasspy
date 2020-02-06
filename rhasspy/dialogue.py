@@ -732,6 +732,9 @@ class DialogueManager(RhasspyActor):
         elif isinstance(message, GetProblems):
             # Report problems from child actors
             self.send(sender, Problems(self.problems))
+        elif isinstance(message, (ListenForWakeWord, StopListeningForWakeWord)):
+            # Forward to wake actor
+            self.send(self.wake, message)
         else:
             self.handle_forward(message, sender)
 
