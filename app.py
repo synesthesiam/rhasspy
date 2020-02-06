@@ -30,7 +30,7 @@ from swagger_ui import quart_api_doc
 
 from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
-from rhasspy.events import IntentRecognized, ProfileTrainingFailed
+from rhasspy.events import IntentRecognized, ProfileTrainingFailed, WakeWordDetected
 from rhasspy.utils import (
     FunctionLoggingHandler,
     buffer_to_wav,
@@ -698,7 +698,7 @@ async def api_text_to_intent():
 
     intent_json = json.dumps(intent)
     logger.debug(intent_json)
-    await add_ws_event(WS_EVENT_INTENT, intent_json)
+    await add_ws_event(WS_EVENT_USER, "intent", intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
@@ -734,7 +734,7 @@ async def api_speech_to_intent() -> Response:
 
     intent_json = json.dumps(intent)
     logger.debug(intent_json)
-    await add_ws_event(WS_EVENT_INTENT, intent_json)
+    await add_ws_event(WS_EVENT_USER, "intent", intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
@@ -780,7 +780,7 @@ async def api_stop_recording() -> Response:
 
     intent_json = json.dumps(intent)
     logger.debug(intent_json)
-    await add_ws_event(WS_EVENT_INTENT, intent_json)
+    await add_ws_event(WS_EVENT_USER, "intent", intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
@@ -1115,25 +1115,25 @@ async def swagger_yaml() -> Response:
 # WebSocket API
 # -----------------------------------------------------------------------------
 
-WS_EVENT_INTENT = 0
+WS_EVENT_USER = 0
 WS_EVENT_LOG = 1
 
 ws_queues: List[List[asyncio.Queue]] = [[], []]
 ws_locks: List[asyncio.Lock] = [asyncio.Lock(), asyncio.Lock()]
 
 
-async def add_ws_event(event_type: int, text: str):
+async def add_ws_event(event_type: int, message_type: str, text: str):
     """Send text out to all websockets for a specific event."""
     async with ws_locks[event_type]:
         for q in ws_queues[event_type]:
-            await q.put(text)
+            await q.put((message_type, text))
 
 
 # Send logging messages out to websocket
 logging.root.addHandler(
     FunctionLoggingHandler(
         lambda msg: asyncio.run_coroutine_threadsafe(
-            add_ws_event(WS_EVENT_LOG, msg), loop
+            add_ws_event(WS_EVENT_LOG, "log", msg), loop
         )
     )
 )
@@ -1156,7 +1156,13 @@ class WebSocketObserver(RhasspyActor):
             intent_json = json.dumps(message.intent)
             self._logger.debug(intent_json)
             asyncio.run_coroutine_threadsafe(
-                add_ws_event(WS_EVENT_INTENT, intent_json), loop
+                add_ws_event(WS_EVENT_USER, "intent", intent_json), loop
+            )
+        elif isinstance(message, WakeWordDetected):
+            assert core is not None
+            wake_json = json.dumps({"wakewordId": message.name, "siteId": core.siteId})
+            asyncio.run_coroutine_threadsafe(
+                add_ws_event(WS_EVENT_USER, "wake", wake_json), loop
             )
 
 
@@ -1165,19 +1171,41 @@ async def api_events_intent() -> None:
     """Websocket endpoint to receive intents as JSON."""
     # Add new queue for websocket
     q: asyncio.Queue = asyncio.Queue()
-    async with ws_locks[WS_EVENT_INTENT]:
-        ws_queues[WS_EVENT_INTENT].append(q)
+    async with ws_locks[WS_EVENT_USER]:
+        ws_queues[WS_EVENT_USER].append(q)
 
     try:
         while True:
-            text = await q.get()
-            await websocket.send(text)
+            message_type, text = await q.get()
+            if message_type == "intent":
+                await websocket.send(text)
     except Exception:
         logger.exception("api_events_intent")
 
     # Remove queue
-    async with ws_locks[WS_EVENT_INTENT]:
-        ws_queues[WS_EVENT_INTENT].remove(q)
+    async with ws_locks[WS_EVENT_USER]:
+        ws_queues[WS_EVENT_USER].remove(q)
+
+
+@app.websocket("/api/events/wake")
+async def api_events_wake() -> None:
+    """Websocket endpoint to report wake up."""
+    # Add new queue for websocket
+    q: asyncio.Queue = asyncio.Queue()
+    async with ws_locks[WS_EVENT_USER]:
+        ws_queues[WS_EVENT_USER].append(q)
+
+    try:
+        while True:
+            message_type, text = await q.get()
+            if message_type == "wake":
+                await websocket.send(text)
+    except Exception:
+        logger.exception("api_events_wake")
+
+    # Remove queue
+    async with ws_locks[WS_EVENT_USER]:
+        ws_queues[WS_EVENT_USER].remove(q)
 
 
 @app.websocket("/api/events/log")
@@ -1190,7 +1218,7 @@ async def api_events_log() -> None:
 
     try:
         while True:
-            text = await q.get()
+            _, text = await q.get()
             await websocket.send(text)
     except concurrent.futures.CancelledError:
         pass

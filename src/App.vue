@@ -3,7 +3,7 @@
         <!-- Top Bar -->
         <nav class="navbar navbar-expand-sm navbar-dark bg-dark fixed-top">
             <a href="/">
-                <img class="navbar-brand" v-bind:class="spinnerClass" src="/img/logo.png">
+                <img id="logo" class="navbar-brand" v-bind:class="spinnerClass" src="/img/logo.png">
             </a>
 
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -191,7 +191,9 @@
 
              version: '',
 
-             downloadStatus: ''
+             downloadStatus: '',
+
+             wakeSocket: null
          }
      },
 
@@ -365,6 +367,24 @@
              if (this.downloading) {
                  setTimeout(this.updateDownloadStatus, 1000)
              }
+         },
+
+         connectWakeSocket: function() {
+             // Connect to /api/events/intent websocket
+             var wsProtocol = 'ws://'
+             if (window.location.protocol == 'https:') {
+                 wsProtocol = 'wss://'
+             }
+
+             var wsURL = wsProtocol + window.location.host + '/api/events/wake'
+             this.wakeSocket = new WebSocket(wsURL)
+             this.wakeSocket.onmessage = (evt) => {
+                 $('#logo').css('border-width', '5px')
+             }
+             this.wakeSocket.onclose = () => {
+                 // Try to reconnect
+                 setTimeout(this.connectWakeSocket, 1000)
+             }
          }
      },
 
@@ -376,6 +396,7 @@
          this.getCustomWords()
          this.getUnknownWords()
          this.getProblems()
+         /* this.connectWakeSocket() */
          this.$options.sockets.onmessage = function(event) {
              this.rhasspyLog = event.data + '\n' + this.rhasspyLog
          }

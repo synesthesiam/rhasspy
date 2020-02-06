@@ -173,3 +173,5 @@
 !rhasspy/train/jsgf2fst/*.py
 !*.py
 !VERSION
+
+!pip

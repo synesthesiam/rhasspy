@@ -136,7 +136,9 @@
              audioContext: null,
              recorder: null,
 
-             sendHass: true
+             sendHass: true,
+
+             intentSocket: null
          }
      },
 
@@ -276,7 +278,30 @@
          playLastVoiceCommand: function(event) {
              TranscribeService.playRecording()
                   .catch(err => this.$parent.error(err))
+         },
+
+         connectIntentSocket: function() {
+             // Connect to /api/events/intent websocket
+             var wsProtocol = 'ws://'
+             if (window.location.protocol == 'https:') {
+                 wsProtocol = 'wss://'
+             }
+
+             var wsURL = wsProtocol + window.location.host + '/api/events/intent'
+             this.intentSocket = new WebSocket(wsURL)
+             this.intentSocket.onmessage = (evt) => {
+                 this.jsonSource = JSON.parse(evt.data)
+                 this.sentence = this.jsonSource.raw_text
+             }
+             this.intentSocket.onclose = () => {
+                 // Try to reconnect
+                 setTimeout(this.connectIntentSocket, 1000)
+             }
          }
+     },
+
+     mounted: function() {
+         this.connectIntentSocket()
      }
  }
 </script>

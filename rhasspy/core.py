@@ -88,7 +88,7 @@ class RhasspyCore:
         self._session: Optional[aiohttp.ClientSession] = aiohttp.ClientSession()
         self.dialogue_manager: Optional[RhasspyActor] = None
 
-        self.download_status: typing.List[str] = []
+        self.download_status: List[str] = []
 
     # -------------------------------------------------------------------------
 

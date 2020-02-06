@@ -13,6 +13,11 @@ body {
     z-index: 9999;
 }
 
+#logo {
+    border-color: red;
+    border-width: 0;
+}
+
 .response {
     text-align: center;
 }
