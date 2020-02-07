@@ -6,6 +6,7 @@
 - /api/events/wake websocket endpoint reports wake up events
 - /api/events/text websocket endpoint reports transcription events
 - Rhasspy logo changes in web UI when wake word is detected
+- espeak arguments list for text to speech
 
 ### Changed
 

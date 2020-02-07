@@ -618,7 +618,7 @@ async def wav2mqtt(core: RhasspyCore, profile: Profile, args: Any) -> None:
 
 async def text2wav(core: RhasspyCore, profile: Profile, args: Any) -> None:
     """Speak a sentence and output WAV data"""
-    result = await core.speak_sentence(args)
+    result = await core.speak_sentence(args.sentence)
     sys.stdout.buffer.write(result.wav_data)
 
 

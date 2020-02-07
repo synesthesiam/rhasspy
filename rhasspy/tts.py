@@ -94,6 +94,7 @@ class EspeakSentenceSpeaker(RhasspyActor):
         self.disable_wake = True
         self.enable_wake = False
         self.wake: Optional[RhasspyActor] = None
+        self.espeak_args: List[str] = []
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
@@ -104,6 +105,7 @@ class EspeakSentenceSpeaker(RhasspyActor):
         self.wake = self.config.get("wake")
         self.wake_on_start = self.profile.get("rhasspy.listen_on_start", False)
         self.disable_wake = self.profile.get("text_to_speech.disable_wake", True)
+        self.espeak_args = list(self.profile.get("text_to_speech.espeak.arguments", []))
         self.transition("ready")
 
     def in_ready(self, message: Any, sender: RhasspyActor) -> None:
@@ -143,7 +145,7 @@ class EspeakSentenceSpeaker(RhasspyActor):
     def speak(self, sentence: str, voice: Optional[str] = None) -> bytes:
         """Get WAV buffer for sentence."""
         try:
-            espeak_cmd = ["espeak"]
+            espeak_cmd = ["espeak"] + self.espeak_args
             if voice:
                 espeak_cmd.extend(["-v", str(voice)])
 

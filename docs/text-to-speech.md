@@ -29,6 +29,19 @@ Add to your [profile](profiles.md):
 
 Remove the `voice` option to have `espeak` use your profile's language automatically.
 
+You may also pass additional arguments to the `espeak` command. For example,
+
+```json
+"text_to_speech": {
+  "system": "espeak",
+  "espeak": {
+    "arguments": ["-s", "80"]
+  }
+}
+```
+
+will speak the sentence more slowly.
+
 See `rhasspy.tts.EspeakSentenceSpeaker` for more details.
 
 ## Flite
