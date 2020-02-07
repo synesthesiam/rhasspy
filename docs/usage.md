@@ -142,7 +142,18 @@ More example flows are available [on Github](https://github.com/synesthesiam/rha
 
 ### WebSocket Events
 
-Whenever a voice command is recognized, Rhasspy emits JSON events over a websocket connection available at `ws://rhasspy:12101/api/events/intent` (replace `ws://` with `wss://` if you're using [secure hosting](usage.md#secure-hosting-with-https)).
+Rhasspy supports multiple websocket event endpoints:
+
+* `/api/events/intent`
+    * Intent recognized or not
+* `/api/events/wake`
+    * Wake word detected
+* `/api/events/text`
+    * Speech transcription
+    
+#### WebSocket Intents
+
+Whenever a voice command is recognized, Rhasspy emits JSON events over a websocket connection available at `ws://YOUR_SERVER:12101/api/events/intent` (replace `ws://` with `wss://` if you're using [secure hosting](usage.md#secure-hosting-with-https)).
 You can listen to these events in a [Node-RED](https://nodered.org) flow, and easily add offline, private voice commands to your home automation set up!
 
 For the `ChangLightState` intent from the [RGB Light Example](index.md#rgb-light-example), Rhasspy will emit a JSON event like this over the websocket:
@@ -170,6 +181,33 @@ For the `ChangLightState` intent from the [RGB Light Example](index.md#rgb-light
   }
 }
 ```
+
+#### WebSocket Wake
+
+When the wake word is detected, or Rhasspy is woken up via the `/api/listen-for-command` HTTP endpoint, a JSON event is emitted at `ws://YOUR_SERVER:12101/api/events/wake` (`wss://` if using HTTPS) like:
+
+```json
+{
+    "wakewordId": "default",
+    "siteId": "default"
+}
+```
+
+The `wakewordId` is set using the model or file name of your wakeword model (e.g., `porcupine` for `porcupine.ppn`). The `siteId` comes from your `mqtt.siteId` profile setting.
+
+#### WebSocket Transcriptions
+
+Each time a voice command is transcribed, Rhasspy emits a JSON event at `ws://YOUR_SERVER:12101/api/events/text` (`wss://` if using HTTPS) like:
+
+```json
+{
+    "text": "text from voice command",
+    "wakewordId": "default",
+    "siteId": "default"
+}
+```
+
+The transcription is contained in the `text` property. `wakewordId` is the id of the wakeword that initiated the voice command (or `default`). The `siteId` comes from your `mqtt.siteId` profile setting.
 
 ## MQTT and Snips
 
