@@ -2,6 +2,11 @@
 
 * [RGB Light Example](#rgb-light-example)
 * [Client/Server Setup](#clientserver-setup)
+* MATRIX Labs
+    * [Rhasspy Voice Assistant on MATRIX Voice and MATRIX Creator](https://www.hackster.io/matrix-labs/rhasspy-voice-assistant-on-matrix-voice-and-matrix-creator-97f92e)
+    * [Adding Intents for Rhasspy Offline Voice Assistant](https://www.hackster.io/matrix-labs/adding-intents-for-rhasspy-offline-voice-assistant-faa221)
+* Rendered Obsolete
+    * [Home Assistant Voice Recognition with Rhasspy](https://rendered-obsolete.github.io/2020/01/02/rhasspy.html)
 
 ## RGB Light Example
 
