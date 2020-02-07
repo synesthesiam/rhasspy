@@ -407,7 +407,7 @@ def numbers_to_words(sentence: str, language: Optional[str] = None) -> str:
             number = float(word)
 
             # 75 -> seventy-five -> seventy five
-            words[i] = num2words(number, lang=language).replace("-", " ")
+            words[i] = re.sub(r"[-,]\s*", " ", num2words(number, lang=language))
             changed = True
         except ValueError:
             pass  # not a number

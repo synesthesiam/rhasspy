@@ -3,6 +3,15 @@
 ### Added
 
 - /api/listen-for-wake accepts "on" and "off" as POST data to enable/disable wake word
+- /api/events/wake websocket endpoint reports wake up events
+- /api/events/text websocket endpoint reports transcription events
+- Rhasspy logo changes in web UI when wake word is detected
+
+### Changed
+
+- All voice commands show up in web UI test page
+- Play last voice command button in web UI works for any command
+- Fixed commas in numbers with thousand separators
 
 ## [2.4.17] - 2020 Jan 21
 
@@ -14,6 +23,7 @@
 - Add "asoundrc" config option to Hass.IO add-on
 
 ### Changed
+
 - Moved $profile/kaldi/custom_words.txt to $profile/kaldi_custom_words.txt
 - Slot substitution casing is kept during training/recognition
 - Fixed fuzzywuzzy and other intent recognizer training after addition of converters
@@ -40,7 +50,7 @@
 
 ### Added
 
-- Preliminary support for Rasperry Pi Zero (no Kaldi)
+- Preliminary support for Raspberry Pi Zero (no Kaldi)
 - Play error sound when intent not recognized
 - _text and _raw_text to Home Assistant events
 

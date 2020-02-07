@@ -99,6 +99,11 @@ class RhasspyCore:
         assert self._session is not None
         return self._session
 
+    @property
+    def siteId(self) -> str:
+        """Get default MQTT siteId"""
+        return self.profile.get("mqtt.siteId", "default")
+
     # -------------------------------------------------------------------------
 
     async def start(

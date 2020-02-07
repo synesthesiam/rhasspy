@@ -390,10 +390,17 @@ class TranscribeWav:
 class WavTranscription:
     """Response to TranscribeWav."""
 
-    def __init__(self, text: str, handle: bool = True, confidence: float = 1) -> None:
+    def __init__(
+        self,
+        text: str,
+        handle: bool = True,
+        confidence: float = 1,
+        wakewordId: str = "default",
+    ) -> None:
         self.text = text
         self.confidence = confidence
         self.handle = handle
+        self.wakewordId = wakewordId
 
 
 # -----------------------------------------------------------------------------

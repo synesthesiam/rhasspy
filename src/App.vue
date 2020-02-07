@@ -217,8 +217,8 @@
              this.alertText = text
              this.alertClass = 'alert-' + level
 
-             // Hide alert after 10 seconds
-             setTimeout(this.clearAlert, 10000)
+             // Hide alert after 20 seconds
+             setTimeout(this.clearAlert, 20000)
          },
 
          beginAsync: function() {
@@ -379,7 +379,10 @@
              var wsURL = wsProtocol + window.location.host + '/api/events/wake'
              this.wakeSocket = new WebSocket(wsURL)
              this.wakeSocket.onmessage = (evt) => {
-                 $('#logo').css('border-width', '5px')
+                 $('#logo').css('filter', 'invert()')
+                 setTimeout(() => {
+                     $('#logo').css('filter', 'initial')
+                 }, 2000)
              }
              this.wakeSocket.onclose = () => {
                  // Try to reconnect
@@ -396,7 +399,7 @@
          this.getCustomWords()
          this.getUnknownWords()
          this.getProblems()
-         /* this.connectWakeSocket() */
+         this.connectWakeSocket()
          this.$options.sockets.onmessage = function(event) {
              this.rhasspyLog = event.data + '\n' + this.rhasspyLog
          }

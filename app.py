@@ -9,8 +9,9 @@ import os
 import re
 import shutil
 import time
+from functools import wraps
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from uuid import uuid4
 
 import attr
@@ -30,7 +31,13 @@ from swagger_ui import quart_api_doc
 
 from rhasspy.actor import ActorSystem, ConfigureEvent, RhasspyActor
 from rhasspy.core import RhasspyCore
-from rhasspy.events import IntentRecognized, ProfileTrainingFailed, WakeWordDetected
+from rhasspy.events import (
+    IntentRecognized,
+    ProfileTrainingFailed,
+    VoiceCommand,
+    WakeWordDetected,
+    WavTranscription,
+)
 from rhasspy.utils import (
     FunctionLoggingHandler,
     buffer_to_wav,
@@ -53,6 +60,10 @@ loop = asyncio.get_event_loop()
 app = Quart("rhasspy")
 app.secret_key = str(uuid4())
 app = cors(app)
+
+# WAV data from last voice command
+last_voice_wav: Optional[bytes] = None
+
 
 # -----------------------------------------------------------------------------
 # Parse Arguments
@@ -293,6 +304,10 @@ async def api_listen_for_command() -> Response:
     # Key/value to set in recognized intent
     entity = request.args.get("entity")
     value = request.args.get("value")
+
+    # Emulate wake
+    wake_json = json.dumps({"wakewordId": "default", "siteId": core.siteId})
+    await add_ws_event("wake", wake_json)
 
     return jsonify(
         await core.listen_for_command(
@@ -654,6 +669,7 @@ async def api_restart() -> str:
 @app.route("/api/speech-to-text", methods=["POST"])
 async def api_speech_to_text() -> str:
     """Transcribe speech from WAV file."""
+    global last_voice_wav
     no_header = request.args.get("noheader", "false").lower() == "true"
     assert core is not None
 
@@ -663,9 +679,19 @@ async def api_speech_to_text() -> str:
         # Wrap in WAV
         wav_data = buffer_to_wav(wav_data)
 
+    last_voice_wav = wav_data
+
     start_time = time.perf_counter()
     result = await core.transcribe_wav(wav_data)
     end_time = time.perf_counter()
+
+    # Send to websocket
+    await add_ws_event(
+        "transcription",
+        json.dumps(
+            {"text": result.text, "wakewordId": "default", "siteId": core.siteId}
+        ),
+    )
 
     if prefers_json():
         return jsonify(
@@ -701,7 +727,7 @@ async def api_text_to_intent():
 
     intent_json = json.dumps(intent)
     logger.debug(intent_json)
-    await add_ws_event(WS_EVENT_USER, "intent", intent_json)
+    await add_ws_event("intent", intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
@@ -716,17 +742,25 @@ async def api_text_to_intent():
 @app.route("/api/speech-to-intent", methods=["POST"])
 async def api_speech_to_intent() -> Response:
     """Transcribe speech, recognize intent, and optionally handle."""
+    global last_voice_wav
     assert core is not None
     no_hass = request.args.get("nohass", "false").lower() == "true"
 
     # Prefer 16-bit 16Khz mono, but will convert with sox if needed
     wav_data = await request.data
+    last_voice_wav = wav_data
 
     # speech -> text
     start_time = time.time()
     transcription = await core.transcribe_wav(wav_data)
     text = transcription.text
     logger.debug(text)
+
+    # Send to websocket
+    await add_ws_event(
+        "transcription",
+        json.dumps({"text": text, "wakewordId": "default", "siteId": core.siteId}),
+    )
 
     # text -> intent
     intent = (await core.recognize_intent(text)).intent
@@ -737,7 +771,7 @@ async def api_speech_to_intent() -> Response:
 
     intent_json = json.dumps(intent)
     logger.debug(intent_json)
-    await add_ws_event(WS_EVENT_USER, "intent", intent_json)
+    await add_ws_event("intent", intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
@@ -747,8 +781,6 @@ async def api_speech_to_intent() -> Response:
 
 
 # -----------------------------------------------------------------------------
-
-last_voice_wav: Optional[bytes] = None
 
 
 @app.route("/api/start-recording", methods=["POST"])
@@ -778,12 +810,18 @@ async def api_stop_recording() -> Response:
     text = transcription.text
     logger.debug(text)
 
+    # Send to websocket
+    await add_ws_event(
+        "transcription",
+        json.dumps({"text": text, "wakewordId": "default", "siteId": core.siteId}),
+    )
+
     intent = (await core.recognize_intent(text)).intent
     intent["speech_confidence"] = transcription.confidence
 
     intent_json = json.dumps(intent)
     logger.debug(intent_json)
-    await add_ws_event(WS_EVENT_USER, "intent", intent_json)
+    await add_ws_event("intent", intent_json)
 
     if not no_hass:
         # Send intent to Home Assistant
@@ -1118,26 +1156,26 @@ async def swagger_yaml() -> Response:
 # WebSocket API
 # -----------------------------------------------------------------------------
 
-WS_EVENT_USER = 0
-WS_EVENT_LOG = 1
-
-ws_queues: List[List[asyncio.Queue]] = [[], []]
-ws_locks: List[asyncio.Lock] = [asyncio.Lock(), asyncio.Lock()]
+user_queues: Set[asyncio.Queue] = set()
+logging_queues: Set[asyncio.Queue] = set()
 
 
-async def add_ws_event(event_type: int, message_type: str, text: str):
-    """Send text out to all websockets for a specific event."""
-    async with ws_locks[event_type]:
-        for q in ws_queues[event_type]:
-            await q.put((message_type, text))
+async def add_ws_event(message_type: str, text: str):
+    """Send text out to all user websockets for a specific event."""
+    for q in user_queues:
+        await q.put((message_type, text))
+
+
+async def log_ws_event(text: str):
+    """Send logging message out to websockets."""
+    for q in logging_queues:
+        await q.put(text)
 
 
 # Send logging messages out to websocket
 logging.root.addHandler(
     FunctionLoggingHandler(
-        lambda msg: asyncio.run_coroutine_threadsafe(
-            add_ws_event(WS_EVENT_LOG, "log", msg), loop
-        )
+        lambda msg: asyncio.run_coroutine_threadsafe(log_ws_event(msg), loop)
     )
 )
 
@@ -1147,6 +1185,8 @@ class WebSocketObserver(RhasspyActor):
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in started state."""
+        global last_voice_wav
+
         if isinstance(message, IntentRecognized):
             # Add slots
             intent_slots = {}
@@ -1158,57 +1198,75 @@ class WebSocketObserver(RhasspyActor):
             # Convert to JSON
             intent_json = json.dumps(message.intent)
             self._logger.debug(intent_json)
-            asyncio.run_coroutine_threadsafe(
-                add_ws_event(WS_EVENT_USER, "intent", intent_json), loop
-            )
+            asyncio.run_coroutine_threadsafe(add_ws_event("intent", intent_json), loop)
         elif isinstance(message, WakeWordDetected):
             assert core is not None
             wake_json = json.dumps({"wakewordId": message.name, "siteId": core.siteId})
-            asyncio.run_coroutine_threadsafe(
-                add_ws_event(WS_EVENT_USER, "wake", wake_json), loop
+            asyncio.run_coroutine_threadsafe(add_ws_event("wake", wake_json), loop)
+        elif isinstance(message, WavTranscription):
+            assert core is not None
+            transcription_json = json.dumps(
+                {
+                    "text": message.text,
+                    "wakewordId": message.wakewordId,
+                    "siteId": core.siteId,
+                }
             )
+            asyncio.run_coroutine_threadsafe(
+                add_ws_event("transcription_json", transcription_json), loop
+            )
+        elif isinstance(message, VoiceCommand):
+            # Save last voice command
+            last_voice_wav = buffer_to_wav(message.data)
+
+
+def api_websocket(func):
+    """Wraps a websocket route to use a user websocket queue"""
+
+    @wraps(func)
+    async def wrapper(*_args, **kwargs):
+        global user_queues
+        queue = asyncio.Queue()
+        user_queues.add(queue)
+        try:
+            return await func(queue, *_args, **kwargs)
+        except Exception:
+            logger.exception("api_websocket")
+        finally:
+            user_queues.discard(queue)
+
+    return wrapper
 
 
 @app.websocket("/api/events/intent")
-async def api_events_intent() -> None:
+@api_websocket
+async def api_events_intent(queue) -> None:
     """Websocket endpoint to receive intents as JSON."""
     # Add new queue for websocket
-    q: asyncio.Queue = asyncio.Queue()
-    async with ws_locks[WS_EVENT_USER]:
-        ws_queues[WS_EVENT_USER].append(q)
+    while True:
+        message_type, text = await queue.get()
+        if message_type == "intent":
+            await websocket.send(text)
 
-    try:
-        while True:
-            message_type, text = await q.get()
-            if message_type == "intent":
-                await websocket.send(text)
-    except Exception:
-        logger.exception("api_events_intent")
 
-    # Remove queue
-    async with ws_locks[WS_EVENT_USER]:
-        ws_queues[WS_EVENT_USER].remove(q)
+@app.websocket("/api/events/text")
+@api_websocket
+async def api_events_text(queue) -> None:
+    """Websocket endpoint for transcriptions."""
+    while True:
+        message_type, text = await queue.get()
+        if message_type == "transcription":
+            await websocket.send(text)
 
 
 @app.websocket("/api/events/wake")
-async def api_events_wake() -> None:
+@api_websocket
+async def api_events_wake(queue) -> None:
     """Websocket endpoint to report wake up."""
-    # Add new queue for websocket
-    q: asyncio.Queue = asyncio.Queue()
-    async with ws_locks[WS_EVENT_USER]:
-        ws_queues[WS_EVENT_USER].append(q)
-
-    try:
-        while True:
-            message_type, text = await q.get()
-            if message_type == "wake":
-                await websocket.send(text)
-    except Exception:
-        logger.exception("api_events_wake")
-
-    # Remove queue
-    async with ws_locks[WS_EVENT_USER]:
-        ws_queues[WS_EVENT_USER].remove(q)
+    while True:
+        message_type, text = await queue.get()
+        if message_type == "wake":
+            await websocket.send(text)
 
 
 @app.websocket("/api/events/log")
@@ -1216,19 +1274,17 @@ async def api_events_log() -> None:
     """Websocket endpoint to receive logging messages as text."""
     # Add new queue for websocket
     q: asyncio.Queue = asyncio.Queue()
-    async with ws_locks[WS_EVENT_LOG]:
-        ws_queues[WS_EVENT_LOG].append(q)
+    logging_queues.add(q)
 
     try:
         while True:
-            _, text = await q.get()
+            text = await q.get()
             await websocket.send(text)
     except concurrent.futures.CancelledError:
         pass
 
     # Remove queue
-    async with ws_locks[WS_EVENT_LOG]:
-        ws_queues[WS_EVENT_LOG].remove(q)
+    logging_queues.discard(q)
 
 
 # -----------------------------------------------------------------------------

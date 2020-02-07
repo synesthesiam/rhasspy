@@ -386,6 +386,10 @@ class DialogueManager(RhasspyActor):
                 for hook_url in awake_hooks:
                     self._logger.debug("POST-ing to %s", hook_url)
                     requests.post(hook_url, json=hook_json)
+
+            # Forward to observer
+            if self.observer:
+                self.send(self.observer, message)
         elif isinstance(message, WakeWordNotDetected):
             self._logger.debug("Wake word NOT detected. Staying asleep.")
             self.transition("ready")
@@ -423,6 +427,10 @@ class DialogueManager(RhasspyActor):
             wav_data = buffer_to_wav(message.data)
             self.send(self.decoder, TranscribeWav(wav_data, handle=message.handle))
             self.transition("decoding")
+
+            # Forward to observer
+            if self.observer:
+                self.send(self.observer, message)
         else:
             self.handle_any(message, sender)
 
@@ -433,6 +441,8 @@ class DialogueManager(RhasspyActor):
     def in_decoding(self, message: Any, sender: RhasspyActor) -> None:
         """Handle messages in decoding state."""
         if isinstance(message, WavTranscription):
+            message.wakewordId = self.wake_detected_name or "default"
+
             # text -> intent
             self._logger.debug("%s (confidence=%s)", message.text, message.confidence)
 
@@ -447,7 +457,8 @@ class DialogueManager(RhasspyActor):
                     "text": message.text,
                     "likelihood": 1,
                     "seconds": 0,
-                    "wakeId": self.wake_detected_name or "",
+                    "wakeId": message.wakewordId,
+                    "wakewordId": message.wakewordId,
                 }
             ).encode()
 
@@ -459,6 +470,10 @@ class DialogueManager(RhasspyActor):
                     ),
                 )
                 self.send(self.mqtt, MqttPublish("hermes/asr/textCaptured", payload))
+
+            # Forward to observer
+            if self.observer:
+                self.send(self.observer, message)
 
             # Pass to intent recognizer
             self.send(

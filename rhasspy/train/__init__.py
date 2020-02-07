@@ -257,7 +257,7 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
             n = int(match.group(1))
 
             # 75 -> (seventy five):75!int
-            number_text = num2words(n, lang=language).replace("-", " ").strip()
+            number_text = re.sub(r"[-,]\s*", " ", num2words(n, lang=language)).strip()
             assert number_text, f"Empty num2words result for {n}"
             number_words = number_text.split()
 

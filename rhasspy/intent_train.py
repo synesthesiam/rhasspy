@@ -1,12 +1,8 @@
 """Training for intent recognizers."""
 import json
 import os
-import random
-import re
-import shutil
 import subprocess
 import tempfile
-import time
 from collections import Counter, defaultdict
 from io import StringIO
 from typing import Any, Callable, Dict, List, Set, Type
@@ -14,7 +10,7 @@ from urllib.parse import urljoin
 
 from rhasspy.actor import RhasspyActor
 from rhasspy.events import IntentTrainingComplete, IntentTrainingFailed, TrainIntent
-from rhasspy.utils import lcm, make_sentences_by_intent, load_converters
+from rhasspy.utils import make_sentences_by_intent, load_converters
 
 # -----------------------------------------------------------------------------
 
