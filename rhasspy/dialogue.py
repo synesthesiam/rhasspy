@@ -443,6 +443,13 @@ class DialogueManager(RhasspyActor):
         if isinstance(message, WavTranscription):
             message.wakewordId = self.wake_detected_name or "default"
 
+            # Fix casing
+            dict_casing = self.profile.get("speech_to_text.dictionary_casing", "")
+            if dict_casing == "lower":
+                message.text = message.text.lower()
+            elif dict_casing == "upper":
+                message.text = message.text.upper()
+
             # text -> intent
             self._logger.debug("%s (confidence=%s)", message.text, message.confidence)
 

@@ -9,6 +9,7 @@
 
 ### Changed
 
+- STT output casing is fixed outside of HTTP API calls
 - All voice commands show up in web UI test page
 - Play last voice command button in web UI works for any command
 - Fixed commas in numbers with thousand separators
