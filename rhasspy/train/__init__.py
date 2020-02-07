@@ -526,6 +526,13 @@ def train_profile(profile_dir: Path, profile: Profile) -> Tuple[int, List[str]]:
                     for word in read_dict(dict_file):
                         print(word, file=vocab_file)
 
+            if profile.get("wake.system", "dummy") == "pocketsphinx":
+                # Add words from Pocketsphinx wake keyphrase
+                keyphrase = profile.get("wake.pocketsphinx.keyphrase", "")
+                if keyphrase:
+                    for word in re.split(r"\s+", keyphrase):
+                        print(word, file=vocab_file)
+
     @create_after(executed="language_model")
     def task_vocab():
         """Writes all vocabulary words to a file from intent.fst."""

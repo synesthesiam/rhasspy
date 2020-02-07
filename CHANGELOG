@@ -13,6 +13,8 @@
 - All voice commands show up in web UI test page
 - Play last voice command button in web UI works for any command
 - Fixed commas in numbers with thousand separators
+- Words from Pocketsphinx wake keyphrase are added to dictionary
+- Pocketsphinx wake word keyphrase casing is fixed
 
 ## [2.4.17] - 2020 Jan 21
 

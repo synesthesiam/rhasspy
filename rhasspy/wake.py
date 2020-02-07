@@ -227,19 +227,19 @@ class PocketsphinxWakeListener(RhasspyActor):
             self.keyphrase = self.profile.get("wake.pocketsphinx.keyphrase", "")
             assert self.keyphrase, "No wake keyphrase"
 
+            # Fix casing
+            dict_casing = self.profile.get("speech_to_text.dictionary_casing", "")
+            if dict_casing == "lower":
+                self.keyphrase = self.keyphrase.lower()
+            elif dict_casing == "upper":
+                self.keyphrase = self.keyphrase.upper()
+
             # Verify that keyphrase words are in dictionary
             keyphrase_words = re.split(r"\s+", self.keyphrase)
             with open(dict_path, "r") as dict_file:
                 word_dict = read_dict(dict_file)
 
-            # TODO: Use dictionary_casing instead
-            dict_upper = self.profile.get("speech_to_text.dictionary_upper", False)
             for word in keyphrase_words:
-                if dict_upper:
-                    word = word.upper()
-                else:
-                    word = word.lower()
-
                 if word not in word_dict:
                     self._logger.warning("%s not in dictionary", word)
 

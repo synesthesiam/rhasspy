@@ -359,9 +359,10 @@ class RhasspyCore:
         """Generate speech/intent artifacts for profile."""
         if no_cache:
             # Delete doit database
-            db_path = Path(self.profile.write_path(".doit.db"))
-            if db_path.is_file():
-                db_path.unlink()
+            profile_dir = Path(self.profile.write_path())
+            for db_path in profile_dir.glob(".doit.db*"):
+                if db_path.is_file():
+                    db_path.unlink()
 
         assert self.actor_system is not None
         with self.actor_system.private() as sys:
