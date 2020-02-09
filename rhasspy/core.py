@@ -103,7 +103,7 @@ class RhasspyCore:
     def siteId(self) -> str:
         """Get default MQTT siteId"""
         try:
-            siteIds = self.profile.get("mqtt.siteId", "default").split(",")[0]
+            return self.profile.get("mqtt.siteId", "default").split(",")[0]
         except Exception:
             return "default"
 
