@@ -137,7 +137,7 @@
                 <div class="form-row">
                     <label for="remote-handle-url" class="col-form-label">Remote URL</label>
                     <div class="col">
-                        <input id="remote-handle-url" type="text" class="form-control" v-model="profile.handle.remote.url" :disabled="profile.intent.system != 'remote'">
+                        <input id="remote-handle-url" type="text" class="form-control" v-model="profile.handle.remote.url" :disabled="profile.handle.system != 'remote'">
                     </div>
                 </div>
             </div>
