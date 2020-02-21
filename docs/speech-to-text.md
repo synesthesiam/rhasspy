@@ -8,6 +8,7 @@ The following table summarizes language support for the various speech to text s
 | ------                                         | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  | -------  |
 | [pocketsphinx](speech-to-text.md#pocketsphinx) | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |          | &#x2713; | &#x2713; |
 | [kaldi](speech-to-text.md#kaldi)               | &#x2713; | &#x2713; |          | &#x2713; |          | &#x2713; |          |          |          |          | &#x2713; |          |          |
+| [google](speech-to-text.md#google-cloud)       | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; | &#x2713; |
 
 ## Pocketsphinx
 
@@ -76,6 +77,29 @@ Rhasspy expects a Kaldi-compatible profile to contain a `model` directory with a
 ### Open Transcription
 
 If you just want to use Rhasspy for general speech to text, you can set `speech_to_text.kaldi.open_transcription` to `true` in your profile. This will use the included general language model (much slower) and ignore any custom voice commands you've specified.
+
+## Google Cloud
+
+Does speech recognition using [Google Cloud Speech-to-Text](https://cloud.google.com/speech-to-text) service.
+You will need an active Google Cloud subscription and a JSON private key connected to a service account enabled to use
+the speech-to-text API. The locale configured in your profile will be used for speech recognition.
+
+```json
+{
+  "locale": "en_US",
+  "speech_to_text": {
+    "system": "google",
+    "google": {
+      "credentials": "api-project-xxxxxxxx-abcdef.json",
+      "min_confidence": 0.7
+      }
+  }
+}
+```
+
+Please note that this module sends the recorded audio after it's completed, so no streaming support.
+
+See `rhasspy.stt.GoogleCloudDecoder` for details.
 
 ## Remote HTTP Server
 
