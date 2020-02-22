@@ -324,31 +324,31 @@
         "cache": false
       },
       "porcupine_params.pv": {
-        "url": "https://github.com/Picovoice/Porcupine/raw/master/lib/common/porcupine_params.pv",
+        "url": "https://github.com/Picovoice/porcupine/raw/v1.7/lib/common/porcupine_params.pv",
         "cache": false
       },
       "porcupine.ppn": {
         "cache": false,
         "x86_64": {
-          "url": "https://github.com/Picovoice/Porcupine/raw/master/resources/keyword_files/linux/porcupine_linux.ppn"
+          "url": "https://github.com/Picovoice/Porcupine/raw/v1.7/resources/keyword_files/linux/porcupine_linux.ppn"
         },
         "armv7l": {
-          "url": "https://github.com/Picovoice/Porcupine/raw/master/resources/keyword_files/raspberrypi/porcupine_raspberrypi.ppn"
+          "url": "https://github.com/Picovoice/porcupine/raw/v1.7/resources/keyword_files/raspberry-pi/porcupine_raspberry-pi.ppn"
         },
         "aarch64": {
-          "url": "https://github.com/Picovoice/Porcupine/raw/master/resources/keyword_files/raspberrypi/porcupine_raspberrypi.ppn"
+          "url": "https://github.com/Picovoice/porcupine/raw/v1.7/resources/keyword_files/raspberry-pi/porcupine_raspberry-pi.ppn"
         }
       },
       "libpv_porcupine.so": {
         "cache": false,
         "x86_64": {
-          "url": "https://github.com/Picovoice/Porcupine/raw/master/lib/linux/x86_64/libpv_porcupine.so"
+          "url": "https://github.com/Picovoice/porcupine/raw/v1.7/lib/linux/x86_64/libpv_porcupine.so"
         },
         "armv7l": {
-          "url": "https://github.com/Picovoice/Porcupine/raw/master/lib/raspberry-pi/cortex-a53/libpv_porcupine.so"
+          "url": "https://github.com/Picovoice/porcupine/raw/v1.7/lib/raspberry-pi/cortex-a53/libpv_porcupine.so"
         },
         "aarch64": {
-          "url": "https://github.com/Picovoice/Porcupine/raw/master/lib/raspberry-pi/cortex-a53/libpv_porcupine.so"
+          "url": "https://github.com/Picovoice/porcupine/raw/v1.7/lib/raspberry-pi/cortex-a53/libpv_porcupine.so"
         }
       }
     }
