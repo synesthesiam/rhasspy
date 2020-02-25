@@ -389,6 +389,7 @@ class RasaIntentRecognizer(RhasspyActor):
         RhasspyActor.__init__(self)
         self.project_name = ""
         self.parse_url = ""
+        self.min_confidence: float = 0
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
@@ -397,6 +398,7 @@ class RasaIntentRecognizer(RhasspyActor):
         self.project_name = rasa_config.get(
             "project_name", f"rhasspy_{self.profile.name}"
         )
+        self.min_confidence = rasa_config.get("min_confidence", 0)
         self.parse_url = urljoin(url, "model/parse")
 
     def in_started(self, message: Any, sender: RhasspyActor) -> None:
@@ -406,6 +408,15 @@ class RasaIntentRecognizer(RhasspyActor):
                 intent = self.recognize(message.text)
                 intent["intent"]["name"] = intent["intent"]["name"] or ""
                 logging.debug(repr(intent))
+                confidence = intent["intent"]["confidence"]
+                if confidence < self.min_confidence:
+                    intent["intent"]["name"] = ""
+
+                    self._logger.warning(
+                        "Intent did not meet confidence threshold: %s < %s",
+                        confidence,
+                        self.min_confidence,
+                    )
             except Exception:
                 self._logger.exception("in_started")
                 intent = empty_intent()
