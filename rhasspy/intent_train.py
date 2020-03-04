@@ -193,7 +193,8 @@ class RasaIntentTrainer(RhasspyActor):
                     entity = None
                     sentence_tokens = []
                     entity_tokens = []
-                    for token in intent_sent["raw_tokens"]:
+                    for raw_token in intent_sent["raw_tokens"]:
+                        token = raw_token
                         if entity and (raw_index >= entity["raw_end"]):
                             # Finish current entity
                             last_token = entity_tokens[-1]
@@ -217,7 +218,7 @@ class RasaIntentTrainer(RhasspyActor):
                             # Add directly to sentence
                             sentence_tokens.append(token)
 
-                        raw_index += len(token) + 1
+                        raw_index += len(raw_token) + 1
 
                     if entity:
                         # Finish final entity
