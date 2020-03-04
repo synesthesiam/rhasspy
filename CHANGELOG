@@ -1,3 +1,16 @@
+## [2.4.19] - 2020 Mar 04
+
+### Added
+
+- Support for Google Cloud speech to text
+- Rasa NLU minimum confidence parameter
+
+### Changed
+
+- Using tagged version of porcupine wake models to avoid incompatibilities
+- Fix Rasa NLU first entity only bug
+- Fix siteId null bug
+
 ## [2.4.18] - 2020 Feb 07
 
 ### Added
