@@ -10,6 +10,9 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 from urllib.parse import urljoin
 
 import requests
+from google.cloud import speech
+from google.cloud.speech import enums
+from google.cloud.speech import types
 
 from rhasspy.actor import RhasspyActor
 from rhasspy.events import TranscribeWav, WavTranscription
@@ -25,6 +28,7 @@ def get_decoder_class(system: str) -> Type[RhasspyActor]:
         "pocketsphinx",
         "kaldi",
         "remote",
+        "google",
         "hass_stt",
         "command",
     ], f"Invalid speech to text system: {system}"
@@ -38,6 +42,9 @@ def get_decoder_class(system: str) -> Type[RhasspyActor]:
     if system == "remote":
         # Use remote Rhasspy server
         return RemoteDecoder
+    if system == "google":
+        # Use remote Google Cloud
+        return GoogleCloudDecoder
     if system == "hass_stt":
         # Use Home Assistant STT platform
         return HomeAssistantSTTIntegration
@@ -318,6 +325,84 @@ class RemoteDecoder(RhasspyActor):
             return ""
 
         return response.text
+
+
+# -----------------------------------------------------------------------------
+# Google Cloud Speech-to-text decoder
+# -----------------------------------------------------------------------------
+
+
+class GoogleCloudDecoder(RhasspyActor):
+    """Forwards speech to text request to Google Cloud STT service"""
+
+    def __init__(self) -> None:
+        RhasspyActor.__init__(self)
+        self.client = None
+        self.language_code = None
+        self.min_confidence: float = 0
+
+    def to_started(self, from_state: str) -> None:
+        """Transition to started state."""
+        credentials_file = self.profile.get("speech_to_text.google.credentials")
+        self.min_confidence = self.profile.get("speech_to_text.google.min_confidence")
+        self.language_code = self.profile.get("locale").replace('_', '-')
+        from google.auth import environment_vars
+        os.environ[environment_vars.CREDENTIALS] = credentials_file
+        self.client = speech.SpeechClient()
+
+    def in_started(self, message: Any, sender: RhasspyActor) -> None:
+        """Handle messages in started state."""
+        if isinstance(message, TranscribeWav):
+            try:
+                text, confidence = self.transcribe_wav(message.wav_data)
+                self._logger.debug(text)
+                self.send(
+                    message.receiver or sender,
+                    WavTranscription(
+                        text, confidence=confidence, handle=message.handle
+                    ),
+                    )
+            except Exception:
+                self._logger.exception("transcribing wav")
+
+                # Send empty transcription back
+                self.send(
+                    message.receiver or sender,
+                    WavTranscription("", confidence=0, handle=message.handle),
+                    )
+
+    def transcribe_wav(self, wav_data: bytes) -> Tuple[str, float]:
+        """POST to remote server and return response."""
+        headers = {"Content-Type": "audio/wav"}
+        self._logger.debug(
+            "POSTing %d byte(s) of WAV data to Google Cloud STT", len(wav_data)
+        )
+
+        audio = types.RecognitionAudio(content=wav_data)
+        config = types.RecognitionConfig(
+            encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=16000,
+            model='command_and_search',
+            language_code=self.language_code)
+
+        response = self.client.recognize(config, audio)
+        if len(response.results) == 0:
+            self._logger.debug("No results returned.")
+            return "", 0
+
+        result = response.results[0].alternatives[0]
+
+        self._logger.debug("Transcription confidence: %s", result.confidence)
+        if result.confidence >= self.min_confidence:
+            return result.transcript, result.confidence
+
+        self._logger.warning(
+            "Transcription did not meet confidence threshold: %s < %s",
+            result.confidence,
+            self.min_confidence,
+        )
+
+        return "", 0
 
 
 # -----------------------------------------------------------------------------
