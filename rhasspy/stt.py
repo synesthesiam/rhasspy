@@ -10,9 +10,6 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 from urllib.parse import urljoin
 
 import requests
-from google.cloud import speech
-from google.cloud.speech import enums
-from google.cloud.speech import types
 
 from rhasspy.actor import RhasspyActor
 from rhasspy.events import TranscribeWav, WavTranscription
@@ -343,10 +340,13 @@ class GoogleCloudDecoder(RhasspyActor):
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
+        from google.cloud import speech
+
         credentials_file = self.profile.get("speech_to_text.google.credentials")
         self.min_confidence = self.profile.get("speech_to_text.google.min_confidence")
-        self.language_code = self.profile.get("locale").replace('_', '-')
+        self.language_code = self.profile.get("locale").replace("_", "-")
         from google.auth import environment_vars
+
         os.environ[environment_vars.CREDENTIALS] = credentials_file
         self.client = speech.SpeechClient()
 
@@ -361,7 +361,7 @@ class GoogleCloudDecoder(RhasspyActor):
                     WavTranscription(
                         text, confidence=confidence, handle=message.handle
                     ),
-                    )
+                )
             except Exception:
                 self._logger.exception("transcribing wav")
 
@@ -369,11 +369,13 @@ class GoogleCloudDecoder(RhasspyActor):
                 self.send(
                     message.receiver or sender,
                     WavTranscription("", confidence=0, handle=message.handle),
-                    )
+                )
 
     def transcribe_wav(self, wav_data: bytes) -> Tuple[str, float]:
         """POST to remote server and return response."""
-        headers = {"Content-Type": "audio/wav"}
+        from google.cloud.speech import enums
+        from google.cloud.speech import types
+
         self._logger.debug(
             "POSTing %d byte(s) of WAV data to Google Cloud STT", len(wav_data)
         )
@@ -382,8 +384,9 @@ class GoogleCloudDecoder(RhasspyActor):
         config = types.RecognitionConfig(
             encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
             sample_rate_hertz=16000,
-            model='command_and_search',
-            language_code=self.language_code)
+            model="command_and_search",
+            language_code=self.language_code,
+        )
 
         response = self.client.recognize(config, audio)
         if len(response.results) == 0:
@@ -650,7 +653,9 @@ class HomeAssistantSTTIntegration(RhasspyActor):
                             audio_data = audio_data[self.chunk_size :]
 
             # POST WAV data to STT
-            response = requests.post(stt_url, data=generate_chunks(), **kwargs)  # type: ignore
+            response = requests.post(
+                stt_url, data=generate_chunks(), **kwargs
+            )  # type: ignore
             response.raise_for_status()
 
             response_json = response.json()
