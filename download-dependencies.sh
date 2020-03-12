@@ -126,10 +126,12 @@ fi
 
 if [[ -z "${no_kaldi}" ]]; then
     for FRIENDLY_ARCH in "${FRIENDLY_ARCHS[@]}"; do
-        # Install pre-built package
-        kaldi_file="${download_dir}/kaldi_${FRIENDLY_ARCH}.tar.gz"
-        kaldi_url="https://github.com/synesthesiam/kaldi-docker/releases/download/v1.0/kaldi_${FRIENDLY_ARCH}.tar.gz"
-        maybe_download "${kaldi_url}" "${kaldi_file}"
+        if [[ "${FRIENDLY_ARCH}" != "armv6l" ]]; then
+            # Install pre-built package
+            kaldi_file="${download_dir}/kaldi_${FRIENDLY_ARCH}.tar.gz"
+            kaldi_url="https://github.com/synesthesiam/kaldi-docker/releases/download/v1.0/kaldi_${FRIENDLY_ARCH}.tar.gz"
+            maybe_download "${kaldi_url}" "${kaldi_file}"
+        fi
     done
 fi
 
