@@ -86,7 +86,7 @@
                 <div class="form-row">
                     <div class="col">
                     <p class="text-muted">
-                        Requires the <a href="https://www.home-assistant.io/integrations/intent/">intent component</a> in your <tt>configuration.yaml</tt>
+                        Requires the <tt>intent</tt> component and <a href="https://www.home-assistant.io/integrations/intent_script">intent scripts</a> in your <tt>configuration.yaml</tt>
                     </p>
                     </div>
                 </div>
