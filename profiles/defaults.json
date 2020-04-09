@@ -119,7 +119,15 @@
     "publish_intents": true,
     "reconnect_sec": 5,
     "site_id": "default",
-    "username": ""
+    "username": "",
+    "tls": {
+      "enabled": false,
+      "ca_certs": "",
+      "cert_reqs": "CERT_REQUIRED",
+      "certfile": "",
+      "ciphers": "",
+      "keyfile": ""
+    }
   },
   "rhasspy": {
     "listen_on_start": true,

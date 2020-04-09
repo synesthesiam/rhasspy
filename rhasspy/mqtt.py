@@ -48,6 +48,7 @@ class HermesMqtt(RhasspyActor):
         self.password = None
         self.reconnect_sec = 5
         self.publish_intents = True
+        self.tls = { "enabled": False }
 
     # -------------------------------------------------------------------------
 
@@ -66,6 +67,7 @@ class HermesMqtt(RhasspyActor):
         self.password = self.profile.get("mqtt.password", None)
         self.reconnect_sec = self.profile.get("mqtt.reconnect_sec", 5)
         self.publish_intents = self.profile.get("mqtt.publish_intents", True)
+        self.tls = self.profile.get("mqtt.tls", { "enabled": False })
 
         if self.profile.get("mqtt.enabled", False):
             self.transition("connecting")
@@ -83,6 +85,27 @@ class HermesMqtt(RhasspyActor):
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         self.client.on_disconnect = self.on_disconnect
+
+        if pydash.get(self.tls, "enabled", False):
+            import ssl
+            allowed_cert_reqs = {
+                "CERT_REQUIRED": ssl.CERT_REQUIRED,
+                "CERT_OPTIONAL": ssl.CERT_OPTIONAL,
+                "CERT_NONE": ssl.CERT_NONE
+            }
+
+            self.client.tls_set(
+                ca_certs=pydash.get(self.tls, "ca_certs", None),
+                cert_reqs=pydash.get(
+                    allowed_cert_reqs,
+                    pydash.get(self.tls, "cert_reqs", "CERT_REQUIRED"),
+                    ssl.CERT_REQUIRED
+                ),
+                certfile=pydash.get(self.tls, "certfile", None),
+                ciphers=pydash.get(self.tls, "ciphers", None),
+                keyfile=pydash.get(self.tls, "keyfile", None),
+                tls_version=ssl.PROTOCOL_TLS
+            )
 
         if self.username:
             self._logger.debug("Logging in as %s", self.username)

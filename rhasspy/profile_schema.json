@@ -417,7 +417,18 @@
             "reconnect_sec": { "type": "integer", "min": 0 },
             "site_id": { "type": "string" },
             "username": { "type": "string" },
-            "publish_intents": { "type": "boolean" }
+            "publish_intents": { "type": "boolean" },
+            "tls": {
+                "type": "dict",
+                "schema": {
+                    "enabled": { "type": "boolean" },
+                    "ca_certs": { "type": "string" },
+                    "cert_reqs": { "type": "string" },
+                    "certfile": { "type": "string" },
+                    "ciphers": { "type": "string" },
+                    "keyfile": { "type": "string" }
+                }
+            }
         }
     },
 
