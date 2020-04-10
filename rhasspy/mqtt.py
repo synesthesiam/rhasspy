@@ -10,8 +10,13 @@ from typing import Any, Dict, List
 import pydash
 
 from rhasspy.actor import RhasspyActor
-from rhasspy.events import (MqttConnected, MqttDisconnected, MqttMessage,
-                            MqttPublish, MqttSubscribe)
+from rhasspy.events import (
+    MqttConnected,
+    MqttDisconnected,
+    MqttMessage,
+    MqttPublish,
+    MqttSubscribe,
+)
 
 # -----------------------------------------------------------------------------
 # Events
@@ -48,7 +53,7 @@ class HermesMqtt(RhasspyActor):
         self.password = None
         self.reconnect_sec = 5
         self.publish_intents = True
-        self.tls = { "enabled": False }
+        self.tls = {"enabled": False}
 
     # -------------------------------------------------------------------------
 
@@ -67,7 +72,7 @@ class HermesMqtt(RhasspyActor):
         self.password = self.profile.get("mqtt.password", None)
         self.reconnect_sec = self.profile.get("mqtt.reconnect_sec", 5)
         self.publish_intents = self.profile.get("mqtt.publish_intents", True)
-        self.tls = self.profile.get("mqtt.tls", { "enabled": False })
+        self.tls = self.profile.get("mqtt.tls", {"enabled": False})
 
         if self.profile.get("mqtt.enabled", False):
             self.transition("connecting")
@@ -88,10 +93,11 @@ class HermesMqtt(RhasspyActor):
 
         if pydash.get(self.tls, "enabled", False):
             import ssl
+
             allowed_cert_reqs = {
                 "CERT_REQUIRED": ssl.CERT_REQUIRED,
                 "CERT_OPTIONAL": ssl.CERT_OPTIONAL,
-                "CERT_NONE": ssl.CERT_NONE
+                "CERT_NONE": ssl.CERT_NONE,
             }
 
             self.client.tls_set(
@@ -99,12 +105,12 @@ class HermesMqtt(RhasspyActor):
                 cert_reqs=pydash.get(
                     allowed_cert_reqs,
                     pydash.get(self.tls, "cert_reqs", "CERT_REQUIRED"),
-                    ssl.CERT_REQUIRED
+                    ssl.CERT_REQUIRED,
                 ),
                 certfile=pydash.get(self.tls, "certfile", None),
                 ciphers=pydash.get(self.tls, "ciphers", None),
                 keyfile=pydash.get(self.tls, "keyfile", None),
-                tls_version=ssl.PROTOCOL_TLS
+                tls_version=ssl.PROTOCOL_TLS,
             )
 
         if self.username:
@@ -282,12 +288,12 @@ class HermesMqtt(RhasspyActor):
                             "slotName": ev["entity"],
                             "confidence": 1,
                             "value": {"kind": ev["entity"], "value": ev["value"]},
-                            "rawValue": ev["value"],
+                            "rawValue": ev.get("raw_value", ev["value"]),
                         }
                         for ev in intent.get("entities", [])
                     ],
                     "asrTokens": [],
-                    "asrConfidence": 1
+                    "asrConfidence": 1,
                 }
             ).encode()
 
