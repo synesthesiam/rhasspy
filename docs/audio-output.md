@@ -44,7 +44,15 @@ Add to your [profile](profiles.md):
   "username": "",
   "port": 1883,
   "password": "",
-  "site_id": "default"
+  "site_id": "default",
+  "tls": {
+    "enabled": false,
+    "ca_certs": "",
+    "cert_reqs": "CERT_REQUIRED",
+    "certfile": "",
+    "ciphers": "",
+    "keyfile": ""
+  }
 }
 ```
 

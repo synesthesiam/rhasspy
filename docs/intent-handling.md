@@ -93,14 +93,22 @@ Add to your [profile](profiles.md):
 
 ```json
 "mqtt": {
-    "enabled": true,
-    "host": "localhost",
-    "username": "",
-    "password": "",
-    "port": 1883,
-    "reconnect_sec": 5,
-    "site_id": "default",
-    "publish_intents": true
+  "enabled": true,
+  "host": "localhost",
+  "username": "",
+  "password": "",
+  "port": 1883,
+  "reconnect_sec": 5,
+  "site_id": "default",
+  "publish_intents": true,
+  "tls": {
+    "enabled": false,
+    "ca_certs": "",
+    "cert_reqs": "CERT_REQUIRED",
+    "certfile": "",
+    "ciphers": "",
+    "keyfile": ""
+  }
 }
 ```
 

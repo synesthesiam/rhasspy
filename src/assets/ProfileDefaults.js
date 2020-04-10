@@ -109,7 +109,15 @@ const profileDefaults = {
         "reconnect_sec": 5,
         "site_id": "default",
         "username": "",
-        "publish_intents": true
+        "publish_intents": true,
+        "tls": {
+            "enabled": false,
+            "ca_certs": "",
+            "cert_reqs": "CERT_REQUIRED",
+            "certfile": "",
+            "ciphers": "",
+            "keyfile": ""
+        }
     },
     "rhasspy": {
         "default_profile": "en",
