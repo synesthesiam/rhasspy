@@ -70,6 +70,7 @@ declare -A CPU_TO_FRIENDLY
 CPU_TO_FRIENDLY["x86_64"]="amd64"
 CPU_TO_FRIENDLY["armv7l"]="armhf"
 CPU_TO_FRIENDLY["arm64v8"]="aarch64"
+CPU_TO_FRIENDLY["aarch64"]="aarch64"
 CPU_TO_FRIENDLY["armv6l"]="armv6l"
 
 declare -A FRIENDLY_TO_DOCKER

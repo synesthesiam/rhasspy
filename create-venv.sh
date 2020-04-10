@@ -170,7 +170,7 @@ case "${CPU_ARCH}" in
         FRIENDLY_ARCH=armhf
         ;;
 
-    arm64v8)
+    aarch64|arm64v8)
         FRIENDLY_ARCH=aarch64
         ;;
 
