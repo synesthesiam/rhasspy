@@ -19,6 +19,11 @@ if [[ -f "${CONFIG_PATH}" ]]; then
     RHASSPY_ARGS="--profile \"${profile_name}\" --user-profiles \"${profile_dir}\""
 fi
 
+RHASSPY_VENV="${RHASSPY_APP}/.venv"
+if [[ -d "${RHASSPY_VENV}" ]]; then
+    source "${RHASSPY_VENV}/bin/activate"
+fi
+
 cd "${RHASSPY_APP}"
 
 if [[ -z "${RHASSPY_ARGS}" ]]; then

@@ -1,7 +1,6 @@
 *
-!etc/qemu-*
 
-!download/rhasspy-tools*
+!download/rhasspy-*
 !download/pocketsphinx-python.tar.gz
 !download/snowboy*
 !download/kaldi*
@@ -9,6 +8,9 @@
 !requirements.txt
 !dist/
 !etc/wav
+!etc/shflags
+!create-venv.sh
+!download-dependencies.sh
 
 !docker/run.sh
 !docker/rhasspy
