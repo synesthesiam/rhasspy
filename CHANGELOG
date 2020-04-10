@@ -2,7 +2,9 @@
 
 ### Added
 
-- libasound2-plugins to Docker image
+- libasound2-plugins to Docker image (for Hass.IO)
+- MQTT TLS support (thanks https://github.com/ofekd)
+- Mycroft Precise 0.3.0 added to Docker image
 
 ### Changed
 

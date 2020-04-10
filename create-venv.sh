@@ -11,10 +11,12 @@ DEFINE_string 'venv' "${this_dir}/.venv" 'Path to create virtual environment'
 DEFINE_string 'download-dir' "${this_dir}/download" 'Directory to cache downloaded files'
 DEFINE_boolean 'system' true 'Install system dependencies'
 DEFINE_boolean 'flair' false 'Install flair'
-DEFINE_boolean 'precise' false 'Install Mycroft Precise'
+DEFINE_boolean 'precise' true 'Install Mycroft Precise'
 DEFINE_boolean 'adapt' true 'Install Mycroft Adapt'
 DEFINE_boolean 'google' false 'Install Google Text to Speech'
 DEFINE_boolean 'kaldi' true 'Install Kaldi'
+DEFINE_boolean 'tools' true 'Install Rhasspy tools'
+DEFINE_boolean 'web' true 'Install web UI'
 DEFINE_boolean 'offline' false "Don't download anything"
 DEFINE_integer 'make-threads' 4 'Number of threads to use with make' 'j'
 DEFINE_string 'python' '' 'Path to Python executable'
@@ -58,6 +60,14 @@ fi
 
 if [[ "${FLAGS_offline}" -eq "${FLAGS_TRUE}" ]]; then
     offline='true'
+fi
+
+if [[ "${FLAGS_tools}" -eq "${FLAGS_FALSE}" ]]; then
+    no_tools='true'
+fi
+
+if [[ "${FLAGS_web}" -eq "${FLAGS_FALSE}" ]]; then
+    no_web='true'
 fi
 
 make_threads="${FLAGS_make_threads}"
@@ -183,6 +193,14 @@ if [[ -n "${no_kaldi}" ]]; then
     download_args+=('--nokaldi')
 fi
 
+if [[ -n "${no_tools}" ]]; then
+    download_args+=('--notools')
+fi
+
+if [[ -n "${no_web}" ]]; then
+    download_args+=('--noweb')
+fi
+
 bash download-dependencies.sh "${download_args[@]}"
 
 # -----------------------------------------------------------------------------
@@ -202,10 +220,12 @@ echo "Creating new virtual environment"
 mkdir -p "${venv}"
 "${PYTHON}" -m venv "${venv}"
 
-# Extract Rhasspy tools
-rhasspy_tools_file="${download_dir}/rhasspy-tools_${FRIENDLY_ARCH}.tar.gz"
-echo "Extracting tools (${rhasspy_tools_file})"
-tar -C "${venv}" -xf "${rhasspy_tools_file}"
+if [[ -z "${no_tools}" ]]; then
+    # Extract Rhasspy tools
+    rhasspy_tools_file="${download_dir}/rhasspy-tools_${FRIENDLY_ARCH}.tar.gz"
+    echo "Extracting tools (${rhasspy_tools_file})"
+    tar -C "${venv}" -xf "${rhasspy_tools_file}"
+fi
 
 # Force .venv/lib to be used
 export LD_LIBRARY_PATH="${venv}/lib:${LD_LIBRARY_PATH}"
@@ -288,7 +308,7 @@ esac
 
 if [[ -z "${no_precise}" && -z "$(command -v precise-engine)" ]]; then
     case "${CPU_ARCH}" in
-        x86_64|armv7l)
+        x86_64|armv7l|aarch64)
             echo "Installing Mycroft Precise"
             precise_file="${download_dir}/precise-engine_0.3.0_${CPU_ARCH}.tar.gz"
             precise_install="${venv}/lib"
@@ -316,9 +336,11 @@ fi
 # Web Interface
 # -----------------------------------------------------------------------------
 
-rhasspy_web_file="${download_dir}/rhasspy-web-dist.tar.gz"
-echo "Extracting web interface (${rhasspy_web_file})"
-tar -C "${this_dir}" -xf "${rhasspy_web_file}"
+if [[ -z "${no_web}" ]]; then
+    rhasspy_web_file="${download_dir}/rhasspy-web-dist.tar.gz"
+    echo "Extracting web interface (${rhasspy_web_file})"
+    tar -C "${this_dir}" -xf "${rhasspy_web_file}"
+fi
 
 # -----------------------------------------------------------------------------
 

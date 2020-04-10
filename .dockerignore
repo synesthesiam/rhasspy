@@ -1,9 +1,6 @@
 *
 
-!download/rhasspy-*
-!download/pocketsphinx-python.tar.gz
-!download/snowboy*
-!download/kaldi*
+!download/
 
 !requirements.txt
 !dist/

@@ -89,28 +89,44 @@
                 </p>
             </div>
             <hr>
-            <!-- <div class="form-group"> -->
-            <!-- <div class="form-row"> -->
-            <!-- <div class="form-check"> -->
-            <!-- <input class="form-check-input" type="radio" name="wake-system" id="wake-system-precise" value="precise" v-model="profile.wake.system"> -->
-            <!-- <label class="form-check-label" for="wake-system-precise"> -->
-            <!-- Use <a href="https://github.com/MycroftAI/mycroft-precise">Mycroft Precise</a> on this device -->
-            <!-- </label> -->
-            <!-- </div> -->
-            <!-- </div> -->
-            <!-- </div> -->
-            <!-- <div class="form-group"> -->
-            <!-- <div class="form-row"> -->
-            <!-- <label for="precise-model" class="col-form-label">Model Name</label> -->
-            <!-- <div class="col-sm-auto"> -->
-            <!-- <input id="precise-model" type="text" class="form-control" v-model="profile.wake.precise.model" :disabled="profile.wake.system != 'precise'"> -->
-            <!-- </div> -->
-            <!-- <div class="col text-muted"> -->
-            <!-- Put models in your profile directory -->
-            <!-- </div> -->
-            <!-- </div> -->
-            <!-- </div> -->
-            <!-- <hr> -->
+            <div class="form-group">
+                <div class="form-row">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="wake-system" id="wake-system-precise" value="precise" v-model="profile.wake.system">
+                        <label class="form-check-label" for="wake-system-precise">
+                            Use <a href="https://github.com/MycroftAI/mycroft-precise">Mycroft Precise</a> on this device
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-row">
+                    <label for="precise-model" class="col-form-label">Model Name</label>
+                    <div class="col-sm-auto">
+                        <input id="precise-model" type="text" class="form-control" v-model="profile.wake.precise.model" :disabled="profile.wake.system != 'precise'">
+                    </div>
+                    <div class="col text-muted">
+                        Put models in the <tt>precise</tt> directory in your profile
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-row">
+                        <label for="wake-precise-sensitivity" class="col-form-label">Sensitivity</label>
+                        <div class="col-sm-auto">
+                            <input id="wake-precise-sensitivity" type="text" class="form-control" v-model="profile.wake.precise.sensitivity" :disabled="profile.wake.system != 'precise'"> 
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-row">
+                        <label for="wake-precise-trigger-level" class="col-form-label">Trigger Level</label>
+                        <div class="col-sm-auto">
+                            <input id="wake-precise-trigger-level" type="text" class="form-control" v-model="profile.wake.precise.trigger_level" :disabled="profile.wake.system != 'precise'">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
             <div class="form-group">
                 <div class="form-row">
                     <div class="form-check">

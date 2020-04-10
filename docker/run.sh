@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-DIR="$( cd "$( dirname "$0" )" && pwd )"
+this_dir="$( cd "$( dirname "$0" )" && pwd )"
 
 # Try to detemine where Rhasspy is located
 if [[ -z "${RHASSPY_APP}" ]]; then
@@ -22,6 +22,9 @@ fi
 RHASSPY_VENV="${RHASSPY_APP}/.venv"
 if [[ -d "${RHASSPY_VENV}" ]]; then
     source "${RHASSPY_VENV}/bin/activate"
+
+    # Force .venv/lib to be used
+    export LD_LIBRARY_PATH="${RHASSPY_VENV}/lib:${LD_LIBRARY_PATH}"
 fi
 
 cd "${RHASSPY_APP}"

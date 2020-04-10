@@ -15,9 +15,14 @@ RUN apt-get update && \
         build-essential swig portaudio19-dev libatlas-base-dev
 
 COPY etc/shflags ${RHASSPY_APP}/etc/
-COPY download/ ${RHASSPY_APP}/download/
+COPY download/rhasspy-tools_*.tar.gz \
+     download/kaldi_*.tar.gz \
+     download/pocketsphinx-python.tar.gz \
+     download/snowboy-1.3.0.tar.gz \
+     download/precise-engine_0.3.0_*.tar.gz \
+     ${RHASSPY_APP}/download/
 COPY create-venv.sh download-dependencies.sh requirements.txt ${RHASSPY_APP}/
-RUN cd ${RHASSPY_APP} && ./create-venv.sh --nosystem
+RUN cd ${RHASSPY_APP} && ./create-venv.sh --nosystem --noweb
 
 # -----------------------------------------------------------------------------
 
@@ -44,10 +49,10 @@ RUN apt-get update && \
         gstreamer1.0-tools gstreamer1.0-plugins-good
 
 COPY --from=build ${RHASSPY_VENV} ${RHASSPY_VENV}
+COPY --from=build ${RHASSPY_APP}/opt/kaldi/ ${RHASSPY_APP}/opt/kaldi/
 
-# Runtime tools
-ADD download/rhasspy-tools_${TARGETARCH}${TARGETVARIANT}.tar.gz /usr/
-ADD download/kaldi_${TARGETARCH}${TARGETVARIANT}.tar.gz /opt/
+# Web interface
+ADD download/rhasspy-web-dist.tar.gz ${RHASSPY_APP}/
 
 RUN ldconfig
 
@@ -69,6 +74,6 @@ COPY rhasspy/*.py ${RHASSPY_APP}/rhasspy/
 COPY VERSION ${RHASSPY_APP}/
 
 ENV CONFIG_PATH /data/options.json
-ENV KALDI_PREFIX /opt
+ENV KALDI_PREFIX ${RHASSPY_APP}/opt
 
 ENTRYPOINT ["/run.sh"]
