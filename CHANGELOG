@@ -1,3 +1,14 @@
+## [2.4.20] - Unreleased
+
+### Added
+
+- libasound2-plugins to Docker image
+
+### Changed
+
+- Properly accept websocket connections
+- Don't error out on missing porcupine files
+
 ## [2.4.19] - 2020 Mar 04
 
 ### Added
