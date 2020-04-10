@@ -72,6 +72,58 @@
             </div>
             <div class="form-group">
                 <div class="form-row">
+                    <input id="mqtt-tls-enabled" type="checkbox" v-model="profile.mqtt.tls.enabled" :disabled="!profile.mqtt.enabled">
+                    <label for="mqtt-tls-enabled" class="col-form-label">Enable MQTT over TLS</label>
+                </div>
+            </div>
+            <template v-if="profile.mqtt.tls.enabled">
+                <div class="form-group">
+                    <div class="form-row">
+                        <label for="mqtt-tls-ca_certs" class="col-form-label">ca_certs</label>
+                        <div class="col-sm-auto">
+                            <input id="mqtt-tls-ca_certs" type="text" class="form-control" v-model="profile.mqtt.tls.ca_certs" :disabled="!profile.mqtt.enabled">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-row">
+                        <label for="mqtt-tls-cert_reqs" class="col-form-label">cert_reqs</label>
+                        <div class="col-sm-auto">
+                            <select id="mqtt-tls-cert_reqs" v-model="profile.mqtt.tls.cert_reqs" :disabled="!profile.mqtt.enabled">
+                                <option value="CERT_REQUIRED" default>CERT_REQUIRED</option>
+                                <option value="CERT_OPTIONAL">CERT_OPTIONAL</option>
+                                <option value="CERT_NONE">CERT_NONE</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-row">
+                        <label for="mqtt-tls-certfile" class="col-form-label">certfile</label>
+                        <div class="col-sm-auto">
+                            <input id="mqtt-tls-certfile" type="text" class="form-control" v-model="profile.mqtt.tls.certfile" :disabled="!profile.mqtt.enabled">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-row">
+                        <label for="mqtt-tls-ciphers" class="col-form-label">ciphers</label>
+                        <div class="col-sm-auto">
+                            <input id="mqtt-tls-ciphers" type="text" class="form-control" v-model="profile.mqtt.tls.ciphers" :disabled="!profile.mqtt.enabled">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-row">
+                        <label for="mqtt-tls-keyfile" class="col-form-label">keyfile</label>
+                        <div class="col-sm-auto">
+                            <input id="mqtt-tls-keyfile" type="text" class="form-control" v-model="profile.mqtt.tls.keyfile" :disabled="!profile.mqtt.enabled">
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <div class="form-group">
+                <div class="form-row">
                     <input type="checkbox" id="mqtt-publish_intents" v-model="profile.mqtt.publish_intents" :disabled="!profile.mqtt.enabled">
                     <label for="mqtt-publish_intents" class="col-form-label">Publish intents over MQTT</label>
                 </div>
