@@ -925,7 +925,8 @@ class PorcupineWakeListener(RhasspyActor):
         """Load porcupine library."""
         if self.handle is None:
             for kw_path in self.keyword_paths:
-                assert kw_path.is_file(), f"Missing {kw_path}"
+                if not kw_path.is_file():
+                    self._logger.error("Missing porcupine keyword at {kw_path}")
 
             from porcupine import Porcupine
 
