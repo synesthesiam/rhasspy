@@ -1243,6 +1243,8 @@ def api_websocket(func):
 async def api_events_intent(queue) -> None:
     """Websocket endpoint to receive intents as JSON."""
     # Add new queue for websocket
+    await websocket.accept()
+
     while True:
         message_type, text = await queue.get()
         if message_type == "intent":
@@ -1253,6 +1255,8 @@ async def api_events_intent(queue) -> None:
 @api_websocket
 async def api_events_text(queue) -> None:
     """Websocket endpoint for transcriptions."""
+    await websocket.accept()
+
     while True:
         message_type, text = await queue.get()
         if message_type == "transcription":
@@ -1263,6 +1267,8 @@ async def api_events_text(queue) -> None:
 @api_websocket
 async def api_events_wake(queue) -> None:
     """Websocket endpoint to report wake up."""
+    await websocket.accept()
+
     while True:
         message_type, text = await queue.get()
         if message_type == "wake":
@@ -1272,6 +1278,8 @@ async def api_events_wake(queue) -> None:
 @app.websocket("/api/events/log")
 async def api_events_log() -> None:
     """Websocket endpoint to receive logging messages as text."""
+    await websocket.accept()
+
     # Add new queue for websocket
     q: asyncio.Queue = asyncio.Queue()
     logging_queues.add(q)
