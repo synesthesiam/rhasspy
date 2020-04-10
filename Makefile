@@ -1,49 +1,17 @@
 .PHONY: web-dist docker manifest docs-uml g2p check
 SHELL := bash
 
+DOCKER_PLATFORMS = linux/amd64,linux/arm64,linux/arm/v7
+
 # -----------------------------------------------------------------------------
 # Docker
 # -----------------------------------------------------------------------------
 
-docker: web-dist docker-amd64 docker-armhf docker-aarch64
-
-docker-deploy: docker-push manifest
-
-docker-amd64:
-	docker build . -f docker/templates/dockerfiles/Dockerfile.prebuilt.alsa.all \
-    --build-arg BUILD_ARCH=amd64 \
-    --build-arg CPU_ARCH=x86_64 \
-    --build-arg BUILD_FROM=ubuntu:bionic \
-    -t synesthesiam/rhasspy-server:amd64
-
-docker-armhf:
-	docker build . -f docker/templates/dockerfiles/Dockerfile.prebuilt.alsa.all \
-     --build-arg BUILD_ARCH=armhf \
-     --build-arg CPU_ARCH=armv7l \
-     --build-arg BUILD_FROM=arm32v7/ubuntu:bionic \
-     -t synesthesiam/rhasspy-server:armhf
-
-docker-aarch64:
-	docker build . -f docker/templates/dockerfiles/Dockerfile.prebuilt.alsa.all \
-     --build-arg BUILD_ARCH=aarch64 \
-     --build-arg CPU_ARCH=arm64v8 \
-     --build-arg BUILD_FROM=arm64v8/ubuntu:bionic \
-     -t synesthesiam/rhasspy-server:aarch64
-
-docker-push:
-	docker push synesthesiam/rhasspy-server:amd64
-	docker push synesthesiam/rhasspy-server:armhf
-	docker push synesthesiam/rhasspy-server:aarch64
-
-manifest:
-	docker manifest push --purge synesthesiam/rhasspy-server:latest
-	docker manifest create --amend synesthesiam/rhasspy-server:latest \
-        synesthesiam/rhasspy-server:amd64 \
-        synesthesiam/rhasspy-server:armhf \
-        synesthesiam/rhasspy-server:aarch64
-	docker manifest annotate synesthesiam/rhasspy-server:latest synesthesiam/rhasspy-server:armhf --os linux --arch arm
-	docker manifest annotate synesthesiam/rhasspy-server:latest synesthesiam/rhasspy-server:aarch64 --os linux --arch arm64
-	docker manifest push synesthesiam/rhasspy-server:latest
+docker: web-dist
+	docker buildx build . \
+        --platform $(DOCKER_PLATFORMS) \
+        --tag rhasspy/rhasspy-server:latest \
+        --push
 
 # -----------------------------------------------------------------------------
 # Yarn (Vue)

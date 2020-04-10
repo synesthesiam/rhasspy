@@ -1,4 +1,4 @@
-## [2.4.20] - Unreleased
+## [2.4.20] - 2020 Apr 10
 
 ### Added
 
@@ -10,6 +10,7 @@
 
 - Properly accept websocket connections
 - Don't error out on missing porcupine files
+- Fix rawValue in MQTT messages
 
 ## [2.4.19] - 2020 Mar 04
 
