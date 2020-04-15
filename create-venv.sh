@@ -234,11 +234,11 @@ export LD_LIBRARY_PATH="${venv}/lib:${LD_LIBRARY_PATH}"
 source "${venv}/bin/activate"
 
 echo "Upgrading pip"
-"${PYTHON}" -m pip install --upgrade pip
+python3 -m pip install --upgrade pip
 
 echo "Installing Python requirements"
-"${PYTHON}" -m pip install wheel setuptools
-"${PYTHON}" -m pip install requests
+python3 -m pip install wheel setuptools
+python3 -m pip install requests
 
 # pytorch is not available on ARM
 case "${CPU_ARCH}" in
@@ -275,18 +275,18 @@ sed -i '/^openfst/d' "${requirements_file}"
 python3 -m pip install -r "${requirements_file}"
 
 # Install Python openfst wrapper
-"${PYTHON}" -m pip install \
-            --global-option=build_ext \
-            --global-option="-I${venv}/include" \
-            --global-option="-L${venv}/lib" \
-            -r <(grep '^openfst' "${this_dir}/requirements.txt")
+python3 -m pip install \
+        --global-option=build_ext \
+        --global-option="-I${venv}/include" \
+        --global-option="-L${venv}/lib" \
+        -r <(grep '^openfst' "${this_dir}/requirements.txt")
 
 # -----------------------------------------------------------------------------
 # Pocketsphinx for Python
 # -----------------------------------------------------------------------------
 
 pocketsphinx_file="${download_dir}/pocketsphinx-python.tar.gz"
-"${PYTHON}" -m pip install "${pocketsphinx_file}"
+python3 -m pip install "${pocketsphinx_file}"
 
 # -----------------------------------------------------------------------------
 # Snowboy
@@ -295,7 +295,7 @@ pocketsphinx_file="${download_dir}/pocketsphinx-python.tar.gz"
 case "${CPU_ARCH}" in
     x86_64|armv7l)
         snowboy_file="${download_dir}/snowboy-1.3.0.tar.gz"
-        "${PYTHON}" -m pip install "${snowboy_file}"
+        python3 -m pip install "${snowboy_file}"
         ;;
 
     *)
