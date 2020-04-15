@@ -3,6 +3,8 @@ SHELL := bash
 
 DOCKER_PLATFORMS = linux/amd64,linux/arm64,linux/arm/v7
 
+all: docker
+
 # -----------------------------------------------------------------------------
 # Docker
 # -----------------------------------------------------------------------------
@@ -10,7 +12,7 @@ DOCKER_PLATFORMS = linux/amd64,linux/arm64,linux/arm/v7
 docker: web-dist
 	docker buildx build . \
         --platform $(DOCKER_PLATFORMS) \
-        --tag rhasspy/rhasspy-server:latest \
+        --tag synesthesiam/rhasspy-server:latest \
         --push
 
 # -----------------------------------------------------------------------------

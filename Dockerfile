@@ -37,6 +37,9 @@ ENV RHASSPY_VENV ${RHASSPY_APP}/.venv
 
 WORKDIR /
 
+COPY --from=build ${RHASSPY_VENV} ${RHASSPY_VENV}
+COPY --from=build ${RHASSPY_APP}/opt/kaldi/ ${RHASSPY_APP}/opt/kaldi/
+
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
         python3 python3-dev \
@@ -47,9 +50,6 @@ RUN apt-get update && \
         libasound2-plugins \
         libfreetype6-dev libpng-dev pkg-config libffi-dev libssl-dev \
         gstreamer1.0-tools gstreamer1.0-plugins-good
-
-COPY --from=build ${RHASSPY_VENV} ${RHASSPY_VENV}
-COPY --from=build ${RHASSPY_APP}/opt/kaldi/ ${RHASSPY_APP}/opt/kaldi/
 
 # Web interface
 ADD download/rhasspy-web-dist.tar.gz ${RHASSPY_APP}/
