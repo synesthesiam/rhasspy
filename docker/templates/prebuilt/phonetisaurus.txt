@@ -1,3 +1,0 @@
-COPY download/phonetisaurus-2019_${BUILD_ARCH}.deb /phonetisaurus.deb
-RUN dpkg -i /phonetisaurus.deb && \
-    rm /phonetisaurus.deb

@@ -1,7 +1,0 @@
-COPY download/phonetisaurus-2019.tar.gz /phonetisaurus.tar.gz
-RUN cd / && tar -xf phonetisaurus.tar.gz
-RUN cd /phonetisaurus && \
-    ./configure && \
-    make -j $MAKE_THREADS && \
-    make install && \
-    rm -rf /phonetisaurus*

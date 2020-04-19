@@ -1,2 +1,0 @@
-# Install gstreamer and plugins
-RUN apt-get install --no-install-recommends --yes gstreamer1.0-tools gstreamer1.0-plugins-good

@@ -1,3 +1,0 @@
-# Switch to new user
-USER $UNAME
-ENV HOME /home/${UNAME}

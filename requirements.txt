@@ -1,4 +1,3 @@
-attrs
 adapt-parser==0.3.4
 aiohttp==3.6.2
 doit==0.31.1

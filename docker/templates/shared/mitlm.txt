@@ -1,9 +1,0 @@
-# Install mitlm
-RUN apt-get install --no-install-recommends --yes gfortran
-COPY download/mitlm-0.4.2.tar.xz /
-RUN cd / && tar -xf mitlm-0.4.2.tar.xz && cd mitlm-0.4.2/ && \
-    ./configure && \
-    make -j $MAKE_THREADS && \
-    make install && \
-    rm -rf /mitlm-0.4.2*
-

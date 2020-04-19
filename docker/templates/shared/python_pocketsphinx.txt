@@ -1,4 +1,0 @@
-# Install Pocketsphinx Python module with no sound
-COPY download/pocketsphinx-python.tar.gz /
-RUN python3 -m pip install --no-cache-dir /pocketsphinx-python.tar.gz && \
-    rm -rf /pocketsphinx-python*

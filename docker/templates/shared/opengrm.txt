@@ -1,9 +1,0 @@
-# Install Opengrm
-COPY download/opengrm-ngram-1.3.3.tar.gz /
-RUN cd / && tar -xf opengrm-ngram-1.3.3.tar.gz && \
-    cd opengrm-ngram-1.3.3 && \
-    ./configure && \
-    make -j $MAKE_THREADS && \
-    make install && \
-    ldconfig && \
-    rm -rf /opengrm*

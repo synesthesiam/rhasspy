@@ -1,1 +1,0 @@
-COPY profiles/en/ ${RHASSPY_APP}/profiles/en/

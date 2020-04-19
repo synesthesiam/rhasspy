@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-this_dir="$( cd "$( dirname "$0" )" && pwd )"
 
 # Try to detemine where Rhasspy is located
 if [[ -z "${RHASSPY_APP}" ]]; then
@@ -16,11 +15,20 @@ if [[ -f "${CONFIG_PATH}" ]]; then
     # Hass.IO configuration
     profile_name="$(jq --raw-output '.profile_name' "${CONFIG_PATH}")"
     profile_dir="$(jq --raw-output '.profile_dir' "${CONFIG_PATH}")"
-    RHASSPY_ARGS="--profile ${profile_name} --user-profiles ${profile_dir}"
+    RHASSPY_ARGS=('--profile' "${profile_name}" '--user-profiles' "${profile_dir}")
 
-    asoundrc="$(jq --raw-output '.asoundrc' ${CONFIG_PATH})"
+    # Copy user-defined asoundrc to root
+    asoundrc="$(jq --raw-output '.asoundrc' "${CONFIG_PATH}")"
     if [[ ! -z "${asoundrc}" ]]; then
 	    echo "${asoundrc}" > /root/.asoundrc
+    fi
+
+    # Add SSL settings
+    ssl="$(jq --raw-output '.ssl' "${CONFIG_PATH}")"
+    if [[ "${ssl}" == 'true' ]]; then
+        certfile="$(jq --raw-output '.certfile' "${CONFIG_PATH}")"
+        keyfile="$(jq --raw-output '.keyfile' "${CONFIG_PATH}")"
+        RHASSPY_ARGS+=('--ssl' "${certfile}" "${keyfile}")
     fi
 fi
 
@@ -32,10 +40,10 @@ if [[ -d "${RHASSPY_VENV}" ]]; then
     export LD_LIBRARY_PATH="${RHASSPY_VENV}/lib:${LD_LIBRARY_PATH}"
 fi
 
-cd "${RHASSPY_APP}"
+cd "${RHASSPY_APP}" || exit 1
 
-if [[ -z "${RHASSPY_ARGS}" ]]; then
+if [[ -z "${RHASSPY_ARGS[*]}" ]]; then
     python3 app.py "$@"
 else
-    python3 app.py ${RHASSPY_ARGS} "$@"
+    python3 app.py "${RHASSPY_ARGS[@]}" "$@"
 fi
