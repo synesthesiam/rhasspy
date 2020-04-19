@@ -16,7 +16,7 @@ if [[ -f "${CONFIG_PATH}" ]]; then
     # Hass.IO configuration
     profile_name="$(jq --raw-output '.profile_name' "${CONFIG_PATH}")"
     profile_dir="$(jq --raw-output '.profile_dir' "${CONFIG_PATH}")"
-    RHASSPY_ARGS="--profile \"${profile_name}\" --user-profiles \"${profile_dir}\""
+    RHASSPY_ARGS="--profile ${profile_name} --user-profiles ${profile_dir}"
 fi
 
 RHASSPY_VENV="${RHASSPY_APP}/.venv"
@@ -32,5 +32,5 @@ cd "${RHASSPY_APP}"
 if [[ -z "${RHASSPY_ARGS}" ]]; then
     python3 app.py "$@"
 else
-    python3 app.py "${RHASSPY_ARGS}" "$@"
+    python3 app.py ${RHASSPY_ARGS} "$@"
 fi
