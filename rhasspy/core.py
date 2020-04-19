@@ -5,6 +5,7 @@ import logging
 import os
 import platform
 import shutil
+import ssl
 import tempfile
 from collections import defaultdict
 from pathlib import Path
@@ -86,6 +87,8 @@ class RhasspyCore:
         self.defaults = Profile.load_defaults(system_profiles_dir)
 
         self.loop = asyncio.get_event_loop()
+
+        self.ssl_context = ssl.SSLContext()
         self._session: Optional[aiohttp.ClientSession] = aiohttp.ClientSession()
         self.dialogue_manager: Optional[RhasspyActor] = None
 
@@ -523,7 +526,7 @@ class RhasspyCore:
                 self._logger.debug(status)
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-                async with self.session.get(url) as response:
+                async with self.session.get(url, ssl=ssl_context) as response:
                     with open(filename, "wb") as out_file:
                         async for chunk in response.content.iter_chunked(chunk_size):
                             out_file.write(chunk)
