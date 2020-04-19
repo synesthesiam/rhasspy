@@ -17,6 +17,11 @@ if [[ -f "${CONFIG_PATH}" ]]; then
     profile_name="$(jq --raw-output '.profile_name' "${CONFIG_PATH}")"
     profile_dir="$(jq --raw-output '.profile_dir' "${CONFIG_PATH}")"
     RHASSPY_ARGS="--profile ${profile_name} --user-profiles ${profile_dir}"
+
+    asoundrc="$(jq --raw-output '.asoundrc' ${CONFIG_PATH})"
+    if [[ ! -z "${asoundrc}" ]]; then
+	    echo "${asoundrc}" > /root/.asoundrc
+    fi
 fi
 
 RHASSPY_VENV="${RHASSPY_APP}/.venv"
