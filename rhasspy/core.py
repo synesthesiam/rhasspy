@@ -526,7 +526,7 @@ class RhasspyCore:
                 self._logger.debug(status)
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-                async with self.session.get(url, ssl=ssl_context) as response:
+                async with self.session.get(url, ssl=self.ssl_context) as response:
                     with open(filename, "wb") as out_file:
                         async for chunk in response.content.iter_chunked(chunk_size):
                             out_file.write(chunk)
