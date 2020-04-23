@@ -28,7 +28,7 @@ if [[ -f "${CONFIG_PATH}" ]]; then
     if [[ "${ssl}" == 'true' ]]; then
         certfile="$(jq --raw-output '.certfile' "${CONFIG_PATH}")"
         keyfile="$(jq --raw-output '.keyfile' "${CONFIG_PATH}")"
-        RHASSPY_ARGS+=('--ssl' "${certfile}" "${keyfile}")
+        RHASSPY_ARGS+=('--ssl' "/ssl/${certfile}" "/ssl/${keyfile}")
     fi
 fi
 
