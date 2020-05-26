@@ -42,7 +42,7 @@ COPY --from=build ${RHASSPY_APP}/opt/kaldi/ ${RHASSPY_APP}/opt/kaldi/
 
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
-        python3 python3-dev \
+        python3 python3-pip python3-dev \
         bash jq unzip curl perl \
         libportaudio2 libatlas3-base \
         libgfortran4 ca-certificates \
