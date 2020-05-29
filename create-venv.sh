@@ -13,7 +13,7 @@ DEFINE_boolean 'system' true 'Install system dependencies'
 DEFINE_boolean 'flair' false 'Install flair'
 DEFINE_boolean 'precise' false 'Install Mycroft Precise'
 DEFINE_boolean 'adapt' true 'Install Mycroft Adapt'
-DEFINE_boolean 'google' false 'Install Google Text to Speech'
+DEFINE_boolean 'google' true 'Install Google Text to Speech'
 DEFINE_boolean 'kaldi' true 'Install Kaldi'
 DEFINE_boolean 'offline' false "Don't download anything"
 DEFINE_integer 'make-threads' 4 'Number of threads to use with make' 'j'
