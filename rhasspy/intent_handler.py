@@ -77,10 +77,12 @@ class HomeAssistantIntentHandler(RhasspyActor):
         self.event_type_format = ""
         self.pem_file = ""
         self.handle_type: HomeAssistantHandleType = HomeAssistantHandleType.EVENT
+        self.speech_actor: Optional[RhasspyActor] = None
 
     def to_started(self, from_state: str) -> None:
         """Transition to started state."""
         self.hass_config = self.profile.get("home_assistant", {})
+        self.speech_actor = self.config.get("speech")
 
         # Python format string for generating event type name
         self.event_type_format = self.hass_config.get(
@@ -170,6 +172,15 @@ class HomeAssistantIntentHandler(RhasspyActor):
                 kwargs["verify"] = self.pem_file
 
             response = requests.post(post_url, **kwargs)
+            response.raise_for_status()
+
+            intent = response.json()
+            self._logger.debug(intent)
+
+            # Check for speech
+            speech_text = intent.get("speech", {}).get("plain", {}).get("speech", "")
+            if speech_text and self.speech_actor:
+                self.send(self.speech_actor, SpeakSentence(speech_text))
         else:
             # Send event
             post_url = urljoin(self.hass_config["url"], "api/events/" + event_type)
@@ -184,7 +195,7 @@ class HomeAssistantIntentHandler(RhasspyActor):
             response = requests.post(post_url, **kwargs)
             self._logger.debug("POSTed intent to %s", post_url)
 
-        response.raise_for_status()
+            response.raise_for_status()
 
     # -------------------------------------------------------------------------
 
