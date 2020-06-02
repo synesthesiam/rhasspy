@@ -55,7 +55,7 @@ See `rhasspy.intent.FuzzyWuzzyRecognizer` for details.
 
 ## Mycroft Adapt
 
-Recognizes intents using [Mycroft Adapt](https://github.com/MycroftAI/adapt). Works best when you have a medium number of sentences (hundreds to thousands) and need to be able to recognize sentences not seen during training (no new words, though).
+Recognizes intents using [Mycroft Adapt](https://github.com/MycroftAI/adapt). Works best when you have a medium number of sentences (hundreds to thousands) and need to be able to recognize sentences not seen during training (no new words, though). This recognizer does not support converters, i.e. numbers are not converted back to integers.
 
 Add to your [profile](profiles.md):
 
