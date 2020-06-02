@@ -584,7 +584,7 @@ class RhasspyCore:
                             src_path = dest_path
 
                         # Check if file is already in cache
-                        if os.path.exists(src_path) and (os.path.getsize(src_path) > 0):
+                        if not delete and os.path.exists(src_path) and (os.path.getsize(src_path) > 0):
                             self._logger.debug(
                                 "Using cached %s for %s", src_path, dest_name
                             )
