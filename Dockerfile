@@ -49,7 +49,8 @@ RUN apt-get update && \
         sox espeak flite libttspico-utils alsa-utils lame \
         libasound2-plugins \
         libfreetype6-dev libpng-dev pkg-config libffi-dev libssl-dev \
-        gstreamer1.0-tools gstreamer1.0-plugins-good
+        gstreamer1.0-tools gstreamer1.0-plugins-good \
+        mosquitto-clients
 
 # Web interface
 ADD download/rhasspy-web-dist.tar.gz ${RHASSPY_APP}/
