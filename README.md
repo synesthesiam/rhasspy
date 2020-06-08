@@ -1,9 +1,6 @@
-<div class="flash flash-warn">
-    <h3>Rhasspy has <a href="https://github.com/rhasspy/rhasspy">moved!</a></h3>
-</div>
+# Rhasspy has [moved](https://github.com/rhasspy/rhasspy)
 
-
-# Rhasspy 2.4
+---
 
 Rhasspy (pronounced RAH-SPEE) is an offline voice assistant toolkit inspired by [Jasper](https://jasperproject.github.io/) that [supports many languages](#supported-languages). It works well with [Home Assistant](https://www.home-assistant.io/), [Hass.io](https://www.home-assistant.io/hassio/), and [Node-RED](https://nodered.org).
 
