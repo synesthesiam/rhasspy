@@ -1,4 +1,4 @@
-# Rhasspy has [moved and upgraded!](https://github.com/rhasspy/rhasspy)
+# Rhasspy has [moved and improved!](https://github.com/rhasspy/rhasspy)
 
 This repository contains code for an older version of Rhasspy (2.4).
 
